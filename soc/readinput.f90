@@ -35,6 +35,12 @@
      write(*,'(a,a25)')' input file:',infilename
      read(1001,*)filename
      write(*,'(2a)')' output file:',filename
+     read(1001,*) BulkBand_calc
+     read(1001,*) SlabBand_calc
+     read(1001,*) WireBand_calc
+     read(1001,*) SlabSS_calc
+     read(1001,*) SlabArc_calc
+     read(1001,*) SlabSpintexture_calc
      read(1001,*)Nk
      write(*,*)'Nk',Nk
      read(1001,*)omeganum
@@ -43,6 +49,8 @@
      write(*,*)'omegamin, omegamax', omegamin, omegamax
      read(1001,*)nslab
      write(*,*)'nslab',nslab
+     read(1001,*)Np
+     write(*,*)'Np',Np
      read(1001,*)Soc
      write(*,*)'soc',Soc
      read(1001,*)eta
@@ -134,9 +142,7 @@
         k3line_stop(j+1)= t1
      enddo
 
-	  omegamin=omegamin
-	  omegamax=omegamax
- 
+
      eta=(omegamax- omegamin)/omeganum*eta
 	  print * ,'eta', eta
      close(1001)

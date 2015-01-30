@@ -4,6 +4,8 @@
 ! change      by Q.S.Wu on 4/22/2010
 ! changed     by Q.S.wu on July/15/2010
 ! version     HmnR.data  contains soc
+! mpi-version is not test yet, take you own risk.
+! Jan 25 2015 by Q.S.Wu at ETH Zurich 
 ! 
 !--------+--------+--------+--------+--------+--------+--------+------!
 
@@ -73,7 +75,6 @@
      call MPI_bcast(Nrpts,1,mpi_in,0,mpi_cmw,ierr)
 	  
 	  ! broadcast ndim,Nk,omeganum,Maxomega,nslab,soc,eta to every cpu
-     call MPI_bcast(ndim,1,mpi_in,0,mpi_cmw,ierr)
      call MPI_bcast(Nk,1,mpi_in,0,mpi_cmw,ierr)
      call MPI_bcast(nslab,1,mpi_in,0,mpi_cmw,ierr)
      call MPI_bcast(omeganum,1,mpi_in,0,mpi_cmw,ierr)
@@ -87,6 +88,9 @@
      call MPI_bcast(Kua,3,mpi_dp,0,mpi_cmw,ierr)
      call MPI_bcast(Kub,3,mpi_dp,0,mpi_cmw,ierr)
      call MPI_bcast(Kuc,3,mpi_dp,0,mpi_cmw,ierr)
+
+     !> dimension for surface green's function
+     Ndim= Num_wann* Np
 
 
 	  allocate(irvec(3,nrpts))
@@ -106,26 +110,22 @@
      call MPI_bcast(ndegen,size(ndegen),mpi_in,0,mpi_cmw,ierr)
 
 	  call ek_bulk
-     call ek_slab
+    !call ek_slab
      
 
-	  If (nslab.ge.1)then
-	     ! call ek_slab 
-	     if(cpuid.eq.0)print *,'begin to calculate surface state'
-       !call surfstat
-        if(cpuid.eq.0)print *,'end calculate surface state'
-        
-	     if(cpuid.eq.0)print *,'begin to calculate fermi arc'
-       !call fermiarc
-        if(cpuid.eq.0)print *,'end calculate fermi arc'
-        
-       ! calculate spin-texture     
-        if(cpuid.eq.0)print *,'begin to calculate spin texture'
-        !call spintext
-        if(cpuid.eq.0)print *,'end calculate spin texture'
-    
-     Endif
-
+	  if(cpuid.eq.0)print *,'begin to calculate surface state'
+    !call surfstat
+     if(cpuid.eq.0)print *,'end calculate surface state'
+     
+	  if(cpuid.eq.0)print *,'begin to calculate fermi arc'
+     call fermiarc
+     if(cpuid.eq.0)print *,'end calculate fermi arc'
+     
+    ! calculate spin-texture     
+     if(cpuid.eq.0)print *,'begin to calculate spin texture'
+     !call spintext
+     if(cpuid.eq.0)print *,'end calculate spin texture'
+   
      if (cpuid.eq.0)write(*,*)'Congratulations! you finished the calculation.'
      
      call mpi_finalize(ierr)

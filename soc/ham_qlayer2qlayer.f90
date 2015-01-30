@@ -38,12 +38,11 @@
 
 
 !     complex(Dp),allocatable,intent(out) :: H00new(:,:)
-     complex(Dp),intent(out) :: H00new(Num_wann*Nslab,Num_wann*Nslab)
+     complex(Dp),intent(out) :: H00new(Ndim,Ndim)
 
 ! H01 Hamiltonian between next-nearest neighbour-quintuple-layers
 !     complex(Dp),allocatable,intent(out) :: H01new(:,:)
-     complex(Dp),intent(out) :: H01new(Num_wann*Nslab,Num_wann*Nslab)
-
+     complex(Dp),intent(out) :: H01new(Ndim,Ndim)
 
 
      Hij=0.0d0
@@ -55,7 +54,8 @@
         ! 100 for fcc conventional cell
         new_ia=ia
         new_ib=ib
-        new_ic=ib+ ic
+        new_ic=ic
+       !new_ic=ib+ ic
         
         if (abs(new_ic).le.ijmax)then
            kdotr=k(1)*real(new_ia,Dp)+k(2)*real(new_ib,Dp)
@@ -73,8 +73,8 @@
 
 ! nslab's principle layer 
 ! H00new
-     do i=1,Nslab
-     do j=1,Nslab
+     do i=1,Np
+     do j=1,Np
         if (abs(i-j).le.(ijmax)) then
           H00new(Num_wann*(i-1)+1:Num_wann*i,Num_wann*(j-1)+1:Num_wann*j)&
                 =Hij(j-i,:,:)
@@ -83,17 +83,17 @@
      enddo
 
 ! H01new
-     do i=1,Nslab
-     do j=Nslab+1,Nslab*2
+     do i=1,Np
+     do j=Np+1,Np*2
         if (j-i.le.ijmax) then
            H01new(Num_wann*(i-1)+1:Num_wann*i,&
-               Num_wann*(j-1-Nslab)+1:Num_wann*(j-Nslab))=Hij(j-i,:,:)
+               Num_wann*(j-1-Np)+1:Num_wann*(j-Np))=Hij(j-i,:,:)
         endif
      enddo
      enddo
 
-     do i=1,Num_wann*Nslab
-     do j=1,Num_wann*Nslab
+     do i=1,Ndim
+     do j=1,Ndim
         if(abs(H00new(i,j)-conjg(H00new(j,i))).ge.1e-4)then
           write(*,*)'there are something wrong with ham_qlayer2qlayer'
         stop
@@ -103,7 +103,7 @@
      enddo
 
   return
-  end
+  end subroutine ham_qlayer2qlayer
 
   ! for slab
   subroutine ham_qlayer2qlayer2(k,Hij)

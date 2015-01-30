@@ -36,7 +36,6 @@
      real(dp), allocatable :: dos(:)
      real(dp), allocatable :: dos_mpi(:)
 
-     complex(dp), allocatable :: green(:,:)
      complex(dp), allocatable :: ones(:,:)
      complex(dp), allocatable :: GLL(:,:), GRR(:,:)
      complex(dp), allocatable :: H00(:,:), H01(:,:)
@@ -47,26 +46,24 @@
      allocate( kxz(2, nkx*nkz))
      allocate( dos(nkx*nkz))
      allocate( dos_mpi(nkx*nkz))
-     allocate( green(ndim,ndim), GRR(ndim,ndim))
+     allocate( GLL(ndim,ndim), GRR(ndim,ndim))
      kxz=0d0
      dos=0d0
      dos_mpi=0d0
 
-     kzmin=-0.5d0/1d0
-     kzmax= 0.5d0/1d0
+     kzmin=-0.15d0/1d0
+     kzmax= 0.15d0/1d0
      kxmin=-0.15d0/1d0
      kxmax= 0.15d0/1d0
      ikp=0
      do i= 1, nkx
      do j= 1, nkz
         ikp=ikp+1
-        kxz(1, ikp)=kxmin+ (i-1)*(kxmax-kxmin)/dble(nkx)
-        kxz(2, ikp)=kzmin+ (j-1)*(kzmax-kzmin)/dble(nkz)
+        kxz(1, ikp)=kxmin+ (i-1)*(kxmax-kxmin)/dble(nkx-1)
+        kxz(2, ikp)=kzmin+ (j-1)*(kzmax-kzmin)/dble(nkz-1)
      enddo
      enddo
 
-     allocate(GLL(Ndim, Ndim))
-     allocate(GRR(Ndim, Ndim))
      allocate(H00(Ndim, Ndim))
      allocate(H01(Ndim, Ndim))
      allocate(ones(Ndim, Ndim))
@@ -100,7 +97,7 @@
 
         ! calculate spectral function
         do i= 1, ndim
-           dos(ikp)=dos(ikp)- aimag(green(i,i))
+           dos(ikp)=dos(ikp)- aimag(GLL(i,i))
         enddo
      enddo
 
@@ -109,14 +106,36 @@
                      mpi_sum, 0, mpi_comm_world, ierr)
 
      if (cpuid.eq.0)then
-        open (unit=12, file='arc.dat')
+        open (unit=12, file='arc.dat_l')
         do ikp=1, nkx*nkz
-           write(12, '(3f16.8)')kxz(:, ikp), dos_mpi(ikp)
+           write(12, '(3f16.8)')kxz(:, ikp), log(dos_mpi(ikp))
+           if (mod(ikp, nkz)==0) write(12, *)' '
         enddo
         close(12)
         write(*,*)'ndim',ndim
         write(*,*) 'Nkx,Nkz,eta',Nkx, Nkz, eta
         write(*,*)'calculate density of state successfully'    
+     endif
+
+     !> write script for gnuplot
+     if (cpuid==0) then
+        open(unit=101, file='arc_l.gnu')
+        write(101, '(a)') 'set terminal  postscript enhanced color'
+        write(101,'(2a)') '#set palette defined ( -10 "green", ', &
+           '5 "yellow", 10 "red" )'
+        write(101, '(a)')'set palette rgbformulae 33,13,10'
+        write(101, '(a)')"set output 'arc_l.eps'"
+        write(101, '(a)')'unset ztics'
+        write(101, '(a)')'unset key'
+        write(101, '(a)')'set pm3d'
+        write(101, '(a)')'set view map'
+        write(101, '(a)')'set xtics font ",24"'
+        write(101, '(a)')'set ytics font ",24"'
+        write(101, '(a, f8.5, a, f8.5, a)')'set xrange [', kxmin, ':', kxmax, ']'
+        write(101, '(a, f8.5, a, f8.5, a)')'set yrange [', kzmin, ':', kzmax, ']'
+        write(101, '(a)')'set pm3d interpolate 2,2'
+        write(101, '(2a)')"splot 'arc.dat_l' u 1:2:3 w pm3d"
+
      endif
 
   return   

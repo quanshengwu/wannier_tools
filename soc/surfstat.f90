@@ -6,33 +6,35 @@
 !         by Quan Sheng Wu on 4/20/2010                                !
 !            mpi version      4/21/2010
 !            change Kb to K=(Ka+Kb)/3 direction 4/22/2010
+!            Quansheng Wu on Jan 30 2015 at ETH Zurich
 !+---------+---------+---------+---------+---------+---------+--------+!
   subroutine surfstat
-
 
      use mpi
      use para
      implicit none
      
-
-
      integer :: ierr
 
-! general loop index
+     ! general loop index
      integer :: i,j 
 
      integer :: knv2
 
-! kpoint loop index
+     ! kpoint loop index
      integer :: ikp
 
      integer :: NN, nlines
 
+     real(dp) :: emin
+     real(dp) :: emax
      real(dp) :: t1, temp
      real(dp) :: k(2), w
 
-     real(dp) :: kp(6, 2)
-     real(dp) :: ke(6, 2)
+     real(dp) :: kp(16, 2)
+     real(dp) :: ke(16, 2)
+     real(dp) :: kpath_stop(16)
+     character(4) :: kpath_name(17)
 
      real(dp) :: kstart(2), kend(2)
 
@@ -52,19 +54,21 @@
 
      real(dp), allocatable :: k_len(:)
 
-     kp(1,:)=(/-0.5d0, 0.000d0/)  ! K
-     ke(1,:)=(/0.0d0,  0.000d0/)  ! Gamma
-     kp(2,:)=(/0.0d0,  0.000d0/)  ! X
-     ke(2,:)=(/0.5d0,  0.000d0/)  ! M
-     kp(3,:)=(/-0.0d0, 0.500d0/)  ! K
-     ke(3,:)=(/0.0d0,  0.000d0/)  ! Gamma
-     kp(4,:)=(/0.0d0,  0.000d0/)  ! X
-     ke(4,:)=(/0.0d0,  0.500d0/)  ! M
+     kpath_name= ' '
+     kp(1,:)=(/0.0d0, 0.5d0/)  ; kpath_name(1)= 'K'
+     ke(1,:)=(/0.0d0, 0.0d0/)  
+     kp(2,:)=(/0.0d0, 0.0d0/)  ; kpath_name(2)= 'G'
+     ke(2,:)=(/0.5d0, 0.00d0/)  ! K
+     kp(3,:)=(/0.5d0, 0.00d0/) ; kpath_name(3)= 'K'     
+     ke(3,:)=(/0.5d0, 0.5d0/)  ! K
+     kp(4,:)=(/0.5d0, 0.5d0/)  ; kpath_name(4)= 'M'     
+     ke(4,:)=(/0.0d0, 0.0d0/)  ; kpath_name(5)= 'G'  
+
      kp(5,:)=(/0.0d0, 0.0d0/)  ! Gamma
      kp(6,:)=(/5.0d0, 0.0d0/)  ! Z
     
      nlines=2
-     NN=Nk
+     NN=40
      knv2=NN*nlines
      allocate( kpoint(knv2, 2))
      allocate( k_len (knv2))
@@ -72,6 +76,7 @@
 
      t1=0d0
      k_len=0d0
+     kpath_stop= 0d0
      do j=1, nlines 
         do i=1, NN
            kstart= kp(j,:)
@@ -86,6 +91,7 @@
            endif
            k_len(i+(j-1)*NN)= t1
         enddo
+        kpath_stop(j+1)= t1
      enddo
 
 
@@ -135,8 +141,8 @@
            ! there are two method to calculate surface green's function 
            ! the method in 1985 is better, you can find the ref in the
            ! subroutine
-           call surfgreen_1985(omega,GLL,GRR,H00,H01,ones)
-           ! call surfgreen_1984(omega,GLL,GRR,H00,H01,ones)
+           call surfgreen_1985(w,GLL,GRR,H00,H01,ones)
+           ! call surfgreen_1984(w,GLL,GRR,H00,H01,ones)
 
            ! calculate spectral function
            do i= 1, ndim
@@ -151,17 +157,19 @@
                      mpi_sum, 0, mpi_comm_world, ierr)
      call mpi_reduce(dos_r, dos_r_mpi, size(dos_r), mpi_double_precision,&
                      mpi_sum, 0, mpi_comm_world, ierr)
-     dos_l=dos_l_mpi
-     dos_r=dos_r_mpi
+     dos_l=log(dos_l_mpi)
+     dos_r=log(dos_r_mpi)
 
      if (cpuid.eq.0)then
         open (unit=12, file='dos.dat_l')
         open (unit=13, file='dos.dat_r')
         do ikp=1, knv2
            do j=1, omeganum 
-              write(12, '(3f16.8)')k_len(ikp), omega(j)*27.2114d0, dos_l(ikp, j)
-              write(13, '(3f16.8)')k_len(ikp), omega(j)*27.2114d0, dos_r(ikp, j)
+              write(12, '(3f16.8)')k_len(ikp), omega(j), dos_l(ikp, j)
+              write(13, '(3f16.8)')k_len(ikp), omega(j), dos_r(ikp, j)
            enddo
+           write(12, *) ' '
+           write(13, *) ' '
         enddo
         close(12)
         close(13)
@@ -169,6 +177,75 @@
         write(*,*) 'knv2,omeganum,eta',knv2, omeganum, eta
         write(*,*)'calculate density of state successfully'    
      endif
+
+     emin= minval(omega)
+     emax= maxval(omega)
+     !> write script for gnuplot
+     if (cpuid==0) then
+        open(unit=101, file='surfdos_l.gnu')
+        write(101, '(a)') 'set terminal  postscript enhanced color'
+        write(101,'(2a)') 'set palette defined ( 0  "green", ', &
+           '5 "yellow", 10 "red" )'
+        write(101, '(a)')"set output 'slabek.eps'"
+        write(101, '(a)')'set style data linespoints'
+        write(101, '(a)')'unset ztics'
+        write(101, '(a)')'unset key'
+        write(101, '(a)')'set pointsize 0.8'
+        write(101, '(a)')'set pm3d'
+        write(101, '(a)')'set view map'
+        write(101, '(a)')'set xtics font ",24"'
+        write(101, '(a)')'set ytics font ",24"'
+        write(101, '(a)')'set ylabel font ",24"'
+        write(101, '(a)')'set ylabel "Energy (eV)"'
+        write(101, '(a, f8.5, a)')'set xrange [0: ', maxval(k_len), ']'
+        write(101, '(a, f8.5, a, f8.5, a)')'set yrange [', emin, ':', emax, ']'
+        write(101, 202, advance="no") (kpath_name(i), kpath_stop(i), i=1, nlines)
+        write(101, 203)kpath_name(nlines+1), kpath_stop(nlines+1)
+
+        do i=1, nlines-1
+           write(101, 204)kpath_stop(i+1), emin, kpath_stop(i+1), emax
+        enddo
+        write(101, '(a)')'set pm3d interpolate 2,2'
+        write(101, '(2a)')"splot 'dos.dat_l' u 1:2:3 w pm3d"
+
+     endif
+
+     !> write script for gnuplot
+     if (cpuid==0) then
+        open(unit=101, file='surfdos_r.gnu')
+        write(101, '(a)') 'set terminal  postscript enhanced color'
+        write(101,'(2a)') '#set palette defined ( 0  "green", ', &
+           '5 "yellow", 10 "red" )'
+        write(101, '(a)')'set palette rgbformulae 33,13,10'
+        write(101, '(a)')"set output 'slabek.eps'"
+        write(101, '(a)')'set style data linespoints'
+        write(101, '(a)')'unset ztics'
+        write(101, '(a)')'unset key'
+        write(101, '(a)')'set pointsize 0.8'
+        write(101, '(a)')'set pm3d'
+        write(101, '(a)')'set view map'
+        write(101, '(a)')'set xtics font ",24"'
+        write(101, '(a)')'set ytics font ",24"'
+        write(101, '(a)')'set ylabel font ",24"'
+        write(101, '(a)')'set ylabel "Energy (eV)"'
+        write(101, '(a, f8.5, a)')'set xrange [0: ', maxval(k_len), ']'
+        write(101, '(a, f8.5, a, f8.5, a)')'set yrange [', emin, ':', emax, ']'
+        write(101, 202, advance="no") (kpath_name(i), kpath_stop(i), i=1, nlines)
+        write(101, 203)kpath_name(nlines+1), kpath_stop(nlines+1)
+
+        do i=1, nlines-1
+           write(101, 204)kpath_stop(i+1), emin, kpath_stop(i+1), emax
+        enddo
+        write(101, '(a)')'set pm3d interpolate 2,2'
+        write(101, '(2a)')"splot 'dos.dat_r' u 1:2:3 w pm3d"
+
+     endif
+
+
+     202 format('set xtics (',:20('"',A3,'" ',F8.5,','))
+     203 format(A3,'" ',F8.5,')')
+     204 format('set arrow from ',F8.5,',',F10.5,' to ',F8.5,',',F10.5, ' nohead')
+ 
 
   return   
   end subroutine

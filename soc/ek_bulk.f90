@@ -35,6 +35,7 @@
         Hamk_bulk= 0d0
         call ham_bulk(k, Hamk_bulk)
 
+        !> diagonalization by call zheev in lapack
         W= 0d0
         call eigensystem_c( 'N', 'U', Num_wann ,Hamk_bulk, W)
 
@@ -46,8 +47,6 @@
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
 
      if (cpuid==0)then
-
-
         open(unit=14, file='bulkek.dat')
    
         do i=1, Num_wann
@@ -59,8 +58,10 @@
         close(14)
      endif
 
+     !> minimum and maximum value of energy bands
      emin= minval(eigv_mpi)-0.5d0
      emax= maxval(eigv_mpi)+0.5d0
+
      !> write script for gnuplot
      if (cpuid==0) then
         open(unit=101, file='bulkek.gnu')
@@ -87,13 +88,12 @@
         enddo
         write(101, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
             "w lp lw 2 pt 7  ps 1"
+        close(101)
      endif
 
      202 format('set xtics (',:20('"',A3,'" ',F8.5,','))
      203 format(A3,'" ',F8.5,')')
      204 format('set arrow from ',F8.5,',',F10.5,' to ',F8.5,',',F10.5, ' nohead')
      
- 
-
    return
    end subroutine ek_bulk
