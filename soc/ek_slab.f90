@@ -164,6 +164,10 @@
         write(101, '(a)')'unset key'
         write(101, '(a)')'set pointsize 0.8'
         write(101, '(a)')'set view 0,0'
+        write(101, '(a)')'set xtics font ",24"'
+        write(101, '(a)')'set ytics font ",24"'
+        write(101, '(a)')'set ylabel font ",24"'
+        write(101, '(a)')'set ylabel "Energy (eV)"'
         write(101, '(a, f8.5, a)')'set xrange [0: ', maxval(k_len), ']'
         write(101, '(a, f8.5, a, f8.5, a)')'set yrange [', emin, ':', emax, ']'
         write(101, 202, advance="no") (kpath_name(i), kpath_stop(i), i=1, nlines)
@@ -174,7 +178,7 @@
         enddo
         write(101, '(a)')'rgb(r,g,b) = int(r)*65536 + int(g)*256 + int(b)'
         write(101, '(2a)')"plot 'slabek.dat' u 1:2:(rgb(255,$3, 3)) ",  &
-            "w lp lw 2 pt 13 ps 1 lc rgb variable"
+            "w lp lw 2 pt 7  ps 1 lc rgb variable"
 
         !write(101, '(2a)')"splot 'slabek.dat' u 1:2:3 ",  &
         !   "w lp lw 2 pt 13 palette"

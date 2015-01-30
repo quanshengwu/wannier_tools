@@ -88,6 +88,8 @@
 ! k list for band
      integer :: nk3lines
      integer :: nk3_band
+     character(4), allocatable :: k3line_name(:)
+     real(dp),allocatable :: k3line_stop(:)
      real(dp),allocatable :: k3line_start(:, :)
      real(dp),allocatable :: k3line_end(:, :)
      real(dp),allocatable :: K3list_band(:, :)

@@ -93,10 +93,17 @@
      read(1001, *) nk3lines
      allocate(k3line_start(3, nk3lines))
      allocate(k3line_end(3, nk3lines))
+     allocate(k3line_name(nk3lines+1))
+     allocate(k3line_stop(nk3lines+1))
+     k3line_stop= 0d0
+     k3line_start= 0d0
+     k3line_end= 0d0
+     k3line_name= ' '
      do i=1, nk3lines
-        read(1001, *) char_temp, k3line_start(:, i), &
+        read(1001, *) k3line_name(i), k3line_start(:, i), &
                       char_temp, k3line_end(:, i)
      enddo
+     k3line_name(nk3lines+1)= char_temp
      close(1001)
 
      NN= 20
@@ -124,6 +131,7 @@
            endif
            k3len(i+(j-1)*NN)= t1
         enddo
+        k3line_stop(j+1)= t1
      enddo
 
 	  omegamin=omegamin
