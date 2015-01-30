@@ -1,3 +1,4 @@
+
 ! read data from HmnR.data   constructed by quansheng wu 4/2/2010
 
   subroutine readHmnR()
