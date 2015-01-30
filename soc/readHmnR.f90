@@ -12,6 +12,7 @@
      logical :: exists
 
      integer :: i, j, ir
+     integer :: n, m
      integer :: i1, i2, i3
      integer :: i4, i5    
      integer :: nwan
@@ -21,9 +22,8 @@
      real(dp) :: rh,ih
      
      write(*,*)''
-     inquire (file =infilename, EXIST = exists)
-     if (exists)then
-        open(12, file=infilename)
+     open(12, file=infilename)
+     if (.not.index(infilename, 'HWR')) then
         read(12, *)
         read(12, *)nwan
         read(12, *)nrpts
@@ -40,7 +40,6 @@
            irvec(2, ir)=i2
            irvec(3, ir)=i3
         enddo
-        close(12)
         do ir=1, nrpts
            if (sum(abs(irvec(:, ir)))<0.1) then
               do i=1, nwan
@@ -48,8 +47,30 @@
               enddo
            endif
         enddo
-     endif
+     else
 
+        !File socBi2Se3.HWR exist, We are using HmnR from WHM
+        ! skip 8 lines
+        do i=1,8
+           read(12,*)
+        enddo
+        read(12,'(a11,f18.7)')c_temp,E_fermi
+        print*,E_fermi
+        do iR=1,Nrpts
+           read(12,'(a3,3i5,a3,i4)')c_temp,irvec(1:3,iR),c_temp,ndegen(iR)
+           do i=1, Num_wann*Num_wann
+              read(12,*)n,m,rh,ih
+              HmnR(n,m,iR)=rh+ zi*ih   ! in Hartree
+           enddo
+           if (Irvec(1,iR).eq.0.and.Irvec(2,iR).eq.0.and.Irvec(3,iR).eq.0)then
+              do i=1, Num_wann
+                 HmnR(i,i,iR)=HmnR(i,i,iR)-E_fermi
+              enddo
+           endif
+        enddo
+        HmnR= HmnR*27.2114d0
+     endif ! HWR or not
+     close(12)
      
          
      return

@@ -147,6 +147,9 @@
         new_ib=ib
         new_ic=ib+ ic
         
+       !new_ia=ia
+       !new_ib=ib
+       !new_ic=ic    
         if (abs(new_ic).le.ijmax)then
            kdotr=k(1)*real(new_ia,Dp)+k(2)*real(new_ib,Dp)
            ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)

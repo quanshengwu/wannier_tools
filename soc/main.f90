@@ -41,20 +41,32 @@
         write(*,*)''
         inquire (file =infilename, EXIST = exists)
         if (exists)then
-           write(*,'(2x,a,a,a)')'File ',infilename, &
-              ' exist, We are using HmnR from wannier90'
-           open(unit=1001,file=infilename,status='old')
-           read(1001,*)
-           read(1001,'(i)') Num_wann
-           read(1001,'(i)') Nrpts
-           write(*,*)'>> Num_wann', Num_wann 
-           write(*,*)'>> NRPTS', NRPTS
-           close(1001)
-		  else
+           if (.not.index(infilename, 'HWR')) then
+              write(*,'(2x,a,a,a)')'File ',infilename, &
+                 ' exist, We are using HmnR from wannier90'
+              open(unit=1001,file=infilename,status='old')
+              read(1001,*)
+              read(1001,'(i)') Num_wann
+              read(1001,'(i)') Nrpts
+              write(*,*)'>> Num_wann', Num_wann 
+              write(*,*)'>> NRPTS', NRPTS
+              close(1001)
+           else 
+              write(*,'(2x,a,a,a)')'File ',infilename, &
+                 ' exist, We are using HmnR from HWR'
+              open(unit=1001,file=infilename,status='old')
+              read(1001,*)
+              read(1001,'(a26, i3)') c_temp, Num_wann
+              read(1001,'(a32,i10)')c_temp,Nrpts
+              write(*,*)'>> Num_wann', Num_wann 
+              write(*,*)'>> NRPTS', NRPTS
+              close(1001)
+           endif ! hwr or not
+        else
            write(*,'(2x,a25)')'>>> Error : no HmnR input'
            stop
-        endif
-     endif
+        endif ! exists or not
+     endif ! cpuid
 
 
 	  ! broadcast and Nrpts to every cpu

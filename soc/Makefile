@@ -6,7 +6,7 @@ obj =  module.o main.o readHmnR.o inverse.o\
        fermiarc.o spintexture.o
 
 
-f90  = mpif90  -check all
+f90  = mpif90 # -check all
 
 #FLAGS =  -O3 -nogen-interface  -warn all 
 flag = -O3 -nogen-interface  -warn all 
