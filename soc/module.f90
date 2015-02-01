@@ -80,14 +80,14 @@
      real(Dp),parameter :: Kb2(2)=(/0.0d0,1d0/)
 
      ! three  primitive vectors  
-     real(dp),allocatable :: Rua(:)
-     real(dp),allocatable :: Rub(:)
-     real(dp),allocatable :: Ruc(:)
+     real(dp),public, save :: Rua(3)
+     real(dp),public, save :: Rub(3)
+     real(dp),public, save :: Ruc(3)
 
      ! three reciprocal primitive vectors  
-     real(dp),allocatable :: Kua(:)
-     real(dp),allocatable :: Kub(:)
-     real(dp),allocatable :: Kuc(:)
+     real(dp),public, save :: Kua(3)
+     real(dp),public, save :: Kub(3)
+     real(dp),public, save :: Kuc(3)
 
      ! k list for band
      integer :: nk3lines
@@ -122,7 +122,7 @@
      !> a matrix change old primitive cell to new primitive cell
      !> which can define new surface
      !> a 3*3 matrix
-     real(dp), allocatable :: Umatrix(:, :)
+     real(dp), public, save :: Umatrix(3, 3)
 
 
  end module para

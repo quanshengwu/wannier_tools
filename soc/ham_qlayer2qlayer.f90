@@ -17,7 +17,7 @@
 ! 
 
 ! new index used to sign irvec     
-     integer :: new_ia,new_ib,new_ic
+     real(dp) :: new_ia,new_ib,new_ic
 
 ! wave vector k times lattice vector R  
      real(Dp) :: kdotr  
@@ -51,14 +51,10 @@
         ib=irvec(2,iR)
         ic=irvec(3,iR)
 
-        ! 100 for fcc conventional cell
-        new_ia=ia
-        new_ib=ib
-        new_ic=ic
-       !new_ic=ib+ ic
+        call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
         
         if (abs(new_ic).le.ijmax)then
-           kdotr=k(1)*real(new_ia,Dp)+k(2)*real(new_ib,Dp)
+           kdotr=k(1)*new_ia+ k(2)*new_ib
            ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
 
            Hij(new_ic, 1:Num_wann, 1:Num_wann )&
@@ -121,7 +117,7 @@
 ! 
 
 ! new index used to sign irvec     
-     integer :: new_ia,new_ib,new_ic
+     real(dp) :: new_ia,new_ib,new_ic
 
 ! wave vector k times lattice vector R  
      real(Dp) :: kdotr  
@@ -142,16 +138,11 @@
         ib=irvec(2,iR)
         ic=irvec(3,iR)
 
-        !> 100 for fcc conventional cell
-        new_ia=ia
-        new_ib=ib
-        new_ic=ib+ ic
-        
-       !new_ia=ia
-       !new_ib=ib
-       !new_ic=ic    
+        !> new lattice
+        call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
+
         if (abs(new_ic).le.ijmax)then
-           kdotr=k(1)*real(new_ia,Dp)+k(2)*real(new_ib,Dp)
+           kdotr=k(1)*new_ia+k(2)*new_ib
            ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
 
            Hij(new_ic, 1:Num_wann, 1:Num_wann )&
@@ -177,7 +168,7 @@
      integer :: ia,ib,ic
 
 ! new index used to sign irvec     
-     integer :: new_ia,new_ib,new_ic
+     real(dp) :: new_ia,new_ib,new_ic
 
 ! wave vector k times lattice vector R  
      real(Dp) :: kdotr
@@ -196,15 +187,13 @@
         ib=irvec(2,iR)
         ic=irvec(3,iR)
 
-        !> 100 for fcc conventional cell
-        new_ia=ia
-        new_ib=ib
-        new_ic=ib+ ic
-        
+        !> new lattice
+        call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
+
 
         if (abs(new_ib).le.ijmax)then
         if (abs(new_ic).le.ijmax)then
-           kdotr=k*real(new_ia,Dp)
+           kdotr=k*new_ia
            ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
 
            Hij(new_ib, new_ic, 1:Num_wann, 1:Num_wann )&
@@ -219,3 +208,24 @@
   end subroutine ham_qlayer2qlayerribbon
 
 
+  !> use Umatrix to get the new representation of a vector in new basis
+  !> R= a*R1+b*R2+c*R3= x*R1'+y*R2'+z*R3'
+  subroutine latticetransform(a, b, c, x, y, z)
+     use para
+     implicit none
+
+     integer, intent(in)  :: a, b, c
+     real(dp), intent(out) :: x, y, z
+
+     real(dp) :: Uinv(3, 3)
+
+     Uinv= Umatrix
+
+     call inv_r(3, Uinv)
+
+     x= a*Uinv(1, 1)+ b*Uinv(2, 1)+ c*Uinv(3, 1)
+     y= a*Uinv(1, 2)+ b*Uinv(2, 2)+ c*Uinv(3, 2)
+     z= a*Uinv(1, 3)+ b*Uinv(2, 3)+ c*Uinv(3, 3)
+
+     return
+  end subroutine latticetransform

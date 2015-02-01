@@ -58,4 +58,4 @@
      enddo
 
   return
-  end
+  end subroutine ham_slab

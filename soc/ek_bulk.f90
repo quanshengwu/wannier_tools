@@ -1,6 +1,7 @@
 ! calculate bulk's energy band using wannier TB method
   subroutine ek_bulk
 
+     use mpi
      use para
 
      implicit none

@@ -81,7 +81,7 @@
      omega = omegamin 
 
      do ikp= 1+cpuid, nkx*nkz, num_cpu
-        print *, ikp
+        if (cpuid==0) print *, 'Arc', ikp, nkx*nkz
         k(1)= kxz(1, ikp)
         k(2)= kxz(2, ikp)
 
@@ -122,7 +122,7 @@
         open(unit=101, file='arc_l.gnu')
         write(101, '(a)') 'set terminal  postscript enhanced color'
         write(101,'(2a)') '#set palette defined ( -10 "green", ', &
-           '5 "yellow", 10 "red" )'
+           '0 "yellow", 10 "red" )'
         write(101, '(a)')'set palette rgbformulae 33,13,10'
         write(101, '(a)')"set output 'arc_l.eps'"
         write(101, '(a)')'unset ztics'

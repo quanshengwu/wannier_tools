@@ -2,7 +2,8 @@
 ! slab Bi2Se3
 
   subroutine ek_ribbon
-    
+
+     use mpi
      use para
      implicit none 
 
@@ -45,10 +46,10 @@
      integer,allocatable ::  iwork(:)
      complex(Dp),allocatable :: work(:)
 
-! eigenvalue 
+     ! eigenvalue 
      real(Dp),allocatable :: eigenvalue(:)
 
-! hamiltonian slab
+     ! hamiltonian slab
      complex(Dp),allocatable ::z(:,:)
      complex(Dp),allocatable ::CHamk(:,:)
 
@@ -113,5 +114,5 @@
      close(100)
      write(*,*) 'calculate energy band  done'
 
-  return
-  end
+     return
+  end subroutine ek_ribbon

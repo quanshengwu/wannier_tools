@@ -72,23 +72,9 @@
 
 
 	  ! broadcast and Nrpts to every cpu
+     call MPI_bcast(Num_wann,1,mpi_in,0,mpi_cmw,ierr)
      call MPI_bcast(Nrpts,1,mpi_in,0,mpi_cmw,ierr)
 	  
-	  ! broadcast ndim,Nk,omeganum,Maxomega,nslab,soc,eta to every cpu
-     call MPI_bcast(Nk,1,mpi_in,0,mpi_cmw,ierr)
-     call MPI_bcast(nslab,1,mpi_in,0,mpi_cmw,ierr)
-     call MPI_bcast(omeganum,1,mpi_in,0,mpi_cmw,ierr)
-     call MPI_bcast(soc,1,mpi_in,0,mpi_cmw,ierr)
-     call MPI_bcast(eta,1,mpi_dp,0,mpi_cmw,ierr)
-     call MPI_bcast(omegamin,1,mpi_dp,0,mpi_cmw,ierr)
-     call MPI_bcast(omegamax,1,mpi_dp,0,mpi_cmw,ierr)
-     call MPI_bcast(Rua,3,mpi_dp,0,mpi_cmw,ierr)
-     call MPI_bcast(Rub,3,mpi_dp,0,mpi_cmw,ierr)
-     call MPI_bcast(Ruc,3,mpi_dp,0,mpi_cmw,ierr)
-     call MPI_bcast(Kua,3,mpi_dp,0,mpi_cmw,ierr)
-     call MPI_bcast(Kub,3,mpi_dp,0,mpi_cmw,ierr)
-     call MPI_bcast(Kuc,3,mpi_dp,0,mpi_cmw,ierr)
-
      !> dimension for surface green's function
      Ndim= Num_wann* Np
 
@@ -109,21 +95,28 @@
      call MPI_bcast(HmnR,size(HmnR),mpi_dc,0,mpi_cmw,ierr)
      call MPI_bcast(ndegen,size(ndegen),mpi_in,0,mpi_cmw,ierr)
 
-	  call ek_bulk
-    !call ek_slab
+     !> bulk band
+	  if(cpuid.eq.0)print *,'begin to calculate bulk band'
+     if (BulkBand_calc)call ek_bulk
+     if(cpuid.eq.0)print *,'end calculate bulk band'
+
+     !> slab band
+     if (SlabBand_calc)call ek_slab
      
 
+     !> surface state
 	  if(cpuid.eq.0)print *,'begin to calculate surface state'
-    !call surfstat
+     if (SlabSS_calc)call surfstat
      if(cpuid.eq.0)print *,'end calculate surface state'
-     
+    
+     !> fermi arc
 	  if(cpuid.eq.0)print *,'begin to calculate fermi arc'
-     call fermiarc
+     if (SlabArc_calc)call fermiarc
      if(cpuid.eq.0)print *,'end calculate fermi arc'
      
-    ! calculate spin-texture     
+     !> calculate spin-texture     
      if(cpuid.eq.0)print *,'begin to calculate spin texture'
-     !call spintext
+     if (SlabSpintexture_calc)call spintext
      if(cpuid.eq.0)print *,'end calculate spin texture'
    
      if (cpuid.eq.0)write(*,*)'Congratulations! you finished the calculation.'

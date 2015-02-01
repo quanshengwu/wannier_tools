@@ -6,13 +6,13 @@ obj =  module.o main.o readHmnR.o inverse.o\
        fermiarc.o spintexture.o
 
 
-f90  = mpif90 # -check all
+f90  = mpif90   -check all
 
 #FLAGS =  -O3 -nogen-interface  -warn all 
 flag = -O3 -nogen-interface  -warn all 
 
 libs = -L/opt/intel/mkl/lib/ \
-		-lmkl_intel_lp64 -lmkl_intel_thread \
+		-lmkl_intel_lp64 -lmkl_sequential \
 		-lmkl_core -liomp5
  
 main :  $(obj)

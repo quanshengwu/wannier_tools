@@ -40,6 +40,7 @@
 
      !> color for plot, surface state weight
      real(dp), allocatable :: surf_weight(:, :)
+     real(dp), allocatable :: surf_weight_mpi(:, :)
 
 ! hamiltonian slab
      complex(Dp),allocatable ::CHamk(:,:)
@@ -70,6 +71,7 @@
      allocate( kpoint(knv3, 3))
      allocate( k_len (knv3))
      allocate( surf_weight (Nslab* Num_wann, knv3))
+     allocate( surf_weight_mpi (Nslab* Num_wann, knv3))
      allocate(ekslab(Nslab*Num_wann,knv3))
      allocate(ekslab_mpi(Nslab*Num_wann,knv3))
      allocate(CHamk(nslab*Num_wann,nslab*Num_wann))
@@ -78,6 +80,7 @@
  
      kpoint= 0d0
      surf_weight= 0d0
+     surf_weight_mpi= 0d0
 
      t1=0d0
      k_len=0d0
@@ -126,14 +129,16 @@
            enddo ! l
            surf_weight(j, i)= sqrt(surf_weight(j, i))
         enddo ! j 
-        print *,'cpuid,k',cpuid,i,ekslab(1,i)
+        if (cpuid==0) print *,'SlabEk,k', i, knv3
      enddo ! i
      call mpi_allreduce(ekslab,ekslab_mpi,size(ekslab),&
+                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+     call mpi_allreduce(surf_weight, surf_weight_mpi,size(surf_weight),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
  
 
      ekslab=ekslab_mpi
-     surf_weight= surf_weight/ maxval(surf_weight)
+     surf_weight= surf_weight_mpi/ maxval(surf_weight_mpi)
         
      if(cpuid==0)then
         open(unit=100, file='slabek.dat')

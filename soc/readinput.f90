@@ -13,6 +13,7 @@
      character*25 :: char_temp 
      logical ::  exists
      real(dp) :: cell_volume
+     real(dp) :: cell_volume2
 
      integer  :: i
      integer  :: j
@@ -20,21 +21,22 @@
      real(dp) :: t1, temp
      real(dp) :: k1(3), k2(3)
      real(dp) :: kstart(3), kend(3)
+     real(dp) :: R1(3), R2(3), R3(3) 
     
      inquire(file=fname,exist=exists)
      if (exists)then
-        write(*,*) 'read some paramters from input.dat'
+        if(cpuid==0)write(*,*) 'read some paramters from input.dat'
         open(unit=1001,file=fname,status='old')
      else
-        write(*,*)'file' ,fname, 'dosnot exist'
+        if(cpuid==0)write(*,*)'file' ,fname, 'dosnot exist'
         stop
      endif
  
 
      read(1001,*)infilename
-     write(*,'(a,a25)')' input file:',infilename
+     if(cpuid==0)write(*,'(a,a25)')' input file:',infilename
      read(1001,*)filename
-     write(*,'(2a)')' output file:',filename
+     if(cpuid==0)write(*,'(2a)')' output file:',filename
      read(1001,*) BulkBand_calc
      read(1001,*) SlabBand_calc
      read(1001,*) WireBand_calc
@@ -42,25 +44,23 @@
      read(1001,*) SlabArc_calc
      read(1001,*) SlabSpintexture_calc
      read(1001,*)Nk
-     write(*,*)'Nk',Nk
+     if(cpuid==0)write(*,*)'Nk',Nk
      read(1001,*)omeganum
-     write(*,*)'omeganum',omeganum
+     if(cpuid==0)write(*,*)'omeganum',omeganum
      read(1001,*)omegamin, omegamax
-     write(*,*)'omegamin, omegamax', omegamin, omegamax
+     if(cpuid==0)write(*,*)'omegamin, omegamax', omegamin, omegamax
      read(1001,*)nslab
-     write(*,*)'nslab',nslab
+     if(cpuid==0)write(*,*)'nslab',nslab
      read(1001,*)Np
-     write(*,*)'Np',Np
+     if(cpuid==0)write(*,*)'Np',Np
      read(1001,*)Soc
-     write(*,*)'soc',Soc
+     if(cpuid==0)write(*,*)'soc',Soc
      read(1001,*)eta
-     write(*,*)'eta',eta
+     if(cpuid==0)write(*,*)'eta',eta
      read(1001,*)E_fermi
-     write(*,*)'E_fermi',E_fermi
+     if(cpuid==0)write(*,*)'E_fermi',E_fermi
 
      !> lattice information
-     allocate(Rua(3), Rub(3), Ruc(3))
-     allocate(Kua(3), Kub(3), Kuc(3))
      read(1001, *)Rua
      read(1001, *)Rub
      read(1001, *)Ruc
@@ -86,15 +86,15 @@
      Kuc(2)= cell_volume*(Rua(3)*Rub(1)- Rua(1)*Rub(3))
      Kuc(3)= cell_volume*(Rua(1)*Rub(2)- Rua(2)*Rub(1))
 
-     write(*, '(a)') '>> lattice information'
-     write(*, '(3f10.6)')Rua
-     write(*, '(3f10.6)')Rub
-     write(*, '(3f10.6)')Ruc
+     if(cpuid==0)write(*, '(a)') '>> lattice information'
+     if(cpuid==0)write(*, '(3f10.6)')Rua
+     if(cpuid==0)write(*, '(3f10.6)')Rub
+     if(cpuid==0)write(*, '(3f10.6)')Ruc
 
-     write(*, '(a)') '>> Reciprocal lattice information'
-     write(*, '(3f10.6)')Kua
-     write(*, '(3f10.6)')Kub
-     write(*, '(3f10.6)')Kuc
+     if(cpuid==0)write(*, '(a)') '>> Reciprocal lattice information'
+     if(cpuid==0)write(*, '(3f10.6)')Kua
+     if(cpuid==0)write(*, '(3f10.6)')Kub
+     if(cpuid==0)write(*, '(3f10.6)')Kuc
 
      !> kline for 3d band structure
      !> high symmetry k points
@@ -112,7 +112,6 @@
                       char_temp, k3line_end(:, i)
      enddo
      k3line_name(nk3lines+1)= char_temp
-     close(1001)
 
      NN= 20
      nk3_band= NN*nk3lines
@@ -143,11 +142,36 @@
      enddo
 
 
+     !> read information for new lattice 
+     !> in order to get different surface state
+     !> R1'=U11*R1+U12*R2+U13*R3
+     !> R2'=U21*R1+U22*R2+U23*R3
+     !> R3'=U31*R1+U32*R2+U33*R3
+     read(1001, *)Umatrix(1, :)
+     read(1001, *)Umatrix(2, :)
+     read(1001, *)Umatrix(3, :)
+
+     !> check whether Umatrix is right
+     !> the volume of the new cell should be the same as the old ones
+     R1= Umatrix(1, 1)*Rua+ Umatrix(1, 2)*Rub+ Umatrix(1, 3)*Ruc
+     R2= Umatrix(2, 1)*Rua+ Umatrix(2, 2)*Rub+ Umatrix(2, 3)*Ruc
+     R3= Umatrix(3, 1)*Rua+ Umatrix(3, 2)*Rub+ Umatrix(3, 3)*Ruc
+
+     cell_volume2= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
+                 +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
+                 +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1)) 
+     cell_volume2= 2d0*3.1415926535d0/cell_volume2
+
+     if (abs(abs(cell_volume2)-abs(cell_volume))> 0.001d0.and.cpuid==0) then
+        Write(*, *)' ERROR The Umatrix is wrong, the new cell', &
+           'volume should be the same as the old ones'
+        stop
+     endif
+
      eta=(omegamax- omegamin)/omeganum*eta
-	  print * ,'eta', eta
      close(1001)
 
-     write(*,*)'read input.dat file successfully'
+     if(cpuid==0)write(*,*)'read input.dat file successfully'
 
      return
   end subroutine
