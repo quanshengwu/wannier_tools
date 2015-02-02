@@ -83,7 +83,7 @@
               pos2= ia*Rua+ ib*Rub+ ic*Ruc+ Atom_position(:, j)
               dis= (pos2(1)-pos1(1))**2+(pos2(2)-pos1(2))**2 + (pos2(3)-pos1(3))**2
               distance(it, i)= sqrt(dis)
-           enddo
+           enddo ! j
         enddo ! ir
      enddo ! ia
 
@@ -154,6 +154,7 @@
      write(10, '(a)')'# export hopping parameters from hr file'
 
      !> R= (0, 0, 0)
+     !> get nearest neighbour
      R0= (/0, 0, 0/)
      R1= (/0, 0, 0/)
      do ir=1, nrpts
@@ -168,6 +169,7 @@
      !> R= (0, 0, 1)
 
 
+
      close(10)
 
 
@@ -178,54 +180,141 @@
 
   end subroutine parse
 
-   !* heap sort algorithm see Numerical Reciples
-   subroutine sortheap(n, arr)
-      use para, only : dp
-      implicit none
-      integer, intent(in) :: n
-      real(dp), intent(inout) :: arr(n)
+!> get the hopping parameter for two-atoms wannier90_hr.dat
+  subroutine parse2(Hmn, R0, R1, ia1, ia2)
+     use para
+     implicit none
 
-      !* local variables
-      integer :: i
+     integer :: i
+     integer :: ir
 
-      do i=n/2, 1, -1
-         call sift_down(i, n)
-      enddo
+     integer :: natoms
 
-      do i=n, 2, -1
-         call swap(arr(1), arr(i))
-         call sift_down(1, i-1)
-      enddo
-      contains
-      subroutine sift_down(l, r)
-         integer, intent(in) :: l, r
-         integer :: j, jold
-         real(8) :: a
-         a= arr(l)
-         jold= l
-         j= l+ l
+     integer :: iatom1
+     integer :: iatom2
+     integer :: col_start
+     integer :: col_end
+     integer :: row_start
+     integer :: row_end
+     integer :: row_diff
+     integer :: col_diff
+     integer :: row_offset
+     integer :: col_offset
 
-         do while (j<=r)
-            if (j<r) then
-               if (arr(j)<arr(j+1))j=j+1
-            endif
-            if (a>= arr(j))exit
-            arr(jold)= arr(j)
-            jold= j
-            j= j+ j
-         enddo
-         arr(jold)= a
-         return
-      end subroutine sift_down
-      subroutine swap(a, b)
-         real(8) :: a, b
+     !> atom species
+     integer, intent(in) :: ia1
+     integer, intent(in) :: ia2
+     integer, intent(in) :: R0(3)
+     integer, intent(in) :: R1(3)
+     complex(dp), intent(in) :: Hmn(Num_wann, Num_wann)
 
-         real(8) :: c
-         c=a
-         a=b
-         b=c
-      end subroutine swap
-   end subroutine sortheap
+     complex(dp), allocatable :: Hsub(:, :)
+
+
+     natoms= Num_atoms
+
+     allocate(Hsub(max_projs*soc, max_projs*soc))
+
+     !> for Zincblende InSb  InAs GaSb AlSb, the projectors are
+     !> In(Ga, Al) s, px, py, pz  Sb(As) px, py, pz
+
+     100 format('# hopping between ', a, '-', a, ' from', &
+        ' (', 3i3, ') to (', 3i3, ')')
+     101 format(2x, 'Real', 2x, 100a8)
+     1010 format(2x, 'Imag', 2x, 100a8)
+     102 format(a8, 100f8.3 )
+
+
+     !>--------------------------------------------------------------
+     !>> onsite hopping atom1-atom2
+     !>--------------------------------------------------------------
+     iatom1= ia1
+     iatom2= ia2
+     row_offset= 0
+     col_offset= nprojs(1)
+
+     !> for Hmn
+     col_start= 1+ col_offset
+     col_end= nprojs(iatom2)+ col_offset
+     row_start= 1+ row_offset
+     row_end= nprojs(iatom1)+ row_offset
+     print *, row_start, row_end
+     print *, col_start, col_end
+
+     !> for Hsub
+     row_diff= row_end- row_start+ 1
+     col_diff= col_end- col_start+ 1
+     Hsub= 0d0
+     do ir=1, nrpts
+        if (sum(abs(irvec(:, ir)))<0.1) then
+           Hsub(1: row_diff, 1:col_diff) &
+              = Hmn(row_start:row_end, col_start:col_end)
+           if (soc==2) then
+           Hsub(row_diff+1:2*row_diff, col_diff+1:2*col_diff) &
+              = Hmn(row_start+ Num_wann/2: row_end+ Num_wann/2, &
+                     col_start+ Num_wann/2: col_end+ Num_wann/2)
+           Hsub(1:row_diff, col_diff+1:2*col_diff) &
+              = Hmn(row_start: row_end, &
+                     col_start+ Num_wann/2: col_end+ Num_wann/2)
+           Hsub(row_diff+1:2*row_diff, 1:col_diff) &
+              = Hmn(row_start+ Num_wann/2: row_end+ Num_wann/2, &
+                     col_start: col_end)
+           endif ! soc
+        endif ! R= (0, 0, 0)
+     enddo ! ir
+
+     !> export onsite hopping for atom2
+     write(10, *) ' '
+     write(10, 100)trim(atom_name(iatom1)), trim(atom_name(iatom2)), R0, R1
+     !> no soc
+     if (soc==1) then
+        write(10, 101)proj_name(:, iatom2)
+        do i=1, row_end- row_start+ 1
+           write(10, 102)proj_name(i, iatom1), &
+              real(Hsub(i, 1: col_diff))
+        enddo
+   
+        write(10, 1010)proj_name(:, iatom2)
+        do i=1, row_end- row_start+ 1
+           write(10, 102)proj_name(i, iatom1), &
+              aimag(Hsub(i, 1: col_diff))
+        enddo
+     else
+        write(10, 101)proj_name(1:nprojs(iatom2), iatom2), &
+           proj_name(1:nprojs(iatom2), iatom2)
+        do i=1, row_diff
+           write(10, 102)proj_name(i, iatom1), &
+              real(Hsub(i, 1: 2*col_diff))
+        enddo
+        do i=1, row_diff
+           write(10, 102)proj_name(i, iatom1), &
+              real(Hsub(i+row_diff, 1: 2*col_diff))
+        enddo
+ 
+        write(10, 1010)proj_name(1:nprojs(iatom2), iatom2), &
+           proj_name(1:nprojs(iatom2), iatom2)
+        do i=1, row_diff
+           write(10, 102)proj_name(i, iatom1), &
+              aimag(Hsub(i, 1: 2*col_diff))
+        enddo
+        do i=1, row_diff
+           write(10, 102)proj_name(i, iatom1), &
+              aimag(Hsub(i+row_diff, 1: 2*col_diff))
+        enddo
+     
+     endif
+
+
+     close(10)
+
+
+     !>--------------------------------------------------------------
+     !>> onsite hopping atom1-atom2
+     !>--------------------------------------------------------------
+     return
+
+  end subroutine parse2
+
 
 !> get the hopping parameter for two-atoms wannier90_hr.dat
   subroutine parse_H(Hmn, R0, R1)
@@ -588,4 +677,54 @@
      return
 
   end subroutine parse_H
+
+   !* heap sort algorithm see Numerical Reciples
+   subroutine sortheap(n, arr)
+      use para, only : dp
+      implicit none
+      integer, intent(in) :: n
+      real(dp), intent(inout) :: arr(n)
+
+      !* local variables
+      integer :: i
+
+      do i=n/2, 1, -1
+         call sift_down(i, n)
+      enddo
+
+      do i=n, 2, -1
+         call swap(arr(1), arr(i))
+         call sift_down(1, i-1)
+      enddo
+      contains
+      subroutine sift_down(l, r)
+         integer, intent(in) :: l, r
+         integer :: j, jold
+         real(8) :: a
+         a= arr(l)
+         jold= l
+         j= l+ l
+
+         do while (j<=r)
+            if (j<r) then
+               if (arr(j)<arr(j+1))j=j+1
+            endif
+            if (a>= arr(j))exit
+            arr(jold)= arr(j)
+            jold= j
+            j= j+ j
+         enddo
+         arr(jold)= a
+         return
+      end subroutine sift_down
+      subroutine swap(a, b)
+         real(8) :: a, b
+
+         real(8) :: c
+         c=a
+         a=b
+         b=c
+      end subroutine swap
+   end subroutine sortheap
+
 
