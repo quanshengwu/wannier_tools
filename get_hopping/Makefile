@@ -1,4 +1,4 @@
-obj =  module.o main.o readinput.o readHmnR.o parse_H.o parse.o
+obj =  module.o main.o readinput.o readHmnR.o parse.o
 
 f90  = mpif90  #-check all
 

@@ -25,8 +25,8 @@
         read(12, *)nwan
         read(12, *)nrpts
         num_wann= nwan
-	     allocate(irvec(3,nrpts))
-	     allocate(ndegen(nrpts))
+        allocate(irvec(3,nrpts))
+        allocate(ndegen(nrpts))
         allocate(HmnR(num_wann,num_wann,nrpts))
         read(12,*)(ndegen(i), i=1, nrpts)
         do ir=1, nrpts
