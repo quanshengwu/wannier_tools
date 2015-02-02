@@ -4,11 +4,9 @@
      implicit none
 
      integer :: i
-     integer :: j
      integer :: ir
 
      integer :: natoms
-     integer :: max_projs
 
      integer :: iatom1
      integer :: iatom2
@@ -25,38 +23,15 @@
      integer, intent(in) :: R1(3)
      complex(dp), intent(in) :: Hmn(Num_wann, Num_wann)
 
-     !> howmany projectors for each atom, with out spin degeneracy
-     integer, allocatable :: nprojs(:)
-
-     !> projectors name
-     character(4), allocatable :: atom_name(:)
-     character(4), allocatable :: proj_name(:, :)
      complex(dp), allocatable :: Hsub(:, :)
 
 
-     natoms= 2
-     allocate(nprojs(natoms))
-     allocate(atom_name(natoms))
-     nprojs(1)= 4
-     nprojs(2)= 3
-     max_projs= maxval(nprojs)
+     natoms= Num_atoms
 
      allocate(Hsub(max_projs*soc, max_projs*soc))
-     allocate(proj_name(max_projs, natoms))
-     proj_name= ' '
 
      !> for Zincblende InSb  InAs GaSb AlSb, the projectors are
      !> In(Ga, Al) s, px, py, pz  Sb(As) px, py, pz
-     proj_name(1, 1)= 's'
-     proj_name(2, 1)= 'px'
-     proj_name(3, 1)= 'py'
-     proj_name(4, 1)= 'pz'
-     proj_name(1, 2)= 'px'
-     proj_name(2, 2)= 'py'
-     proj_name(3, 2)= 'pz'
-     atom_name(1)= 'In'
-     atom_name(2)= 'Sb'
-
 
      100 format('# hopping between ', a, '-', a, ' from', &
         ' (', 3i3, ') to (', 3i3, ')')
@@ -146,8 +121,6 @@
      row_start= 1+ row_offset
      col_end= nprojs(iatom1)+ col_offset
      row_end= nprojs(iatom2)+ row_offset
-     print *, row_start, row_end
-     print *, col_start, col_end
 
      !> for Hsub
      row_diff= row_end- row_start+ 1
@@ -374,9 +347,6 @@
         enddo
      
      endif
-
-
-
 
 
 

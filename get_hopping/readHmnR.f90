@@ -17,13 +17,10 @@
      real(dp) :: r1, r2
 
      !> for InSb soc-hyb 666
-     Efermi= 5.2545d0
-     soc= 2
 
-     write(*,*)''
-     inquire (file ='wannier90_hr.dat', EXIST = exists)
+     inquire (file =infilename, EXIST = exists)
      if (exists)then
-        open(12, file='wannier90_hr.dat', status='old')
+        open(12, file=infilename, status='old')
         read(12, *)
         read(12, *)nwan
         read(12, *)nrpts
@@ -48,7 +45,7 @@
         do ir=1, nrpts
            if (sum(abs(irvec(:, ir)))<0.1) then
               do i=1, nwan
-                 HmnR(i, i, ir)= HmnR(i, i, ir)- Efermi
+                 HmnR(i, i, ir)= HmnR(i, i, ir)- E_fermi
               enddo
            endif
         enddo

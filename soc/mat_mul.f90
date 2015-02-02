@@ -1,6 +1,5 @@
 ! performs matrix-matrix multiply
 ! C=A*B
-! function mat_mul(nmatdim,A,B)
   subroutine mat_mul(nmatdim,A,B,C)
      
      use para, only : Dp
@@ -15,7 +14,6 @@
 
      complex(Dp), intent(in)  :: A(nmatdim ,nmatdim)
      complex(Dp), intent(in)  :: B(nmatdim ,nmatdim)
-     !complex(Dp) :: mat_mul(nmatdim,nmatdim)
      complex(Dp), intent(out) :: C(nmatdim,nmatdim)
 
      ALPHA=1.0d0 
@@ -28,4 +26,3 @@
 
      return
   end subroutine mat_mul
-!  end function mat_mul

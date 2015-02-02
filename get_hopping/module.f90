@@ -30,6 +30,23 @@
      integer, allocatable     :: ndegen(:)
 
      !> fermi level
-     real(dp) :: Efermi
+     real(dp) :: E_fermi
+
+     !> lattice vector
+     real(dp),public, save :: Rua(3)
+     real(dp),public, save :: Rub(3)
+     real(dp),public, save :: Ruc(3)
+     
+     !> atoms information
+     integer :: Num_atoms
+     character(4), allocatable :: atom_name(:)
+     real(dp), allocatable :: Atom_position(:, :)
+     
+     !> howmany projectors for each atom, with out spin degeneracy
+     integer, allocatable :: nprojs(:)
+     integer :: max_projs
+
+     !> projectors name
+     character(4), allocatable :: proj_name(:, :)
 
  end module para
