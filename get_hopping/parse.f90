@@ -11,6 +11,7 @@
      integer :: ic
      integer :: it
      integer :: ir
+     integer :: iR0
 
      !> maximun order of nearest neighbour
      integer :: max_NN
@@ -153,22 +154,39 @@
      open (unit=10, file='hopping.dat')
      write(10, '(a)')'# export hopping parameters from hr file'
 
-     !> R= (0, 0, 0)
-     !> get nearest neighbour
-     R0= (/0, 0, 0/)
-     R1= (/0, 0, 0/)
      do ir=1, nrpts
-        if (irvec(1, ir)==0 .and. irvec(2, ir)==0 .and.irvec(3, ir)==0) then
-           Hmn= HmnR(:, :, ir)
+        if (irvec(1, ir)==0.and. irvec(2, ir)==0 .and.irvec(3, ir)==0)then
+           iR0= ir
         endif
      enddo
 
-     call parse_H(Hmn, R0, R1)
 
+     !> sweep over atoms in R=0
+     do i=1, Num_atoms 
 
-     !> R= (0, 0, 1)
+        call parse2(iR0, i, i)
 
-
+        !> for each atoms, sweep its neighbour order
+        write(10, '(a)') '#-------------------------------------------------------- '
+        write(10, '(a, a, a)')'# hopping bewteen ', trim(Atom_name(i)), &
+           ' and its neighbours'
+        do n=1, max_NN
+           write(10, *) ' '
+           write(10, '(a, i3, a)')"#the ", n, "'th order"
+           write(10, '(a, i3, 8(6a))')"#There are", neighbours(n, i)%numbers, &
+              " neighbours: ", &
+           (neighbours(n, i)%neighbour_name(j), j=1, neighbours(n, i)%numbers)
+           !> for each order, sweep its neighbours
+           do j=1, neighbours(n, i)%numbers
+              write(10, *)' '
+              write(10, '(a, i2, a, i3)')'# ', j, ' in', neighbours(n, i)%numbers 
+              write(10, '(a, a, 2a)')'# hopping bewteen ', trim(Atom_name(i)),&
+                   '-', trim(neighbours(n, i)%neighbour_name(j))
+              iR= neighbours(n, i)%iR(j)
+              call parse2(iR, i, neighbours(n, i)%neighbour(j))
+           enddo ! j
+        enddo ! n
+     enddo ! i
 
      close(10)
 
@@ -181,7 +199,7 @@
   end subroutine parse
 
 !> get the hopping parameter for two-atoms wannier90_hr.dat
-  subroutine parse2(Hmn, R0, R1, ia1, ia2)
+  subroutine parse2(iR1, ia1, ia2)
      use para
      implicit none
 
@@ -200,20 +218,28 @@
      integer :: col_diff
      integer :: row_offset
      integer :: col_offset
+     integer :: R0(3)
+     integer :: R1(3)
 
      !> atom species
      integer, intent(in) :: ia1
      integer, intent(in) :: ia2
-     integer, intent(in) :: R0(3)
-     integer, intent(in) :: R1(3)
-     complex(dp), intent(in) :: Hmn(Num_wann, Num_wann)
+     integer, intent(in) :: iR1
+     complex(dp), allocatable :: Hmn(:, :)
 
      complex(dp), allocatable :: Hsub(:, :)
 
+     allocate(Hmn(Num_wann, Num_wann))
+     Hmn= 0d0
 
      natoms= Num_atoms
+     Hmn= HmnR(:, :, iR1)
+     R1= irvec(:, iR1)
 
      allocate(Hsub(max_projs*soc, max_projs*soc))
+     Hsub= 0d0
+
+     R0= 0
 
      !> for Zincblende InSb  InAs GaSb AlSb, the projectors are
      !> In(Ga, Al) s, px, py, pz  Sb(As) px, py, pz
@@ -228,23 +254,27 @@
      !>--------------------------------------------------------------
      !>> onsite hopping atom1-atom2
      !>--------------------------------------------------------------
-     iatom1= ia1
-     iatom2= ia2
+     iatom1= ia1  !> row
+     iatom2= ia2  !> col
      row_offset= 0
-     col_offset= nprojs(1)
+     do i=1, ia1-1
+        row_offset= row_offset+ nprojs(i)
+     enddo
+
+     col_offset= 0
+     do i=1, ia2-1
+        col_offset= col_offset+ nprojs(i)
+     enddo
 
      !> for Hmn
-     col_start= 1+ col_offset
-     col_end= nprojs(iatom2)+ col_offset
      row_start= 1+ row_offset
      row_end= nprojs(iatom1)+ row_offset
-     print *, row_start, row_end
-     print *, col_start, col_end
+     col_start= 1+ col_offset
+     col_end= nprojs(iatom2)+ col_offset
 
      !> for Hsub
      row_diff= row_end- row_start+ 1
      col_diff= col_end- col_start+ 1
-     Hsub= 0d0
      do ir=1, nrpts
         if (sum(abs(irvec(:, ir)))<0.1) then
            Hsub(1: row_diff, 1:col_diff) &
@@ -264,7 +294,6 @@
      enddo ! ir
 
      !> export onsite hopping for atom2
-     write(10, *) ' '
      write(10, 100)trim(atom_name(iatom1)), trim(atom_name(iatom2)), R0, R1
      !> no soc
      if (soc==1) then
@@ -303,9 +332,6 @@
         enddo
      
      endif
-
-
-     close(10)
 
 
      !>--------------------------------------------------------------

@@ -66,7 +66,7 @@
 
 
      nlines= 4
-     NN=Nk
+     NN=20
      knv3=NN*nlines
      allocate( kpoint(knv3, 3))
      allocate( k_len (knv3))
