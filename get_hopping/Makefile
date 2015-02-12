@@ -11,6 +11,7 @@ libs = -L/opt/intel/mkl/lib/ \
  
 main :  $(obj)
 	$(f90) $(obj) -o get_hopping  $(libs) 
+	cp -f get_hopping ../bin/
 
 .SUFFIXES: .o .f90
 

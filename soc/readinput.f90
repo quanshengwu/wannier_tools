@@ -49,6 +49,8 @@
      if(cpuid==0)write(*,*)'omeganum',omeganum
      read(1001,*)omegamin, omegamax
      if(cpuid==0)write(*,*)'omegamin, omegamax', omegamin, omegamax
+     read(1001,*)E_arc
+     if(cpuid==0)write(*,*)'E_arc', E_arc
      read(1001,*)nslab
      if(cpuid==0)write(*,*)'nslab',nslab
      read(1001,*)Np

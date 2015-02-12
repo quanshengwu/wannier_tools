@@ -63,6 +63,9 @@
      ! omega interval 
      real(dp) :: omegamin, omegamax
 
+     ! Fermi energy for arc calculation
+     real(Dp) :: E_arc
+
      ! Fermi energy
      real(Dp) :: E_fermi
 
