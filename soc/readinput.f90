@@ -171,7 +171,12 @@
         stop
      endif
 
-     !> get the surface vector
+     !> get the surface vector, we should set the new coordinate system
+     !> set R1 to the new x direction ex'
+     !> set R1\cross R2 to the new z direction ez'
+     !> set ey'= ez'\cross ex'
+     !> then e_i'= \sum_j U_ij e_j
+
      Ra2= R1(1:2)
      Rb2= R2(1:2)
 
