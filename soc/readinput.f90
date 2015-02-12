@@ -159,6 +159,7 @@
      R2= Umatrix(2, 1)*Rua+ Umatrix(2, 2)*Rub+ Umatrix(2, 3)*Ruc
      R3= Umatrix(3, 1)*Rua+ Umatrix(3, 2)*Rub+ Umatrix(3, 3)*Ruc
 
+
      cell_volume2= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
                  +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
                  +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1)) 
@@ -169,6 +170,18 @@
            'volume should be the same as the old ones'
         stop
      endif
+
+     !> get the surface vector
+     Ra2= R1(1:2)
+     Rb2= R2(1:2)
+
+     !> get the surface reciprocal vector
+     cell_volume=Ra2(1)*Rb2(2)- Rb2(1)*Ra2(2)
+     cell_volume= abs(cell_volume)
+     Ka2(1)= 2d0*pi/cell_volume*Rb2(2)
+     Ka2(2)=-2d0*pi/cell_volume*Rb2(1)
+     Kb2(1)=-2d0*pi/cell_volume*Ra2(2)
+     Kb2(2)= 2d0*pi/cell_volume*Ra2(1)
 
      eta=(omegamax- omegamin)/omeganum*eta
      close(1001)
