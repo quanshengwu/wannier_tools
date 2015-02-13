@@ -93,6 +93,7 @@
 
 
      omega = E_arc
+     eta= 0.05d0
 
      do ikp= 1+cpuid, nkx*nkz, num_cpu
         if (cpuid==0) print *, 'Arc', ikp, nkx*nkz
