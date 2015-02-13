@@ -15,6 +15,8 @@
      integer :: lwork
 
 ! wave vector 
+     real(dp) :: k1(2)
+     real(dp) :: k2(2)
      real(Dp) :: k(2), kstart(2), kend(2)
      real(dp) :: kp(16,2), ke(16,2), kpath_stop(16)
      character(4) :: kpath_name(17)
@@ -89,14 +91,16 @@
         do i=1, NN
            k = kp(j,:)
            kstart=k
+           k1= kstart(1)*Ka2+ kstart(2)*Kb2
 
            k = ke(j,:)
            kend=k
+           k2= kend(1)*Ka2+ kend(2)*Kb2
 
            kpoint(i+(j-1)*NN,:)= kstart+ (kend-kstart)*dble(i-1)/dble(NN-1)
            
-           temp= dsqrt((kstart(1)- kend(1))**2 &
-                 +(kstart(2)- kend(2))**2)/dble(NN-1) 
+           temp= dsqrt((k2(1)- k1(1))**2 &
+                 +(k2(2)- k1(2))**2)/dble(NN-1) 
 
            if (i.gt.1) then
               t1=t1+temp

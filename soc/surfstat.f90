@@ -30,6 +30,8 @@
      real(dp) :: emax
      real(dp) :: t1, temp
      real(dp) :: k(2), w
+     real(dp) :: k1(2)
+     real(dp) :: k2(2)
 
      real(dp) :: kp(16, 2)
      real(dp) :: ke(16, 2)
@@ -81,10 +83,12 @@
         do i=1, NN
            kstart= kp(j,:)
            kend  = ke(j,:)
+           k1= kstart(1)*Ka2+ kstart(2)*Kb2
+           k2= kend(1)*Ka2+ kend(2)*Kb2
            kpoint(i+(j-1)*NN,:)= kstart+ (kend-kstart)*(i-1)/dble(NN-1)
            
-           temp= dsqrt((ke(j,1)- kp(j,1))**2 &
-                 +(ke(j,2)- kp(j,2))**2)/dble(NN-1) 
+           temp= dsqrt((k2(1)- k1(1))**2 &
+                 +(k2(2)- k1(2))**2)/dble(NN-1) 
 
            if (i.gt.1) then
               t1=t1+temp
@@ -184,7 +188,7 @@
      if (cpuid==0) then
         open(unit=101, file='surfdos_l.gnu')
         write(101, '(a)') 'set terminal  postscript enhanced color'
-        write(101,'(2a)') 'set palette defined (-10 "green", ', &
+        write(101,'(2a)') '#set palette defined (-10 "green", ', &
            '0 "yellow", 10 "red" )'
         write(101, '(a)')"set output 'surfdos_l.eps'"
         write(101, '(a)')'set style data linespoints'

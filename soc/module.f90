@@ -63,6 +63,9 @@
      ! omega interval 
      real(dp) :: omegamin, omegamax
 
+     ! Fermi energy for arc calculation
+     real(Dp) :: E_arc
+
      ! Fermi energy
      real(Dp) :: E_fermi
 
@@ -73,11 +76,11 @@
      real(Dp),parameter :: Ka(2)=(/1.0d0,0.0d0/)
      real(Dp),parameter :: Kb(2)=(/0.0d0,1.0d0/)
 
-     real(Dp),parameter :: Ra2(2)=(/1d0,0.0d0/)
-     real(Dp),parameter :: Rb2(2)=(/0.0d0,1d0/)
+     real(Dp),public, save :: Ra2(2)
+     real(Dp),public, save :: Rb2(2)
 
-     real(Dp),parameter :: Ka2(2)=(/1d0,0.0d0/)
-     real(Dp),parameter :: Kb2(2)=(/0.0d0,1d0/)
+     real(Dp),public, save :: Ka2(2)
+     real(Dp),public, save :: Kb2(2)
 
      ! three  primitive vectors  
      real(dp),public, save :: Rua(3)

@@ -44,7 +44,7 @@
         inquire (file =infilename, EXIST = exists)
         if (exists)then
            if (.not.index(infilename, 'HWR')) then
-              write(*,'(2x,a,a,a)')'File ',infilename, &
+              write(*,'(2x,a,a,a)')'File ',trim(infilename), &
                  ' exist, We are using HmnR from wannier90'
               open(unit=1001,file=infilename,status='old')
               read(1001,*)
@@ -54,7 +54,7 @@
               write(*,*)'>> NRPTS', NRPTS
               close(1001)
            else 
-              write(*,'(2x,a,a,a)')'File ',infilename, &
+              write(*,'(2x, 3a)')'File ',trim(infilename), &
                  ' exist, We are using HmnR from HWR'
               open(unit=1001,file=infilename,status='old')
               read(1001,*)

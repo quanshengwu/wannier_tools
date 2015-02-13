@@ -1,0 +1,33 @@
+wannier90_hr.dat  socBi2Se3.HWR ! input file
+dos.dat       ! output file
+F             ! BulkBand_calc
+T             ! SlabBand_calc
+F             ! WireBand_calc
+T             ! SlabSS_calc
+T             ! SlabArc_calc
+F             ! SlabSpintexture_calc
+100           ! Nk
+500           ! omega number
+-0.60 0.60    ! omegamin omegamax
+-0.08         ! E_arc
+10            ! nslab
+2             ! np   
+1             ! soc
+0.05          ! eta
+7.35          ! e-fermi
+3.477000   0.000000   0.000000 ! atom position
+0.000000   6.249000   0.000000
+0.000000   0.000000  14.018000
+     9        ! number of k line
+G 0.00000  0.00000  0.00000    X 0.00000  0.50000  0.00000    ! k point path
+X 0.00000  0.50000  0.00000    S 0.50000  0.50000  0.00000    
+S 0.50000  0.50000  0.00000    Y 0.50000  0.00000  0.00000    
+Y 0.50000  0.00000  0.00000    G 0.00000  0.00000  0.00000    
+G 0.00000  0.00000  0.00000    Z 0.00000  0.00000  0.50000    
+Z 0.00000  0.00000  0.50000    U 0.00000  0.50000  0.50000    
+U 0.00000  0.50000  0.50000    R 0.50000  0.50000  0.50000    
+R 0.5      0.5      0.5        T 0.5      0.0      0.5        
+T 0.5      0.0      0.5        Z 0.0      0.0      0.5        
+1 0 0   ! Umatrix for new lattice
+0 1 0 
+0 0 1

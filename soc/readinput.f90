@@ -22,6 +22,8 @@
      real(dp) :: k1(3), k2(3)
      real(dp) :: kstart(3), kend(3)
      real(dp) :: R1(3), R2(3), R3(3) 
+     real(dp) :: Urot(3, 3)
+     real(dp), external :: norm
     
      inquire(file=fname,exist=exists)
      if (exists)then
@@ -49,6 +51,8 @@
      if(cpuid==0)write(*,*)'omeganum',omeganum
      read(1001,*)omegamin, omegamax
      if(cpuid==0)write(*,*)'omegamin, omegamax', omegamin, omegamax
+     read(1001,*)E_arc
+     if(cpuid==0)write(*,*)'E_arc', E_arc
      read(1001,*)nslab
      if(cpuid==0)write(*,*)'nslab',nslab
      read(1001,*)Np
@@ -157,6 +161,7 @@
      R2= Umatrix(2, 1)*Rua+ Umatrix(2, 2)*Rub+ Umatrix(2, 3)*Ruc
      R3= Umatrix(3, 1)*Rua+ Umatrix(3, 2)*Rub+ Umatrix(3, 3)*Ruc
 
+
      cell_volume2= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
                  +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
                  +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1)) 
@@ -168,13 +173,65 @@
         stop
      endif
 
-     eta=(omegamax- omegamin)/omeganum*eta
+     !> get the surface vector, we should set the new coordinate system
+     !> set R1 to the new x direction ex'
+     !> set R1\cross R2 to the new z direction ez'
+     !> set ey'= ez'\cross ex'
+     !> then e_i'= \sum_j U_ij e_j
+     Urot= 0d0
+     !> e_x'
+     print *, R1, norm(R1)
+     Urot(1, :)= R1/norm(R1)
+
+     !> e_z'
+     Urot(3, 1)= (R1(2)*R2(3)- R1(3)*R2(2))
+     Urot(3, 2)= (R1(3)*R2(1)- R1(1)*R2(3))
+     Urot(3, 3)= (R1(1)*R2(2)- R1(2)*R2(1))
+     Urot(3, :)= Urot(3, :)/norm(Urot(3, :))
+
+     !> e_y'= e_z'\cross e_x'
+     Urot(2, 1)= (Urot(3, 2)*Urot(1, 3)- Urot(3, 3)*Urot(1, 2))
+     Urot(2, 2)= (Urot(3, 3)*Urot(1, 1)- Urot(3, 1)*Urot(1, 3))
+     Urot(2, 3)= (Urot(3, 1)*Urot(1, 2)- Urot(3, 2)*Urot(1, 1))
+     Urot(2, :)= Urot(2, :)/norm(Urot(2, :))
+
+     !> then transform R1, R2 to the new coordinates
+     !> R1'_j= \sum_i U_ij R_i
+     !> because the z direction is perpendicular to R1, R2, 
+     !> so the z coordinates for R1, R2 in the new axis are zero
+     Ra2(1)= Urot(1, 1)*R1(1)+ Urot(1, 2)*R1(2)+ Urot(1, 3)*R1(3)
+     Ra2(2)= Urot(2, 1)*R1(1)+ Urot(2, 2)*R1(2)+ Urot(2, 3)*R1(3)
+     Rb2(1)= Urot(1, 1)*R2(1)+ Urot(1, 2)*R2(2)+ Urot(1, 3)*R2(3)
+     Rb2(2)= Urot(2, 1)*R2(1)+ Urot(2, 2)*R2(2)+ Urot(2, 3)*R2(3)
+
+     !> get the surface reciprocal vector
+     cell_volume=Ra2(1)*Rb2(2)- Rb2(1)*Ra2(2)
+     cell_volume= abs(cell_volume)
+     Ka2(1)= 2d0*pi/cell_volume*Rb2(2)
+     Ka2(2)=-2d0*pi/cell_volume*Rb2(1)
+     Kb2(1)=-2d0*pi/cell_volume*Ra2(2)
+     Kb2(2)= 2d0*pi/cell_volume*Ra2(1)
+
+
      close(1001)
+
+     eta=(omegamax- omegamin)/omeganum*eta
 
      if(cpuid==0)write(*,*)'read input.dat file successfully'
 
      return
   end subroutine
 
+  function norm(R1)
+     use para, only : dp
+
+     implicit none
+     real(dp), intent(in) :: R1(3)
+     real(dp) :: norm
+
+     norm= sqrt(R1(1)*R1(1)+ R1(2)*R1(2)+ R1(3)*R1(3))
+
+     return
+  end function norm
 
 

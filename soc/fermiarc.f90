@@ -27,11 +27,14 @@
 ! kpoint loop index
      integer :: ikp
 
+     real(dp) :: k1(2)
+     real(dp) :: k2(2)
      real(dp) :: k(2)
 
      real(dp) :: kxmin, kxmax, kzmin, kzmax, omega
 
      real(dp), allocatable :: kxz(:,:)
+     real(dp), allocatable :: kxz_shape(:,:)
      
      real(dp), allocatable :: dos(:)
      real(dp), allocatable :: dos_mpi(:)
@@ -44,10 +47,12 @@
      nkz = Nk
 
      allocate( kxz(2, nkx*nkz))
+     allocate( kxz_shape(2, nkx*nkz))
      allocate( dos(nkx*nkz))
      allocate( dos_mpi(nkx*nkz))
      allocate( GLL(ndim,ndim), GRR(ndim,ndim))
      kxz=0d0
+     kxz_shape=0d0
      dos=0d0
      dos_mpi=0d0
 
@@ -61,6 +66,7 @@
         ikp=ikp+1
         kxz(1, ikp)=kxmin+ (i-1)*(kxmax-kxmin)/dble(nkx-1)
         kxz(2, ikp)=kzmin+ (j-1)*(kzmax-kzmin)/dble(nkz-1)
+        kxz_shape(:, ikp)= kxz(1, ikp)* Ka2+ kxz(2, ikp)* Kb2
      enddo
      enddo
 
@@ -108,7 +114,7 @@
      if (cpuid.eq.0)then
         open (unit=12, file='arc.dat_l')
         do ikp=1, nkx*nkz
-           write(12, '(3f16.8)')kxz(:, ikp), log(dos_mpi(ikp))
+           write(12, '(3f16.8)')kxz_shape(:, ikp), log(dos_mpi(ikp))
            if (mod(ikp, nkz)==0) write(12, *)' '
         enddo
         close(12)
