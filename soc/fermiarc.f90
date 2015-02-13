@@ -32,6 +32,7 @@
      real(dp) :: k(2)
 
      real(dp) :: kxmin, kxmax, kzmin, kzmax, omega
+     real(dp) :: kxmin_shape, kxmax_shape, kzmin_shape, kzmax_shape
 
      real(dp), allocatable :: kxz(:,:)
      real(dp), allocatable :: kxz_shape(:,:)
@@ -56,10 +57,10 @@
      dos=0d0
      dos_mpi=0d0
 
-     kzmin=-0.15d0/1d0
-     kzmax= 0.15d0/1d0
-     kxmin=-0.15d0/1d0
-     kxmax= 0.15d0/1d0
+     kzmin=-0.50d0/1d0
+     kzmax= 0.50d0/1d0
+     kxmin=-0.50d0/1d0
+     kxmax= 0.50d0/1d0
      ikp=0
      do i= 1, nkx
      do j= 1, nkz
@@ -69,6 +70,13 @@
         kxz_shape(:, ikp)= kxz(1, ikp)* Ka2+ kxz(2, ikp)* Kb2
      enddo
      enddo
+
+     k1= kxmin*Ka2+ kzmin*Kb2
+     k2= kxmax*ka2+ kzmax*kb2
+     kxmin_shape= min(k1(1), k2(1))
+     kzmin_shape= min(k1(2), k2(2))
+     kxmax_shape= max(k1(1), k2(1))
+     kzmax_shape= max(k1(2), k2(2))
 
      allocate(H00(Ndim, Ndim))
      allocate(H01(Ndim, Ndim))
@@ -137,8 +145,8 @@
         write(101, '(a)')'set view map'
         write(101, '(a)')'set xtics font ",24"'
         write(101, '(a)')'set ytics font ",24"'
-        write(101, '(a, f8.5, a, f8.5, a)')'set xrange [', kxmin, ':', kxmax, ']'
-        write(101, '(a, f8.5, a, f8.5, a)')'set yrange [', kzmin, ':', kzmax, ']'
+        write(101, '(a, f8.5, a, f8.5, a)')'set xrange [', kxmin_shape, ':', kxmax_shape, ']'
+        write(101, '(a, f8.5, a, f8.5, a)')'set yrange [', kzmin_shape, ':', kzmax_shape, ']'
         write(101, '(a)')'set pm3d interpolate 2,2'
         write(101, '(2a)')"splot 'arc.dat_l' u 1:2:3 w pm3d"
 

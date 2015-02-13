@@ -57,11 +57,11 @@
      real(dp), allocatable :: k_len(:)
 
      kpath_name= ' '
-     kp(1,:)=(/0.0d0, 0.5d0/)  ; kpath_name(1)= 'K'
+     kp(1,:)=(/0.0d0, 0.5d0/)  ; kpath_name(1)= 'Y'
      ke(1,:)=(/0.0d0, 0.0d0/)  
      kp(2,:)=(/0.0d0, 0.0d0/)  ; kpath_name(2)= 'G'
      ke(2,:)=(/0.5d0, 0.00d0/)  ! K
-     kp(3,:)=(/0.5d0, 0.00d0/) ; kpath_name(3)= 'K'     
+     kp(3,:)=(/0.5d0, 0.00d0/) ; kpath_name(3)= 'X'     
      ke(3,:)=(/0.5d0, 0.5d0/)  ! K
      kp(4,:)=(/0.5d0, 0.5d0/)  ; kpath_name(4)= 'M'     
      ke(4,:)=(/0.0d0, 0.0d0/)  ; kpath_name(5)= 'G'  
@@ -70,7 +70,7 @@
      kp(6,:)=(/5.0d0, 0.0d0/)  ! Z
     
      nlines=4
-     NN=40
+     NN=80
      knv2=NN*nlines
      allocate( kpoint(knv2, 2))
      allocate( k_len (knv2))
@@ -190,6 +190,7 @@
         write(101, '(a)') 'set terminal  postscript enhanced color'
         write(101,'(2a)') '#set palette defined (-10 "green", ', &
            '0 "yellow", 10 "red" )'
+        write(101, '(a)')'set palette rgbformulae 33,13,10'
         write(101, '(a)')"set output 'surfdos_l.eps'"
         write(101, '(a)')'set style data linespoints'
         write(101, '(a)')'unset ztics'
