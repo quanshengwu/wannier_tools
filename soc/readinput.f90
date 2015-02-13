@@ -60,8 +60,8 @@
      if(cpuid==0)write(stdout,*)'Np',Np
      read(1001,*)Soc
      if(cpuid==0)write(stdout,*)'soc',Soc
-     read(1001,*)eta
-     if(cpuid==0)write(stdout,*)'eta',eta
+     read(1001,*)eta_arc
+     if(cpuid==0)write(stdout,*)'eta_arc',eta_arc
      read(1001,*)E_fermi
      if(cpuid==0)write(stdout,*)'E_fermi',E_fermi
 

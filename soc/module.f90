@@ -58,6 +58,7 @@
 
      ! used to calculate dos epsilon+i eta
      real(Dp) :: eta 
+     real(Dp) :: eta_arc
 
      ! the number of omega
      integer :: omeganum 
