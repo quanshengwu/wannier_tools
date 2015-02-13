@@ -55,7 +55,7 @@
      info=18*Nslab+10
 
      psi(:)=eigenvector(:, info)
-     write(*,*) 'eigenvalue',info,ekslab(info)
+     write(stdout,*) 'eigenvalue',info,ekslab(info)
 
      j=0
      psi2=0.0d0
@@ -71,6 +71,6 @@
      enddo
      close(100)
      
-     write(*,*) 'calculate psi  done'
+     write(stdout,*) 'calculate psi  done'
      
   end

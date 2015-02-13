@@ -110,7 +110,7 @@
 
         ekribbon(:,i)=eigenvalue
 
-        write(*,'(a2,i4,f12.5,f10.2,a2)')'B', i,ekribbon(1,i),time2-time1,' s'
+        write(stdout,'(a2,i4,f12.5,f10.2,a2)')'B', i,ekribbon(1,i),time2-time1,' s'
      enddo
      
     !open(unit=100, file='ribbonek.dat',status='unknown')
@@ -129,7 +129,7 @@
     do i=1, Nb
        write(100, '(50000f15.7)')magnetic(i), ekribbon(:, i)
     enddo
-    !write(*,*) 'calculate energy band  done'
+    !write(stdout,*) 'calculate energy band  done'
 
   return
   end

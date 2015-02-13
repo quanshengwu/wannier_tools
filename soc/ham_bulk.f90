@@ -43,7 +43,7 @@
      do i1=1, Num_wann
      do i2=1, Num_wann
         if(abs(Hamk_bulk(i1,i2)-conjg(Hamk_bulk(i2,i1))).ge.1e-6)then
-          write(*,*)'there are something wrong with Hamk_bulk'
+          write(stdout,*)'there are something wrong with Hamk_bulk'
           stop
         endif 
      enddo

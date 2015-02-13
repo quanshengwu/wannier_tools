@@ -98,7 +98,7 @@
 
         ekribbon(:,i)=eigenvalue
 
-        write(*,'(a2,i4,f12.5,f10.2,a2)')'k',i,ekribbon(1,i),time2-time1,' s'
+        write(stdout,'(a2,i4,f12.5,f10.2,a2)')'k',i,ekribbon(1,i),time2-time1,' s'
      enddo
      
      open(unit=100, file='ribbonek.dat',status='unknown')
@@ -112,7 +112,7 @@
         write(100,'(60000f15.7)')k,ekribbon(:,i)
      enddo
      close(100)
-     write(*,*) 'calculate energy band  done'
+     write(stdout,*) 'calculate energy band  done'
 
      return
   end subroutine ek_ribbon

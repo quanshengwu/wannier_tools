@@ -91,7 +91,7 @@
      do i=1,Ndim
      do j=1,Ndim
         if(abs(H00new(i,j)-conjg(H00new(j,i))).ge.1e-4)then
-          write(*,*)'there are something wrong with ham_qlayer2qlayer'
+          write(stdout,*)'there are something wrong with ham_qlayer2qlayer'
         stop
         endif
 

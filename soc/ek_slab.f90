@@ -156,7 +156,7 @@
            write(100 , *)''
         enddo
         close(100)
-        write(*,*) 'calculate energy band  done'
+        write(stdout,*) 'calculate energy band  done'
      endif
 
      emin= minval(ekslab)-0.5d0

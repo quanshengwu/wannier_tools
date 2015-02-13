@@ -115,20 +115,20 @@
        enddo
     enddo
 
-	 write(*,*)'sigma_x'
+    if (cpuid.eq.0)write(stdout,*)'sigma_x'
 	 do i=1, ndim
-	    write(*,'(24f3.0)')real(sigma_x(i,:)) 
+    if (cpuid.eq.0)write(stdout,'(24f3.0)')real(sigma_x(i,:)) 
 	 enddo
 
-	 write(*,*)'sigma_y'
+    if (cpuid.eq.0)write(stdout,*)'sigma_y'
 	 do i=1, ndim
-	    write(*,'(24f3.0)')aimag(sigma_y(i,:)) 
+    if (cpuid.eq.0)write(stdout,'(24f3.0)')aimag(sigma_y(i,:)) 
 	 enddo
 
    !do i=1, Nslab
-	 write(*,*)'sigma_z'
+   if (cpuid.eq.0)write(stdout,*)'sigma_z'
 	 do i=1, ndim
-	    write(*,'(24f3.0)')real(sigma_z(i,:)) 
+    if (cpuid.eq.0)write(stdout,'(24f3.0)')real(sigma_z(i,:)) 
 	 enddo
 
 
@@ -214,7 +214,7 @@
     endif
 
   
-    write(*,*)'calculate spintexture successfully' 
+    if (cpuid.eq.0)write(stdout,*)'calculate spintexture successfully' 
  
     return
   end subroutine spintext

@@ -7,7 +7,7 @@
 
      ! output file name
 
-     character*40 :: filename
+     character*40 :: outfilename
      character*80 :: infilename
 
      logical :: BulkBand_calc
@@ -16,7 +16,9 @@
      logical :: SlabSS_calc
      logical :: SlabArc_calc
      logical :: SlabSpintexture_calc
- 
+
+     integer,parameter :: stdout= 6
+
      ! double precision  
      integer,parameter :: Dp=kind(1.0d0)
 
@@ -32,7 +34,7 @@
      !> leading dimension of surface green's function 
      integer :: Ndim
 
-	  integer :: Num_wann
+     integer :: Num_wann
 
      ! number of R points
      integer :: Nrpts

@@ -51,7 +51,7 @@
      do i1=1,nslab*Num_wann
      do i2=1,nslab*Num_wann
         if(abs(Hamk_slab(i1,i2)-conjg(Hamk_slab(i2,i1))).ge.1e-6)then
-          write(*,*)'there are something wrong with Hamk_slab'
+          write(stdout,*)'there are something wrong with Hamk_slab'
           stop
         endif 
      enddo

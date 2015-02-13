@@ -32,7 +32,7 @@
 
      ! if mpi initial wrong, alarm 
      if (cpuid==0.and.ierr.ne.0)then
-        write(*,*)'mpi initialize wrong'
+        write(stdout,*)'mpi initialize wrong'
         stop 
      endif
 
@@ -40,32 +40,32 @@
 
      ! open file Hmn_R.data to get Num_wann and Nrpts
      if (cpuid.eq.0)then
-        write(*,*)''
+        write(stdout,*)''
         inquire (file =infilename, EXIST = exists)
         if (exists)then
            if (.not.index(infilename, 'HWR')) then
-              write(*,'(2x,a,a,a)')'File ',trim(infilename), &
+              write(stdout,'(2x,a,a,a)')'File ',trim(infilename), &
                  ' exist, We are using HmnR from wannier90'
               open(unit=1001,file=infilename,status='old')
               read(1001,*)
               read(1001,'(i)') Num_wann
               read(1001,'(i)') Nrpts
-              write(*,*)'>> Num_wann', Num_wann 
-              write(*,*)'>> NRPTS', NRPTS
+              write(stdout,*)'>> Num_wann', Num_wann 
+              write(stdout,*)'>> NRPTS', NRPTS
               close(1001)
            else 
-              write(*,'(2x, 3a)')'File ',trim(infilename), &
+              write(stdout,'(2x, 3a)')'File ',trim(infilename), &
                  ' exist, We are using HmnR from HWR'
               open(unit=1001,file=infilename,status='old')
               read(1001,*)
               read(1001,'(a26, i3)') c_temp, Num_wann
               read(1001,'(a32,i10)')c_temp,Nrpts
-              write(*,*)'>> Num_wann', Num_wann 
-              write(*,*)'>> NRPTS', NRPTS
+              write(stdout,*)'>> Num_wann', Num_wann 
+              write(stdout,*)'>> NRPTS', NRPTS
               close(1001)
            endif ! hwr or not
         else
-           write(*,'(2x,a25)')'>>> Error : no HmnR input'
+           write(stdout,'(2x,a25)')'>>> Error : no HmnR input'
            stop
         endif ! exists or not
      endif ! cpuid
@@ -84,9 +84,9 @@
      allocate(HmnR(num_wann,num_wann,nrpts))
 
      if(cpuid==0)then
-       write(*,*) 'begin reading Hmn_R.data'
+       write(stdout,*) 'begin reading Hmn_R.data'
        call readHmnR() 
-       write(*,*) 'read Hmn_R.data successfully'
+       write(stdout,*) 'read Hmn_R.data successfully'
      endif
 
 
@@ -119,7 +119,7 @@
      if (SlabSpintexture_calc)call spintext
      if(cpuid.eq.0)print *,'end calculate spin texture'
    
-     if (cpuid.eq.0)write(*,*)'Congratulations! you finished the calculation.'
+     if (cpuid.eq.0)write(stdout,*)'Congratulations! you finished the calculation.'
      
      call mpi_finalize(ierr)
 

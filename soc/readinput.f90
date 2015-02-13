@@ -27,18 +27,19 @@
     
      inquire(file=fname,exist=exists)
      if (exists)then
-        if(cpuid==0)write(*,*) 'read some paramters from input.dat'
+        if(cpuid==0)write(stdout,*) 'read some paramters from input.dat'
         open(unit=1001,file=fname,status='old')
      else
-        if(cpuid==0)write(*,*)'file' ,fname, 'dosnot exist'
+        if(cpuid==0)write(stdout,*)'file' ,fname, 'dosnot exist'
         stop
      endif
  
 
      read(1001,*)infilename
-     if(cpuid==0)write(*,'(a,a25)')' input file:',infilename
-     read(1001,*)filename
-     if(cpuid==0)write(*,'(2a)')' output file:',filename
+     if(cpuid==0)write(stdout,'(a,a25)')' input file:',infilename
+     read(1001,*)outfilename
+     if(cpuid==0)write(stdout,'(2a)')' output file:',outfilename
+     if(cpuid==0)open(unit=stdout, file=outfilename)
      read(1001,*) BulkBand_calc
      read(1001,*) SlabBand_calc
      read(1001,*) WireBand_calc
@@ -46,23 +47,23 @@
      read(1001,*) SlabArc_calc
      read(1001,*) SlabSpintexture_calc
      read(1001,*)Nk
-     if(cpuid==0)write(*,*)'Nk',Nk
+     if(cpuid==0)write(stdout,*)'Nk',Nk
      read(1001,*)omeganum
-     if(cpuid==0)write(*,*)'omeganum',omeganum
+     if(cpuid==0)write(stdout,*)'omeganum',omeganum
      read(1001,*)omegamin, omegamax
-     if(cpuid==0)write(*,*)'omegamin, omegamax', omegamin, omegamax
+     if(cpuid==0)write(stdout,*)'omegamin, omegamax', omegamin, omegamax
      read(1001,*)E_arc
-     if(cpuid==0)write(*,*)'E_arc', E_arc
+     if(cpuid==0)write(stdout,*)'E_arc', E_arc
      read(1001,*)nslab
-     if(cpuid==0)write(*,*)'nslab',nslab
+     if(cpuid==0)write(stdout,*)'nslab',nslab
      read(1001,*)Np
-     if(cpuid==0)write(*,*)'Np',Np
+     if(cpuid==0)write(stdout,*)'Np',Np
      read(1001,*)Soc
-     if(cpuid==0)write(*,*)'soc',Soc
+     if(cpuid==0)write(stdout,*)'soc',Soc
      read(1001,*)eta
-     if(cpuid==0)write(*,*)'eta',eta
+     if(cpuid==0)write(stdout,*)'eta',eta
      read(1001,*)E_fermi
-     if(cpuid==0)write(*,*)'E_fermi',E_fermi
+     if(cpuid==0)write(stdout,*)'E_fermi',E_fermi
 
      !> lattice information
      read(1001, *)Rua
@@ -90,15 +91,15 @@
      Kuc(2)= cell_volume*(Rua(3)*Rub(1)- Rua(1)*Rub(3))
      Kuc(3)= cell_volume*(Rua(1)*Rub(2)- Rua(2)*Rub(1))
 
-     if(cpuid==0)write(*, '(a)') '>> lattice information'
-     if(cpuid==0)write(*, '(3f10.6)')Rua
-     if(cpuid==0)write(*, '(3f10.6)')Rub
-     if(cpuid==0)write(*, '(3f10.6)')Ruc
+     if(cpuid==0)write(stdout, '(a)') '>> lattice information'
+     if(cpuid==0)write(stdout, '(3f10.6)')Rua
+     if(cpuid==0)write(stdout, '(3f10.6)')Rub
+     if(cpuid==0)write(stdout, '(3f10.6)')Ruc
 
-     if(cpuid==0)write(*, '(a)') '>> Reciprocal lattice information'
-     if(cpuid==0)write(*, '(3f10.6)')Kua
-     if(cpuid==0)write(*, '(3f10.6)')Kub
-     if(cpuid==0)write(*, '(3f10.6)')Kuc
+     if(cpuid==0)write(stdout, '(a)') '>> Reciprocal lattice information'
+     if(cpuid==0)write(stdout, '(3f10.6)')Kua
+     if(cpuid==0)write(stdout, '(3f10.6)')Kub
+     if(cpuid==0)write(stdout, '(3f10.6)')Kuc
 
      !> kline for 3d band structure
      !> high symmetry k points
@@ -168,7 +169,7 @@
      cell_volume2= 2d0*3.1415926535d0/cell_volume2
 
      if (abs(abs(cell_volume2)-abs(cell_volume))> 0.001d0.and.cpuid==0) then
-        Write(*, *)' ERROR The Umatrix is wrong, the new cell', &
+        write(stdout, *)' ERROR The Umatrix is wrong, the new cell', &
            'volume should be the same as the old ones'
         stop
      endif
@@ -215,7 +216,7 @@
 
      eta=(omegamax- omegamin)/omeganum*eta
 
-     if(cpuid==0)write(*,*)'read input.dat file successfully'
+     if(cpuid==0)write(stdout,*)'read input.dat file successfully'
 
      return
   end subroutine

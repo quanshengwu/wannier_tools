@@ -126,9 +126,9 @@
            if (mod(ikp, nkz)==0) write(12, *)' '
         enddo
         close(12)
-        write(*,*)'ndim',ndim
-        write(*,*) 'Nkx,Nkz,eta',Nkx, Nkz, eta
-        write(*,*)'calculate density of state successfully'    
+        write(stdout,*)'ndim',ndim
+        write(stdout,*) 'Nkx,Nkz,eta',Nkx, Nkz, eta
+        write(stdout,*)'calculate density of state successfully'    
      endif
 
      !> write script for gnuplot

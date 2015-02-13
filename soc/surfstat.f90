@@ -177,9 +177,9 @@
         enddo
         close(12)
         close(13)
-        write(*,*)'ndim',ndim
-        write(*,*) 'knv2,omeganum,eta',knv2, omeganum, eta
-        write(*,*)'calculate density of state successfully'    
+        write(stdout,*)'ndim',ndim
+        write(stdout,*) 'knv2,omeganum,eta',knv2, omeganum, eta
+        write(stdout,*)'calculate density of state successfully'    
      endif
 
      emin= minval(omega)

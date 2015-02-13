@@ -2,7 +2,7 @@
 ! a subroutine to calculate eigenvector and eigenvalue
   subroutine eigensystem_c(JOBZ,UPLO,N,A,W)
 
-     use para, only : Dp
+     use para, only : Dp, stdout
      implicit none
 
 !  JOBZ    (input) CHARACTER*1
@@ -63,7 +63,7 @@
               W, work, 16*N, rwork, info )
 
      if (info.ne.0) then
-        write(*, *) 'ERROR : something wrong with zheev'
+        write(stdout, *) 'ERROR : something wrong with zheev'
         stop
      endif
 
@@ -75,7 +75,7 @@
 ! a subroutine to calculate eigenvector and eigenvalue
   subroutine eigensystem_r (JOBZ,UPLO,N,A,W)
 
-     use para, only : Dp
+     use para, only : Dp, stdout
      implicit none
 
 !  JOBZ    (input) CHARACTER*1
@@ -131,7 +131,7 @@
               W, work, 16*N, info )
 
      if (info.ne.0) then
-        write(*, *) 'ERROR : something wrong with dsyev'
+        write(stdout, *) 'ERROR : something wrong with dsyev'
         stop
      endif
 

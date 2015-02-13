@@ -21,7 +21,7 @@
 ! real and imag of HmnR
      real(dp) :: rh,ih
      
-     write(*,*)''
+     if(cpuid.eq.0)write(stdout,*)''
      open(12, file=infilename)
      if (.not.index(infilename, 'HWR')) then
         read(12, *)
