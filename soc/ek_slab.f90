@@ -164,10 +164,12 @@
      !> write script for gnuplot
      if (cpuid==0) then
         open(unit=101, file='slabek.gnu')
-        write(101, '(a)') 'set terminal  postscript enhanced color'
+        write(101, '(a)')'#set terminal  postscript enhanced color'
+        write(101, '(a)')"#set output 'slabek.eps'"
+        write(101, '(a)')'set terminal  png turecolor enhanced transpent giant'
+        write(101, '(a)')"set output 'slabek.png'"
         write(101,'(2a)') 'set palette defined ( 0  "green", ', &
            '5 "yellow", 10 "red" )'
-        write(101, '(a)')"set output 'slabek.eps'"
         write(101, '(a)')'set style data linespoints'
         write(101, '(a)')'unset ztics'
         write(101, '(a)')'unset key'

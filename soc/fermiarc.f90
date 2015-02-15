@@ -96,7 +96,7 @@
      eta= eta_arc
 
      do ikp= 1+cpuid, nkx*nkz, num_cpu
-        if (cpuid==0) print *, 'Arc', ikp, nkx*nkz
+        if (cpuid==0) write(stdout, *) 'Arc', ikp, nkx*nkz
         k(1)= kxz(1, ikp)
         k(2)= kxz(2, ikp)
 
@@ -135,14 +135,17 @@
      !> write script for gnuplot
      if (cpuid==0) then
         open(unit=101, file='arc_l.gnu')
-        write(101, '(a)') 'set terminal  postscript enhanced color'
+        write(101, '(a)')'#set terminal  postscript enhanced color'
+        write(101, '(a)')"#set output 'arc_l.eps'"
+        write(101, '(a)')'set terminal  png turecolor enhanced transpent giant'
+        write(101, '(a)')"set output 'arc_l.png'"
         write(101,'(2a)') '#set palette defined ( -10 "green", ', &
            '0 "yellow", 10 "red" )'
         write(101, '(a)')'set palette rgbformulae 33,13,10'
-        write(101, '(a)')"set output 'arc_l.eps'"
         write(101, '(a)')'unset ztics'
         write(101, '(a)')'unset key'
         write(101, '(a)')'set pm3d'
+        write(101, '(a)')'#set view equal xyz'
         write(101, '(a)')'set view map'
         write(101, '(a)')'set xtics font ",24"'
         write(101, '(a)')'set ytics font ",24"'

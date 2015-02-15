@@ -132,7 +132,7 @@
      enddo
 
      do ikp= 1+cpuid, knv2, num_cpu
-        if (cpuid==0) print *, ikp, 'in', knv2
+        if (cpuid==0) write(stdout, *) ikp, 'in', knv2
         k= kpoint(ikp,:)
 
         !> get the hopping matrix between two principle layers
@@ -187,16 +187,19 @@
      !> write script for gnuplot
      if (cpuid==0) then
         open(unit=101, file='surfdos_l.gnu')
-        write(101, '(a)') 'set terminal  postscript enhanced color'
+        write(101, '(a)')'#set terminal  postscript enhanced color'
+        write(101, '(a)')"set output 'surfdos_l.eps'"
+        write(101, '(a)')'set terminal  png turecolor enhanced transpent giant'
+        write(101, '(a)')"set output 'surfdos_l.png'"
         write(101,'(2a)') '#set palette defined (-10 "green", ', &
            '0 "yellow", 10 "red" )'
         write(101, '(a)')'set palette rgbformulae 33,13,10'
-        write(101, '(a)')"set output 'surfdos_l.eps'"
         write(101, '(a)')'set style data linespoints'
         write(101, '(a)')'unset ztics'
         write(101, '(a)')'unset key'
         write(101, '(a)')'set pointsize 0.8'
         write(101, '(a)')'set pm3d'
+        write(101, '(a)')'#set view equal xyz'
         write(101, '(a)')'set view map'
         write(101, '(a)')'set xtics font ",24"'
         write(101, '(a)')'set ytics font ",24"'
@@ -218,16 +221,19 @@
      !> write script for gnuplot
      if (cpuid==0) then
         open(unit=101, file='surfdos_r.gnu')
-        write(101, '(a)') 'set terminal  postscript enhanced color'
+        write(101, '(a)')'#set terminal  postscript enhanced color'
+        write(101, '(a)')"#set output 'surfdos_r.eps'"
+        write(101, '(a)')'set terminal  png turecolor enhanced transpent giant'
+        write(101, '(a)')"set output 'surfdos_r.png'"
         write(101,'(2a)') '#set palette defined (-10 "green", ', &
            '0 "yellow", 10 "red" )'
         write(101, '(a)')'set palette rgbformulae 33,13,10'
-        write(101, '(a)')"set output 'surfdos_r.eps'"
         write(101, '(a)')'set style data linespoints'
         write(101, '(a)')'unset ztics'
         write(101, '(a)')'unset key'
         write(101, '(a)')'set pointsize 0.8'
         write(101, '(a)')'set pm3d'
+        write(101, '(a)')'#set view equal xyz'
         write(101, '(a)')'set view map'
         write(101, '(a)')'set xtics font ",24"'
         write(101, '(a)')'set ytics font ",24"'
