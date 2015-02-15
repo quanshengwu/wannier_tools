@@ -137,7 +137,7 @@
         open(unit=101, file='arc_l.gnu')
         write(101, '(a)')'#set terminal  postscript enhanced color'
         write(101, '(a)')"#set output 'arc_l.eps'"
-        write(101, '(a)')'set terminal  png turecolor enhanced transpent giant'
+        write(101, '(a)')'set terminal  png truecolor enhanced transarpent giant'
         write(101, '(a)')"set output 'arc_l.png'"
         write(101,'(2a)') '#set palette defined ( -10 "green", ', &
            '0 "yellow", 10 "red" )'
