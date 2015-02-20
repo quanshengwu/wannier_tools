@@ -189,7 +189,7 @@
         open(unit=101, file='surfdos_l.gnu')
         write(101, '(a)')'#set terminal  postscript enhanced color'
         write(101, '(a)')"#set output 'surfdos_l.eps'"
-        write(101, '(a)')'set terminal  png truecolor enhanced transarpent giant'
+        write(101, '(a)')'set terminal  png truecolor enhanced transparent giant'
         write(101, '(a)')"set output 'surfdos_l.png'"
         write(101,'(2a)') '#set palette defined (-10 "green", ', &
            '0 "yellow", 10 "red" )'
@@ -223,7 +223,7 @@
         open(unit=101, file='surfdos_r.gnu')
         write(101, '(a)')'#set terminal  postscript enhanced color'
         write(101, '(a)')"#set output 'surfdos_r.eps'"
-        write(101, '(a)')'set terminal  png truecolor enhanced transarpent giant'
+        write(101, '(a)')'set terminal  png truecolor enhanced transparent giant'
         write(101, '(a)')"set output 'surfdos_r.png'"
         write(101,'(2a)') '#set palette defined (-10 "green", ', &
            '0 "yellow", 10 "red" )'
