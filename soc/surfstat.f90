@@ -189,7 +189,8 @@
         open(unit=101, file='surfdos_l.gnu')
         write(101, '(a)')'#set terminal  postscript enhanced color'
         write(101, '(a)')"#set output 'surfdos_l.eps'"
-        write(101, '(a)')'set terminal  png truecolor enhanced transparent giant'
+        write(101, '(3a)')'set terminal  png truecolor enhanced', &
+           ' transparent font Monaco giant size 3840, 3360'
         write(101, '(a)')"set output 'surfdos_l.png'"
         write(101,'(2a)') '#set palette defined (-10 "green", ', &
            '0 "yellow", 10 "red" )'
@@ -201,10 +202,12 @@
         write(101, '(a)')'set pm3d'
         write(101, '(a)')'#set view equal xyz'
         write(101, '(a)')'set view map'
-        write(101, '(a)')'set xtics font ",24"'
-        write(101, '(a)')'set ytics font ",24"'
-        write(101, '(a)')'set ylabel font ",24"'
+        write(101, '(a)')'set xtics font ",48"'
+        write(101, '(a)')'set ytics font ",48"'
+        write(101, '(a)')'set ylabel font ",48"'
         write(101, '(a)')'set ylabel "Energy (eV)"'
+        write(101, '(a)')'set xtics offset 0, -1'
+        write(101, '(a)')'set ylabel offset -6, 0 '
         write(101, '(a, f8.5, a)')'set xrange [0: ', maxval(k_len), ']'
         write(101, '(a, f8.5, a, f8.5, a)')'set yrange [', emin, ':', emax, ']'
         write(101, 202, advance="no") (kpath_name(i), kpath_stop(i), i=1, nlines)
@@ -223,7 +226,8 @@
         open(unit=101, file='surfdos_r.gnu')
         write(101, '(a)')'#set terminal  postscript enhanced color'
         write(101, '(a)')"#set output 'surfdos_r.eps'"
-        write(101, '(a)')'set terminal  png truecolor enhanced transparent giant'
+        write(101, '(3a)')'set terminal  png truecolor enhanced', &
+           ' transparent font Monaco giant size 3840, 3360'
         write(101, '(a)')"set output 'surfdos_r.png'"
         write(101,'(2a)') '#set palette defined (-10 "green", ', &
            '0 "yellow", 10 "red" )'
@@ -235,10 +239,12 @@
         write(101, '(a)')'set pm3d'
         write(101, '(a)')'#set view equal xyz'
         write(101, '(a)')'set view map'
-        write(101, '(a)')'set xtics font ",24"'
-        write(101, '(a)')'set ytics font ",24"'
-        write(101, '(a)')'set ylabel font ",24"'
+        write(101, '(a)')'set xtics font ",48"'
+        write(101, '(a)')'set ytics font ",48"'
+        write(101, '(a)')'set ylabel font ",48"'
         write(101, '(a)')'set ylabel "Energy (eV)"'
+        write(101, '(a)')'set xtics offset 0, -1'
+        write(101, '(a)')'set ylabel offset -6, 0 '
         write(101, '(a, f8.5, a)')'set xrange [0: ', maxval(k_len), ']'
         write(101, '(a, f8.5, a, f8.5, a)')'set yrange [', emin, ':', emax, ']'
         write(101, 202, advance="no") (kpath_name(i), kpath_stop(i), i=1, nlines)

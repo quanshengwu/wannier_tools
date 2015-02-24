@@ -10,9 +10,10 @@
 
 ! loop index  
      integer :: i1,i2, i
+     integer :: ir
 
 ! wave vector in 2d
-     real(Dp), intent(in) :: k(2)      
+     real(Dp), intent(inout) :: k(2)      
 
 ! Hamiltonian of slab system
      complex(Dp),intent(out) ::Hamk_slab(Num_wann*nslab,Num_wann*nslab) 

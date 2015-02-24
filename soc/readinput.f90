@@ -118,7 +118,7 @@
      enddo
      k3line_name(nk3lines+1)= char_temp
 
-     NN= 20
+     NN= 50
      nk3_band= NN*nk3lines
      allocate(k3len(nk3_band))
      allocate(k3points(3, nk3_band))

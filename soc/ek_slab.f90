@@ -10,6 +10,8 @@
      integer :: i     
      integer :: j
      integer :: l
+     integer :: i1
+     integer :: i2
      integer :: NN, nlines, knv3
 
      integer :: lwork
@@ -51,11 +53,11 @@
      ierr = 0
 
      kpath_name= ' '
-     kp(1,:)=(/0.0d0, 0.5d0/)  ; kpath_name(1)= 'K'
+     kp(1,:)=(/0.0d0, 0.5d0/)  ; kpath_name(1)= 'Y'
      ke(1,:)=(/0.0d0, 0.0d0/)  
      kp(2,:)=(/0.0d0, 0.0d0/)  ; kpath_name(2)= 'G'
      ke(2,:)=(/0.5d0, 0.00d0/)  ! K
-     kp(3,:)=(/0.5d0, 0.00d0/) ; kpath_name(3)= 'K'     
+     kp(3,:)=(/0.5d0, 0.00d0/) ; kpath_name(3)= 'X'     
      ke(3,:)=(/0.5d0, 0.5d0/)  ! K
      kp(4,:)=(/0.5d0, 0.5d0/)  ; kpath_name(4)= 'M'     
      ke(4,:)=(/0.0d0, 0.0d0/)  ; kpath_name(5)= 'G'  
@@ -68,7 +70,7 @@
 
 
      nlines= 4
-     NN=20
+     NN=40
      knv3=NN*nlines
      allocate( kpoint(knv3, 3))
      allocate( k_len (knv3))
@@ -166,7 +168,8 @@
         open(unit=101, file='slabek.gnu')
         write(101, '(a)')'#set terminal  postscript enhanced color'
         write(101, '(a)')"#set output 'slabek.eps'"
-        write(101, '(a)')'set terminal  png truecolor enhanced transparent giant'
+        write(101, '(3a)')'set terminal  png truecolor enhanced', &
+           ' transparent font Monaco giant size 3840, 3360'
         write(101, '(a)')"set output 'slabek.png'"
         write(101,'(2a)') 'set palette defined ( 0  "green", ', &
            '5 "yellow", 10 "red" )'
@@ -178,6 +181,8 @@
         write(101, '(a)')'set xtics font ",24"'
         write(101, '(a)')'set ytics font ",24"'
         write(101, '(a)')'set ylabel font ",24"'
+        write(101, '(a)')'set xtics offset 0, -1'
+        write(101, '(a)')'set ylabel offset -6, 0 '
         write(101, '(a)')'set ylabel "Energy (eV)"'
         write(101, '(a, f8.5, a)')'set xrange [0: ', maxval(k_len), ']'
         write(101, '(a, f8.5, a, f8.5, a)')'set yrange [', emin, ':', emax, ']'
