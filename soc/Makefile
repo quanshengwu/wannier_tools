@@ -1,7 +1,7 @@
 obj =  module.o main.o readHmnR.o inverse.o\
        eigen.o ham_qlayer2qlayer.o \
 		 ham_slab.o ek_slab.o \
-       readinput.o surfgreen.o surfstat.o \
+       readinput.o fermisurface.o surfgreen.o surfstat.o \
 		 mat_mul.o ham_bulk.o ek_bulk.o \
        fermiarc.o spintexture.o
 
