@@ -36,10 +36,10 @@
      kxy=0d0
      kxy_shape=0d0
 
-     kymin=-0.50d0/1d0
-     kymax= 0.50d0/1d0
-     kxmin=-0.50d0/1d0
-     kxmax= 0.50d0/1d0
+     kymin=-0.20d0/1d0
+     kymax= 0.20d0/1d0
+     kxmin=-0.20d0/1d0
+     kxmax= 0.20d0/1d0
      kz= 0d0
      ik =0
      do i= 1, nkx
