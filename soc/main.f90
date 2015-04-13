@@ -99,7 +99,7 @@
 	  if(cpuid.eq.0)print *,'begin to calculate bulk band'
      if (BulkBand_calc) then
         call ek_bulk
-        call fermisurface
+       !call fermisurface
      endif
      if(cpuid.eq.0)print *,'end calculate bulk band'
 

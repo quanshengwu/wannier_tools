@@ -88,7 +88,7 @@
            write(101, 204)k3line_stop(i+1), emin, k3line_stop(i+1), emax
         enddo
         write(101, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
-            "w lp lw 2 pt 7  ps 1"
+            "w lp lw 2 pt 7  ps 0.2"
         close(101)
      endif
 

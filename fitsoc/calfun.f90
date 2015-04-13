@@ -89,7 +89,8 @@
 
       func= 0d0
       eigval_nsoc= 0d0
-      do ik=1, knv3
+     !do ik=1, knv3
+      do ik=20, 40
          k= kpoints(:, ik)
          W=0d0
          Hamk_nsoc= 0d0
@@ -98,10 +99,13 @@
          eigval_nsoc(:, ik)= W
 
         !do i=1, num_wann_soc
-         do i= 51, 60
+        !do i= 51, 60
+         do i= 55, 58
+        !do i= 1, 60
             func= func+ abs((eigval_soc(i, ik)- W(i)+ efermi_nsoc))**2
          enddo
       enddo
+ 
       func= func/knv3
 
       deallocate(W, Hamk_nsoc)

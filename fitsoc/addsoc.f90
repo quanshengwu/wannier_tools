@@ -11,6 +11,9 @@
       integer :: Num_wann_new
       real(dp), parameter :: sqrt3=1.732051d0
 
+      real(dp) :: lp
+      real(dp) :: ld
+
       complex(dp), allocatable :: h_soc(:, :)
 
       complex(dp), allocatable :: soc_p(:, :)
@@ -70,21 +73,23 @@
          enddo
       enddo
 
+      ld= lambda_d(1)
+      lp= lambda_p(5)
 
       !> 1:20 45:64 is the part of W orbitals
       do ia=1, 4
-         H_soc((ia-1)*5+1:(ia-1)*5+5, (ia-1)*5+1:(ia-1)*5+5)= lambda_d(ia)*soc_d(1:5, 1:5)/2d0
-         H_soc((ia-1)*5+45:(ia-1)*5+49, (ia-1)*5+1:(ia-1)*5+5)= lambda_d(ia)*soc_d(6:10, 1:5)/2d0
-         H_soc((ia-1)*5+1:(ia-1)*5+5, (ia-1)*5+45:(ia-1)*5+49)= lambda_d(ia)*soc_d(1:5, 6:10)/2d0
-         H_soc((ia-1)*5+45:(ia-1)*5+49, (ia-1)*5+45:(ia-1)*5+49)= lambda_d(ia)*soc_d(6:10, 6:10)/2d0
+         H_soc((ia-1)*5+1:(ia-1)*5+5, (ia-1)*5+1:(ia-1)*5+5)= ld*soc_d(1:5, 1:5)/2d0
+         H_soc((ia-1)*5+45:(ia-1)*5+49, (ia-1)*5+1:(ia-1)*5+5)= ld*soc_d(6:10, 1:5)/2d0
+         H_soc((ia-1)*5+1:(ia-1)*5+5, (ia-1)*5+45:(ia-1)*5+49)= ld*soc_d(1:5, 6:10)/2d0
+         H_soc((ia-1)*5+45:(ia-1)*5+49, (ia-1)*5+45:(ia-1)*5+49)= ld*soc_d(6:10, 6:10)/2d0
       enddo
 
       !> 21:44 65:88 is the part of Te orbitals
       do ia=1, 8
-         H_soc((ia-1)*3+21:(ia-1)*3+23, (ia-1)*3+21:(ia-1)*3+23)= lambda_p(ia+4)*soc_p(1:3, 1:3)/2d0
-         H_soc((ia-1)*3+65:(ia-1)*3+67, (ia-1)*3+21:(ia-1)*3+23)= lambda_p(ia+4)*soc_p(4:6, 1:3)/2d0
-         H_soc((ia-1)*3+21:(ia-1)*3+23, (ia-1)*3+65:(ia-1)*3+67)= lambda_p(ia+4)*soc_p(1:3, 4:6)/2d0
-         H_soc((ia-1)*3+65:(ia-1)*3+67, (ia-1)*3+65:(ia-1)*3+67)= lambda_p(ia+4)*soc_p(4:6, 4:6)/2d0
+         H_soc((ia-1)*3+21:(ia-1)*3+23, (ia-1)*3+21:(ia-1)*3+23)= lp*soc_p(1:3, 1:3)/2d0
+         H_soc((ia-1)*3+65:(ia-1)*3+67, (ia-1)*3+21:(ia-1)*3+23)= lp*soc_p(4:6, 1:3)/2d0
+         H_soc((ia-1)*3+21:(ia-1)*3+23, (ia-1)*3+65:(ia-1)*3+67)= lp*soc_p(1:3, 4:6)/2d0
+         H_soc((ia-1)*3+65:(ia-1)*3+67, (ia-1)*3+65:(ia-1)*3+67)= lp*soc_p(4:6, 4:6)/2d0
       enddo
 
       if (Num_wann_new.ne.88) stop' Num_wann should equal 44'

@@ -94,7 +94,7 @@
       !> get eigenvalues for soc hamiltonian from DFT
       call EigvalFromDFT
      !eigval_soc=eigval_soc_DFT(19:18+num_wann_soc, :)
-      eigval_soc(1:num_bands_DFT-19+1, :)=eigval_soc_DFT(19:num_bands_DFT, :)
+      eigval_soc(1:num_bands_DFT-17+1, :)=eigval_soc_DFT(17:num_bands_DFT, :)
 
       npara= 3
  
@@ -120,7 +120,7 @@
          y(i)= func(npara, p(i, :))
       enddo
 
-      ftol=1d-10
+      ftol=1d-6 
       call amoeba(npara, p, y, ftol, func, iter)
 
       x= p(1, :)
@@ -130,7 +130,7 @@
 
       open(unit=14, file='bulkek-soc.dat')
      !do i=1, num_wann_soc
-      do i=1, num_bands_DFT
+      do i=1, num_bands_DFT-16
          do ik=1, knv3
             write(14, '(1000f19.9)')k3len(ik),eigval_soc(i, ik)
          enddo
