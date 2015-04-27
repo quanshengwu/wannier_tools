@@ -1,4 +1,6 @@
 # wannier_tools
+Written by QuanSheng Wu in Fortran (wuquansheng@gmail.com)
+
 Use wannier functions to get the surface state of slab system 
 or edge state of nanowire system or just bulk band. Especially
 usefull for topological insulator.
