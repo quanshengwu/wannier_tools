@@ -82,15 +82,15 @@
 
       !> add spin-orbital term onto the nsoc HmnR
       !> for a given spin orbitall coupling strength lambda_p
-      call addsoc_pd
+      call addsoc_pd_zjw
 
       allocate(W(num_wann_soc))
       allocate(Hamk_nsoc(num_wann_soc, num_wann_soc))
 
       func= 0d0
       eigval_nsoc= 0d0
-     !do ik=1, knv3
-      do ik=20, 40
+      do ik=1, knv3
+     !do ik=20, 40
          k= kpoints(:, ik)
          W=0d0
          Hamk_nsoc= 0d0
@@ -99,8 +99,8 @@
          eigval_nsoc(:, ik)= W
 
         !do i=1, num_wann_soc
-        !do i= 51, 60
-         do i= 55, 58
+         do i= 51, 60
+        !do i= 55, 58
         !do i= 1, 60
             func= func+ abs((eigval_soc(i, ik)- W(i)+ efermi_nsoc))**2
          enddo
