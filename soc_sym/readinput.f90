@@ -22,6 +22,7 @@
      real(dp) :: k1(3), k2(3)
      real(dp) :: kstart(3), kend(3)
      real(dp) :: R1(3), R2(3), R3(3) 
+     real(dp) :: pos(3)
      real(dp) :: Urot(3, 3)
      real(dp), external :: norm
     
@@ -100,6 +101,54 @@
      if(cpuid==0)write(stdout, '(3f10.6)')Kua
      if(cpuid==0)write(stdout, '(3f10.6)')Kub
      if(cpuid==0)write(stdout, '(3f10.6)')Kuc
+
+     !> read atom position
+     read(1001, *)Num_atoms
+     if (cpuid==0) write(stdout, *)"Num_atoms: ", Num_atoms
+     allocate(atom_name(Num_atoms))
+     allocate(Atom_position(3, Num_atoms))
+     read(1001, *)cart_or_direct
+     if (cpuid==0) write(stdout, *)"Cart or Direct: ", cart_or_direct
+     do i=1, Num_atoms
+        read(1001, *) atom_name(i), Atom_position(:, i)
+        pos= Atom_position(:, i)
+        if (cart_or_direct=='D'.or.cart_or_direct=='d') then
+           Atom_position(:, i)= pos(1)*Rua+ pos(2)*Rub+ pos(3)*Ruc
+        endif
+        if (cpuid==0) write(stdout, '(a4,3f10.4)')atom_name(i), Atom_position(:, i)
+     enddo
+
+     !> read projectors
+     allocate(nprojs(Num_atoms))
+     nprojs= 0
+     read(1001, *)nprojs
+     if (cpuid==0) write(stdout, '(a, 500I4)')"Num projectors: ", nprojs
+
+     max_projs= maxval(nprojs)
+     allocate(proj_name(max_projs, Num_atoms))
+     proj_name= ' '
+     do i=1, Num_atoms
+        read(1001, *)char_temp, proj_name(1:nprojs(i), i)
+        if (cpuid==0) write(stdout, '(500a6)')char_temp,&
+           proj_name(1:nprojs(i), i)
+     enddo
+
+     !> orbital index order 
+     allocate(index_start(Num_atoms))
+     allocate(index_end  (Num_atoms))
+     index_start= 0
+     index_end= 0
+     index_start(1)= 1
+     index_end(1)= nprojs(1)
+     do i=2, Num_atoms
+        index_start(i)= index_start(i-1)+ nprojs(i-1)
+        index_end(i)= index_end(i-1)+ nprojs(i-1)
+     enddo
+
+     !> Rcut
+     read(1001, *) Rcut
+     if (cpuid==0) write(stdout, '(a, f10.5)') &
+        'Rcut for summation of HmnR: ', Rcut
 
      !> kline for 3d band structure
      !> high symmetry k points

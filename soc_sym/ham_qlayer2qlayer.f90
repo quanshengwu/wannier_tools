@@ -8,22 +8,35 @@
 
      implicit none
 
-! loop index
+     ! loop index
      integer :: i,j,iR
 
-! index used to sign irvec     
+     ! index used to sign irvec     
      integer :: ia,ib,ic
 
-! 
+     integer :: ia1, ia2
 
-! new index used to sign irvec     
+     integer :: nwann
+
+     ! new index used to sign irvec     
      real(dp) :: new_ia,new_ib,new_ic
 
-! wave vector k times lattice vector R  
+     ! wave vector k times lattice vector R  
      real(Dp) :: kdotr  
 
-! input wave vector k's cooridinates
+     ! input wave vector k's cooridinates
      real(Dp),intent(in) :: k(2)
+
+     !> row start; row end; column start; column end
+     real(dp) :: rs, re
+     real(dp) :: cs, ce
+
+     real(dp) :: pos(3)
+     real(dp) :: pos1(3)
+     real(dp) :: pos2(3)
+
+     !> distance between two atoms
+     real(dp) :: dis
 
 ! H00 Hamiltonian between nearest neighbour-quintuple-layers
 ! the factor 2 is induced by spin
@@ -44,26 +57,90 @@
 !     complex(Dp),allocatable,intent(out) :: H01new(:,:)
      complex(Dp),intent(out) :: H01new(Ndim,Ndim)
 
+     real(dp), external :: norm
+
+     !> it's only used when the hr file contains soc effect
+     nwann= Num_wann/2
 
      Hij=0.0d0
-     do iR=1,Nrpts
-        ia=irvec(1,iR)
-        ib=irvec(2,iR)
-        ic=irvec(3,iR)
 
-        call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
+     if (soc>0) then
+        !> the first atom in home unit cell
+        do ia1=1, Num_atoms
+           pos1= Atom_position(:, ia1)
+           rs= index_start(ia1)
+           re= index_end(ia1)
+           !> the second atom in unit cell R
+           do ia2=1, Num_atoms
+              pos2= Atom_position(:, ia2)
+              cs= index_start(ia2)
+              ce= index_end(ia2)
+              do iR=1,Nrpts
+                 ia=irvec(1,iR)
+                 ib=irvec(2,iR)
+                 ic=irvec(3,iR)
+         
+                 pos= ia*Rua+ ib*Rub+ ic* Ruc
+                 pos= pos+ pos2- pos1
+                 dis= norm(pos)
+         
+                 if (dis> Rcut) cycle
+                 call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
+                 if (abs(new_ic).gt.ijmax)cycle
         
-        if (abs(new_ic).le.ijmax)then
-           kdotr=k(1)*new_ia+ k(2)*new_ib
-           ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
+                 kdotr=k(1)*new_ia+ k(2)*new_ib
+                 ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
+        
+                 Hij(new_ic, rs:re, cs:ce )= Hij(new_ic, rs:re, cs:ce)&
+                    +HmnR(rs:re, cs:ce,iR)*ratio/ndegen(iR)
+                 Hij(new_ic, rs+nwann:re+nwann, cs:ce )= &
+                    Hij(new_ic, rs+nwann:re+nwann, cs:ce)&
+                    +HmnR(rs+nwann:re+nwann, cs:ce,iR)*ratio/ndegen(iR)
+                 Hij(new_ic, rs:re, cs+nwann:ce+nwann )= &
+                    Hij(new_ic, rs:re, cs+nwann:ce+nwann)&
+                    +HmnR(rs:re, cs+nwann:ce+nwann,iR)*ratio/ndegen(iR)
+                 Hij(new_ic, rs+nwann:re+nwann, cs+nwann:ce+nwann )= &
+                    Hij(new_ic, rs+nwann:re+nwann, cs+nwann:ce+nwann)&
+                    +HmnR(rs+nwann:re+nwann, cs+nwann:ce+nwann,iR)*ratio/ndegen(iR)
+         
+              enddo !iR
+           enddo !ia2
+        enddo !ia1
 
-           Hij(new_ic, 1:Num_wann, 1:Num_wann )&
-           =Hij(new_ic, 1:Num_wann, 1:Num_wann )&
-           +HmnR(:,:,iR)*ratio/ndegen(iR)
-        endif
-
-     enddo
-
+     else
+        !> the first atom in home unit cell
+        do ia1=1, Num_atoms
+           pos1= Atom_position(:, ia1)
+           rs= index_start(ia1)
+           re= index_end(ia1)
+           !> the second atom in unit cell R
+           do ia2=1, Num_atoms
+              pos2= Atom_position(:, ia2)
+              cs= index_start(ia2)
+              ce= index_end(ia2)
+              do iR=1,Nrpts
+                 ia=irvec(1,iR)
+                 ib=irvec(2,iR)
+                 ic=irvec(3,iR)
+         
+                 pos= ia*Rua+ ib*Rub+ ic* Ruc
+                 pos= pos+ pos2- pos1
+                 dis= norm(pos)
+         
+                 if (dis> Rcut) cycle
+                 call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
+                 if (abs(new_ic).gt.ijmax)cycle
+        
+                 kdotr=k(1)*new_ia+ k(2)*new_ib
+                 ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
+        
+                 Hij(new_ic, rs:re, cs:ce )= Hij(new_ic, rs:re, cs:ce)&
+                    +HmnR(rs:re, cs:ce,iR)*ratio/ndegen(iR)
+              enddo !iR
+           enddo !ia2
+        enddo !ia1
+     endif ! soc
+     
      H00new=0.0d0
      H01new=0.0d0
 

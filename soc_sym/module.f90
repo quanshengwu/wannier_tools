@@ -130,5 +130,25 @@
      !> a 3*3 matrix
      real(dp), public, save :: Umatrix(3, 3)
 
+     !> atom's information in the unit cell
+     integer :: Num_atoms
+     character(4), allocatable :: atom_name(:)
+     real(dp), allocatable :: Atom_position(:, :)
+     
+     !> howmany projectors for each atom, with out spin degeneracy
+     integer, allocatable :: nprojs(:)
+     integer :: max_projs
+
+     !> projectors name
+     character(4), allocatable :: proj_name(:, :)
+
+     !> index for non-spin polarization 
+     integer, allocatable :: index_start(:)
+     integer, allocatable :: index_end(:)
+
+     !> cut of radial for summation over R vectors
+     real(dp) :: Rcut
+
+     character(1) :: cart_or_direct
 
  end module para
