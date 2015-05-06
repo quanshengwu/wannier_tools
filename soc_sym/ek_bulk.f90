@@ -28,8 +28,8 @@
 	  eigv_mpi= 0d0
 
      do ik= 1+cpuid, knv3, num_cpu
-	     if (cpuid==0) print * , ik
 
+	     if (cpuid==0) print *, ik
         k = k3points(:, ik)
 
         ! calculation bulk hamiltonian

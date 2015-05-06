@@ -41,7 +41,7 @@
 
      nwann= Num_wann/2
      Hamk_bulk=0d0
-     if (soc>0) then
+     if (soc==2) then
         !> the first atom in home unit cell
         do ia1=1, Num_atoms
            pos1= Atom_position(:, ia1)
@@ -108,7 +108,7 @@
          
                  if (dis> Rcut) cycle
         
-                 kdotr=k(1)*R(1) + k(2)*R(2) + k(3)*R(3)
+                 kdotr=k(1)*ia + k(2)*ib + k(3)*ic
                
                  Hamk_bulk(rs:re, cs:ce)=Hamk_bulk(rs:re, cs:ce)&
                  +HmnR(rs:re, cs:ce,iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
@@ -117,7 +117,7 @@
            enddo ! ia2
         enddo ! ia1
 
-     endif
+     endif ! soc
 
 ! check hermitcity
 
@@ -131,4 +131,4 @@
      enddo
 
   return
-  end
+  end subroutine ham_bulk

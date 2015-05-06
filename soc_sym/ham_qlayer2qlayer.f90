@@ -64,7 +64,7 @@
 
      Hij=0.0d0
 
-     if (soc>0) then
+     if (soc==2) then
         !> the first atom in home unit cell
         do ia1=1, Num_atoms
            pos1= Atom_position(:, ia1)

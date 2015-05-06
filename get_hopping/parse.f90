@@ -233,7 +233,7 @@
      Hmn= 0d0
 
      natoms= Num_atoms
-     Hmn= HmnR(:, :, iR1)
+     Hmn= HmnR(:, :, iR1)/ndegen(iR1)
      R1= irvec(:, iR1)
 
      allocate(Hsub(max_projs*soc, max_projs*soc))

@@ -142,7 +142,7 @@
      index_end(1)= nprojs(1)
      do i=2, Num_atoms
         index_start(i)= index_start(i-1)+ nprojs(i-1)
-        index_end(i)= index_end(i-1)+ nprojs(i-1)
+        index_end(i)= index_end(i-1)+ nprojs(i)
      enddo
 
      !> Rcut
