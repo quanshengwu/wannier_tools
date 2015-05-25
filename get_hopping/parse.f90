@@ -48,7 +48,7 @@
      real(dp) :: dis
      real(dp) :: pos1(3)
      real(dp) :: pos2(3)
-     max_NN= 3
+     max_NN= 4
      max_neighbours= 20
 
      allocate(neighbours(max_NN, Num_atoms))

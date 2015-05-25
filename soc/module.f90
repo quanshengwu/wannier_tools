@@ -16,6 +16,7 @@
      logical :: SlabSS_calc
      logical :: SlabArc_calc
      logical :: SlabSpintexture_calc
+     logical :: wanniercenter_calc
 
      integer,parameter :: stdout= 6
 

@@ -5,6 +5,6 @@
      call readinput
      call readHmnR
 
-     call fitsoc
+     call fitsoc_p
 
   end 

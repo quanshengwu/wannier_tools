@@ -3,10 +3,11 @@ obj =  module.o main.o readHmnR.o inverse.o\
 		 ham_slab.o ek_slab.o ek_bulk_polar.o ek_bulk2D.o \
        readinput.o fermisurface.o surfgreen.o surfstat.o \
 		 mat_mul.o ham_bulk.o ek_bulk.o \
-       fermiarc.o spintexture.o
+       fermiarc.o spintexture.o \
+		 wanniercenter.o
 
 
-f90  = mpif90 # -check all
+f90  = mpif90   -check all
 
 #FLAGS =  -O3 -nogen-interface  -warn all 
 flag = -O3 -nogen-interface  -warn all 

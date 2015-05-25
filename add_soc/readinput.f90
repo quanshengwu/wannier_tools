@@ -59,7 +59,7 @@
      allocate(lambda_p(Num_atoms))
      allocate(lambda_d(Num_atoms))
      read(1001, *) lambda_p(:)
-     read(1001, *) lambda_d(:)
+    !read(1001, *) lambda_d(:)
 
      write(*,*)'read input.dat file successfully'
 

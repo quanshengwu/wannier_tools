@@ -65,6 +65,9 @@
      real(dp),allocatable :: K3len(:)
      real(dp),allocatable :: K3points(:, :)
 
+     !> weight for fitting of each kpoints and each band
+     real(dp), allocatable :: weight(:, :)
+
 
      !> eigenvalue (Nwann, Nk)
      real(dp), allocatable :: eigval_soc(:, :)

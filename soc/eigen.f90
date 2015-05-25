@@ -139,3 +139,95 @@
      return
   end subroutine
 
+! a subroutine to calculate eigenvector and eigenvalue
+  subroutine zgeev_pack(N, A, W)
+
+     use para, only : Dp
+     implicit none
+
+!  JOBVL   (input) CHARACTER*1
+!  JOBVR   (input) CHARACTER*1
+!          = 'N':  Compute eigenvalues only;
+!          = 'V':  Compute eigenvalues and eigenvectors.
+!
+     character*1 :: JOBVL
+     character*1 :: JOBVR
+
+!  N       (input) INTEGER
+!          The order of the matrix A.  N >= 0.
+     integer,   intent(in) :: N
+
+!  A       (input/output) COMPLEX*16 array, dimension (LDA, N)
+!          On entry, the Hermitian matrix A.  If UPLO = 'U', the
+!          leading N-by-N upper triangular part of A contains the
+!          upper triangular part of the matrix A.  If UPLO = 'L',
+!          the leading N-by-N lower triangular part of A contains
+!          the lower triangular part of the matrix A.
+!          On exit, if JOBZ = 'V', then if INFO = 0, A contains the
+!          orthonormal eigenvectors of the matrix A.
+!          If JOBZ = 'N', then on exit the lower triangle (if UPLO='L')
+!          or the upper triangle (if UPLO='U') of A, including the
+!          diagonal, is destroyed.
+
+     complex(Dp),intent(inout) :: A(N, N)
+
+!  W       (output) DOUBLE PRECISION array, dimension (N)
+!          If INFO = 0, the eigenvalues in ascending order.
+
+!    left eigenvectors
+     complex(dp), allocatable :: VL(:, :)
+
+!    right eigenvectors
+     complex(dp), allocatable :: VR(:, :)
+
+     complex(Dp), intent(out) :: W(N)
+    
+     integer :: info
+
+     integer :: lda
+     integer :: ldvl
+     integer :: ldvr
+
+     integer :: lwork
+
+     real(Dp),allocatable ::  rwork(:)
+
+     complex(Dp),allocatable :: work(:)
+
+     !> only calculate eigenvalues
+     JOBVL= 'N'
+     JOBVR= 'N'
+
+     lda=N
+     ldvl=N
+     ldvr=N
+     lwork= 16*N
+     allocate(VL(N, N))
+     allocate(VR(N, N))
+
+     allocate(rwork(16*N))
+     allocate( work(lwork))
+     VL= 0d0
+     VR= 0d0
+     rwork= 0d0
+     work= 0d0
+
+     info=0
+     W=0.0d0
+
+     if (N==1) then 
+        W=A(1, 1)
+        VL(1, 1)= 1d0
+        VR(1, 1)= 1d0
+        return
+     endif
+
+     call  ZGEEV( JOBVL, JOBVR, N, A, LDA, W, VL, LDVL, VR, LDVR, &
+                        WORK, LWORK, RWORK, INFO )
+     if (info .ne. 0) then
+        stop ">>> Error : something wrong happens in diag_zgeev" 
+     endif
+
+     return
+  end subroutine zgeev_pack
+

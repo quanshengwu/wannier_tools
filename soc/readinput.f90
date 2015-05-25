@@ -46,6 +46,7 @@
      read(1001,*) SlabSS_calc
      read(1001,*) SlabArc_calc
      read(1001,*) SlabSpintexture_calc
+     read(1001,*) wanniercenter_calc
      read(1001,*)Nk
      if(cpuid==0)write(stdout,*)'Nk',Nk
      read(1001,*)omeganum

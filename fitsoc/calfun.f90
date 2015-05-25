@@ -76,13 +76,14 @@
       real(dp), allocatable :: W(:)
       complex(dp), allocatable :: Hamk_nsoc(:, :)
 
-      lambda_p(5:12)= X(1)
-      lambda_d(1:4)= X(2)
+      lambda_p(1:2)= X(1:2)
+     !lambda_d(1:4)= X(2)
       efermi_nsoc= X(3)
 
       !> add spin-orbital term onto the nsoc HmnR
       !> for a given spin orbitall coupling strength lambda_p
-      call addsoc_pd_zjw
+      call addsoc_p
+      !call addsoc_pd_zjw
 
       allocate(W(num_wann_soc))
       allocate(Hamk_nsoc(num_wann_soc, num_wann_soc))
@@ -98,11 +99,12 @@
          call eigensystem_c('N', 'U', num_wann_soc, Hamk_nsoc, W)
          eigval_nsoc(:, ik)= W
 
-        !do i=1, num_wann_soc
-         do i= 51, 60
+         do i=1, num_wann_soc
+        !do i= 51, 60
         !do i= 55, 58
         !do i= 1, 60
-            func= func+ abs((eigval_soc(i, ik)- W(i)+ efermi_nsoc))**2
+            func= func+ abs((eigval_soc(i, ik)- W(i)+ efermi_nsoc))**2 &
+               * weight(i, ik)
          enddo
       enddo
  
