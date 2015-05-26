@@ -69,7 +69,7 @@
 
      deallocate(rwork, work)
      return
-  end subroutine
+  end subroutine eigensystem_c
 
 ! real version
 ! a subroutine to calculate eigenvector and eigenvalue
@@ -137,7 +137,7 @@
 
      deallocate(work)
      return
-  end subroutine
+  end subroutine eigensystem_r
 
 ! a subroutine to calculate eigenvector and eigenvalue
   subroutine zgeev_pack(N, A, W)
@@ -174,14 +174,15 @@
 !  W       (output) DOUBLE PRECISION array, dimension (N)
 !          If INFO = 0, the eigenvalues in ascending order.
 
+!    eigenvalues
+     complex(Dp), intent(out) :: W(N)
+    
 !    left eigenvectors
      complex(dp), allocatable :: VL(:, :)
 
 !    right eigenvectors
      complex(dp), allocatable :: VR(:, :)
 
-     complex(Dp), intent(out) :: W(N)
-    
      integer :: info
 
      integer :: lda
@@ -190,9 +191,9 @@
 
      integer :: lwork
 
-     real(Dp),allocatable ::  rwork(:)
+     real(dp),allocatable ::  rwork(:)
 
-     complex(Dp),allocatable :: work(:)
+     complex(dp),allocatable :: work(:)
 
      !> only calculate eigenvalues
      JOBVL= 'N'
@@ -224,8 +225,8 @@
 
      call  ZGEEV( JOBVL, JOBVR, N, A, LDA, W, VL, LDVL, VR, LDVR, &
                         WORK, LWORK, RWORK, INFO )
-     if (info .ne. 0) then
-        stop ">>> Error : something wrong happens in diag_zgeev" 
+     if (info /= 0) then
+        stop ">>> Error : something wrong happens in zgeev_pack" 
      endif
 
      return
