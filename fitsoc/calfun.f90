@@ -76,13 +76,13 @@
       real(dp), allocatable :: W(:)
       complex(dp), allocatable :: Hamk_nsoc(:, :)
 
-      lambda_p(1:2)= X(1:2)
-     !lambda_d(1:4)= X(2)
-      efermi_nsoc= X(3)
+      lambda_p(1:Num_atom_type)= X(1:Num_atom_type)
+      lambda_d(1:Num_atom_type)= X(1+Num_atom_type:2*Num_atom_type)
+      efermi_nsoc= X(Num_atom_type*2+ 1)
 
       !> add spin-orbital term onto the nsoc HmnR
       !> for a given spin orbitall coupling strength lambda_p
-      call addsoc_p
+      call addsoc_all
       !call addsoc_pd_zjw
 
       allocate(W(num_wann_soc))

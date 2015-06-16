@@ -10,7 +10,7 @@
       integer :: n
       integer :: ik
       real(dp) :: k(3)
-      real(dp) :: x(3)
+      real(dp), allocatable :: x(:)
 
       integer :: npara
 
@@ -96,17 +96,19 @@
      !eigval_soc=eigval_soc_DFT(19:18+num_wann_soc, :)
       eigval_soc(1:num_bands_DFT-17+1, :)=eigval_soc_DFT(17:num_bands_DFT, :)
 
-      npara= 3
+      npara= Num_atom_type*2+ 1
  
+      allocate(x(npara))
       allocate(y(npara+1))
       allocate(p(npara+1, npara))
+      x=0d0
       y=0d0
       p=0d0
 
       !> initial value for spin-orbital coupling
-      x(1)= lambda_p(5)
-      x(2)= lambda_d(1)
-      x(3)= 4.1445d0
+      x(1:Num_atom_type)= lambda_p(1:Num_atom_type)
+      x(1+Num_atom_type:2*Num_atom_type)= lambda_d(1:Num_atom_type)
+      x(Num_atom_type*2+ 1)= E_fermi
 
       Nitermax=10000
       do i=1, npara+1
@@ -162,7 +164,7 @@
       integer :: n
       integer :: ik
       real(dp) :: k(3)
-      real(dp) :: x(3)
+      real(dp), allocatable :: x(:)
 
       integer :: npara
 
@@ -198,9 +200,6 @@
       allocate(Hamk_soc(num_wann_soc, num_wann_soc))
       W=0d0
       Hamk_soc= 0d0
-
-      n= 3
-
 
       knv3= Nk*Nk*Nk
       allocate(kpoints(3, knv3))
@@ -259,17 +258,18 @@
      !eigval_soc=eigval_soc_DFT(19:18+num_wann_soc, :)
      !eigval_soc(1:num_bands_DFT-17+1, :)=eigval_soc_DFT(17:num_bands_DFT, :)
 
-      npara= 3
- 
+      npara= 2*Num_atom_type+ 1
+      allocate(x(npara))
       allocate(y(npara+1))
       allocate(p(npara+1, npara))
+      x= 0d0
       y=0d0
       p=0d0
 
       !> initial value for spin-orbital coupling
-      x(1)= lambda_p(1)
-      x(2)= lambda_p(2)
-      x(3)= 4.1445d0
+      x(1:Num_atom_type)= lambda_p(1:Num_atom_type)
+      x(1+Num_atom_type:2*Num_atom_type)= lambda_d(1:Num_atom_type)
+      x(Num_atom_type*2+ 1)= E_fermi
 
       Nitermax=10000
       do i=1, npara+1
@@ -288,7 +288,7 @@
 
       x= p(1, :)
       write(*,*)'iter', iter
-      write(*, '(3f10.4)')x
+      write(*, '(30f10.4)')x
       write(*, *)' '
 
       open(unit=14, file='bulkek-soc.dat')
@@ -304,7 +304,7 @@
       open(unit=15, file='bulkek-nsoc.dat')
       do i=1, num_wann_soc
          do ik=1, knv3
-            write(15, '(1000f19.9)')k3len(ik),eigval_nsoc(i, ik)- X(3)
+            write(15, '(1000f19.9)')k3len(ik),eigval_nsoc(i, ik)- X(npara)
          enddo
          write(15, *)' '
       enddo

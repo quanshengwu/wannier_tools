@@ -35,6 +35,9 @@
      !> leading dimension of surface green's function 
      integer :: Ndim
 
+     !> number of occupied bands for bulk unit cell
+     integer :: Numoccupied
+
      integer :: Num_wann
 
      ! number of R points
@@ -130,6 +133,15 @@
      !> which can define new surface
      !> a 3*3 matrix
      real(dp), public, save :: Umatrix(3, 3)
+
+     !> number of atoms in one primitive cell
+     integer :: Num_atoms
+     character(10), allocatable :: atom_name(:)
+     real(dp), allocatable :: Atom_position(:, :)
+
+     integer :: max_projs
+     integer, allocatable :: nprojs(:)
+     character(10), allocatable :: proj_name(:, :)
 
 
  end module para

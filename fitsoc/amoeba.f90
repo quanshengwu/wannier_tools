@@ -87,7 +87,6 @@
             call swap1(y(1),y(ilo))
             call swap2(p(1,:),p(ilo,:))
             call printpy(p, y)
-            print *, 'here'
             return
          end if
          if (iter >= itmax) then

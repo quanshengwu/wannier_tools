@@ -53,6 +53,20 @@
         pos= Atom_position(:, i)
      enddo
 
+     Num_atom_type= 1
+     do i=1, Num_atoms- 1
+        if (atom_name(i).ne.atom_name(i+1)) Num_atom_type= Num_atom_type+ 1
+     enddo
+     print *, Num_atom_type
+     allocate(atom_type(Num_atoms))
+
+     Num_atom_type= 1
+     atom_type(1)= 1
+     do i=1, Num_atoms- 1
+        if (atom_name(i).ne.atom_name(i+1)) Num_atom_type= Num_atom_type+ 1
+        atom_type(i+1)= Num_atom_type
+     enddo
+
      !> lattice information
      read(1001, *)Rua
      read(1001, *)Rub
@@ -148,10 +162,12 @@
      enddo
 
      !> spin orbital coupling strength
-     allocate(lambda_p(Num_atoms))
-     allocate(lambda_d(Num_atoms))
+     allocate(lambda_p(Num_atom_type))
+     allocate(lambda_d(Num_atom_type))
+     lambda_p= 0d0
+     lambda_d= 0d0
      read(1001, *) lambda_p(:)
-    !read(1001, *) lambda_d(:)
+     read(1001, *) lambda_d(:)
 
      write(*,*)'read input.dat file successfully'
 

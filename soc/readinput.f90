@@ -19,6 +19,7 @@
      integer  :: j
      integer  :: NN
      real(dp) :: t1, temp
+     real(dp) :: pos(3)
      real(dp) :: k1(3), k2(3)
      real(dp) :: kstart(3), kend(3)
      real(dp) :: R1(3), R2(3), R3(3) 
@@ -59,6 +60,8 @@
      if(cpuid==0)write(stdout,*)'nslab',nslab
      read(1001,*)Np
      if(cpuid==0)write(stdout,*)'Np',Np
+     read(1001,*)Numoccupied
+     if(cpuid==0)write(stdout,*)'Numoccupied', Numoccupied
      read(1001,*)Soc
      if(cpuid==0)write(stdout,*)'soc',Soc
      read(1001,*)eta_arc
@@ -101,6 +104,37 @@
      if(cpuid==0)write(stdout, '(3f10.6)')Kua
      if(cpuid==0)write(stdout, '(3f10.6)')Kub
      if(cpuid==0)write(stdout, '(3f10.6)')Kuc
+
+     !> read atom position
+     read(1001, *)Num_atoms
+     allocate(atom_name(Num_atoms))
+     allocate(Atom_position(3, Num_atoms))
+     do i=1, Num_atoms
+        read(1001, *) atom_name(i), Atom_position(:, i)
+        if(cpuid==0)write(stdout, '(a4,3f6.3)')atom_name(i), Atom_position(:, i)
+        pos= Atom_position(:, i)
+        Atom_position(:, i)= pos(1)*Rua+ pos(2)*Rub+ pos(3)*Ruc
+     enddo
+     if(cpuid==0)write(stdout,'(a)')'Atom position in cartisen coordinate'
+     do i=1, Num_atoms
+        if(cpuid==0)write(stdout, '(a4,3f6.3)')atom_name(i), Atom_position(:, i)
+     enddo
+
+
+     !> read projectors
+     allocate(nprojs(Num_atoms))
+     nprojs= 0
+     read(1001, *)nprojs
+
+     max_projs= maxval(nprojs)
+     allocate(proj_name(max_projs, Num_atoms))
+     proj_name= ' '
+     do i=1, Num_atoms
+        read(1001, *)char_temp, proj_name(1:nprojs(i), i)
+     enddo
+
+
+
 
      !> kline for 3d band structure
      !> high symmetry k points

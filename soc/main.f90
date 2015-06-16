@@ -108,7 +108,8 @@
      if (SlabBand_calc)call ek_slab
     
      !> wannier center calculate
-     if (wanniercenter_calc)call wannier_center2D
+    !if (wanniercenter_calc)call wannier_center2D
+     if (wanniercenter_calc)call wannier_center2D_alt
      
 
      !> surface state

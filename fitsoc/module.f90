@@ -89,7 +89,11 @@
      !> projectors name
      character(4), allocatable :: proj_name(:, :)
 
+     integer :: Num_atom_type
+     integer, allocatable :: atom_type(:)
+
      !> spin orbital coupling strength
+     !> for each type of atom
      real(dp), allocatable :: lambda_p(:)
      real(dp), allocatable :: lambda_d(:)
 
