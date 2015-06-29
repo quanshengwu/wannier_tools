@@ -135,7 +135,7 @@
            enddo ! l
            surf_weight(j, i)= sqrt(surf_weight(j, i))
         enddo ! j 
-        if (cpuid==0) print *,'SlabEk,k', i, knv3
+        if (cpuid==0) write(stdout, *)'SlabEk,k', i, knv3
      enddo ! i
      call mpi_allreduce(ekslab,ekslab_mpi,size(ekslab),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)

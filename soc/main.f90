@@ -96,13 +96,13 @@
      call MPI_bcast(ndegen,size(ndegen),mpi_in,0,mpi_cmw,ierr)
 
      !> bulk band
-	  if(cpuid.eq.0)print *,'begin to calculate bulk band'
+	  if(cpuid.eq.0)write(stdout, *)'begin to calculate bulk band'
      if (BulkBand_calc) then
         call ek_bulk
        !call ek_bulk2D
        !call fermisurface
      endif
-     if(cpuid.eq.0)print *,'end calculate bulk band'
+     if(cpuid.eq.0)write(stdout, *)'end calculate bulk band'
 
      !> slab band
      if (SlabBand_calc)call ek_slab
@@ -113,26 +113,26 @@
      
 
      !> surface state
-	  if(cpuid.eq.0)print *,'begin to calculate surface state'
+	  if(cpuid.eq.0)write(stdout, *)'begin to calculate surface state'
      if (SlabSS_calc)call surfstat
-     if(cpuid.eq.0)print *,'end calculate surface state'
+     if(cpuid.eq.0)write(stdout, *)'end calculate surface state'
     
-	  if(cpuid.eq.0)print *,'begin to calculate surface state'
+	  if(cpuid.eq.0)write(stdout, *)'begin to calculate surface state'
      if (WireBand_calc) then
-   	  if(cpuid.eq.0)print *,'begin to calculate ribbon band'
+   	  if(cpuid.eq.0)write(stdout, *)'begin to calculate ribbon band'
         call ek_ribbon
-        if(cpuid.eq.0)print *,'end calculate ribbon band'
+        if(cpuid.eq.0)write(stdout, *)'end calculate ribbon band'
      endif
 
      !> fermi arc
-	  if(cpuid.eq.0)print *,'begin to calculate fermi arc'
+	  if(cpuid.eq.0)write(stdout, *)'begin to calculate fermi arc'
      if (SlabArc_calc)call fermiarc
-     if(cpuid.eq.0)print *,'end calculate fermi arc'
+     if(cpuid.eq.0)write(stdout, *)'end calculate fermi arc'
      
      !> calculate spin-texture     
-     if(cpuid.eq.0)print *,'begin to calculate spin texture'
+     if(cpuid.eq.0)write(stdout, *)'begin to calculate spin texture'
      if (SlabSpintexture_calc)call spintext
-     if(cpuid.eq.0)print *,'end calculate spin texture'
+     if(cpuid.eq.0)write(stdout, *)'end calculate spin texture'
    
      if (cpuid.eq.0)write(stdout,*)'Congratulations! you finished the calculation.'
      

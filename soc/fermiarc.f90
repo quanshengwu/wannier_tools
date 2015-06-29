@@ -138,7 +138,7 @@
         write(101, '(a)')'#set terminal  postscript enhanced color'
         write(101, '(a)')"#set output 'arc_l.eps'"
         write(101, '(3a)')'set terminal  png truecolor enhanced', &
-           ' transparent font Monaco giant size 3840, 3360'
+           ' font Monaco giant size 1920, 1680'
         write(101, '(a)')"set output 'arc_l.png'"
         write(101,'(2a)') '#set palette defined ( -10 "green", ', &
            '0 "yellow", 10 "red" )'
@@ -146,6 +146,7 @@
         write(101, '(a)')'unset ztics'
         write(101, '(a)')'unset key'
         write(101, '(a)')'set pm3d'
+        write(101, '(a)')'set border lw 3'
         write(101, '(a)')'set view equal xyz'
         write(101, '(a)')'set view map'
         write(101, '(a)')'#set xtics font ",24"'
@@ -153,8 +154,8 @@
         write(101, '(a)')'unset xtics'
         write(101, '(a)')'unset ytics'
         write(101, '(a)')'unset colorbox'
-        write(101, '(a, f8.5, a, f8.5, a)')'set xrange [', kxmin_shape, ':', kxmax_shape, ']'
-        write(101, '(a, f8.5, a, f8.5, a)')'set yrange [', kzmin_shape, ':', kzmax_shape, ']'
+        write(101, '(a, f8.5, a, f8.5, a)')'#set xrange [', kxmin_shape, ':', kxmax_shape, ']'
+        write(101, '(a, f8.5, a, f8.5, a)')'#set yrange [', kzmin_shape, ':', kzmax_shape, ']'
         write(101, '(a)')'set pm3d interpolate 2,2'
         write(101, '(2a)')"splot 'arc.dat_l' u 1:2:3 w pm3d"
 

@@ -28,7 +28,7 @@
 	  eigv_mpi= 0d0
 
      do ik= 1+cpuid, knv3, num_cpu
-	     if (cpuid==0) print * , ik
+	     if (cpuid==0) write(stdout, *)'ik, knv3 ', ik, knv3
 
         k = k3points(:, ik)
 

@@ -70,7 +70,7 @@
      kp(6,:)=(/5.0d0, 0.0d0/)  ! Z
     
      nlines=4
-     NN=80
+     NN= Nk
      knv2=NN*nlines
      allocate( kpoint(knv2, 2))
      allocate( k_len (knv2))
@@ -190,7 +190,7 @@
         write(101, '(a)')'#set terminal  postscript enhanced color'
         write(101, '(a)')"#set output 'surfdos_l.eps'"
         write(101, '(3a)')'set terminal  png truecolor enhanced', &
-           ' transparent font Monaco giant size 3840, 3360'
+           ' font Monaco giant size 1920, 1680'
         write(101, '(a)')"set output 'surfdos_l.png'"
         write(101,'(2a)') '#set palette defined (-10 "green", ', &
            '0 "yellow", 10 "red" )'
@@ -202,6 +202,8 @@
         write(101, '(a)')'set pm3d'
         write(101, '(a)')'#set view equal xyz'
         write(101, '(a)')'set view map'
+        write(101, '(a)')'set border lw 3'
+        write(101, '(a)')'set cbtics font ",48"'
         write(101, '(a)')'set xtics font ",48"'
         write(101, '(a)')'set ytics font ",48"'
         write(101, '(a)')'set ylabel font ",48"'
@@ -227,7 +229,7 @@
         write(101, '(a)')'#set terminal  postscript enhanced color'
         write(101, '(a)')"#set output 'surfdos_r.eps'"
         write(101, '(3a)')'set terminal  png truecolor enhanced', &
-           ' transparent font Monaco giant size 3840, 3360'
+           ' font Monaco giant size 1920, 1680'
         write(101, '(a)')"set output 'surfdos_r.png'"
         write(101,'(2a)') '#set palette defined (-10 "green", ', &
            '0 "yellow", 10 "red" )'
@@ -237,8 +239,10 @@
         write(101, '(a)')'unset key'
         write(101, '(a)')'set pointsize 0.8'
         write(101, '(a)')'set pm3d'
+        write(101, '(a)')'set border lw 3'
         write(101, '(a)')'#set view equal xyz'
         write(101, '(a)')'set view map'
+        write(101, '(a)')'set cbtics font ",48"'
         write(101, '(a)')'set xtics font ",48"'
         write(101, '(a)')'set ytics font ",48"'
         write(101, '(a)')'set ylabel font ",48"'
@@ -261,7 +265,7 @@
 
      202 format('set xtics (',:20('"',A3,'" ',F8.5,','))
      203 format(A3,'" ',F8.5,')')
-     204 format('set arrow from ',F8.5,',',F10.5,' to ',F8.5,',',F10.5, ' nohead')
+     204 format('set arrow from ',F8.5,',',F10.5,' to ',F8.5,',',F10.5, ' nohead front lw 3')
  
 
   return   

@@ -12,6 +12,7 @@
 
      ! loop index
      integer :: i     
+     integer :: j
 
      integer :: lwork
 
@@ -85,10 +86,10 @@
      iu=20*Nslab1*Nslab2
      mdim=iu-il+1
 
-     print *,'number of bands calculating: ',mdim
+     write(stdout, *)'number of bands calculating: ',mdim
 
      do i=1+cpuid, Nk1, num_cpu
-        if (cpuid.eq.0) print *, "Ribbonek the i'th kpoint", i, Nk1
+        if (cpuid.eq.0) write(stdout, *) "Ribbonek the i'th kpoint", i, Nk1
         k=kmax*real(i-1)/(Nk1-1)
         chamk=0.0d0 
         call ham_ribbon(k,Chamk)
@@ -111,15 +112,18 @@
   
      if (cpuid.eq.0) then
         open(unit=100, file='ribbonek.dat',status='unknown')
-        do i=1,Nk1
-           k=-kmax*real(Nk1-i)/(Nk1-1)
-           write(100,'(60000f15.7)')k,ekribbon_mpi(:,Nk1-i+1)
+        do j=1, Ndim1
+           do i=1,Nk1
+              k=-kmax*real(Nk1-i)/(Nk1-1)
+              write(100,'(60000f15.7)')k,ekribbon_mpi(j,Nk1-i+1)
+           enddo 
+           do i=1,Nk1
+              k=kmax*real(i-1)/(Nk1-1)
+              write(100,'(60000f15.7)')k,ekribbon_mpi(j,i)
+           enddo 
+           write(100, *)' '
         enddo 
      
-        do i=1,Nk1
-           k=kmax*real(i-1)/(Nk1-1)
-           write(100,'(60000f15.7)')k,ekribbon_mpi(:,i)
-        enddo
         close(100)
         write(stdout,*) 'calculate energy band  done'
      endif
