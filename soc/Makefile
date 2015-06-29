@@ -17,8 +17,8 @@ libs = -L/opt/intel/mkl/lib/ \
 		-lmkl_core -liomp5
  
 main :  $(obj)
-	$(f90) $(obj) -o wann_surf_soc $(libs) 
-	cp -f wann_surf_soc ../bin
+	$(f90) $(obj) -o wann_tools $(libs) 
+	cp -f wann_tools ../bin
 
 .SUFFIXES: .o .f90
 
@@ -26,4 +26,4 @@ main :  $(obj)
 	$(f90) -c $(flag) $(includes) $*.f90
 
 clean :
-	rm -f *.o *.mod *~ wann_surf_soc
+	rm -f *.o *.mod *~ wann_tools

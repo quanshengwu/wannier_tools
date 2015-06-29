@@ -1,31 +1,37 @@
-wannier90_hr.dat ! input file
+wusocBi2Se3.HWR ! input file
 output       ! output file
-T             ! BulkBand_calc
+F             ! BulkBand_calc
 T             ! SlabBand_calc
 F             ! WireBand_calc
 F             ! SlabSS_calc
 F             ! SlabArc_calc
 F             ! SlabSpintexture_calc
 F             ! wanniercenter_calc
-100           ! Nk
+40            ! Nk
 500           ! omega number
 -2.00 2.00    ! omegamin omegamax
 0             ! E_arc
-10            ! nslab
+20            ! nslab
 2             ! np   
-6             ! Numoccupied
+18            ! NumOccupied
 1             ! soc
 0.05          ! eta
-0       ! e-fermi
-   0.0000000   3.0500000   3.0500000    
-   3.0500000   0.0000000   3.0500000    
-   3.0500000   3.0500000   0.0000000    
-   2
-  In    0.000000   0.000000   0.000000   
-  As    0.250000   0.250000   0.250000   
- 4 3  ! number of projectors for each atom
- In s px py pz
- As px py pz
+-0.183283        ! e-fermi
+  -3.90984   -2.25735   18.04058  ! lattice vector
+   3.90984   -2.25735   18.04058 
+   0.00000    4.51470   18.04058 
+   5
+Se -0.794  0.206  0.206      ! atom position
+Bi -0.601  0.399  0.399  
+Se  0.0    0.0    0.0    
+Bi  0.601 -0.399 -0.399  
+Se  0.794 -0.206 -0.206  
+ 3 3 3 3 3          ! number of projectors
+Se px py pz
+Bi px py pz
+Se px py pz
+Bi px py pz
+Se px py pz
      5        ! number of k line
 G 0.00000 0.00000 0.0000 X 0.50000 0.00000 0.5000  ! k point path
 X 0.50000 0.00000 0.5000 W 0.75000 0.25000 0.5000
@@ -33,5 +39,5 @@ W 0.75000 0.25000 0.5000 L 0.50000 0.50000 0.5000
 L 0.50000 0.50000 0.5000 G 0.00000 0.00000 0.0000
 G 0.00000 0.00000 0.0000 K 0.75000 0.37500 0.3750
 1 0 0   ! Umatrix for new lattice
-0 1 -1
+0 1 0 
 0 0 1

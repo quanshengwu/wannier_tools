@@ -169,7 +169,7 @@
         write(101, '(a)')'#set terminal  postscript enhanced color'
         write(101, '(a)')"#set output 'slabek.eps'"
         write(101, '(3a)')'set terminal  png truecolor enhanced', &
-           ' transparent font Monaco giant size 3840, 3360'
+           '  font Monaco size 1920, 1680'
         write(101, '(a)')"set output 'slabek.png'"
         write(101,'(2a)') 'set palette defined ( 0  "green", ', &
            '5 "yellow", 10 "red" )'
