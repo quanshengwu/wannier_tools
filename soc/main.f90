@@ -117,6 +117,13 @@
      if (SlabSS_calc)call surfstat
      if(cpuid.eq.0)print *,'end calculate surface state'
     
+	  if(cpuid.eq.0)print *,'begin to calculate surface state'
+     if (WireBand_calc) then
+   	  if(cpuid.eq.0)print *,'begin to calculate ribbon band'
+        call ek_ribbon
+        if(cpuid.eq.0)print *,'end calculate ribbon band'
+     endif
+
      !> fermi arc
 	  if(cpuid.eq.0)print *,'begin to calculate fermi arc'
      if (SlabArc_calc)call fermiarc

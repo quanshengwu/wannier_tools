@@ -1,6 +1,6 @@
-obj =  module.o main.o readinput.o readHmnR.o addsoc.o
+obj =  module.o main.o readinput.o readHmnR.o addsoc1.o
 
-f90  = mpif90   -check all
+f90  = mpif90 # -check all
 
 #FLAGS =  -O3 -nogen-interface  -warn all 
 flag = -O3 -nogen-interface  -warn all 

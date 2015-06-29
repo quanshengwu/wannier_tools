@@ -39,6 +39,9 @@
      character(4), allocatable :: atom_name(:)
      real(dp), allocatable :: Atom_position(:, :)
      
+     integer :: Num_atom_type
+     integer, allocatable :: atom_type(:)
+
      !> howmany projectors for each atom, with out spin degeneracy
      integer, allocatable :: nprojs(:)
      integer :: max_projs

@@ -26,6 +26,8 @@
      ! number of slabs of Bi2Se3 
      ! slab=1 means there is a quintuple layer of Bi2Se3 system
      integer :: Nslab
+     integer :: Nslab1
+     integer :: Nslab2
 
      !> number of princple layers for surface green's function
      integer :: Np

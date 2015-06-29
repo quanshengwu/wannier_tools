@@ -18,6 +18,7 @@
 
 ! new index used to sign irvec     
      real(dp) :: new_ia,new_ib,new_ic
+     integer :: inew_ia,inew_ib,inew_ic
 
 ! wave vector k times lattice vector R  
      real(Dp) :: kdotr  
@@ -52,13 +53,15 @@
         ic=irvec(3,iR)
 
         call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
-        
+       
+        inew_ic= int(new_ic)
         if (abs(new_ic).le.ijmax)then
            kdotr=k(1)*new_ia+ k(2)*new_ib
            ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
 
-           Hij(new_ic, 1:Num_wann, 1:Num_wann )&
-           =Hij(new_ic, 1:Num_wann, 1:Num_wann )&
+
+           Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
+           =Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
            +HmnR(:,:,iR)*ratio/ndegen(iR)
         endif
 
@@ -118,6 +121,7 @@
 
 ! new index used to sign irvec     
      real(dp) :: new_ia,new_ib,new_ic
+     integer :: inew_ia,inew_ib,inew_ic
 
 ! wave vector k times lattice vector R  
      real(Dp) :: kdotr  
@@ -141,12 +145,13 @@
         !> new lattice
         call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
 
+        inew_ic= int(new_ic)
         if (abs(new_ic).le.ijmax)then
            kdotr=k(1)*new_ia+k(2)*new_ib
            ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
 
-           Hij(new_ic, 1:Num_wann, 1:Num_wann )&
-           =Hij(new_ic, 1:Num_wann, 1:Num_wann )&
+           Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
+           =Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
            +HmnR(:,:,iR)*ratio/ndegen(iR)
         endif
 
@@ -169,6 +174,7 @@
 
 ! new index used to sign irvec     
      real(dp) :: new_ia,new_ib,new_ic
+     integer :: inew_ia,inew_ib,inew_ic
 
 ! wave vector k times lattice vector R  
      real(Dp) :: kdotr
@@ -191,13 +197,15 @@
         call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
 
 
+        inew_ia= int(new_ia)
+        inew_ib= int(new_ib)
+        if (abs(new_ia).le.ijmax)then
         if (abs(new_ib).le.ijmax)then
-        if (abs(new_ic).le.ijmax)then
-           kdotr=k*new_ia
+           kdotr=k*new_ic
            ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
 
-           Hij(new_ib, new_ic, 1:Num_wann, 1:Num_wann )&
-           =Hij(new_ib, new_ic, 1:Num_wann, 1:Num_wann )&
+           Hij(inew_ia, inew_ib, 1:Num_wann, 1:Num_wann )&
+           =Hij(inew_ia, inew_ib, 1:Num_wann, 1:Num_wann )&
            +HmnR(:,:,iR)*ratio/ndegen(iR)
         endif
         endif

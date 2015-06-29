@@ -1,24 +1,31 @@
-AlSb-new_hr.dat wannier90_hr.dat  socBi2Se3.HWR ! input file
-dos.dat       ! output file
-F             ! BulkBand_calc
-F             ! SlabBand_calc
+wannier90_hr.dat ! input file
+output       ! output file
+T             ! BulkBand_calc
+T             ! SlabBand_calc
 F             ! WireBand_calc
 F             ! SlabSS_calc
 F             ! SlabArc_calc
 F             ! SlabSpintexture_calc
-T             ! wanniercenter_calc
-40            ! Nk
+F             ! wanniercenter_calc
+100           ! Nk
 500           ! omega number
 -2.00 2.00    ! omegamin omegamax
 0             ! E_arc
 10            ! nslab
 2             ! np   
+6             ! Numoccupied
 1             ! soc
 0.05          ! eta
-4.7623 3.96194 4.2703        ! e-fermi
-     0.0000000     3.0240000     3.0240000   ! atom position
-     3.0240000     0.0000000     3.0240000
-     3.0240000     3.0240000     0.0000000
+0       ! e-fermi
+   0.0000000   3.0500000   3.0500000    
+   3.0500000   0.0000000   3.0500000    
+   3.0500000   3.0500000   0.0000000    
+   2
+  In    0.000000   0.000000   0.000000   
+  As    0.250000   0.250000   0.250000   
+ 4 3  ! number of projectors for each atom
+ In s px py pz
+ As px py pz
      5        ! number of k line
 G 0.00000 0.00000 0.0000 X 0.50000 0.00000 0.5000  ! k point path
 X 0.50000 0.00000 0.5000 W 0.75000 0.25000 0.5000

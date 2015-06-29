@@ -20,7 +20,7 @@
      integer :: il,iu
 
 
-     integer,parameter :: Nk1=50
+     integer:: Nk1
 
      ! wave vector 
      real(Dp) :: k
@@ -42,6 +42,7 @@
    
      ! energy dispersion
      real(Dp),allocatable :: ekribbon(:,:)
+     real(Dp),allocatable :: ekribbon_mpi(:,:)
      real(Dp),allocatable ::  rwork(:)
      integer,allocatable ::  iwork(:)
      complex(Dp),allocatable :: work(:)
@@ -57,7 +58,10 @@
      Ndim1=Num_wann*nslab1*nslab2
      lwork=64*Ndim1
 
+     Nk1= Nk
+
      allocate(ekribbon(Ndim1,Nk1))
+     allocate(ekribbon_mpi(Ndim1,Nk1))
      allocate(z(Ndim1,Ndim1))
      allocate(CHamk(Ndim1,Ndim1))
      allocate(rwork(7*Ndim1))
@@ -70,6 +74,7 @@
      
      ! sweep k
      ekribbon=0.0d0
+     ekribbon_mpi=0.0d0
 
      kmax=0.5d0
 
@@ -82,7 +87,8 @@
 
      print *,'number of bands calculating: ',mdim
 
-     do i=1,Nk1
+     do i=1+cpuid, Nk1, num_cpu
+        if (cpuid.eq.0) print *, "Ribbonek the i'th kpoint", i, Nk1
         k=kmax*real(i-1)/(Nk1-1)
         chamk=0.0d0 
         call ham_ribbon(k,Chamk)
@@ -98,21 +104,25 @@
 
         ekribbon(:,i)=eigenvalue
 
-        write(stdout,'(a2,i4,f12.5,f10.2,a2)')'k',i,ekribbon(1,i),time2-time1,' s'
+        if (cpuid.eq.0) write(stdout,'(a2,i4,f12.5,f10.2,a2)')'k',i,ekribbon(1,i),time2-time1,' s'
      enddo
-     
-     open(unit=100, file='ribbonek.dat',status='unknown')
-     do i=1,Nk1
-        k=-kmax*real(Nk1-i)/(Nk1-1)
-        write(100,'(60000f15.7)')k,ekribbon(:,Nk1-i+1)
-     enddo 
+     call mpi_allreduce(ekribbon,ekribbon_mpi,size(ekribbon),&
+                       mpi_dp,mpi_sum,mpi_cmw,ierr)
   
-     do i=1,Nk1
-        k=kmax*real(i-1)/(Nk1-1)
-        write(100,'(60000f15.7)')k,ekribbon(:,i)
-     enddo
-     close(100)
-     write(stdout,*) 'calculate energy band  done'
+     if (cpuid.eq.0) then
+        open(unit=100, file='ribbonek.dat',status='unknown')
+        do i=1,Nk1
+           k=-kmax*real(Nk1-i)/(Nk1-1)
+           write(100,'(60000f15.7)')k,ekribbon_mpi(:,Nk1-i+1)
+        enddo 
+     
+        do i=1,Nk1
+           k=kmax*real(i-1)/(Nk1-1)
+           write(100,'(60000f15.7)')k,ekribbon_mpi(:,i)
+        enddo
+        close(100)
+        write(stdout,*) 'calculate energy band  done'
+     endif
 
      return
   end subroutine ek_ribbon

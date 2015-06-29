@@ -69,6 +69,10 @@
      read(1001,*)E_fermi
      if(cpuid==0)write(stdout,*)'E_fermi',E_fermi
 
+     !> for ribbon calculation
+     Nslab1= Nslab
+     Nslab2= Np
+
      !> lattice information
      read(1001, *)Rua
      read(1001, *)Rub
