@@ -109,7 +109,8 @@
     
      !> wannier center calculate
     !if (wanniercenter_calc)call wannier_center2D
-     if (wanniercenter_calc)call wannier_center2D_alt
+    !if (wanniercenter_calc)call wannier_center2D_alt
+     if (wanniercenter_calc)call wannier_center3D
      
 
      !> surface state

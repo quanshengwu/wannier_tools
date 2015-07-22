@@ -250,6 +250,8 @@
      Kb2(1)=-2d0*pi/cell_volume*Ra2(2)
      Kb2(2)= 2d0*pi/cell_volume*Ra2(1)
 
+
+
      close(1001)
 
      eta=(omegamax- omegamin)/omeganum*eta
@@ -257,7 +259,7 @@
      if(cpuid==0)write(stdout,*)'read input.dat file successfully'
 
      return
-  end subroutine
+  end subroutine readinput
 
   function norm(R1)
      use para, only : dp

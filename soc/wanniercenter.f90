@@ -208,6 +208,7 @@
 
 
 ! this suboutine is used for wannier center calculation for slab system
+!> calculate z2 
 
    subroutine  wannier_center2D_alt
       use para
@@ -551,8 +552,8 @@
       use mpi
       implicit none
 
-      integer :: Nkx
-      integer :: Nky
+      integer :: Nk1
+      integer :: Nk2
       integer :: knv2
 
       integer :: i
@@ -562,9 +563,10 @@
       integer :: ia
       integer :: ia1
       integer :: nfill
+      integer :: imax
 
-      integer :: ikx
-      integer :: iky
+      integer :: ik1
+      integer :: ik2
 
       integer :: ierr
 
@@ -601,16 +603,21 @@
       real(dp), allocatable :: WannierCenterKy(:, :)
       real(dp), allocatable :: WannierCenterKy_mpi(:, :)
 
+      !> larges gap of each two wannier centers for a given k point
+      !> dim= Nky
+      real(dp), allocatable :: largestgap(:)
+      real(dp), allocatable :: largestgap_mpi(:)
+
       !> eigenvalue
       real(dp), allocatable :: eigenvalue(:)
 
       !> atom position in the unit cell
-      !> for slab system, dim=Nslab*Num_atoms
+      !> for slab system, dim=Num_atoms
       real(dp), allocatable :: AtomsPosition_unitcell(:, :)
       real(dp), allocatable :: AtomsPosition_supercell(:, :)
 
       !> for each orbital, it correspond to an atom
-      !> dim= Num_wann*Nslab
+      !> dim= Num_wann
       integer, allocatable :: AtomIndex_orbital(:)
 
       real(dp) :: Umatrix_t(3, 3)
@@ -623,16 +630,34 @@
 
       real(dp) :: kx
       real(dp) :: ky
-      real(dp) :: k(2)
-      real(dp) :: b(2)
+      real(dp) :: k(3)
+      real(dp) :: b(3)
 
-      Nkx= Nk
-      Nky= 40
-      knv2= Nkx*Nky
+      real(dp) :: maxgap
+      real(dp) :: maxgap0
 
-      nfill= 6*Nslab
+      !> Z2 calculation for time reversal invariant system
+      integer :: Z2
+      integer :: Delta
 
-      allocate(kpoints(2, Nkx, Nky))
+      real(dp) :: g
+      real(dp) :: phi1
+      real(dp) :: phi2
+      real(dp) :: phi3
+      real(dp) :: zm
+      real(dp) :: zm1
+      real(dp) :: xnm1
+      real(dp) :: Deltam
+      real(dp), allocatable :: xnm(:)
+
+
+      Nk1= Nk
+      Nk2= Nk
+      knv2= Nk1*Nk2
+
+      nfill= Numoccupied
+
+      allocate(kpoints(2, Nk1, Nk2))
       kpoints= 0d0
 
       allocate(Lambda_eig(nfill))
@@ -640,19 +665,22 @@
       allocate(Lambda0(nfill, nfill))
       allocate(Mmnkb(nfill, nfill))
       allocate(Mmnkb_com(nfill, nfill))
-      allocate(Mmnkb_full(Num_wann*Nslab, Num_wann*Nslab))
-      allocate(hamk(Num_wann*Nslab, Num_wann*Nslab))
-      allocate(hamk_dag(Num_wann*Nslab, Num_wann*Nslab))
-      allocate(Eigenvector(Num_wann*Nslab, Num_wann*Nslab, Nkx))
-      allocate(eigenvalue(Num_wann*Nslab))
+      allocate(Mmnkb_full(Num_wann, Num_wann))
+      allocate(hamk(Num_wann, Num_wann))
+      allocate(hamk_dag(Num_wann, Num_wann))
+      allocate(Eigenvector(Num_wann, Num_wann, Nk1))
+      allocate(eigenvalue(Num_wann))
       allocate(U(nfill, nfill))
       allocate(Sigma(nfill, nfill))
       allocate(VT(nfill, nfill))
-      allocate(WannierCenterKy(nfill, Nky))
-      allocate(WannierCenterKy_mpi(nfill, Nky))
-      allocate(AtomsPosition_unitcell(3, Num_atoms))
-      allocate(AtomsPosition_supercell(3, Nslab*Num_atoms))
-      allocate(AtomIndex_orbital(Num_wann*Nslab))
+      allocate(WannierCenterKy(nfill, Nk2))
+      allocate(WannierCenterKy_mpi(nfill, Nk2))
+      allocate(AtomIndex_orbital(Num_wann))
+      allocate(xnm(nfill))
+      allocate(largestgap(Nk2))
+      allocate(largestgap_mpi(Nk2))
+      largestgap= 0d0
+      largestgap_mpi= 0d0
       WannierCenterKy= 0d0
       WannierCenterKy_mpi= 0d0
       hamk=0d0
@@ -668,129 +696,95 @@
       VT= 0d0
 
       !> setup kpoints
-      do iky=1, Nky
-         do ikx=1, Nkx
-            kx= (ikx-1d0)/real(Nkx)
-            ky= (iky-1d0)/real(Nky)
-            kpoints(1, ikx, iky)= kx
-            kpoints(2, ikx, iky)= ky
-            b(1)= 1.d0/real(Nkx)
+      do ik2=1, Nk2
+         do ik1=1, Nk1
+            kx= (ik1-1d0)/real(Nk1)
+            ky= (ik2-1d0)/real(Nk2-1)/2d0
+            kpoints(1, ik1, ik2)= kx
+            kpoints(2, ik1, ik2)= ky
+            b(1)= 1.d0/real(Nk1)
             b(2)= 0.d0
+            b(3)= 0.d0
          enddo
       enddo
 
       !> set up atom index for each orbitals in the basis
       if (soc>0) then  !> with spin orbital coupling
          l= 0
-         do i=1, Nslab
-            do ia=1, Num_atoms  !> spin up
-               do j=1, nprojs(ia)
-                  l= l+ 1
-                  AtomIndex_orbital(l)= ia+ (i-1)*Num_atoms
-               enddo ! l
-            enddo ! ia
-            do ia=1, Num_atoms  !> spin down
-               do j=1, nprojs(ia)
-                  l= l+ 1
-                  AtomIndex_orbital(l)= ia+ (i-1)*Num_atoms
-               enddo ! l
-            enddo ! ia
-         enddo ! i
+         do ia=1, Num_atoms  !> spin up
+            do j=1, nprojs(ia)
+               l= l+ 1
+               AtomIndex_orbital(l)= ia
+            enddo ! l
+         enddo ! ia
+         do ia=1, Num_atoms  !> spin down
+            do j=1, nprojs(ia)
+               l= l+ 1
+               AtomIndex_orbital(l)= ia
+            enddo ! l
+         enddo ! ia
       else  !> without spin orbital coupling
          l= 0
-         do i=1, Nslab
-            do ia=1, Num_atoms  !> spin down
-               do j=1, nprojs(ia)
-                  l= l+ 1
-                  AtomIndex_orbital(l)= ia+ (i-1)*Num_atoms
-               enddo ! l
-            enddo ! ia
-         enddo ! i
+         do ia=1, Num_atoms  !> spin down
+            do j=1, nprojs(ia)
+               l= l+ 1
+               AtomIndex_orbital(l)= ia
+            enddo ! l
+         enddo ! ia
 
       endif
 
       Umatrix_t= transpose(Umatrix)
       call inv_r(3, Umatrix_t)
 
-      !> set up atoms' position in the unit cell in the new basis
-      !> only for 2D slab system
-      do ia=1, Num_atoms
-         do i=1, 3
-         do j=1, 3
-            AtomsPosition_unitcell(i, ia)= AtomsPosition_unitcell(i, ia)+ &
-               Umatrix_t(i, j)*Atom_position(j, ia)
-         enddo ! j
-         enddo ! i
-      enddo ! ia
-     
-      !> set up atoms' position in the supercell
-      !> actually, we only need the first two coordinates
-      ia1= 0
-      do i=1, Nslab
-         do ia=1, Num_atoms
-            ia1= ia1+ 1
-            AtomsPosition_supercell(1, ia1)= AtomsPosition_unitcell(1, ia)
-            AtomsPosition_supercell(2, ia1)= AtomsPosition_unitcell(2, ia)
-         enddo ! ia
-      enddo ! i 
-
+      !>> Get wannier center for ky=0 plane
       !> for each ky, we can get wanniercenter
-      do iky=1+ cpuid, nky, num_cpu
+      do ik2=1+ cpuid, Nk2, num_cpu
          Lambda0=0d0
          do i=1, nfill
             Lambda0(i, i)= 1d0
          enddo
 
-         if (cpuid==0) print *, iky, nky
-         !> for each kx, we get the eigenvectors
-         do ikx=1, nkx
-            k(1)= kpoints(1, ikx, iky)
-            k(2)= kpoints(2, ikx, iky)
+         !> for each k1, we get the eigenvectors
+         do ik1=1, Nk1
+            if (cpuid==0) print *, ik1, ik2, Nk1, Nk2
+            k(1)= kpoints(1, ik1, ik2)
+            k(2)= 0d0
+            k(3)= kpoints(2, ik1, ik2)
 
-            call ham_slab(k,hamk)
+            call ham_bulk(k,hamk)
 
             !> diagonal hamk
-            call eigensystem_c('V', 'U', Num_wann*Nslab, hamk, eigenvalue)
+            call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
 
-            Eigenvector(:, :, ikx)= hamk
+            Eigenvector(:, :, ik1)= hamk
          enddo
 
-         !> sum over kx to get wanniercenters
-         do ikx=1, nkx
-           !hamk= Eigenvector(:, :, ikx)
-           !hamk_dag= conjg(transpose(hamk))
-           !if (ikx==nkx) then
-           !   hamk= Eigenvector(:, :, 1)
-           !else
-           !   hamk= Eigenvector(:, :, ikx+ 1)
-           !endif
-
+         !> sum over k1 to get wanniercenters
+         do ik1=1, Nk1
             !> <u_k|u_k+1>
-           !call mat_mul(Num_wann*Nslab, hamk_dag, hamk, Mmnkb_full)
-           !Mmnkb= Mmnkb_full(1:nfill, 1:nfill)
             Mmnkb= 0d0
-            hamk_dag= Eigenvector(:, :, ikx)
-            if (ikx==nkx) then
+            hamk_dag= Eigenvector(:, :, ik1)
+            if (ik1==Nk1) then
                hamk= Eigenvector(:, :, 1)
             else
-               hamk= Eigenvector(:, :, ikx+ 1)
+               hamk= Eigenvector(:, :, ik1+ 1)
             endif
-            do l=1, Nslab
-               do m=1, Num_wann
-                  ia= AtomIndex_orbital(m+(l-1)*Num_wann)
-                  br= b(1)*AtomsPosition_supercell(1, ia)+ &
-                      b(2)*AtomsPosition_supercell(2, ia)
-                  ratio= cos(br)- zi* sin(br)
-            
+            do m=1, Num_wann
+               ia= AtomIndex_orbital(m)
+               br= b(1)*Atom_position(1, ia)+ &
+                   b(2)*Atom_position(2, ia)+ &
+                   b(3)*Atom_position(3, ia)
+              !ratio= cos(br)- zi* sin(br)
+               ratio= 1d0
+         
+               do j=1, nfill
                   do i=1, nfill
-                     do j=1, nfill
-                        Mmnkb(i, j)=  Mmnkb(i, j)+ &
-                           conjg(hamk_dag((l-1)*Num_wann+m, i))* &
-                           hamk((l-1)*Num_wann+m, j)* ratio
-                     enddo ! m
-                  enddo ! l
+                     Mmnkb(i, j)=  Mmnkb(i, j)+ &
+                        conjg(hamk_dag(m, i))* hamk(m, j)* ratio
+                  enddo ! i
                enddo ! j
-            enddo ! i
+            enddo ! m
 
             !> perform Singluar Value Decomposed of Mmnkb
             call zgesvd_pack(nfill, Mmnkb, U, Sigma, VT)
@@ -802,29 +796,244 @@
 
             call mat_mul(nfill, Mmnkb, Lambda0, Lambda)
             Lambda0 = Lambda
-         enddo  !< ikx
+         enddo  !< ik1
 
          !> diagonalize Lambda to get the eigenvalue 
          call zgeev_pack(nfill, Lambda, Lambda_eig)
          do i=1, nfill
-            WannierCenterKy(i, iky)= aimag(log(Lambda_eig(i)))/2d0/pi
+            WannierCenterKy(i, ik2)= aimag(log(Lambda_eig(i)))/2d0/pi
+            WannierCenterKy(i, ik2)= mod(WannierCenterKy(i, ik2)+10d0, 1d0) 
          enddo
 
-      enddo !< iky
+         call sortheap(nfill, WannierCenterKy(:, ik2))
 
+         maxgap0= -99999d0
+         imax= nfill
+         do i=1, nfill
+            if (i/=nfill) then
+               maxgap= WannierCenterKy(i+1, ik2)- WannierCenterKy(i, ik2)
+            else
+               maxgap=1d0+ WannierCenterKy(1, ik2)- WannierCenterKy(nfill, ik2)
+            endif
+
+            if (maxgap>maxgap0) then
+               maxgap0= maxgap
+               imax= i
+            endif
+
+         enddo
+
+         if (imax==nfill) then
+            largestgap(ik2)= (WannierCenterKy(1, ik2)+ &
+               WannierCenterKy(nfill, ik2) +1d0)/2d0
+            largestgap(ik2)= mod(largestgap(ik2), 1d0)
+         else
+            largestgap(ik2)= (WannierCenterKy(imax+1, ik2)+ &
+               WannierCenterKy(imax, ik2))/2d0
+         endif
+
+
+      enddo !< ik2
+
+      WannierCenterKy_mpi= 0d0
+      largestgap_mpi= 0d0
       call mpi_allreduce(WannierCenterKy, WannierCenterKy_mpi, &
            size(WannierCenterKy), mpi_dp, mpi_sum, mpi_cmw, ierr)
+      call mpi_allreduce(largestgap, largestgap_mpi, &
+           size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
 
       if (cpuid==0) then
-         open(unit=101, file='wanniercenter.dat')
+         open(unit=101, file='wanniercenterky0.dat')
 
-         do iky=1, Nky
-            write(101, '(10000f16.8)') kpoints(2, 1, iky), &
-               dmod(sum(WannierCenterKy_mpi(:, iky)), 1d0), & 
-               WannierCenterKy_mpi(:, iky)
+         do ik2=1, Nk2
+            write(101, '(10000f16.8)') kpoints(2, 1, ik2), &
+               largestgap_mpi(ik2), dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
+               WannierCenterKy_mpi(:, ik2)
          enddo
          close(101)
       endif
+
+
+      !> Z2 calculation Alexey Soluyanov arXiv:1102.5600
+
+      Delta= 0
+      !> for each iky, we get a Deltam
+      do ik2=1, nk2-1
+      
+         !> largestgap position
+         zm= largestgap_mpi(ik2)
+        !if (ik2==nk2) then
+        !   zm1= largestgap_mpi(1)
+        !   xnm= WannierCenterKy_mpi(1:nfill, 1)
+        !else
+            zm1= largestgap_mpi(ik2+1)
+            xnm= WannierCenterKy_mpi(1:nfill, ik2+1)
+        !endif
+         Deltam= 1
+         do i=1, nfill
+            xnm1= xnm(i)
+            phi1= 2d0*pi*zm
+            phi2= 2d0*pi*zm1
+            phi3= 2d0*pi*xnm1
+            
+            g= sin(phi2-phi1)+ sin(phi3-phi2)+  sin(phi1-phi3) 
+            Deltam= Deltam* sign(1d0, g)
+         enddo !i 
+         if (Deltam<0) then
+            Delta= Delta+ 1
+         endif
+      enddo !ik2
+
+      Z2= mod(Delta, 2)
+
+      if (cpuid==0) print*,'Z2 for ky=0: ', Z2, Delta
+
+
+      !>> Get wannier center for ky=0.5 plane
+      !> for each ky, we can get wanniercenter
+      do ik2=1+ cpuid, Nk2, num_cpu
+         Lambda0=0d0
+         do i=1, nfill
+            Lambda0(i, i)= 1d0
+         enddo
+
+         !> for each k1, we get the eigenvectors
+         do ik1=1, Nk1
+            if (cpuid==0) print *, ik1, ik2, Nk1, Nk2
+            k(1)= kpoints(1, ik1, ik2)
+            k(2)= 0.5d0
+            k(3)= kpoints(2, ik1, ik2)
+
+            call ham_bulk(k,hamk)
+
+            !> diagonal hamk
+            call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
+
+            Eigenvector(:, :, ik1)= hamk
+         enddo
+
+         !> sum over k1 to get wanniercenters
+         do ik1=1, Nk1
+            !> <u_k|u_k+1>
+            Mmnkb= 0d0
+            hamk_dag= Eigenvector(:, :, ik1)
+            if (ik1==Nk1) then
+               hamk= Eigenvector(:, :, 1)
+            else
+               hamk= Eigenvector(:, :, ik1+ 1)
+            endif
+            do m=1, Num_wann
+               ia= AtomIndex_orbital(m)
+               br= b(1)*Atom_position(1, ia)+ &
+                   b(2)*Atom_position(2, ia)+ &
+                   b(3)*Atom_position(3, ia)
+              !ratio= cos(br)- zi* sin(br)
+               ratio= 1d0
+         
+               do j=1, nfill
+                  do i=1, nfill
+                     Mmnkb(i, j)=  Mmnkb(i, j)+ &
+                        conjg(hamk_dag(m, i))* hamk(m, j)* ratio
+                  enddo ! i
+               enddo ! j
+            enddo ! m
+
+            !> perform Singluar Value Decomposed of Mmnkb
+            call zgesvd_pack(nfill, Mmnkb, U, Sigma, VT)
+
+            !> after the calling of zgesvd_pack, Mmnkb becomes a temporal matrix
+            U= conjg(transpose(U))
+            VT= conjg(transpose(VT))
+            call mat_mul(nfill, VT, U, Mmnkb)
+
+            call mat_mul(nfill, Mmnkb, Lambda0, Lambda)
+            Lambda0 = Lambda
+         enddo  !< ik1
+
+         !> diagonalize Lambda to get the eigenvalue 
+         call zgeev_pack(nfill, Lambda, Lambda_eig)
+         do i=1, nfill
+            WannierCenterKy(i, ik2)= aimag(log(Lambda_eig(i)))/2d0/pi
+            WannierCenterKy(i, ik2)= mod(WannierCenterKy(i, ik2)+10d0, 1d0) 
+         enddo
+
+         call sortheap(nfill, WannierCenterKy(:, ik2))
+
+         maxgap0= -99999d0
+         imax= nfill
+         do i=1, nfill
+            if (i/=nfill) then
+               maxgap= WannierCenterKy(i+1, ik2)- WannierCenterKy(i, ik2)
+            else
+               maxgap=1d0+ WannierCenterKy(1, ik2)- WannierCenterKy(nfill, ik2)
+            endif
+
+            if (maxgap>maxgap0) then
+               maxgap0= maxgap
+               imax= i
+            endif
+
+         enddo
+
+         if (imax==nfill) then
+            largestgap(ik2)= (WannierCenterKy(1, ik2)+ &
+               WannierCenterKy(nfill, ik2) +1d0)/2d0
+            largestgap(ik2)= mod(largestgap(ik2), 1d0)
+         else
+            largestgap(ik2)= (WannierCenterKy(imax+1, ik2)+ &
+               WannierCenterKy(imax, ik2))/2d0
+         endif
+
+      enddo !< ik2
+
+      WannierCenterKy_mpi= 0d0
+      largestgap_mpi= 0d0
+      call mpi_allreduce(WannierCenterKy, WannierCenterKy_mpi, &
+           size(WannierCenterKy), mpi_dp, mpi_sum, mpi_cmw, ierr)
+      call mpi_allreduce(largestgap, largestgap_mpi, &
+           size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
+
+      if (cpuid==0) then
+         open(unit=101, file='wanniercenterky05.dat')
+
+         do ik2=1, Nk2
+            write(101, '(10000f16.8)') kpoints(2, 1, ik2), &
+               largestgap_mpi(ik2), &
+               dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
+               WannierCenterKy_mpi(:, ik2)
+         enddo
+         close(101)
+      endif
+
+
+      !> Z2 calculation Alexey Soluyanov arXiv:1102.5600
+
+      Delta= 0
+      !> for each iky, we get a Deltam
+      do ik2=1, nk2- 1
+      
+         !> largestgap position
+         zm= largestgap_mpi(ik2)
+         zm1= largestgap_mpi(ik2+1)
+         xnm= WannierCenterKy_mpi(1:nfill, ik2+1)
+         Deltam= 1
+         do i=1, nfill
+            xnm1= xnm(i)
+            phi1= 2*pi*zm
+            phi2= 2*pi*zm1
+            phi3= 2*pi*xnm1
+            
+            g= sin(phi2-phi1)+ sin(phi3-phi2)+  sin(phi1-phi3) 
+            Deltam= Deltam* sign(1d0, g)
+         enddo !i 
+         if (Deltam<0) then
+            Delta= Delta+ 1
+         endif
+      enddo !ik2
+
+      Z2= mod(Delta, 2)
+
+      if (cpuid==0) print*,'Z2 for ky=0.5: ', Z2
 
       return
    end subroutine  wannier_center3D

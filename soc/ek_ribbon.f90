@@ -14,12 +14,6 @@
      integer :: i     
      integer :: j
 
-     integer :: lwork
-
-     ! the indices of the smallest and largest
-     ! eigenvalues to be returned
-     integer :: il,iu
-
 
      integer:: Nk1
 
@@ -29,6 +23,12 @@
      real(Dp) :: kmax=0.5d0
  
      real(Dp) :: time1,time2,time3
+
+     integer :: lwork
+
+     ! the indices of the smallest and largest
+     ! eigenvalues to be returned
+     integer :: il,iu
 
      !the lower and upper bounds of the interval
      !to be searched for eigenvalues
