@@ -168,8 +168,8 @@
         open(unit=101, file='slabek.gnu')
         write(101, '(a)')'#set terminal  postscript enhanced color'
         write(101, '(a)')"#set output 'slabek.eps'"
-        write(101, '(3a)')'set terminal  png truecolor enhanced', &
-           '  font Monaco size 1920, 1680'
+        write(101, '(3a)')'set terminal  pngcairo truecolor enhanced', &
+           '  font ",36" size 1920, 1680'
         write(101, '(a)')"set output 'slabek.png'"
         write(101,'(2a)') 'set palette defined ( 0  "green", ', &
            '5 "yellow", 10 "red" )'
@@ -177,15 +177,16 @@
         write(101, '(a)')'unset ztics'
         write(101, '(a)')'unset key'
         write(101, '(a)')'set pointsize 0.8'
+        write(101, '(a)')'set border lw 3 '
         write(101, '(a)')'set view 0,0'
-        write(101, '(a)')'set xtics font ",24"'
-        write(101, '(a)')'set ytics font ",24"'
-        write(101, '(a)')'set ylabel font ",24"'
+        write(101, '(a)')'set xtics font ",36"'
+        write(101, '(a)')'set ytics font ",36"'
+        write(101, '(a)')'set ylabel font ",36"'
         write(101, '(a)')'set xtics offset 0, -1'
-        write(101, '(a)')'set ylabel offset -6, 0 '
+        write(101, '(a)')'set ylabel offset -1, 0 '
         write(101, '(a)')'set ylabel "Energy (eV)"'
-        write(101, '(a, f8.5, a)')'set xrange [0: ', maxval(k_len), ']'
-        write(101, '(a, f8.5, a, f8.5, a)')'set yrange [', emin, ':', emax, ']'
+        write(101, '(a, f10.5, a)')'set xrange [0: ', maxval(k_len), ']'
+        write(101, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
         write(101, 202, advance="no") (kpath_name(i), kpath_stop(i), i=1, nlines)
         write(101, 203)kpath_name(nlines+1), kpath_stop(nlines+1)
 
@@ -200,9 +201,9 @@
         !   "w lp lw 2 pt 13 palette"
      endif
 
-     202 format('set xtics (',:20('"',A3,'" ',F8.5,','))
-     203 format(A3,'" ',F8.5,')')
-     204 format('set arrow from ',F8.5,',',F10.5,' to ',F8.5,',',F10.5, ' nohead')
+     202 format('set xtics (',:20('"',A3,'" ',F10.5,','))
+     203 format(A3,'" ',F10.5,')')
+     204 format('set arrow from ',F10.5,',',F10.5,' to ',F10.5,',',F10.5, ' nohead')
      
   return
   end

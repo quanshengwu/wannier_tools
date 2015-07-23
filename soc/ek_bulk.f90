@@ -79,8 +79,8 @@
         write(101, '(a)')'set ytics font ",24"'
         write(101, '(a)')'set ylabel font ",24"'
         write(101, '(a)')'set ylabel "Energy (eV)"'
-        write(101, '(a, f8.5, a)')'set xrange [0: ', maxval(k3len), ']'
-        write(101, '(a, f8.5, a, f8.5, a)')'set yrange [', emin, ':', emax, ']'
+        write(101, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
+        write(101, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
         write(101, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
         write(101, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
 
@@ -92,9 +92,9 @@
         close(101)
      endif
 
-     202 format('set xtics (',:20('"',A3,'" ',F8.5,','))
-     203 format(A3,'" ',F8.5,')')
-     204 format('set arrow from ',F8.5,',',F10.5,' to ',F8.5,',',F10.5, ' nohead')
+     202 format('set xtics (',:20('"',A3,'" ',F10.5,','))
+     203 format(A3,'" ',F10.5,')')
+     204 format('set arrow from ',F10.5,',',F10.5,' to ',F10.5,',',F10.5, ' nohead')
      
    return
    end subroutine ek_bulk
