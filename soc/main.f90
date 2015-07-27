@@ -85,7 +85,9 @@
 
      if(cpuid==0)then
        write(stdout,*) 'begin reading Hmn_R.data'
-       call readHmnR() 
+     endif
+     call readHmnR() 
+     if(cpuid==0)then
        write(stdout,*) 'read Hmn_R.data successfully'
      endif
 

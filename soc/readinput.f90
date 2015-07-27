@@ -62,6 +62,8 @@
      if(cpuid==0)write(stdout,*)'Np',Np
      read(1001,*)Numoccupied
      if(cpuid==0)write(stdout,*)'Numoccupied', Numoccupied
+     read(1001,*)Ntotch
+     if(cpuid==0)write(stdout,*)'Ntotch', Ntotch
      read(1001,*)Soc
      if(cpuid==0)write(stdout,*)'soc',Soc
      read(1001,*)eta_arc
@@ -176,6 +178,10 @@
                  +(k2(2)- k1(2))**2  &
                  +(k2(3)- k1(3))**2)/dble(NN-1) 
 
+          !temp= dsqrt((kend(1)- kstart(1))**2 &
+          !      +(kend(2)- kstart(2))**2  &
+          !      +(kend(3)- kstart(3))**2)/dble(NN-1) 
+
            if (i.gt.1) then
               t1=t1+temp
            endif
@@ -242,6 +248,11 @@
      Rb2(1)= Urot(1, 1)*R2(1)+ Urot(1, 2)*R2(2)+ Urot(1, 3)*R2(3)
      Rb2(2)= Urot(2, 1)*R2(1)+ Urot(2, 2)*R2(2)+ Urot(2, 3)*R2(3)
 
+     Ra2= R1(1:2)
+     Rb2= R2(1:2)
+
+    
+
      !> get the surface reciprocal vector
      cell_volume=Ra2(1)*Rb2(2)- Rb2(1)*Ra2(2)
      cell_volume= abs(cell_volume)
@@ -249,6 +260,15 @@
      Ka2(2)=-2d0*pi/cell_volume*Rb2(1)
      Kb2(1)=-2d0*pi/cell_volume*Ra2(2)
      Kb2(2)= 2d0*pi/cell_volume*Ra2(1)
+
+     if (cpuid==0) then
+        write(stdout, *)'Ra2, Rb2'
+        write(stdout, '(3f10.4)')Ra2
+        write(stdout, '(3f10.4)')Rb2
+        write(stdout, *)'Ka2, Kb2'
+        write(stdout, '(3f10.4)')ka2
+        write(stdout, '(3f10.4)')kb2
+     endif
 
 
 

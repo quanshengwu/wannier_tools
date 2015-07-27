@@ -62,16 +62,20 @@
               read(12,*)n,m,rh,ih
               HmnR(n,m,iR)=rh+ zi*ih   ! in Hartree
            enddo
-           if (Irvec(1,iR).eq.0.and.Irvec(2,iR).eq.0.and.Irvec(3,iR).eq.0)then
-              do i=1, Num_wann
-                 HmnR(i,i,iR)=HmnR(i,i,iR)-E_fermi
-              enddo
-           endif
         enddo
         HmnR= HmnR*27.2114d0
      endif ! HWR or not
      close(12)
-     
-         
+
+    !call get_fermilevel
+
+     do iR=1,Nrpts
+        if (Irvec(1,iR).eq.0.and.Irvec(2,iR).eq.0.and.Irvec(3,iR).eq.0)then
+           do i=1, Num_wann
+              HmnR(i,i,iR)=HmnR(i,i,iR)-E_fermi
+           enddo
+        endif
+     enddo
+    
      return
   end subroutine readHmnR

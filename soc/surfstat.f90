@@ -57,11 +57,11 @@
      real(dp), allocatable :: k_len(:)
 
      kpath_name= ' '
-     kp(1,:)=(/0.0d0, 0.5d0/)  ; kpath_name(1)= 'Y'
-     ke(1,:)=(/0.0d0, 0.0d0/)  
-     kp(2,:)=(/0.0d0, 0.0d0/)  ; kpath_name(2)= 'G'
-     ke(2,:)=(/0.5d0, 0.00d0/)  ! K
-     kp(3,:)=(/0.5d0, 0.00d0/) ; kpath_name(3)= 'X'     
+     kp(1,:)=(/0.7d0, 0.0d0/)  ; kpath_name(1)= 'X2'
+     ke(1,:)=(/0.5d0, 0.0d0/)  
+     kp(2,:)=(/0.5d0, 0.0d0/)  ; kpath_name(2)= 'X'
+     ke(2,:)=(/0.5d0, 0.20d0/)  ! K
+     kp(3,:)=(/0.5d0, 0.00d0/) ; kpath_name(3)= 'T2'     
      ke(3,:)=(/0.5d0, 0.5d0/)  ! K
      kp(4,:)=(/0.5d0, 0.5d0/)  ; kpath_name(4)= 'M'     
      ke(4,:)=(/0.0d0, 0.0d0/)  ; kpath_name(5)= 'G'  
@@ -69,7 +69,7 @@
      kp(5,:)=(/0.0d0, 0.0d0/)  ! Gamma
      kp(6,:)=(/5.0d0, 0.0d0/)  ! Z
     
-     nlines=4
+     nlines=2
      NN= Nk
      knv2=NN*nlines
      allocate( kpoint(knv2, 2))
@@ -132,7 +132,7 @@
      enddo
 
      do ikp= 1+cpuid, knv2, num_cpu
-        if (cpuid==0) write(stdout, *) ikp, 'in', knv2
+        if (cpuid==0) write(*, *) ikp, 'in', knv2
         k= kpoint(ikp,:)
 
         !> get the hopping matrix between two principle layers
@@ -189,13 +189,14 @@
         open(unit=101, file='surfdos_l.gnu')
         write(101, '(a)')'#set terminal  postscript enhanced color'
         write(101, '(a)')"#set output 'surfdos_l.eps'"
-        write(101, '(3a)')'set terminal  png truecolor enhanced', &
-           ' font Monaco giant size 1920, 1680'
+        write(101, '(3a)')'set terminal  pngcairo truecolor enhanced', &
+           ' font ", 36" size 1920, 1680'
         write(101, '(a)')"set output 'surfdos_l.png'"
         write(101,'(2a)') '#set palette defined (-10 "green", ', &
            '0 "yellow", 10 "red" )'
         write(101, '(a)')'set palette rgbformulae 33,13,10'
         write(101, '(a)')'set style data linespoints'
+        write(101, '(a)')'set size ratio -1'
         write(101, '(a)')'unset ztics'
         write(101, '(a)')'unset key'
         write(101, '(a)')'set pointsize 0.8'
@@ -228,8 +229,8 @@
         open(unit=101, file='surfdos_r.gnu')
         write(101, '(a)')'#set terminal  postscript enhanced color'
         write(101, '(a)')"#set output 'surfdos_r.eps'"
-        write(101, '(3a)')'set terminal  png truecolor enhanced', &
-           ' font Monaco giant size 1920, 1680'
+        write(101, '(3a)')'set terminal  pngcairo truecolor enhanced', &
+           ' font ", 36" size 1920, 1680'
         write(101, '(a)')"set output 'surfdos_r.png'"
         write(101,'(2a)') '#set palette defined (-10 "green", ', &
            '0 "yellow", 10 "red" )'
@@ -240,6 +241,7 @@
         write(101, '(a)')'set pointsize 0.8'
         write(101, '(a)')'set pm3d'
         write(101, '(a)')'set border lw 3'
+        write(101, '(a)')'set size ratio -1'
         write(101, '(a)')'#set view equal xyz'
         write(101, '(a)')'set view map'
         write(101, '(a)')'set cbtics font ",48"'

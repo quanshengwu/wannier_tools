@@ -53,11 +53,11 @@
      ierr = 0
 
      kpath_name= ' '
-     kp(1,:)=(/0.0d0, 0.5d0/)  ; kpath_name(1)= 'Y'
-     ke(1,:)=(/0.0d0, 0.0d0/)  
-     kp(2,:)=(/0.0d0, 0.0d0/)  ; kpath_name(2)= 'G'
-     ke(2,:)=(/0.5d0, 0.00d0/)  ! K
-     kp(3,:)=(/0.5d0, 0.00d0/) ; kpath_name(3)= 'X'     
+     kp(1,:)=(/0.7d0, 0.0d0/)  ; kpath_name(1)= 'X2'
+     ke(1,:)=(/0.5d0, 0.0d0/)  
+     kp(2,:)=(/0.5d0, 0.0d0/)  ; kpath_name(2)= 'X'
+     ke(2,:)=(/0.5d0, 0.20d0/)  ! K
+     kp(3,:)=(/0.5d0, 0.00d0/) ; kpath_name(3)= 'T2'     
      ke(3,:)=(/0.5d0, 0.5d0/)  ! K
      kp(4,:)=(/0.5d0, 0.5d0/)  ; kpath_name(4)= 'M'     
      ke(4,:)=(/0.0d0, 0.0d0/)  ; kpath_name(5)= 'G'  
@@ -69,8 +69,8 @@
   
 
 
-     nlines= 4
-     NN=40
+     nlines= 2
+     NN=Nk
      knv3=NN*nlines
      allocate( kpoint(knv3, 3))
      allocate( k_len (knv3))
@@ -115,6 +115,7 @@
      ! sweep k
      ekslab=0.0d0
      do i=1+cpuid,knv3,num_cpu
+        if (cpuid==0) print *, 'ik ',  i, knv3
         k= kpoint(i, :)
         chamk=0.0d0 
         call ham_slab(k,Chamk)
@@ -182,7 +183,7 @@
         write(101, '(a)')'set xtics font ",36"'
         write(101, '(a)')'set ytics font ",36"'
         write(101, '(a)')'set ylabel font ",36"'
-        write(101, '(a)')'set xtics offset 0, -1'
+        write(101, '(a)')'#set xtics offset 0, -1'
         write(101, '(a)')'set ylabel offset -1, 0 '
         write(101, '(a)')'set ylabel "Energy (eV)"'
         write(101, '(a, f10.5, a)')'set xrange [0: ', maxval(k_len), ']'

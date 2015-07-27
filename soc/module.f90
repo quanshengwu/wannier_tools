@@ -40,6 +40,9 @@
      !> number of occupied bands for bulk unit cell
      integer :: Numoccupied
 
+     !> number of electrons
+     integer :: Ntotch
+
      integer :: Num_wann
 
      ! number of R points
@@ -81,6 +84,10 @@
 
      ! circumference ratio pi  
      real(dp),parameter :: Pi= 3.14159265359d0
+     real(dp),parameter :: half= 0.5d0
+     real(dp),parameter :: zero= 0.0d0
+     real(dp),parameter :: one = 1.0d0
+     real(dp),parameter :: eps6= 1e-6
 
      real(Dp),parameter :: Ka(2)=(/1.0d0,0.0d0/)
      real(Dp),parameter :: Kb(2)=(/0.0d0,1.0d0/)
