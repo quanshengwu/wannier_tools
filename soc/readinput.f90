@@ -248,20 +248,24 @@
      Rb2(1)= Urot(1, 1)*R2(1)+ Urot(1, 2)*R2(2)+ Urot(1, 3)*R2(3)
      Rb2(2)= Urot(2, 1)*R2(1)+ Urot(2, 2)*R2(2)+ Urot(2, 3)*R2(3)
 
-     Ra2= R1(1:2)
-     Rb2= R2(1:2)
+    !Ra2= R1(1:2)
+    !Rb2= R2(1:2)
 
     
 
      !> get the surface reciprocal vector
      cell_volume=Ra2(1)*Rb2(2)- Rb2(1)*Ra2(2)
      cell_volume= abs(cell_volume)
+
+     if (abs(cell_volume)<1e-6) stop 'cell_volume equal zero'
+
      Ka2(1)= 2d0*pi/cell_volume*Rb2(2)
      Ka2(2)=-2d0*pi/cell_volume*Rb2(1)
      Kb2(1)=-2d0*pi/cell_volume*Ra2(2)
      Kb2(2)= 2d0*pi/cell_volume*Ra2(1)
 
      if (cpuid==0) then
+        write(stdout, *)'cell_volume: ', cell_volume
         write(stdout, *)'Ra2, Rb2'
         write(stdout, '(3f10.4)')Ra2
         write(stdout, '(3f10.4)')Rb2

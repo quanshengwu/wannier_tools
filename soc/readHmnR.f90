@@ -40,13 +40,6 @@
            irvec(2, ir)=i2
            irvec(3, ir)=i3
         enddo
-        do ir=1, nrpts
-           if (sum(abs(irvec(:, ir)))<0.1) then
-              do i=1, nwan
-                 HmnR(i, i, ir)= HmnR(i, i, ir)- E_fermi
-              enddo
-           endif
-        enddo
      else
 
         !File socBi2Se3.HWR exist, We are using HmnR from WHM

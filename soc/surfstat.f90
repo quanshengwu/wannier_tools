@@ -57,19 +57,19 @@
      real(dp), allocatable :: k_len(:)
 
      kpath_name= ' '
-     kp(1,:)=(/0.7d0, 0.0d0/)  ; kpath_name(1)= 'X2'
-     ke(1,:)=(/0.5d0, 0.0d0/)  
-     kp(2,:)=(/0.5d0, 0.0d0/)  ; kpath_name(2)= 'X'
-     ke(2,:)=(/0.5d0, 0.20d0/)  ! K
-     kp(3,:)=(/0.5d0, 0.00d0/) ; kpath_name(3)= 'T2'     
-     ke(3,:)=(/0.5d0, 0.5d0/)  ! K
-     kp(4,:)=(/0.5d0, 0.5d0/)  ; kpath_name(4)= 'M'     
+     kp(1,:)=(/0.5d0, 0.0d0/)  ; kpath_name(1)= 'X'
+     ke(1,:)=(/0.0d0, 0.0d0/)  
+     kp(2,:)=(/0.0d0, 0.0d0/)  ; kpath_name(2)= 'G'
+     ke(2,:)=(/0.5d0, 0.50d0/)  ! K
+     kp(3,:)=(/0.5d0, 0.50d0/) ; kpath_name(3)= 'M'     
+     ke(3,:)=(/0.0d0, 0.5d0/)  ! K
+     kp(4,:)=(/0.0d0, 0.5d0/)  ; kpath_name(4)= 'Y'     
      ke(4,:)=(/0.0d0, 0.0d0/)  ; kpath_name(5)= 'G'  
 
      kp(5,:)=(/0.0d0, 0.0d0/)  ! Gamma
      kp(6,:)=(/5.0d0, 0.0d0/)  ! Z
     
-     nlines=2
+     nlines=4
      NN= Nk
      knv2=NN*nlines
      allocate( kpoint(knv2, 2))

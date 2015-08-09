@@ -39,8 +39,10 @@
      real(dp), allocatable :: k12(:,:)
      real(dp), allocatable :: k12_shape(:,:)
      
-     real(dp), allocatable :: dos(:)
-     real(dp), allocatable :: dos_mpi(:)
+     real(dp), allocatable :: dos_l(:)
+     real(dp), allocatable :: dos_l_mpi(:)
+     real(dp), allocatable :: dos_r(:)
+     real(dp), allocatable :: dos_r_mpi(:)
 
      complex(dp), allocatable :: ones(:,:)
      complex(dp), allocatable :: GLL(:,:), GRR(:,:)
@@ -51,18 +53,22 @@
 
      allocate( k12(2, nk1*nk2))
      allocate( k12_shape(2, nk1*nk2))
-     allocate( dos(nk1*nk2))
-     allocate( dos_mpi(nk1*nk2))
+     allocate( dos_l(nk1*nk2))
+     allocate( dos_l_mpi(nk1*nk2))
+     allocate( dos_r(nk1*nk2))
+     allocate( dos_r_mpi(nk1*nk2))
      allocate( GLL(ndim,ndim), GRR(ndim,ndim))
      k12=0d0
      k12_shape=0d0
-     dos=0d0
-     dos_mpi=0d0
+     dos_l=0d0
+     dos_l_mpi=0d0
+     dos_r=0d0
+     dos_r_mpi=0d0
 
-     k1min= 0.35d0/1d0
-     k1max= 0.65d0/1d0
-     k2min=-0.15d0/1d0
-     k2max= 0.15d0/1d0
+     k1min= 0.00d0/1d0
+     k1max= 1.00d0/1d0
+     k2min=-0.50d0/1d0
+     k2max= 0.50d0/1d0
      ikp=0
      do i= 1, nk1
      do j= 1, nk2
@@ -116,21 +122,28 @@
 
         ! calculate spectral function
         do i= 1, ndim
-           dos(ikp)=dos(ikp)- aimag(GLL(i,i))
+           dos_l(ikp)=dos_l(ikp)- aimag(GLL(i,i))
+           dos_r(ikp)=dos_r(ikp)- aimag(GRR(i,i))
         enddo
      enddo
 
      !> we don't have to do allreduce operation
-     call mpi_reduce(dos, dos_mpi, size(dos),mpi_double_precision,&
+     call mpi_reduce(dos_l, dos_l_mpi, size(dos_l),mpi_double_precision,&
+                     mpi_sum, 0, mpi_comm_world, ierr)
+     call mpi_reduce(dos_r, dos_r_mpi, size(dos_r),mpi_double_precision,&
                      mpi_sum, 0, mpi_comm_world, ierr)
 
      if (cpuid.eq.0)then
         open (unit=12, file='arc.dat_l')
+        open (unit=13, file='arc.dat_r')
         do ikp=1, nk1*nk2
-           write(12, '(3f16.8)')k12_shape(:, ikp), log(dos_mpi(ikp))
+           write(12, '(3f16.8)')k12_shape(:, ikp), log(dos_l_mpi(ikp))
            if (mod(ikp, nk2)==0) write(12, *)' '
+           write(13, '(3f16.8)')k12_shape(:, ikp), log(dos_r_mpi(ikp))
+           if (mod(ikp, nk2)==0) write(13, *)' '
         enddo
         close(12)
+        close(13)
         write(stdout,*)'ndim',ndim
         write(stdout,*) 'Nk1,Nk2,eta',Nk1, Nk2, eta
         write(stdout,*)'calculate density of state successfully'    
@@ -155,15 +168,47 @@
         write(101, '(a)')'set view map'
         write(101, '(a)')'set xtics'
         write(101, '(a)')'set ytics'
-        write(101, '(a)')'set xlabel "Kx"'
-        write(101, '(a)')'set ylabel "Ky"'
+        write(101, '(a)')'set xlabel "K1"'
+        write(101, '(a)')'set ylabel "K2"'
         write(101, '(a)')'set colorbox'
         write(101, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape, ':', k1max_shape, ']'
         write(101, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape, ':', k2max_shape, ']'
         write(101, '(a)')'set pm3d interpolate 2,2'
         write(101, '(2a)')"splot 'arc.dat_l' u 1:2:3 w pm3d"
 
+        close(101)
      endif
+
+     !> write script for gnuplot
+     if (cpuid==0) then
+        open(unit=101, file='arc_r.gnu')
+        write(101, '(a)')'#set terminal  postscript enhanced color'
+        write(101, '(a)')"#set output 'arc_r.eps'"
+        write(101, '(3a)')'set terminal  pngcairo truecolor enhanced', &
+           ' font ",60" size 3680, 3360'
+        write(101, '(a)')"set output 'arc_r.png'"
+        write(101,'(2a)') 'set palette defined ( -10 "white", ', &
+           '0 "yellow", 10 "red" )'
+        write(101, '(a)')'#set palette rgbformulae 33,13,10'
+        write(101, '(a)')'unset ztics'
+        write(101, '(a)')'unset key'
+        write(101, '(a)')'set pm3d'
+        write(101, '(a)')'set border lw 6'
+        write(101, '(a)')'set size ratio -1'
+        write(101, '(a)')'set view map'
+        write(101, '(a)')'set xtics'
+        write(101, '(a)')'set ytics'
+        write(101, '(a)')'set xlabel "K1"'
+        write(101, '(a)')'set ylabel "K2"'
+        write(101, '(a)')'set colorbox'
+        write(101, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape, ':', k1max_shape, ']'
+        write(101, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape, ':', k2max_shape, ']'
+        write(101, '(a)')'set pm3d interpolate 2,2'
+        write(101, '(2a)')"splot 'arc.dat_r' u 1:2:3 w pm3d"
+
+        close(101)
+     endif
+
 
   return   
   end subroutine

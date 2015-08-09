@@ -53,13 +53,17 @@
      ierr = 0
 
      kpath_name= ' '
-     kp(1,:)=(/0.7d0, 0.0d0/)  ; kpath_name(1)= 'X2'
-     ke(1,:)=(/0.5d0, 0.0d0/)  
-     kp(2,:)=(/0.5d0, 0.0d0/)  ; kpath_name(2)= 'X'
-     ke(2,:)=(/0.5d0, 0.20d0/)  ! K
-     kp(3,:)=(/0.5d0, 0.00d0/) ; kpath_name(3)= 'T2'     
-     ke(3,:)=(/0.5d0, 0.5d0/)  ! K
-     kp(4,:)=(/0.5d0, 0.5d0/)  ; kpath_name(4)= 'M'     
+    !kp(1,:)=(/0.7d0, 0.0d0/)  ; kpath_name(1)= 'X2'
+    !ke(1,:)=(/0.5d0, 0.0d0/)  
+    !kp(2,:)=(/0.5d0, 0.0d0/)  ; kpath_name(2)= 'X'
+    !ke(2,:)=(/0.5d0, 0.20d0/)  ! K
+     kp(1,:)=(/0.5d0, 0.0d0/)  ; kpath_name(1)= 'X'
+     ke(1,:)=(/0.0d0, 0.0d0/)  
+     kp(2,:)=(/0.0d0, 0.0d0/)  ; kpath_name(2)= 'G'
+     ke(2,:)=(/0.5d0, 0.50d0/)  ! K
+     kp(3,:)=(/0.5d0, 0.50d0/) ; kpath_name(3)= 'M'     
+     ke(3,:)=(/0.0d0, 0.5d0/)  ! K
+     kp(4,:)=(/0.0d0, 0.5d0/)  ; kpath_name(4)= 'Y'     
      ke(4,:)=(/0.0d0, 0.0d0/)  ; kpath_name(5)= 'G'  
 
      kp(5,:)=(/0.0d0, 0.0d0/)  ! K
@@ -69,7 +73,7 @@
   
 
 
-     nlines= 2
+     nlines= 4
      NN=Nk
      knv3=NN*nlines
      allocate( kpoint(knv3, 3))
@@ -188,8 +192,8 @@
         write(101, '(a)')'set ylabel "Energy (eV)"'
         write(101, '(a, f10.5, a)')'set xrange [0: ', maxval(k_len), ']'
         write(101, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
-        write(101, 202, advance="no") (kpath_name(i), kpath_stop(i), i=1, nlines)
-        write(101, 203)kpath_name(nlines+1), kpath_stop(nlines+1)
+        write(101, 202, advance="no") (trim(kpath_name(i)), kpath_stop(i), i=1, nlines)
+        write(101, 203)trim(kpath_name(nlines+1)), kpath_stop(nlines+1)
 
         do i=1, nlines-1
            write(101, 204)kpath_stop(i+1), emin, kpath_stop(i+1), emax
