@@ -101,9 +101,10 @@
 	  if(cpuid.eq.0)write(stdout, *)'begin to calculate bulk band'
      if (BulkBand_calc) then
         call ek_bulk
+       !call dos_calc
        !call ek_bulk2D
-        call fermisurface
-        call gapshape
+       !call fermisurface
+       !call gapshape
      endif
      if(cpuid.eq.0)write(stdout, *)'end calculate bulk band'
 

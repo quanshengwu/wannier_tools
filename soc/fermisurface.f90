@@ -37,10 +37,10 @@
      kxy=0d0
      kxy_shape=0d0
 
-     kxmin= 0.35d0/1d0
-     kxmax= 0.65d0/1d0
-     kymin=-0.15d0/1d0
-     kymax= 0.15d0/1d0
+     kxmin= 0.10d0/1d0
+     kxmax= 0.30d0/1d0
+     kymin=-0.05d0/1d0
+     kymax= 0.05d0/1d0
      kz= 0.0d0
      ik =0
      do i= 1, nkx
@@ -182,10 +182,10 @@
       kxy=0d0
       kxy_shape=0d0
       
-      kxmin= 0.35d0/1d0
-      kxmax= 0.65d0/1d0
-      kymin=-0.15d0/1d0
-      kymax= 0.15d0/1d0
+      kxmin= 0.10d0/1d0
+      kxmax= 0.14d0/1d0
+      kymin= 0.00d0/1d0
+      kymax= 0.05d0/1d0
       kz= 0.0d0
       ik =0
       do i= 1, nkx
@@ -245,7 +245,7 @@
          open(unit=14, file='gap.dat')
       
          do ik=1, knv3
-            write(14, '(3f16.8)')kxy_shape(:, ik), (gap_mpi(ik))
+            write(14, '(3f16.8)')kxy      (:, ik), (gap_mpi(ik))
             if (mod(ik, nky)==0) write(14, *)' '
          enddo
          close(14)

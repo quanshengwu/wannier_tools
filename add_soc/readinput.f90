@@ -14,6 +14,7 @@
 
      logical :: exists
      integer :: i
+     integer :: j
 
      real(dp) :: pos(3)
 
@@ -66,6 +67,9 @@
      proj_name= ' '
      do i=1, Num_atoms
         read(1001, *)char_temp, proj_name(1:nprojs(i), i)
+        do j=1, nprojs(i)
+           print *, proj_name(j, i)
+        enddo
      enddo
 
      !> spin orbital coupling strength

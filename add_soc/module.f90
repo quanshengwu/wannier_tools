@@ -47,7 +47,7 @@
      integer :: max_projs
 
      !> projectors name
-     character(4), allocatable :: proj_name(:, :)
+     character(8), allocatable :: proj_name(:, :)
 
      !> spin orbital coupling strength
      real(dp), allocatable :: lambda_p(:)

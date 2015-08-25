@@ -128,6 +128,7 @@
             case default
                write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 &
                   orbitals"
+               write(*, *)proj_name(i, ia)
                stop
             end select
          enddo
@@ -157,7 +158,7 @@
 
       do ir=1, nrpts
          if (irvec(1, ir).ne.0 .or. irvec(2, ir).ne.0 .or. irvec(3, ir).ne.0) cycle
-         HmnR(:, :, ir)= HmnR_origin(:, :, ir)+ H_soc* ndegen(ir)
+         HmnR(:, :, ir)= HmnR(:, :, ir)+ H_soc* ndegen(ir)
       enddo
 
       !> write to new_hr.dat
