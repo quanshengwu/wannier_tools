@@ -8,7 +8,7 @@
       integer,intent(in) :: N
 
       ! parameters
-      real(Dp),intent(in):: X(N)
+      real(Dp),intent(inout):: X(N)
 
       real(dp) :: func_old
 
@@ -63,7 +63,7 @@
       integer,intent(in) :: N
 
       ! parameters
-      real(Dp),intent(in):: X(N)
+      real(Dp),intent(inout):: X(N)
       real(dp) :: func
 
 
@@ -76,6 +76,7 @@
       real(dp), allocatable :: W(:)
       complex(dp), allocatable :: Hamk_nsoc(:, :)
 
+     !X(1)= 0
       lambda_p(1:Num_atom_type)= X(1:Num_atom_type)
       lambda_d(1:Num_atom_type)= X(1+Num_atom_type:2*Num_atom_type)
       efermi_nsoc= X(Num_atom_type*2+ 1)
@@ -99,7 +100,7 @@
          call eigensystem_c('N', 'U', num_wann_soc, Hamk_nsoc, W)
          eigval_nsoc(:, ik)= W
 
-         do i=1, num_wann_soc
+         do i=1, num_wann_soc-4
         !do i= 51, 60
         !do i= 55, 58
         !do i= 1, 60

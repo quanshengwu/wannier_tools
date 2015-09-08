@@ -238,10 +238,10 @@
       do ik=1, knv3
          k= kpoints(:, ik)
          if (abs(k(1))<0.2d0 .and. abs(k(2))<0.2d0 .and. abs(k(3))<0.2d0)then
-            weight(:, ik)=30d0
+        !   weight(:, ik)=30d0
          endif
          if (abs(k(1))<0.1d0 .and. abs(k(2))<0.1d0 .and. abs(k(3))<0.1d0)then
-            weight(:, ik)=300d0
+        !   weight(:, ik)=300d0
          endif
          if (abs(k(1))<0.02d0 .and. abs(k(2))<0.02d0 .and. abs(k(3))<0.02d0)then
             weight(:, ik)=3000d0
