@@ -307,8 +307,11 @@
      use para, only : dp
      implicit none
      real(dp), intent(in) :: R1(3)
+     real(dp), intent(inout) :: R2(3)
 
+     R2(1)= Urot(1, 1)*R1(1)+ Urot(1, 2)*R1(2)+ Urot(1, 3)*R1(3)
+     R2(2)= Urot(2, 1)*R1(1)+ Urot(2, 2)*R1(2)+ Urot(2, 3)*R1(3)
+     R2(3)= Urot(3, 1)*R1(1)+ Urot(3, 2)*R1(2)+ Urot(3, 3)*R1(3)
 
-
-
+     return
   end subroutine rotate
