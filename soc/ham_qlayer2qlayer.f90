@@ -160,6 +160,86 @@
   return
   end subroutine ham_qlayer2qlayer2
 
+  !> for slab with in-plane magnetic field
+  !> the magnetic phase are chosen like this
+  !> phi_ij= alpha*[By*(xj-xi)*(zi+zj)-Bx*(yj-yi)*(zi+zj)] 
+  !> x, z are in unit of Angstrom, Bx, By are in unit of Tesla
+  !> History :
+  !        9/17/2015 by Quansheng Wu @ETH Zurich
+  subroutine ham_qlayer2qlayer_parallel_B(k,Hij)
+
+     use para
+
+     implicit none
+
+! loop index
+     integer :: iR
+
+! index used to sign irvec     
+     integer :: ia,ib,ic
+
+! new index used to sign irvec     
+     real(dp) :: new_ia,new_ib,new_ic
+     integer :: inew_ia,inew_ib,inew_ic
+
+! wave vector k times lattice vector R  
+     real(Dp) :: kdotr  
+
+! input wave vector k's cooridinates
+     real(Dp),intent(in) :: k(2)
+     complex(dp) :: ratio
+     
+     real(dp) :: phase
+     complex(dp) :: fac
+
+     real(dp) :: xyz1(3)
+     real(dp) :: xyz2(3)
+
+
+     complex(Dp), intent(out) :: Hij(-ijmax:ijmax,Num_wann,Num_wann)
+
+     Hij=0.0d0
+     do iR=1,Nrpts
+        ia=irvec(1,iR)
+        ib=irvec(2,iR)
+        ic=irvec(3,iR)
+
+        !> new lattice
+        call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
+
+        inew_ic= int(new_ic)
+        if (abs(new_ic).gt.ijmax) cycle
+
+        do ia1=1, Num_atoms
+        do ia2=1, Num_atoms
+           xyz1(1)= 0
+           xyz1(2)= dble(i1)
+           xyz1(3)= dble(j1)
+           
+           xyz2(1)= dble(ia)
+           xyz2(2)= dble(i2)
+           xyz2(3)= dble(j2)
+ 
+
+           phase=-Bmag*(xyz2(3)+xyz1(3))*(xyz2(1)-xyz1(1))/2d0
+           fac= cos(phase)+ zi*sin(phase)
+
+           kdotr=k(1)*new_ia+k(2)*new_ib
+           ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
+
+           Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
+           =Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
+           +HmnR(:,:,iR)*ratio/ndegen(iR)* fac
+        enddo ! ia2
+        enddo ! ia1
+     enddo ! iR
+
+     return
+  end subroutine ham_qlayer2qlayer_parallel_B
+
+
+
+
   subroutine ham_qlayer2qlayerribbon(k,Hij)
 
      use para

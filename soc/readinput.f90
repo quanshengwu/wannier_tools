@@ -70,6 +70,8 @@
      if(cpuid==0)write(stdout,*)'eta_arc',eta_arc
      read(1001,*)E_fermi
      if(cpuid==0)write(stdout,*)'E_fermi',E_fermi
+     read(1001,*)Bx, By, Bz
+     if(cpuid==0)write(stdout,'(a,3f16.10)')'Bx, By, Bz', Bx, By, Bz
 
      Nslab1= Nslab
      Nslab2= Np
@@ -300,3 +302,13 @@
   end function norm
 
 
+  !> rotate a vector to the new coordinate system
+  subroutine rotate(R1, R2)
+     use para, only : dp
+     implicit none
+     real(dp), intent(in) :: R1(3)
+
+
+
+
+  end subroutine rotate

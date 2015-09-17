@@ -81,6 +81,12 @@
      ! Fermi energy
      real(Dp) :: E_fermi
 
+     !> magnetic field (Tesla)
+     real(dp) :: Bx, By, Bz
+
+     !> e/2/h*a*a   a=1d-10m, h is the planck constant
+     !> then the flux equals alpha*B*s
+     real(dp),parameter :: alpha= 1.20736d0*1D-6
 
      ! circumference ratio pi  
      real(dp),parameter :: Pi= 3.14159265359d0
