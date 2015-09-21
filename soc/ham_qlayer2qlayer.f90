@@ -177,12 +177,20 @@
 
 ! index used to sign irvec     
      integer :: ia,ib,ic
+     integer :: ia1, ia2
+
+     integer :: istart1, istart2
+     integer :: iend1, iend2
+
+     integer :: inew_ic
+
+     !> nwann= Num_wann/2
+     integer :: nwann
      
      integer, allocatable :: orbital_start(:)
 
 ! new index used to sign irvec     
      real(dp) :: new_ia,new_ib,new_ic
-     integer :: inew_ia,inew_ib,inew_ic
 
 ! wave vector k times lattice vector R  
      real(Dp) :: kdotr  
@@ -205,10 +213,12 @@
 
      complex(Dp), intent(out) :: Hij(-ijmax:ijmax,Num_wann,Num_wann)
 
+     nwann= Num_wann/2
      allocate( orbital_start(Num_atoms+ 1))
+     orbital_start= 0
      orbital_start(1)= 1
-     do i=1, Num_atoms
-        orbital_start(i+1)= orbital_start(i)+ nprojs(i)
+     do ia=1, Num_atoms
+        orbital_start(ia+1)= orbital_start(ia)+ nprojs(ia)
      enddo
 
      Hij=0.0d0
@@ -220,11 +230,16 @@
         !> new lattice
         call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
 
-        R= ia*Rua+ ib*Rub+ ic*Ruc
-        call rotate(R, Rp)
 
         inew_ic= int(new_ic)
         if (abs(new_ic).gt.ijmax) cycle
+
+        !> exp(i k.R)
+        kdotr=k(1)*new_ia+ k(2)*new_ib
+        ratio=cos(2d0*pi*kdotr)+ zi*sin(2d0*pi*kdotr)
+
+        R= ia*Rua+ ib*Rub+ ic*Ruc
+        call rotate(R, Rp)
 
         do ia1=1, Num_atoms
         do ia2=1, Num_atoms
@@ -233,6 +248,7 @@
            call rotate(R1, tau1)
            call rotate(R2, tau2)
 
+          
            Ri= tau1
            Rj= Rp+ tau2
 
@@ -240,12 +256,16 @@
                 - alpha*Bx*(Rj(3)+Ri(3))*(Rj(2)-Ri(2))
            fac= cos(phase)+ zi*sin(phase)
 
-           kdotr=k(1)*new_ia+k(2)*new_ib
-           ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
+
+          !write(*, '(a, 4i5   )') 'iR, ia ib ic', ir, ia, ib, ic
+          !write(*, '(a, 4f10.5)') '            ', new_ia, new_ib, new_ic
+          !write(*, '(a, 3f10.5)') 'Ri', Ri
+          !write(*, '(a, 3f10.5)') 'Rj', Rj
+          !write(*, '(a, 3f10.5)') 'phase', phase
 
            istart1= orbital_start(ia1)
-           istart2= orbital_start(ia2)
            iend1= orbital_start(ia1+1)- 1 
+           istart2= orbital_start(ia2)
            iend2= orbital_start(ia2+1)- 1
            
            Hij(inew_ic, istart1:iend1, istart2:iend2) &
@@ -254,28 +274,28 @@
 
            !> there is soc term in the hr file
            if (soc>0) then
-              istart1= orbital_start(ia1)
+              istart1= orbital_start(ia1) + Nwann
+              iend1= orbital_start(ia1+1)- 1 + Nwann
               istart2= orbital_start(ia2)
-              iend1= orbital_start(ia1+1)- 1 + Num_wann/2
-              iend2= orbital_start(ia2+1)- 1 + Num_wann/2
-              
-              Hij(inew_ic, istart1:iend1, istart2:iend2) &
-              = Hij(inew_ic, istart1:iend1, istart2:iend2) &
-              + HmnR( istart1:iend1, istart2:iend2, iR)*ratio/ndegen(iR)* fac
-
-              istart1= orbital_start(ia1) + Num_wann/2
-              istart2= orbital_start(ia2) + Num_wann/2
-              iend1= orbital_start(ia1+1)- 1
               iend2= orbital_start(ia2+1)- 1
               
               Hij(inew_ic, istart1:iend1, istart2:iend2) &
               = Hij(inew_ic, istart1:iend1, istart2:iend2) &
               + HmnR( istart1:iend1, istart2:iend2, iR)*ratio/ndegen(iR)* fac
 
-              istart1= orbital_start(ia1) + Num_wann/2
-              istart2= orbital_start(ia2) + Num_wann/2
-              iend1= orbital_start(ia1+1)- 1 + Num_wann/2
-              iend2= orbital_start(ia2+1)- 1 + Num_wann/2
+              istart1= orbital_start(ia1)
+              iend1= orbital_start(ia1+1)- 1
+              istart2= orbital_start(ia2) + Nwann
+              iend2= orbital_start(ia2+1)- 1 + Nwann
+              
+              Hij(inew_ic, istart1:iend1, istart2:iend2) &
+              = Hij(inew_ic, istart1:iend1, istart2:iend2) &
+              + HmnR( istart1:iend1, istart2:iend2, iR)*ratio/ndegen(iR)* fac
+
+              istart1= orbital_start(ia1) + Nwann
+              istart2= orbital_start(ia2) + Nwann
+              iend1= orbital_start(ia1+1)- 1 + Nwann
+              iend2= orbital_start(ia2+1)- 1 + Nwann
               
               Hij(inew_ic, istart1:iend1, istart2:iend2) &
               = Hij(inew_ic, istart1:iend1, istart2:iend2) &
@@ -283,6 +303,7 @@
            endif
         enddo ! ia2
         enddo ! ia1
+       !pause
      enddo ! iR
 
      return

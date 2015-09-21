@@ -68,6 +68,11 @@
            write(stdout,'(2x,a25)')'>>> Error : no HmnR input'
            stop
         endif ! exists or not
+        if ((soc==0 .and. sum(nprojs)/=Num_wann) .or. &
+           (soc>0 .and. sum(nprojs)/=Num_wann/2))then
+           print *, sum(nprojs), num_wann, num_wann/2
+           stop 'projectors are wrong'
+        endif
      endif ! cpuid
 
 

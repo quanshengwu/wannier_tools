@@ -134,7 +134,7 @@
            do l=1, Num_wann
               surf_weight(j, i)= surf_weight(j, i) &
                  + abs(CHamk(l, j))**2 & ! first slab
-                 + abs(CHamk(Num_wann*Nslab- l, j))**2 !& ! last slab
+                 + abs(CHamk(Num_wann*Nslab- l+ 1, j))**2 !& ! last slab
                 !+ abs(CHamk(Num_wann+ l, j))**2 & ! the second slab
                 !+ abs(CHamk(Num_wann*(Nslab-1)- l, j))**2 ! last second slab
            enddo ! l
@@ -340,8 +340,20 @@
         if (cpuid==0) print *, 'ik ',  i, knv3
         k= kpoint(i, :)
         chamk=0.0d0 
-        call ham_slab(k,Chamk)
         eigenvalue=0.0d0
+
+        !> no magnetgic field
+        if (abs(Bx)<eps9.and. abs(By)<eps9.and. abs(Bz)<eps9)then
+           call ham_slab(k,Chamk)
+        !> in-plane magnetic field
+        elseif (abs(Bx)>eps9 .or. abs(By)>eps9)then
+           call ham_slab_parallel_B(k,Chamk)
+        !> vertical magnetic field
+        else
+           print *, 'Error: we only support in-plane magnetic field at present'
+           stop 'please set Bz= 0'
+        endif
+
 
         ! diagonal Chamk
         call eigensystem_c('V', 'U', Num_wann*Nslab, CHamk, eigenvalue)
@@ -352,9 +364,9 @@
            do l=1, Num_wann
               surf_weight(j, i)= surf_weight(j, i) &
                  + abs(CHamk(l, j))**2 & ! first slab
-                 + abs(CHamk(Num_wann*Nslab- l, j))**2 !& ! last slab
+                 + abs(CHamk(Num_wann*Nslab- l+ 1, j))**2 !& ! last slab
                 !+ abs(CHamk(Num_wann+ l, j))**2 & ! the second slab
-                !+ abs(CHamk(Num_wann*(Nslab-1)- l, j))**2 ! last second slab
+                !+ abs(CHamk(Num_wann*(Nslab-1)- l+ 1, j))**2 ! last second slab
            enddo ! l
            surf_weight(j, i)= sqrt(surf_weight(j, i))
         enddo ! j 

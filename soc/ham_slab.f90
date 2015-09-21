@@ -8,30 +8,20 @@
      use para
      implicit none
 
-! loop index  
-     integer :: i1,i2, i
+     ! loop index  
+     integer :: i1, i2, i, j
      integer :: ir
 
-! wave vector in 2d
+     ! wave vector in 2d
      real(Dp), intent(inout) :: k(2)      
 
-! Hamiltonian of slab system
+     ! Hamiltonian of slab system
      complex(Dp),intent(out) ::Hamk_slab(Num_wann*nslab,Num_wann*nslab) 
 
-! the factor 2 is induced by spin
+     ! the factor 2 is induced by spin
      complex(Dp) :: Hij(-ijmax:ijmax,Num_wann,Num_wann)
 
-     !> no magnetgic field
-     if (abs(Bx)<eps6.and. abs(By)<eps6.and. abs(Bz)<eps6)then
-        call ham_qlayer2qlayer2(k,Hij)
-     !> in-plane magnetic field
-     elseif (abs(Bx)>eps6 .or. abs(By)>eps6)then
-        call ham_qlayer2qlayer_parallel_B(k,Hij)
-     !> vertical magnetic field
-     else
-        print *, 'Error: we only support in-plane magnetic field at present'
-        stop 'please set Bz= 0'
-     endif
+     call ham_qlayer2qlayer2(k,Hij)
 
      Hamk_slab=0.0d0 
      ! i1 column index
@@ -43,17 +33,10 @@
                       (i1-1)*Num_wann+1:(i1-1)*Num_wann+Num_wann )&
             = Hij(i2-i1,1:Num_wann,1:Num_wann)
           endif 
-          if ((i1.eq.1.and.i2.eq.1).or.(i1.eq.nslab.and.i2.eq.nslab))then
-             do i=1, Num_wann
-                Hamk_slab((i2-1)*Num_wann+i,(i1-1)*Num_wann+i )&
-               =Hamk_slab((i2-1)*Num_wann+i,(i1-1)*Num_wann+i )
-             enddo ! i
-          endif
         enddo ! i2
      enddo ! i1
 
- 
-! check hermitcity
+     ! check hermitcity
 
      do i1=1,nslab*Num_wann
      do i2=1,nslab*Num_wann
@@ -66,4 +49,182 @@
 
   return
   end subroutine ham_slab
+
+
+  ! This subroutine is used to caculate Hamiltonian for 
+  ! slab system . 
+  !> for slab with in-plane magnetic field
+  !> the magnetic phase are chosen like this
+  !> phi_ij= alpha*[By*(xj-xi)*(zi+zj)-Bx*(yj-yi)*(zi+zj)] 
+  !> x, z are in unit of Angstrom, Bx, By are in unit of Tesla
+  !> History :
+  !        9/21/2015 by Quansheng Wu @ETH Zurich
+  subroutine ham_slab_parallel_B(k,Hamk_slab)
+  
+     use para
+     implicit none
+
+     ! loop index  
+     integer :: i1, i2, i, j
+
+     ! wave vector in 2d
+     real(Dp), intent(inout) :: k(2)      
+
+     ! loop index
+     integer :: iR
+
+     ! index used to sign irvec     
+     integer :: ia,ib,ic
+     integer :: ia1, ia2
+
+     integer :: istart1, istart2
+     integer :: iend1, iend2
+
+     integer :: inew_ic
+
+     !> nwann= Num_wann/2
+     integer :: nwann
+     
+     integer, allocatable :: orbital_start(:)
+
+     ! new index used to sign irvec     
+     real(dp) :: new_ia,new_ib,new_ic
+
+     ! wave vector k times lattice vector R  
+     real(Dp) :: kdotr  
+
+
+     complex(dp) :: ratio
+     
+     real(dp) :: phase
+     complex(dp) :: fac
+
+     real(dp) :: R(3)
+     real(dp) :: Rp1(3)
+     real(dp) :: Rp2(3)
+     real(dp) :: R1(3)
+     real(dp) :: R2(3)
+     real(dp) :: Ri(3)
+     real(dp) :: Rj(3)
+     real(dp) :: tau1(3)
+     real(dp) :: tau2(3)
+
+
+     ! Hamiltonian of slab system
+     complex(Dp),intent(out) ::Hamk_slab(Num_wann*nslab,Num_wann*nslab) 
+
+     nwann= Num_wann/2
+     allocate( orbital_start(Num_atoms+ 1))
+     orbital_start= 0
+     orbital_start(1)= 1
+     do ia=1, Num_atoms
+        orbital_start(ia+1)= orbital_start(ia)+ nprojs(ia)
+     enddo
+
+     Hamk_slab=0.0d0 
+     ! i1 column index
+     do i1=1, nslab
+        ! i2 row index
+        do i2=1, nslab
+           !> sum over R points to get H(k1, k2)
+           do iR=1,Nrpts
+              ia=irvec(1,iR)
+              ib=irvec(2,iR)
+              ic=irvec(3,iR)
+      
+              !> new lattice
+              call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
+      
+              inew_ic= int(new_ic)
+              if (new_ic /= (i2-i1)) cycle
+      
+              !> exp(i k.R)
+              kdotr=k(1)*new_ia+ k(2)*new_ib
+              ratio=cos(2d0*pi*kdotr)+ zi*sin(2d0*pi*kdotr)
+      
+              R1= new_ia*Rua_new+ new_ib*Rub_new+ (i1-1)*Ruc_new
+              R2= new_ia*Rua_new+ new_ib*Rub_new+ (i2-1)*Ruc_new
+              call rotate(R1, Rp1)
+              call rotate(R2, Rp2)
+      
+              do ia1=1, Num_atoms
+              do ia2=1, Num_atoms
+                 R1= Atom_position(:, ia1)
+                 R2= Atom_position(:, ia2)
+                 call rotate(R1, tau1)
+                 call rotate(R2, tau2)
+      
+                
+                 Ri= Rp1+ tau1
+                 Rj= Rp2+ tau2
+      
+                 phase= alpha*By*(Rj(3)+Ri(3))*(Rj(1)-Ri(1))  &
+                      - alpha*Bx*(Rj(3)+Ri(3))*(Rj(2)-Ri(2))
+                 fac= cos(phase)+ zi*sin(phase)
+      
+      
+                !write(*, '(a, 4i5   )') 'iR, ia ib ic', ir, ia, ib, ic
+                !write(*, '(a, 4f10.5)') '            ', new_ia, new_ib, new_ic
+                !write(*, '(a, 3f10.5)') 'Ri', Ri
+                !write(*, '(a, 3f10.5)') 'Rj', Rj
+                !write(*, '(a, 3f10.5)') 'phase', phase
+      
+                 istart1= orbital_start(ia1)
+                 iend1= orbital_start(ia1+1)- 1 
+                 istart2= orbital_start(ia2)
+                 iend2= orbital_start(ia2+1)- 1
+                 
+                 Hamk_slab( istart1:iend1, istart2:iend2) &
+                 = Hamk_slab( istart1:iend1, istart2:iend2) &
+                 + HmnR( istart1:iend1, istart2:iend2, iR)*ratio/ndegen(iR)* fac
+      
+                 !> there is soc term in the hr file
+                 if (soc>0) then
+                    istart1= orbital_start(ia1) + Nwann
+                    iend1= orbital_start(ia1+1)- 1 + Nwann
+                    istart2= orbital_start(ia2)
+                    iend2= orbital_start(ia2+1)- 1
+                    
+                    Hamk_slab( istart1:iend1, istart2:iend2) &
+                    = Hamk_slab( istart1:iend1, istart2:iend2) &
+                    + HmnR( istart1:iend1, istart2:iend2, iR)*ratio/ndegen(iR)* fac
+      
+                    istart1= orbital_start(ia1)
+                    iend1= orbital_start(ia1+1)- 1
+                    istart2= orbital_start(ia2) + Nwann
+                    iend2= orbital_start(ia2+1)- 1 + Nwann
+                    
+                    Hamk_slab( istart1:iend1, istart2:iend2) &
+                    = Hamk_slab( istart1:iend1, istart2:iend2) &
+                    + HmnR( istart1:iend1, istart2:iend2, iR)*ratio/ndegen(iR)* fac
+      
+                    istart1= orbital_start(ia1) + Nwann
+                    istart2= orbital_start(ia2) + Nwann
+                    iend1= orbital_start(ia1+1)- 1 + Nwann
+                    iend2= orbital_start(ia2+1)- 1 + Nwann
+                    
+                    Hamk_slab( istart1:iend1, istart2:iend2) &
+                    = Hamk_slab( istart1:iend1, istart2:iend2) &
+                    + HmnR( istart1:iend1, istart2:iend2, iR)*ratio/ndegen(iR)* fac
+                 endif ! soc
+              enddo ! ia2
+              enddo ! ia1
+           enddo ! iR
+        enddo ! i2
+     enddo ! i1
+
+ 
+
+     !> check hermitcity
+     do i1=1,nslab*Num_wann
+     do i2=1,nslab*Num_wann
+        if(abs(Hamk_slab(i1,i2)-conjg(Hamk_slab(i2,i1))).ge.1e-6)then
+          write(stdout,*)'there are something wrong with Hamk_slab'
+          stop
+        endif 
+     enddo
+     enddo
+
+  return
+  end subroutine ham_slab_parallel_B
 

@@ -23,7 +23,6 @@
      real(dp) :: k1(3), k2(3)
      real(dp) :: kstart(3), kend(3)
      real(dp) :: R1(3), R2(3), R3(3) 
-     real(dp) :: Urot(3, 3)
      real(dp), external :: norm
     
      inquire(file=fname,exist=exists)
@@ -141,8 +140,6 @@
      enddo
 
 
-
-
      !> kline for 3d band structure
      !> high symmetry k points
      read(1001, *) nk3lines
@@ -243,6 +240,10 @@
      Urot(2, 3)= (Urot(3, 1)*Urot(1, 2)- Urot(3, 2)*Urot(1, 1))
      Urot(2, :)= Urot(2, :)/norm(Urot(2, :))
 
+     call rotate(R1, Rua_new)
+     call rotate(R2, Rub_new)
+     call rotate(R3, Ruc_new)
+
      !> then transform R1, R2 to the new coordinates
      !> R1'_j= \sum_i U_ij R_i
      !> because the z direction is perpendicular to R1, R2, 
@@ -251,11 +252,6 @@
      Ra2(2)= Urot(2, 1)*R1(1)+ Urot(2, 2)*R1(2)+ Urot(2, 3)*R1(3)
      Rb2(1)= Urot(1, 1)*R2(1)+ Urot(1, 2)*R2(2)+ Urot(1, 3)*R2(3)
      Rb2(2)= Urot(2, 1)*R2(1)+ Urot(2, 2)*R2(2)+ Urot(2, 3)*R2(3)
-
-    !Ra2= R1(1:2)
-    !Rb2= R2(1:2)
-
-    
 
      !> get the surface reciprocal vector
      cell_volume=Ra2(1)*Rb2(2)- Rb2(1)*Ra2(2)
@@ -304,7 +300,7 @@
 
   !> rotate a vector to the new coordinate system
   subroutine rotate(R1, R2)
-     use para, only : dp
+     use para, only : dp, Urot
      implicit none
      real(dp), intent(in) :: R1(3)
      real(dp), intent(inout) :: R2(3)

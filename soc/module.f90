@@ -94,6 +94,7 @@
      real(dp),parameter :: zero= 0.0d0
      real(dp),parameter :: one = 1.0d0
      real(dp),parameter :: eps6= 1e-6
+     real(dp),parameter :: eps9= 1e-9
 
      real(Dp),parameter :: Ka(2)=(/1.0d0,0.0d0/)
      real(Dp),parameter :: Kb(2)=(/0.0d0,1.0d0/)
@@ -104,15 +105,21 @@
      real(Dp),public, save :: Ka2(2)
      real(Dp),public, save :: Kb2(2)
 
-     ! three  primitive vectors  
+     ! three  primitive vectors in Cartsien coordinatec
      real(dp),public, save :: Rua(3)
      real(dp),public, save :: Rub(3)
      real(dp),public, save :: Ruc(3)
+
+     !> three primitive vectors in new coordinate system, see slab part
+     real(dp),public, save :: Rua_new(3)
+     real(dp),public, save :: Rub_new(3)
+     real(dp),public, save :: Ruc_new(3)
 
      ! three reciprocal primitive vectors  
      real(dp),public, save :: Kua(3)
      real(dp),public, save :: Kub(3)
      real(dp),public, save :: Kuc(3)
+     real(dp),public, save :: Urot(3, 3)
 
      ! k list for band
      integer :: nk3lines
