@@ -122,7 +122,20 @@
         if (cpuid==0) print *, 'ik ',  i, knv3
         k= kpoint(i, :)
         chamk=0.0d0 
-        call ham_slab(k,Chamk)
+
+        !> no magnetgic field
+        if (abs(Bx)<eps9.and. abs(By)<eps9.and. abs(Bz)<eps9)then
+           call ham_slab(k,Chamk)
+        !> in-plane magnetic field
+        elseif (abs(Bx)>eps9 .or. abs(By)>eps9)then
+           call ham_slab_parallel_B(k,Chamk)
+        !> vertical magnetic field
+        else
+           print *, 'Error: we only support in-plane magnetic field at present'
+           stop 'please set Bz= 0'
+        endif
+
+
         eigenvalue=0.0d0
 
         ! diagonal Chamk
@@ -341,20 +354,6 @@
         k= kpoint(i, :)
         chamk=0.0d0 
         eigenvalue=0.0d0
-
-        !> no magnetgic field
-        if (abs(Bx)<eps9.and. abs(By)<eps9.and. abs(Bz)<eps9)then
-           call ham_slab(k,Chamk)
-        !> in-plane magnetic field
-        elseif (abs(Bx)>eps9 .or. abs(By)>eps9)then
-           call ham_slab_parallel_B(k,Chamk)
-        !> vertical magnetic field
-        else
-           print *, 'Error: we only support in-plane magnetic field at present'
-           stop 'please set Bz= 0'
-        endif
-
-
         ! diagonal Chamk
         call eigensystem_c('V', 'U', Num_wann*Nslab, CHamk, eigenvalue)
        

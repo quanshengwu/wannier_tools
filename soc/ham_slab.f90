@@ -92,11 +92,8 @@
 
      ! wave vector k times lattice vector R  
      real(Dp) :: kdotr  
-
-
-     complex(dp) :: ratio
-     
      real(dp) :: phase
+     complex(dp) :: ratio
      complex(dp) :: fac
 
      real(dp) :: R(3)
@@ -123,11 +120,11 @@
 
      Hamk_slab=0.0d0 
      ! i1 column index
-     do i1=1, nslab
+     do i1=1, Nslab
         ! i2 row index
-        do i2=1, nslab
+        do i2=1, Nslab
            !> sum over R points to get H(k1, k2)
-           do iR=1,Nrpts
+           do iR=1, Nrpts
               ia=irvec(1,iR)
               ib=irvec(2,iR)
               ic=irvec(3,iR)
@@ -136,13 +133,13 @@
               call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
       
               inew_ic= int(new_ic)
-              if (new_ic /= (i2-i1)) cycle
+              if (inew_ic /= (i2-i1)) cycle
       
               !> exp(i k.R)
-              kdotr=k(1)*new_ia+ k(2)*new_ib
-              ratio=cos(2d0*pi*kdotr)+ zi*sin(2d0*pi*kdotr)
+              kdotr= k(1)*new_ia+ k(2)*new_ib
+              ratio= cos(2d0*pi*kdotr)+ zi*sin(2d0*pi*kdotr)
       
-              R1= new_ia*Rua_new+ new_ib*Rub_new+ (i1-1)*Ruc_new
+              R1= (i1-1)*Ruc_new
               R2= new_ia*Rua_new+ new_ib*Rub_new+ (i2-1)*Ruc_new
               call rotate(R1, Rp1)
               call rotate(R2, Rp2)
@@ -162,50 +159,53 @@
                       - alpha*Bx*(Rj(3)+Ri(3))*(Rj(2)-Ri(2))
                  fac= cos(phase)+ zi*sin(phase)
       
-      
                 !write(*, '(a, 4i5   )') 'iR, ia ib ic', ir, ia, ib, ic
                 !write(*, '(a, 4f10.5)') '            ', new_ia, new_ib, new_ic
                 !write(*, '(a, 3f10.5)') 'Ri', Ri
                 !write(*, '(a, 3f10.5)') 'Rj', Rj
                 !write(*, '(a, 3f10.5)') 'phase', phase
       
-                 istart1= orbital_start(ia1)
-                 iend1= orbital_start(ia1+1)- 1 
-                 istart2= orbital_start(ia2)
-                 iend2= orbital_start(ia2+1)- 1
+                 istart1= (i2-1)*Num_wann+ orbital_start(ia1)
+                 iend1= (i2-1)*Num_wann+ orbital_start(ia1+1)- 1 
+                 istart2= (i1-1)*Num_wann+ orbital_start(ia2)
+                 iend2= (i1-1)*Num_wann+ orbital_start(ia2+1)- 1
                  
                  Hamk_slab( istart1:iend1, istart2:iend2) &
                  = Hamk_slab( istart1:iend1, istart2:iend2) &
-                 + HmnR( istart1:iend1, istart2:iend2, iR)*ratio/ndegen(iR)* fac
+                 + HmnR( istart1- (i2-1)*Num_wann:iend1- (i2-1)*Num_wann, &
+                 istart2- (i1-1)*Num_wann:iend2- (i1-1)*Num_wann, iR)*ratio/ndegen(iR)* fac
       
                  !> there is soc term in the hr file
                  if (soc>0) then
-                    istart1= orbital_start(ia1) + Nwann
-                    iend1= orbital_start(ia1+1)- 1 + Nwann
-                    istart2= orbital_start(ia2)
-                    iend2= orbital_start(ia2+1)- 1
+                    istart1= (i2-1)*Num_wann+ orbital_start(ia1) + Nwann
+                    iend1= (i2-1)*Num_wann+ orbital_start(ia1+1)- 1 + Nwann 
+                    istart2= (i1-1)*Num_wann+ orbital_start(ia2)
+                    iend2= (i1-1)*Num_wann+ orbital_start(ia2+1)- 1
                     
                     Hamk_slab( istart1:iend1, istart2:iend2) &
                     = Hamk_slab( istart1:iend1, istart2:iend2) &
-                    + HmnR( istart1:iend1, istart2:iend2, iR)*ratio/ndegen(iR)* fac
+                    + HmnR( istart1- (i2-1)*Num_wann:iend1- (i2-1)*Num_wann, &
+                    istart2- (i1-1)*Num_wann:iend2- (i1-1)*Num_wann, iR)*ratio/ndegen(iR)* fac
       
-                    istart1= orbital_start(ia1)
-                    iend1= orbital_start(ia1+1)- 1
-                    istart2= orbital_start(ia2) + Nwann
-                    iend2= orbital_start(ia2+1)- 1 + Nwann
+                    istart1= (i2-1)*Num_wann+ orbital_start(ia1)
+                    iend1= (i2-1)*Num_wann+ orbital_start(ia1+1)- 1 
+                    istart2= (i1-1)*Num_wann+ orbital_start(ia2) + Nwann
+                    iend2= (i1-1)*Num_wann+ orbital_start(ia2+1)- 1 + Nwann
                     
                     Hamk_slab( istart1:iend1, istart2:iend2) &
                     = Hamk_slab( istart1:iend1, istart2:iend2) &
-                    + HmnR( istart1:iend1, istart2:iend2, iR)*ratio/ndegen(iR)* fac
+                    + HmnR( istart1- (i2-1)*Num_wann:iend1- (i2-1)*Num_wann, &
+                    istart2- (i1-1)*Num_wann:iend2- (i1-1)*Num_wann, iR)*ratio/ndegen(iR)* fac
       
-                    istart1= orbital_start(ia1) + Nwann
-                    istart2= orbital_start(ia2) + Nwann
-                    iend1= orbital_start(ia1+1)- 1 + Nwann
-                    iend2= orbital_start(ia2+1)- 1 + Nwann
+                    istart1= (i2-1)*Num_wann+ orbital_start(ia1) + Nwann
+                    iend1= (i2-1)*Num_wann+ orbital_start(ia1+1)- 1 + Nwann 
+                    istart2= (i1-1)*Num_wann+ orbital_start(ia2) + Nwann
+                    iend2= (i1-1)*Num_wann+ orbital_start(ia2+1)- 1 + Nwann
                     
                     Hamk_slab( istart1:iend1, istart2:iend2) &
                     = Hamk_slab( istart1:iend1, istart2:iend2) &
-                    + HmnR( istart1:iend1, istart2:iend2, iR)*ratio/ndegen(iR)* fac
+                    + HmnR( istart1- (i2-1)*Num_wann:iend1- (i2-1)*Num_wann, &
+                    istart2- (i1-1)*Num_wann:iend2- (i1-1)*Num_wann, iR)*ratio/ndegen(iR)* fac
                  endif ! soc
               enddo ! ia2
               enddo ! ia1
