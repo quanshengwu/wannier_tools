@@ -143,6 +143,7 @@
  
      ! complex constant 0+1*i
      complex(dp),parameter    :: zi=(0.0d0, 1.0d0)
+     complex(dp),parameter    :: pi2zi=(0.0d0, 6.283185307179586d0)
 
      integer :: cpuid
      integer :: num_cpu

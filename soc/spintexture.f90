@@ -89,10 +89,10 @@
        ones(i,i)=1.0d0
     enddo
     
-    kxmin=-0.5d0/4d0
-    kxmax= 0.5d0/4d0
-    kzmin=-0.5d0/4d0
-    kzmax= 0.5d0/4d0
+    kxmin= 0.10d0/1d0
+    kxmax= 0.30d0/1d0
+    kzmin=-0.20d0/1d0
+    kzmax= 0.20d0/1d0
     ikp=0
     do i= 1, nkx
     do j= 1, nkz
@@ -103,55 +103,41 @@
     enddo
 	
     Nband= Num_wann/2
-! spin operator matrix
-    do i=1,Nslab
-       do j=1,Nband
-          sigma_x(Nband*(i-1)*2+j, Nband*(i-1)*2+Nband+j)=1.0d0
-          sigma_x(Nband*(i-1)*2+j+Nband, Nband*(i-1)*2+j)=1.0d0
-          sigma_y(Nband*(i-1)*2+j, Nband*(i-1)*2+Nband+j)=-zi
-          sigma_y(Nband*(i-1)*2+j+Nband, Nband*(i-1)*2+j)=zi
-          sigma_z(Nband*(i-1)*2+j, Nband*(i-1)*2+j)= 1d0
-          sigma_z(Nband*(i-1)*2+j+Nband, Nband*(i-1)*2+j+Nband)=-1d0
+
+    !> spin operator matrix
+    do i=1, Np
+       do j=1, Nband
+          sigma_x(Num_wann*(i-1)+j, Num_wann*(i-1)+Nband+j)=1.0d0
+          sigma_x(Num_wann*(i-1)+j+Nband, Num_wann*(i-1)+j)=1.0d0
+          sigma_y(Num_wann*(i-1)+j, Num_wann*(i-1)+Nband+j)=-zi
+          sigma_y(Num_wann*(i-1)+j+Nband, Num_wann*(i-1)+j)=zi
+          sigma_z(Num_wann*(i-1)+j, Num_wann*(i-1)+j)= 1d0
+          sigma_z(Num_wann*(i-1)+j+Nband, Num_wann*(i-1)+j+Nband)=-1d0
        enddo
     enddo
 
     if (cpuid.eq.0)write(stdout,*)'sigma_x'
 	 do i=1, ndim
-    if (cpuid.eq.0)write(stdout,'(24f3.0)')real(sigma_x(i,:)) 
+       if (cpuid.eq.0)write(stdout,'(240f3.0)')real(sigma_x(i,:)) 
 	 enddo
 
     if (cpuid.eq.0)write(stdout,*)'sigma_y'
 	 do i=1, ndim
-    if (cpuid.eq.0)write(stdout,'(24f3.0)')aimag(sigma_y(i,:)) 
+       if (cpuid.eq.0)write(stdout,'(240f3.0)')aimag(sigma_y(i,:)) 
 	 enddo
 
-   !do i=1, Nslab
-   if (cpuid.eq.0)write(stdout,*)'sigma_z'
+    if (cpuid.eq.0)write(stdout,*)'sigma_z'
 	 do i=1, ndim
-    if (cpuid.eq.0)write(stdout,'(24f3.0)')real(sigma_z(i,:)) 
+       if (cpuid.eq.0)write(stdout,'(240f3.0)')real(sigma_z(i,:)) 
 	 enddo
 
-
-   !do i=1, Nslab
-   !do i=1, Nslab
-   !   do j=1, Nband
-   !      sigma_x(Nband*(i-1)*2+(j-1)*2+1, Nband*(i-1)*2+(j-1)*2+2)=1.0d0
-   !      sigma_x(Nband*(i-1)*2+(j-1)*2+2, Nband*(i-1)*2+(j-1)*2+1)=1.0d0
-   !      sigma_y(Nband*(i-1)*2+(j-1)*2+1, Nband*(i-1)*2+(j-1)*2+2)=-zi
-   !      sigma_y(Nband*(i-1)*2+(j-1)*2+2, Nband*(i-1)*2+(j-1)*2+1)=zi
-   !      sigma_z(Nband*(i-1)*2+(j-1)*2+1, Nband*(i-1)*2+(j-1)*2+1)=1d0
-   !      sigma_z(Nband*(i-1)*2+(j-1)*2+2, Nband*(i-1)*2+(j-1)*2+2)=-1d0
-   !   enddo
-   !enddo
-
-  
     sx=0.0d0
     sy=0.0d0
     sz=0.0d0
  
 	 omega= omegamin
     do i=1+cpuid,knv2,num_cpu 
-       print *,i
+       if (cpuid==0) print *,i, knv2
 
        k=kxz(:,i) 
 
@@ -184,7 +170,7 @@
        enddo
 
 
-    enddo
+    enddo  ! i  kpoint
     
     call mpi_allreduce(sx,sx_mpi,size(sx),mpi_double_precision, &
                   mpi_sum , mpi_comm_world, ierr)
@@ -201,13 +187,18 @@
     dos= dos_mpi
 
     if (cpuid.eq.0)then
-       open(100,file='spin.dat')
+       open(100,file='spindos.dat')
 
-       do i=1, knv2
-          k=kxz(:, i)
-			 !if (dos(i).gt.dos(i+1).and.dos(i).gt.dos(i-1))then
-             write(100,'(6f16.8)')k,real(sx(i)),real(sy(i)),real(sz(i)),real(dos(i))
-		    !endif
+       do i= 1, nkx
+          do j= 1, nkz
+             ikp=ikp+1
+             k=kxz(:, ikp)
+	   		 !if (dos(i).gt.dos(i+1).and.dos(i).gt.dos(i-1))then
+                write(100,'(6f16.8)')k,real(log(dos(ikp))), &
+                   real(sx(ikp)),real(sy(ikp)),real(sz(ikp))                 
+	   	    !endif
+          enddo
+          write(100, *)' '
        enddo
 
        close(100)
