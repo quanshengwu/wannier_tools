@@ -190,6 +190,9 @@
 
      complex(Dp),allocatable  :: H01dag(:,:)
 
+     !> surface hamiltonian
+     complex(Dp),allocatable  :: Hs(:,:)
+
      ! temp hamiltonian
      complex(Dp),allocatable  :: t0(:,:)
      complex(Dp),allocatable  :: Tmatrix(:,:)
@@ -206,6 +209,7 @@
      real(Dp),allocatable     :: abs_told(:,:)
 
      ! allocate variables
+     allocate(Hs(ndim,ndim))
      allocate(t0(ndim,ndim))
      allocate(Tmatrix(ndim,ndim))
      allocate(Tmatrixt(ndim,ndim))
@@ -221,6 +225,7 @@
     
      allocate(H01dag(ndim,ndim))
  
+     Hs=0.0d0
      t0=0.0d0
      t0tilde=0.0d0
      told=0.0d0
@@ -249,8 +254,8 @@
 
 
      call inv(ndim,temp)
-     t0=matmul(temp,H01dag)  
-     t0tilde=matmul(temp,H01)
+     t0= matmul(temp,H01dag)  
+     t0tilde= matmul(temp,H01)
      told=t0
      toldtilde=t0tilde
 
@@ -291,19 +296,27 @@
      end do ITER1
 
      !print *,'iter,acc',iter,real_temp
+
+     !> set up surface hamiltonian
+     !> usually Hs= H00
+     !> but you can add static potential on the surface
+     Hs= H00
+     do i=1, ndim
+        Hs(i, i)=Hs(i, i)+ surf_onsite
+     enddo
   
      Tmatrix=t0+Tmatrix
-     temp=energy*ones-H00-matmul(H01,Tmatrix)    
+     temp=energy*ones-Hs-matmul(H01,Tmatrix)    
      call inv(ndim,temp)
      
-     ! g_00=(epsilon-H00-H01*T)^-1
+     ! g_00=(epsilon-Hs -H01*T)^-1
      GLL(1:ndim,1:ndim)=temp
 
      Tmatrixt=t0tilde+Tmatrixt
-     temp=energy*ones-H00-matmul(conjg(transpose(H01)),Tmatrixt)  
+     temp=energy*ones-Hs -matmul(conjg(transpose(H01)),Tmatrixt)  
      call inv(ndim,temp)
 
-     ! g_00=(epsilon-H00-H01*T)^-1
+     ! g_00=(epsilon-Hs -H01*T)^-1
      GRR(1:ndim,1:ndim)=temp
 
      return   

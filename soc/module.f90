@@ -82,6 +82,9 @@
      ! Fermi energy
      real(Dp) :: E_fermi
 
+     !> surface onsite energy shift
+     real(dp) :: surf_onsite
+
      !> magnetic field (Tesla)
      real(dp) :: Bx, By, Bz
 

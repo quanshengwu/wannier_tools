@@ -70,6 +70,8 @@
      if(cpuid==0)write(stdout,*)'eta_arc',eta_arc
      read(1001,*)E_fermi
      if(cpuid==0)write(stdout,*)'E_fermi',E_fermi
+     read(1001,*)surf_onsite
+     if(cpuid==0)write(stdout,*)'surf_onsite',surf_onsite
      read(1001,*)Bx, By, Bz
      if(cpuid==0)write(stdout,'(a,3f16.10)')'Bx, By, Bz', Bx, By, Bz
 
