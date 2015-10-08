@@ -135,7 +135,9 @@
     sy=0.0d0
     sz=0.0d0
  
-	 omega= omegamin
+    omega = E_arc
+    eta= eta_arc
+
     do i=1+cpuid,knv2,num_cpu 
        if (cpuid==0) print *,i, knv2
 
@@ -189,14 +191,19 @@
     if (cpuid.eq.0)then
        open(100,file='spindos.dat')
 
+       ikp= 0
        do i= 1, nkx
           do j= 1, nkz
              ikp=ikp+1
              k=kxz(:, ikp)
-	   		 !if (dos(i).gt.dos(i+1).and.dos(i).gt.dos(i-1))then
+	   		 if (dos(ikp).gt.dos(ikp+1).and.dos(ikp).gt.dos(ikp-1).and. &
+                real(log(dos(ikp)))>5.5) then
                 write(100,'(6f16.8)')k,real(log(dos(ikp))), &
                    real(sx(ikp)),real(sy(ikp)),real(sz(ikp))                 
-	   	    !endif
+             else
+                write(100,'(6f16.8)')k,real(log(dos(ikp))), &
+                   real(sx(ikp)),real(sy(ikp)),real(sz(ikp))                 
+	   	    endif
           enddo
           write(100, *)' '
        enddo

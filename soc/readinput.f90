@@ -47,6 +47,7 @@
      read(1001,*) SlabArc_calc
      read(1001,*) SlabSpintexture_calc
      read(1001,*) wanniercenter_calc
+     read(1001,*) berry_calc
      read(1001,*)Nk
      if(cpuid==0)write(stdout,*)'Nk',Nk
      read(1001,*)omeganum
@@ -113,6 +114,7 @@
 
      !> read atom position
      read(1001, *)Num_atoms
+     if(cpuid==0)write(stdout, '(a, i)')'Num_atoms', Num_atoms
      allocate(atom_name(Num_atoms))
      allocate(Atom_position(3, Num_atoms))
      do i=1, Num_atoms
@@ -131,18 +133,22 @@
      allocate(nprojs(Num_atoms))
      nprojs= 0
      read(1001, *)nprojs
+     if(cpuid==0)write(stdout, '(a, 40i5)')'nprojs', nprojs
 
      max_projs= maxval(nprojs)
      allocate(proj_name(max_projs, Num_atoms))
      proj_name= ' '
      do i=1, Num_atoms
         read(1001, *)char_temp, proj_name(1:nprojs(i), i)
+        if(cpuid==0)write(stdout, '(40a)') &
+           char_temp, proj_name(1:nprojs(i), i)
      enddo
 
 
      !> kline for 3d band structure
      !> high symmetry k points
      read(1001, *) nk3lines
+     if(cpuid==0)write(stdout, '(a, 40i5)')'nk3lines', nk3lines
      allocate(k3line_start(3, nk3lines))
      allocate(k3line_end(3, nk3lines))
      allocate(k3line_name(nk3lines+1))
@@ -154,6 +160,11 @@
      do i=1, nk3lines
         read(1001, *) k3line_name(i), k3line_start(:, i), &
                       char_temp, k3line_end(:, i)
+        if(cpuid==0)write(stdout, '(a, 3f9.4, a, 3f9.4)')&
+          k3line_name(i), k3line_start(:, i), &
+          char_temp, k3line_end(:, i)
+
+
      enddo
      k3line_name(nk3lines+1)= char_temp
 

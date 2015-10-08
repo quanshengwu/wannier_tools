@@ -3,7 +3,7 @@ obj =  module.o main.o readHmnR.o inverse.o\
 		 ham_slab.o ek_slab.o ek_bulk_polar.o ek_bulk2D.o \
        readinput.o fermisurface.o surfgreen.o surfstat.o \
 		 mat_mul.o ham_ribbon.o ek_ribbon.o ham_bulk.o ek_bulk.o \
-       fermiarc.o spintexture.o \
+       fermiarc.o spintexture.o berrycurvature.o \
 		 wanniercenter.o dos.o
 
 

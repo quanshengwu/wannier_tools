@@ -8,25 +8,34 @@
      implicit none
     
      integer :: iR
-     integer :: ia
-     integer :: ib
-     integer :: ic
      integer :: ik
+     integer :: nk1, nk2
+
+     integer :: m, n, i, j
 
      integer :: knv2
+     integer :: ierr
+
+
+     real(dp) :: kdotr
+     real(dp) :: k(3)
 
      real(dp) :: k1min, k1max, k2min, k2max, kz
+     real(dp) :: k1min_shape, k1max_shape, k2min_shape, k2max_shape
    
      !> R points coordinates (3, nrpts)
-     real(dp) :: crvec(:, :)
-     real(dp) :: R(3)
+     real(dp), allocatable :: crvec(:, :)
 
      !> k points slice
-     real(dp) :: kslice(:, :)
+     real(dp), allocatable :: kslice(:, :)
+     real(dp), allocatable :: kslice_shape(:, :)
    
      ! eigen value of H
-	  real(dp), allocatable :: eigv(:,:)
-	  real(dp), allocatable :: eigv_mpi(:,:)
+	  real(dp), allocatable :: W(:)
+     complex(dp), allocatable :: Hamk_bulk(:, :)
+     complex(dp), allocatable :: Amat(:, :)
+     complex(dp), allocatable :: UU(:, :)
+     complex(dp), allocatable :: UU_dag(:, :)
 
      !> velocities
      complex(dp), allocatable :: vx(:, :)
@@ -45,19 +54,26 @@
      knv2= nk1*nk2
      allocate( kslice(2, knv2))
      allocate( kslice_shape(2, knv2))
-     allocate( eigv    (Num_wann, knv3))
-     allocate( eigv_mpi(Num_wann, knv3))
-     allocate( Omega    (3, knv3))
-     allocate( Omega_mpi(3, knv3))
+     allocate( W       (Num_wann))
+     allocate( crvec    (3, nrpts))
+     allocate( Omega    (3, knv2))
+     allocate( Omega_mpi(3, knv2))
+     allocate( vx      (Num_wann, Num_wann))
+     allocate( vy      (Num_wann, Num_wann))
+     allocate( vz      (Num_wann, Num_wann))
+     allocate( Hamk_bulk(Num_wann, Num_wann))
+     allocate( Amat(Num_wann, Num_wann))
+     allocate( UU(Num_wann, Num_wann))
+     allocate( UU_dag(Num_wann, Num_wann))
      allocate( DHDk    (Num_wann, Num_wann, 3))
      allocate( DHDkdag (Num_wann, Num_wann, 3))
      kslice=0d0
      kslice_shape=0d0
 
-     k1min= 0.10d0/1d0
+     k1min= 0.00d0/1d0
      k1max= 0.30d0/1d0
-     k2min=-0.05d0/1d0
-     k2max= 0.05d0/1d0
+     k2min= 0.00d0/1d0
+     k2max= 0.20d0/1d0
      kz= 0.0d0
      ik =0
      do i= 1, nk1
@@ -74,48 +90,56 @@
      k1min_shape=minval(kslice_shape(1,:))
      k1max_shape=maxval(kslice_shape(1,:))
 
-     !> sweep over k points
-     do ik= 1+ cpuid, knv2, num_cpu
-        k(1)= kslice(1, ik)
-        k(2)= kslice(2, ik)
-        k(3)= kz
-
-        ! calculation bulk hamiltonian
-        Hamk_bulk= 0d0
-        call ham_bulk(k, Hamk_bulk)
-
-        !> diagonalization by call zheev in lapack
-        W= 0d0
-        call eigensystem_c( 'N', 'U', Num_wann ,Hamk_bulk, W)
-
-        eigv(:, ik)= W
-     enddo
-     call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
-                       mpi_dp,mpi_sum,mpi_cmw,ierr)
-
      !> get R coordinates 
      do iR=1, Nrpts
         crvec(:, iR)= Rua*irvec(1,iR) + Rub*irvec(2,iR) + Ruc*irvec(3,iR)
      enddo
 
      do ik= 1+ cpuid, knv2, num_cpu
-        ham= 0d0
+        if (cpuid==0) print *, ik, knv2
+
+        !> diagonalize hamiltonian
+        k(1)= kslice(1, ik)
+        k(2)= kslice(2, ik)
+        k(3)= kz
+
+        ! calculation bulk hamiltonian
+        UU= 0d0
+        call ham_bulk(k, Hamk_bulk)
+        
+
+        !> diagonalization by call zheev in lapack
+        W= 0d0
+       !call eigensystem_c( 'V', 'U', Num_wann, UU, W)
+        call utility_diagonalize(hamk_bulk,Num_wann, W, UU)
+
+        UU_dag= conjg(transpose(UU))
+
         vx= 0d0
         vy= 0d0
         vz= 0d0
         do iR= 1, Nrpts
            kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
-           vx= vx+ crvec(1, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
-           vy= vy+ crvec(2, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
-           vz= vz+ crvec(3, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
+           vx= vx+ zi*crvec(1, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
+           vy= vy+ zi*crvec(2, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
+           vz= vz+ zi*crvec(3, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
         enddo ! iR
 
+        call mat_mul(Num_wann, vx, UU, Amat) 
+        call mat_mul(Num_wann, UU_dag, Amat, vx) 
+        call mat_mul(Num_wann, vy, UU, Amat) 
+        call mat_mul(Num_wann, UU_dag, Amat, vy) 
+        call mat_mul(Num_wann, vz, UU, Amat) 
+        call mat_mul(Num_wann, UU_dag, Amat, vz) 
+
+        DHDk= 0d0
+        DHDkdag= 0d0
         do n= 1, Num_wann
            do m= 1, Num_wann
-              if (eigv(n, ik) > E_fermi .and. eigv(m, ik)< E_fermi) then
-                 DHDk(n, m, 1)= zi*vx(n, m)/(eigv(m, ik)-eigv(n, ik))
-                 DHDk(n, m, 2)= zi*vy(n, m)/(eigv(m, ik)-eigv(n, ik))
-                 DHDk(n, m, 3)= zi*vz(n, m)/(eigv(m, ik)-eigv(n, ik))
+              if (W(n) > 0d0 .and. W(m)<0d0) then
+                 DHDk(n, m, 1)= zi*vx(n, m)/(W(m)-W(n))
+                 DHDk(n, m, 2)= zi*vy(n, m)/(W(m)-W(n))
+                 DHDk(n, m, 3)= zi*vz(n, m)/(W(m)-W(n))
               else
                  DHDk(n, m, 1)= 0d0
                  DHDk(n, m, 2)= 0d0
@@ -126,10 +150,10 @@
 
         do n= 1, Num_wann
            do m= 1, Num_wann
-              if (eigv(m, ik) > E_fermi .and. eigv(n, ik)< E_fermi) then
-                 DHDkdag(n, m, 1)= zi*vx(n, m)/(eigv(m, ik)-eigv(n, ik))
-                 DHDkdag(n, m, 2)= zi*vy(n, m)/(eigv(m, ik)-eigv(n, ik))
-                 DHDkdag(n, m, 3)= zi*vz(n, m)/(eigv(m, ik)-eigv(n, ik))
+              if (W(m) > 0d0 .and. W(n)< 0d0) then
+                 DHDkdag(n, m, 1)= zi*vx(n, m)/(W(m)-W(n))
+                 DHDkdag(n, m, 2)= zi*vy(n, m)/(W(m)-W(n))
+                 DHDkdag(n, m, 3)= zi*vz(n, m)/(W(m)-W(n))
               else              
                  DHDkdag(n, m, 1)= 0d0
                  DHDkdag(n, m, 2)= 0d0
@@ -138,15 +162,43 @@
            enddo ! m
         enddo ! n
 
+        !> rotate DHDk and DHDkdag to diagonal basis
+        do i=1, 3
+        !  call mat_mul(Num_wann, DHDk(:, :, i), UU, Amat) 
+        !  call mat_mul(Num_wann, UU_dag, Amat, DHDk(:, :, i)) 
+        !  call mat_mul(Num_wann, DHDkdag(:, :, i), UU, Amat) 
+        !  call mat_mul(Num_wann, UU_dag, Amat, DHDkdag(:, :, i)) 
+        enddo
+
         call mat_mul(Num_wann, DHDk(:, :, 1), DHDkdag(:, :, 2), vz)
         call mat_mul(Num_wann, DHDk(:, :, 2), DHDkdag(:, :, 3), vx)
         call mat_mul(Num_wann, DHDk(:, :, 3), DHDkdag(:, :, 1), vy)
 
         call trace(Num_wann, vx, Omega(1, ik))
-        call trace(Num_wann, vy, Omega(1, ik))
-        call trace(Num_wann, vz, Omega(1, ik))
+        call trace(Num_wann, vy, Omega(2, ik))
+        call trace(Num_wann, vz, Omega(3, ik))
 
      enddo ! ik
+
+     Omega_mpi= 0d0
+     call mpi_allreduce(Omega,Omega_mpi,size(Omega_mpi),&
+                       mpi_dc,mpi_sum,mpi_cmw,ierr)
+
+     if (cpuid==0) then
+        open(unit=18, file='berry.dat')
+        ik= 0
+        do i= 1, nk1
+           do j= 1, nk2
+              ik= ik+ 1
+              write(18, '(20f18.10)')kslice(:, ik), Omega_mpi(:, ik)
+           enddo
+           write(18, *) ' '
+        enddo
+
+        close(18)
+
+     endif
+
 
      return
 
@@ -160,6 +212,7 @@
      complex(dp), intent(out) :: ham(Num_wann, Num_wann)
      integer :: iR
      real(dp) :: R(3)
+     real(dp) :: kdotr
 
      ham= 0d0
      do iR= 1, Nrpts
@@ -182,7 +235,7 @@
 
      tr = 0d0
      do i=1, ndim
-        tr= tr+ A(i, i)
+        tr= tr+ (A(i, i))
      enddo
 
      return

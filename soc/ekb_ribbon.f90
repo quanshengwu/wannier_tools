@@ -46,7 +46,7 @@
      real(dp), allocatable :: magnetic(:)
    
      ! energy dispersion
-     real(Dp),allocatable :: ekribbon(:,:)
+     real(Dp),allocatable :: ekbribbon(:,:)
      real(Dp),allocatable ::  rwork(:)
      integer,allocatable ::  iwork(:)
      complex(Dp),allocatable :: work(:)
@@ -63,7 +63,7 @@
      Ndim1=Num_wann*nslab1*nslab2
      lwork=64*Ndim1
 
-     allocate(ekribbon(Ndim1,Nb ))
+     allocate(ekbribbon(Ndim1,Nb ))
      allocate(z(Ndim1,Ndim1))
      allocate(CHamk(Ndim1,Ndim1))
      allocate(rwork(7*Ndim1))
@@ -76,7 +76,7 @@
      ierr = 0
      
      ! sweep k
-     ekribbon=0.0d0
+     ekbribbon=0.0d0
 
      kmax=0.5d0
 
@@ -108,26 +108,26 @@
        !mdim,eigenvalue,z,Ndim1,work,lwork,rwork,iwork,ifail,info)
 
 
-        ekribbon(:,i)=eigenvalue
+        ekbribbon(:,i)=eigenvalue
 
-        write(stdout,'(a2,i4,f12.5,f10.2,a2)')'B', i,ekribbon(1,i),time2-time1,' s'
+        write(stdout,'(a2,i4,f12.5,f10.2,a2)')'B', i,ekbribbon(1,i),time2-time1,' s'
      enddo
      
     !open(unit=100, file='ribbonek.dat',status='unknown')
     !do i=1,Nk1
     !   k=-kmax*real(Nk1-i)/(Nk1-1)
-    !   write(100,'(60000f15.7)')k,ekribbon(:,Nk1-i+1)
+    !   write(100,'(60000f15.7)')k,ekbribbon(:,Nk1-i+1)
     !enddo 
   
     !do i=1,Nk1
     !   k=kmax*real(i-1)/(Nk1-1)
-    !   write(100,'(60000f15.7)')k,ekribbon(:,i)
+    !   write(100,'(60000f15.7)')k,ekbribbon(:,i)
     !enddo
     !close(100)
 
     open(unit=100, file='ribbonekb.dat',status='unknown')
     do i=1, Nb
-       write(100, '(50000f15.7)')magnetic(i), ekribbon(:, i)
+       write(100, '(50000f15.7)')magnetic(i), ekbribbon(:, i)
     enddo
     !write(stdout,*) 'calculate energy band  done'
 

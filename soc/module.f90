@@ -17,6 +17,7 @@
      logical :: SlabArc_calc
      logical :: SlabSpintexture_calc
      logical :: wanniercenter_calc
+     logical :: berry_calc
 
      integer,parameter :: stdout= 6
 

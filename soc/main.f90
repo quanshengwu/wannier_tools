@@ -105,8 +105,8 @@
      !> bulk band
 	  if(cpuid.eq.0)write(stdout, *)'begin to calculate bulk band'
      if (BulkBand_calc) then
-       !call ek_bulk
-        call ek_bulk_spin
+        call ek_bulk
+       !call ek_bulk_spin
        !call dos_calc
        !call ek_bulk2D
        !call fermisurface3D
@@ -121,6 +121,7 @@
     !if (wanniercenter_calc)call wannier_center2D
     !if (wanniercenter_calc)call wannier_center2D_alt
      if (wanniercenter_calc)call wannier_center3D
+     if (berry_calc)call berry_curvarture 
      
 
      !> surface state

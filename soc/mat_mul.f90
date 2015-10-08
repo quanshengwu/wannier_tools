@@ -84,3 +84,52 @@
 
      return
   end subroutine zgesvd_pack
+
+  !============================================================!
+  subroutine utility_diagonalize(mat,dim,eig,rot)
+    !============================================================!
+    !                                                            !
+    ! Diagonalize the dim x dim  hermitian matrix 'mat' and      !
+    ! return the eigenvalues 'eig' and the unitary rotation 'rot'!
+    !                                                            !
+    !============================================================!
+
+    use para, only : dp, stdout
+
+    integer, intent(in)           :: dim
+    complex(kind=dp), intent(in)  :: mat(dim,dim)
+    real(kind=dp), intent(out)    :: eig(dim)
+    complex(kind=dp), intent(out) :: rot(dim,dim)
+
+    complex(kind=dp), allocatable :: mat_pack(:),cwork(:)
+    real(kind=dp), allocatable    :: rwork(:)
+    integer            :: i,j,info,nfound
+    integer, allocatable :: iwork(:),ifail(:)
+
+    allocate(mat_pack((dim*(dim+1))/2))
+    allocate(cwork(2*dim))
+    allocate(rwork(7*dim))
+    allocate(iwork(5*dim))
+    allocate(ifail(dim))
+    do j=1,dim
+       do i=1,j
+          mat_pack(i+((j-1)*j)/2)=mat(i,j)
+       enddo
+    enddo
+    rot=0d0;eig=0.0_dp;cwork=0d0;rwork=0.0_dp;iwork=0
+    call ZHPEVX('V','A','U',dim,mat_pack,0.0_dp,0.0_dp,0,0,-1.0_dp, &
+         nfound,eig(1),rot,dim,cwork,rwork,iwork,ifail,info)
+    if(info < 0) then
+       write(stdout,'(a,i3,a)') 'THE ',-info,&
+            ' ARGUMENT OF ZHPEVX HAD AN ILLEGAL VALUE'
+       stop 'Error in utility_diagonalize'
+    endif
+    if(info > 0) then
+       write(stdout,'(i3,a)') info,' EIGENVECTORS FAILED TO CONVERGE'
+       stop 'Error in utility_diagonalize'
+    endif
+
+    return
+  end subroutine utility_diagonalize
+
+ 
