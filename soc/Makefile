@@ -4,7 +4,8 @@ obj =  module.o main.o readHmnR.o inverse.o\
        readinput.o fermisurface.o surfgreen.o surfstat.o \
 		 mat_mul.o ham_ribbon.o ek_ribbon.o ham_bulk.o ek_bulk.o \
        fermiarc.o spintexture.o berrycurvature.o \
-		 wanniercenter.o dos.o
+		 wanniercenter.o dos.o \
+		 landau_level.o
 
 
 f90  = mpif90 # -check all -pg -traceback

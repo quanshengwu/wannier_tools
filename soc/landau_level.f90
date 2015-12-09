@@ -1,5 +1,7 @@
   !> calculate landau levels in 3D system in special k line
   !> fix B field
+  !> the magnetic field is in the a1 a2 plane
+  !> B= (B cos\theta, B sin\theta, 0)
   !> construct on Dec 8 2015
   !> By QuanSheng Wu at ETH Zurich Honggerberg
   subroutine landau_level_k
@@ -9,30 +11,45 @@
 
      !> magnetic supercell size, perpendicular to the magnetic field
      integer :: Nq
-     integer :: iq
+     integer :: ia1
+     integer :: ia2
+     integer :: ik
+     integer :: i, j
 
-     !> Ndim= Nq* Num_wann
-     integer :: Ndim
+     !> Ndimq= Nq* Num_wann
+     integer :: Ndimq
 
      integer :: knv3
      integer :: NN
      integer :: nlines
 
-     real(dp) :: Bmag
+     integer :: ierr
+
+     real(dp) :: B0
+     real(dp) :: theta
+
+     real(dp) :: R1(3)
+     real(dp) :: R2(3)
+     real(dp) :: tau1(3)
+     real(dp) :: tau2(3)
+
+     real(dp) :: t1, temp, dis, dis1
      ! wave vector 
-     real(dp) :: k (3)
+     real(dp) :: k3(3)
      real(dp) :: k1(2)
      real(dp) :: k2(2)
      real(Dp) :: k(2), kstart(2), kend(2)
      real(dp) :: kp(16,2), ke(16,2), kpath_stop(16)
      character(4) :: kpath_name(17)
+     real(dp), allocatable :: k_len(:)
+     real(dp), allocatable :: kpoint(:, :)
 
-     !> dim= Ndim, knv3
+     !> dim= Ndimq, knv3
      real(dp), allocatable :: W(:)
      real(dp), allocatable :: eigv(:, :)
      real(dp), allocatable :: eigv_mpi(:, :)
 
-     !> dim= Ndim*Ndim
+     !> dim= Ndimq*Ndimq
      complex(dp), allocatable :: ham_landau(:, :)
 
 
@@ -40,13 +57,13 @@
      NN=Nk
      nlines= 4
      knv3=NN*nlines
-     Ndim= Num_wann* Nq
+     Ndimq= Num_wann* Nq
      allocate( k_len (knv3))
      allocate( kpoint(knv3, 3))
-     allocate( ham_landau(Ndim, Ndim))
-     allocate( W( Ndim))
-     allocate( eigv( Ndim, knv3))
-     allocate( eigv_mpi( Ndim, knv3))
+     allocate( ham_landau(Ndimq, Ndimq))
+     allocate( W( Ndimq))
+     allocate( eigv( Ndimq, knv3))
+     allocate( eigv_mpi( Ndimq, knv3))
      eigv_mpi= 0d0
      eigv    = 0d0
      kpoint  = 0d0
@@ -77,7 +94,7 @@
            kend=k
            k2= kend(1)*Ka2+ kend(2)*Kb2
 
-           kpoint(i+(j-1)*NN,:)= kstart+ (kend-kstart)*dble(i-1)/dble(NN-1)
+           kpoint(i+(j-1)*NN,1:2)= kstart+ (kend-kstart)*dble(i-1)/dble(NN-1)
            
            temp= dsqrt((k2(1)- k1(1))**2 &
                  +(k2(2)- k1(2))**2)/dble(NN-1) 
@@ -90,17 +107,46 @@
         kpath_stop(j+1)= t1
      enddo
 
+     !> deal with the magnetic field
+     !> first transform the Bx By into B*Cos\theta, B*Sin\theta
+     if (abs(By)<1e-8) then
+        theta= 0d0
+     elseif (By>0) then
+        theta = atan(Bx/By)
+     else
+        theta = atan(Bx/By)+ pi
+     endif
+     if (abs(theta)<1e-8 .and. Bx<0 ) theta= theta+ pi 
+
+     !> get the shortest bond in the home unit cell
+     dis1= 9999999d0
+     do ia1=1, Num_atoms
+        do ia2=1, Num_atoms
+           R1= Atom_position(:, ia1)
+           R2= Atom_position(:, ia2)
+           call rotate(R1, tau1)
+           call rotate(R2, tau2)
+           dis= (tau2(2)-tau1(2))*Cos(theta)- (tau2(1)-tau1(1))*Sin(theta) 
+           if (dis< dis1) dis1= dis
+        enddo
+     enddo
+
+     !> The flux in the supercell should be 2*pi
+     B0= 2d0*pi/ (dis1* Ruc_new(3)*Nq)
+     Bx= B0* Cos(theta)
+     By= B0* Sin(theta)
+
 
      !> calculate the landau levels along special k line
      do ik=1+ cpuid, knv3, num_cpu
 
-        k = kpoint(ik, :)
-
-        call ham_3Dlandau(Ndim, Nq, Bmag, k, ham_landau)
+        if (cpuid==0) print *, ik, knv3
+        k3 = kpoint(ik, :)
+        call ham_3Dlandau(Ndimq, Nq, k3, ham_landau)
         
         !> diagonalization by call zheev in lapack
         W= 0d0
-        call eigensystem_c( 'N', 'U', Ndim ,ham_landau, W)
+        call eigensystem_c( 'N', 'U', Ndimq ,ham_landau, W)
 
         eigv(:, ik)= W
      enddo !ik
@@ -108,6 +154,17 @@
      call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
 
+     if (cpuid.eq.0) then
+        open(unit=100, file='landaulevel_k.dat')
+        do j=1, Ndimq
+           do i=1, knv3
+              write(100,'(2f15.7, i8)')k_len(i), eigv_mpi(j, i)
+           enddo
+           write(100 , *)''
+        enddo
+        close(100)
+        write(stdout,*) 'calculate landau level done'
+     endif
 
      return
   end subroutine landau_level_k
@@ -121,16 +178,289 @@
   end subroutine landau_level_B
 
   !> calculate hamiltonian for landau levels
-  subroutine ham_3Dlandau(Ndim, Nq, Bmag, k, ham_landau)
+  subroutine ham_3Dlandau(Ndimq, Nq, k, ham_landau)
      use para
      implicit none
 
-     integer, intent(in) :: Ndim
+     integer, intent(in) :: Ndimq
      integer, intent(in) :: Nq
-     real(dp), intent(in) :: bmag
      real(dp), intent(in) :: k(3)
-     complex(dp), intent(out) :: ham_landau(Ndim, Ndim)
+     complex(dp), intent(out) :: ham_landau(Ndimq, Ndimq)
 
+     !> inta-hopping for the supercell
+     complex(dp), allocatable :: H00(:, :)
+
+     !> inter-hopping for the supercell
+     complex(dp), allocatable :: H01(:, :)
+
+     ! loop index  
+     integer :: i1, i2
+
+     ! loop index
+     integer :: iR
+
+     ! index used to sign irvec     
+     integer :: ia,ib,ic
+     integer :: ia1, ia2
+
+     integer :: istart1, istart2
+     integer :: iend1, iend2
+
+     integer :: inew_ic
+
+     !> nwann= Num_wann/2
+     integer :: nwann
+     
+     integer, allocatable :: orbital_start(:)
+
+     ! new index used to sign irvec     
+     real(dp) :: new_ia,new_ib,new_ic
+
+     ! wave vector k times lattice vector R  
+     real(Dp) :: kdotr  
+     real(dp) :: phase
+     complex(dp) :: ratio
+     complex(dp) :: fac
+
+     real(dp) :: Rp1(3)
+     real(dp) :: Rp2(3)
+     real(dp) :: R1(3)
+     real(dp) :: R2(3)
+     real(dp) :: Ri(3)
+     real(dp) :: Rj(3)
+     real(dp) :: tau1(3)
+     real(dp) :: tau2(3)
+
+     allocate( H00( Ndimq, Ndimq))
+     allocate( H01( Ndimq, Ndimq))
+
+     nwann= Num_wann/2
+     allocate( orbital_start(Num_atoms+ 1))
+     orbital_start= 0
+     orbital_start(1)= 1
+     do ia=1, Num_atoms
+        orbital_start(ia+1)= orbital_start(ia)+ nprojs(ia)
+     enddo
+
+     !> calculate intra-hopping
+     H00=0.0d0 
+     ! i1 column index
+     do i1=1, Nq
+        ! i2 row index
+        do i2=1, Nq
+           if (abs(i2-i1)> ijmax) cycle
+           !> sum over R points to get H(k1, k2)
+           do iR=1, Nrpts
+              ia=irvec(1,iR)
+              ib=irvec(2,iR)
+              ic=irvec(3,iR)
+      
+              !> new lattice
+              call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
+      
+              inew_ic= int(new_ic)
+              if (inew_ic /= (i2-i1)) cycle
+      
+              !> exp(i k.R)
+              kdotr= k(1)*new_ia+ k(2)*new_ib
+              ratio= cos(2d0*pi*kdotr)+ zi*sin(2d0*pi*kdotr)
+      
+              R1= (i1-1)*Ruc_new
+              R2= new_ia*Rua_new+ new_ib*Rub_new+ (i2-1)*Ruc_new
+              call rotate(R1, Rp1)
+              call rotate(R2, Rp2)
+      
+              do ia1=1, Num_atoms
+              do ia2=1, Num_atoms
+                 R1= Atom_position(:, ia1)
+                 R2= Atom_position(:, ia2)
+                 call rotate(R1, tau1)
+                 call rotate(R2, tau2)
+      
+                
+                 Ri= Rp1+ tau1
+                 Rj= Rp2+ tau2
+      
+                 phase= By*(Rj(3)+Ri(3))*(Rj(1)-Ri(1))  &
+                      - Bx*(Rj(3)+Ri(3))*(Rj(2)-Ri(2))
+                 fac= cos(phase)+ zi*sin(phase)
+      
+                !write(*, '(a, 4i5   )') 'iR, ia ib ic', ir, ia, ib, ic
+                !write(*, '(a, 4f10.5)') '            ', new_ia, new_ib, new_ic
+                !write(*, '(a, 3f10.5)') 'Ri', Ri
+                !write(*, '(a, 3f10.5)') 'Rj', Rj
+                !write(*, '(a, 3f10.5)') 'phase', phase
+      
+                 istart1= (i2-1)*Num_wann+ orbital_start(ia1)
+                 iend1= (i2-1)*Num_wann+ orbital_start(ia1+1)- 1 
+                 istart2= (i1-1)*Num_wann+ orbital_start(ia2)
+                 iend2= (i1-1)*Num_wann+ orbital_start(ia2+1)- 1
+                 
+                 H00( istart1:iend1, istart2:iend2) &
+                 = H00( istart1:iend1, istart2:iend2) &
+                 + HmnR( istart1- (i2-1)*Num_wann:iend1- (i2-1)*Num_wann, &
+                 istart2- (i1-1)*Num_wann:iend2- (i1-1)*Num_wann, iR)*ratio/ndegen(iR)* fac
+      
+                 !> there is soc term in the hr file
+                 if (soc>0) then
+                    istart1= (i2-1)*Num_wann+ orbital_start(ia1) + Nwann
+                    iend1= (i2-1)*Num_wann+ orbital_start(ia1+1)- 1 + Nwann 
+                    istart2= (i1-1)*Num_wann+ orbital_start(ia2)
+                    iend2= (i1-1)*Num_wann+ orbital_start(ia2+1)- 1
+                    
+                    H00( istart1:iend1, istart2:iend2) &
+                    = H00( istart1:iend1, istart2:iend2) &
+                    + HmnR( istart1- (i2-1)*Num_wann:iend1- (i2-1)*Num_wann, &
+                    istart2- (i1-1)*Num_wann:iend2- (i1-1)*Num_wann, iR)*ratio/ndegen(iR)* fac
+      
+                    istart1= (i2-1)*Num_wann+ orbital_start(ia1)
+                    iend1= (i2-1)*Num_wann+ orbital_start(ia1+1)- 1 
+                    istart2= (i1-1)*Num_wann+ orbital_start(ia2) + Nwann
+                    iend2= (i1-1)*Num_wann+ orbital_start(ia2+1)- 1 + Nwann
+                    
+                    H00( istart1:iend1, istart2:iend2) &
+                    = H00( istart1:iend1, istart2:iend2) &
+                    + HmnR( istart1- (i2-1)*Num_wann:iend1- (i2-1)*Num_wann, &
+                    istart2- (i1-1)*Num_wann:iend2- (i1-1)*Num_wann, iR)*ratio/ndegen(iR)* fac
+      
+                    istart1= (i2-1)*Num_wann+ orbital_start(ia1) + Nwann
+                    iend1= (i2-1)*Num_wann+ orbital_start(ia1+1)- 1 + Nwann 
+                    istart2= (i1-1)*Num_wann+ orbital_start(ia2) + Nwann
+                    iend2= (i1-1)*Num_wann+ orbital_start(ia2+1)- 1 + Nwann
+                    
+                    H00( istart1:iend1, istart2:iend2) &
+                    = H00( istart1:iend1, istart2:iend2) &
+                    + HmnR( istart1- (i2-1)*Num_wann:iend1- (i2-1)*Num_wann, &
+                    istart2- (i1-1)*Num_wann:iend2- (i1-1)*Num_wann, iR)*ratio/ndegen(iR)* fac
+                 endif ! soc
+              enddo ! ia2
+              enddo ! ia1
+           enddo ! iR
+        enddo ! i2
+     enddo ! i1
+
+ 
+
+     !> check hermitcity
+     do i1=1,Nq*Num_wann
+     do i2=1,Nq*Num_wann
+        if(abs(H00(i1,i2)-conjg(H00(i2,i1))).ge.1e-6)then
+          write(stdout,*)'there are something wrong with H00'
+          print *, i1, i2, H00(i1, i2)
+          stop
+        endif 
+     enddo
+     enddo
+
+     !>> calculate inter-hopping
+     H01=0.0d0 
+     ! i1 column index
+     do i1=1, Nq
+        ! i2 row index
+        do i2=1, Nq
+           !> sum over R points to get H(k1, k2)
+           do iR=1, Nrpts
+              ia=irvec(1,iR)
+              ib=irvec(2,iR)
+              ic=irvec(3,iR)
+      
+              !> new lattice
+              call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
+      
+              inew_ic= int(new_ic)
+              if (inew_ic /= (i2+ Nq -i1)) cycle
+      
+              !> exp(i k.R)
+              kdotr= k(1)*new_ia+ k(2)*new_ib
+              ratio= cos(2d0*pi*kdotr)+ zi*sin(2d0*pi*kdotr)
+      
+              R1= (i1-1)*Ruc_new
+              R2= new_ia*Rua_new+ new_ib*Rub_new+ (i2-1+ Nq)*Ruc_new
+              call rotate(R1, Rp1)
+              call rotate(R2, Rp2)
+      
+              do ia1=1, Num_atoms
+              do ia2=1, Num_atoms
+                 R1= Atom_position(:, ia1)
+                 R2= Atom_position(:, ia2)
+                 call rotate(R1, tau1)
+                 call rotate(R2, tau2)
+      
+                
+                 Ri= Rp1+ tau1
+                 Rj= Rp2+ tau2
+      
+                 phase= alpha*By*(Rj(3)+Ri(3))*(Rj(1)-Ri(1))  &
+                      - alpha*Bx*(Rj(3)+Ri(3))*(Rj(2)-Ri(2))
+                 fac= cos(phase)+ zi*sin(phase)
+      
+                !write(*, '(a, 4i5   )') 'iR, ia ib ic', ir, ia, ib, ic
+                !write(*, '(a, 4f10.5)') '            ', new_ia, new_ib, new_ic
+                !write(*, '(a, 3f10.5)') 'Ri', Ri
+                !write(*, '(a, 3f10.5)') 'Rj', Rj
+                !write(*, '(a, 3f10.5)') 'phase', phase
+      
+                 istart1= (i2-1)*Num_wann+ orbital_start(ia1)
+                 iend1= (i2-1)*Num_wann+ orbital_start(ia1+1)- 1 
+                 istart2= (i1-1)*Num_wann+ orbital_start(ia2)
+                 iend2= (i1-1)*Num_wann+ orbital_start(ia2+1)- 1
+                 
+                 H01( istart1:iend1, istart2:iend2) &
+                 = H01( istart1:iend1, istart2:iend2) &
+                 + HmnR( istart1- (i2-1)*Num_wann:iend1- (i2-1)*Num_wann, &
+                 istart2- (i1-1)*Num_wann:iend2- (i1-1)*Num_wann, iR)*ratio/ndegen(iR)* fac
+      
+                 !> there is soc term in the hr file
+                 if (soc>0) then
+                    istart1= (i2-1)*Num_wann+ orbital_start(ia1) + Nwann
+                    iend1= (i2-1)*Num_wann+ orbital_start(ia1+1)- 1 + Nwann 
+                    istart2= (i1-1)*Num_wann+ orbital_start(ia2)
+                    iend2= (i1-1)*Num_wann+ orbital_start(ia2+1)- 1
+                    
+                    H01( istart1:iend1, istart2:iend2) &
+                    = H01( istart1:iend1, istart2:iend2) &
+                    + HmnR( istart1- (i2-1)*Num_wann:iend1- (i2-1)*Num_wann, &
+                    istart2- (i1-1)*Num_wann:iend2- (i1-1)*Num_wann, iR)*ratio/ndegen(iR)* fac
+      
+                    istart1= (i2-1)*Num_wann+ orbital_start(ia1)
+                    iend1= (i2-1)*Num_wann+ orbital_start(ia1+1)- 1 
+                    istart2= (i1-1)*Num_wann+ orbital_start(ia2) + Nwann
+                    iend2= (i1-1)*Num_wann+ orbital_start(ia2+1)- 1 + Nwann
+                    
+                    H01( istart1:iend1, istart2:iend2) &
+                    = H01( istart1:iend1, istart2:iend2) &
+                    + HmnR( istart1- (i2-1)*Num_wann:iend1- (i2-1)*Num_wann, &
+                    istart2- (i1-1)*Num_wann:iend2- (i1-1)*Num_wann, iR)*ratio/ndegen(iR)* fac
+      
+                    istart1= (i2-1)*Num_wann+ orbital_start(ia1) + Nwann
+                    iend1= (i2-1)*Num_wann+ orbital_start(ia1+1)- 1 + Nwann 
+                    istart2= (i1-1)*Num_wann+ orbital_start(ia2) + Nwann
+                    iend2= (i1-1)*Num_wann+ orbital_start(ia2+1)- 1 + Nwann
+                    
+                    H01( istart1:iend1, istart2:iend2) &
+                    = H01( istart1:iend1, istart2:iend2) &
+                    + HmnR( istart1- (i2-1)*Num_wann:iend1- (i2-1)*Num_wann, &
+                    istart2- (i1-1)*Num_wann:iend2- (i1-1)*Num_wann, iR)*ratio/ndegen(iR)* fac
+                 endif ! soc
+              enddo ! ia2
+              enddo ! ia1
+           enddo ! iR
+        enddo ! i2
+     enddo ! i1
+
+
+     !> periodic boundary
+     ham_landau= H00+ H01* exp(zi*k(3)) + conjg(transpose(H01))* exp(-zi*k(3))
+
+     !> check hermitcity
+     do i1=1,Nq*Num_wann
+     do i2=1,Nq*Num_wann
+        if(abs(H00(i1,i2)-conjg(H00(i2,i1))).ge.1e-6)then
+          write(stdout,*)'there are something wrong with ham_landau'
+          stop
+        endif 
+     enddo
+     enddo
 
      return
   end subroutine ham_3Dlandau

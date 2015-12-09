@@ -18,8 +18,8 @@
     ! file existence
     logical  :: exists
 
-	  character*4 :: c_temp
-	  integer :: i_temp
+     character*4 :: c_temp
+     integer :: i_temp
 	  real(dp) :: r_temp
 
      integer :: namelen
@@ -105,14 +105,15 @@
      !> bulk band
 	  if(cpuid.eq.0)write(stdout, *)'begin to calculate bulk band'
      if (BulkBand_calc) then
-        call ek_bulk
+       !call ek_bulk
        !call ek_bulk_fortomas
        !call ek_bulk_spin
        !call dos_calc
        !call ek_bulk2D
        !call fermisurface3D
-        call gapshape
+       !call gapshape
        !call gapshape3D
+        call landau_level_k
      endif
      if(cpuid.eq.0)write(stdout, *)'end calculate bulk band'
 
