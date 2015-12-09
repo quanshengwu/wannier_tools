@@ -1,15 +1,16 @@
 wannier90_hr.dat hrmn.dat_WTe2  ! input file
 output        ! output file
 F             ! BulkBand_calc
-T             ! SlabBand_calc
+F             ! SlabBand_calc
 F             ! WireBand_calc
 F             ! SlabSS_calc
 F             ! SlabArc_calc
 F             ! SlabSpintexture_calc
 F             ! wanniercenter_calc
-20             ! Nk
+F             ! berry
+50             ! Nk
 2000          ! omega number
- 0.050 0.051   ! omegamin omegamax
+0.050 0.051   ! omegamin omegamax
 0.0600        ! E_arc
 10            ! nslab
 1             ! np   
@@ -17,8 +18,9 @@ F             ! wanniercenter_calc
 44            ! ntotch
 1             ! soc
 0.000040      ! eta
-7.3128        ! e-fermi
-000.000 0 0         ! Bx By Bz
+7.3147  7.3747       ! e-fermi
+0.0           ! surf_onsite
+0 0 0         ! Bx By Bz
 3.477000       0.000          0.0000000
 0.000000       6.249          0.0000000
 0.000000       0.000          14.018000
@@ -48,16 +50,12 @@ F             ! wanniercenter_calc
  Te   px  py  pz
  Te   px  py  pz
  Te   px  py  pz
-     9        ! number of k line
-G 0.00000  0.00000  0.00000    Y 0.00000  0.50000  0.00000    ! k point path
-Y 0.00000  0.50000  0.00000    S 0.50000  0.50000  0.00000    
-S 0.50000  0.50000  0.00000    X 0.50000  0.00000  0.00000    
-X 0.50000  0.00000  0.00000    G 0.00000  0.00000  0.00000    
-G 0.00000  0.00000  0.00000    Z 0.00000  0.00000  0.50000    
-Z 0.00000  0.00000  0.50000    U 0.00000  0.50000  0.50000    
-U 0.00000  0.50000  0.50000    R 0.50000  0.50000  0.50000    
-R 0.5      0.5      0.5        T 0.5      0.0      0.5        
-T 0.5      0.0      0.5        Z 0.0      0.0      0.5        
+     1        ! number of k line
+G 0.00000  0.00000  0.00000    X 0.50000  0.00000  0.00000    ! k point path
 1 0 0   ! Umatrix for new lattice 010 surface
 0 1 0 
 0 0 1
+W1 0.1213 0.04766 0    W2  0.122 0.03603 0
+W1 -0.1213 0.04766 0    W2  -0.122 0.03603 0
+W1 -0.1213 -0.04766 0    W2  -0.122 -0.03603 0
+W1 0.1213 -0.04766 0    W2  0.122 -0.03603 0

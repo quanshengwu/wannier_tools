@@ -375,7 +375,7 @@
       do ir=1, nrpts
          do i=1, Num_wann_new
             do j=1, Num_wann_new
-               write(105, '(5I5, 2f16.8)')irvec(:, ir), HmnR(i, j, ir)
+               write(105, '(5I5, 2f16.8)')irvec(:, ir), i, j, HmnR(i, j, ir)
             enddo
          enddo
       enddo

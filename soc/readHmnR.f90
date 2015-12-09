@@ -40,6 +40,7 @@
            irvec(2, ir)=i2
            irvec(3, ir)=i3
         enddo
+
      else
 
         !File socBi2Se3.HWR exist, We are using HmnR from WHM
@@ -57,6 +58,24 @@
            enddo
         enddo
         HmnR= HmnR*27.2114d0
+
+        nwan= Num_wann
+        open(unit=105, file='wannier90_hr.dat')
+        write(105, *)'hr file transformed from HWR'
+        write(105, *)Nwan
+        write(105, *)nrpts
+        write(105, '(15I5)')(ndegen(i), i=1, nrpts)
+        do ir=1, nrpts
+           do i=1, Nwan
+              do j=1, Nwan
+                 write(105, '(5I5, 2f16.8)')irvec(:, ir), i, j, HmnR(i, j, ir)
+              enddo
+           enddo
+        enddo
+        close(105)
+
+
+
      endif ! HWR or not
      close(12)
 

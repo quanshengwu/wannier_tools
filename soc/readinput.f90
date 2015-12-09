@@ -183,8 +183,8 @@
            kend  = k3line_end(:, j)
            k1= kstart(1)*Kua+ kstart(2)*Kub+ kstart(3)*Kuc
            k2= kend(1)*Kua+ kend(2)*Kub+ kend(3)*Kuc
-          !k1= kstart
-          !k2= kend
+           k1= kstart
+           k2= kend
 
            k3points(:, i+ (j-1)*NN)= kstart+ (kend- kstart)*dble(i-1)/dble(NN-1)
            

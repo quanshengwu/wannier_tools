@@ -192,8 +192,8 @@
         write(101, '(3a)')'set terminal  pngcairo truecolor enhanced', &
            ' font ", 36" size 1920, 1680'
         write(101, '(a)')"set output 'surfdos_l.png'"
-        write(101,'(2a)') '#set palette defined (-10 "green", ', &
-           '0 "yellow", 10 "red" )'
+        write(101,'(2a)') 'set palette defined ( -10 "#194eff", ', &
+           '0 "white", 10 "red" )'
         write(101, '(a)')'set palette rgbformulae 33,13,10'
         write(101, '(a)')'set style data linespoints'
         write(101, '(a)')'set size ratio -1'
@@ -232,8 +232,8 @@
         write(101, '(3a)')'set terminal  pngcairo truecolor enhanced', &
            ' font ", 36" size 1920, 1680'
         write(101, '(a)')"set output 'surfdos_r.png'"
-        write(101,'(2a)') '#set palette defined (-10 "green", ', &
-           '0 "yellow", 10 "red" )'
+        write(101,'(2a)') 'set palette defined ( -10 "#194eff", ', &
+           '0 "white", 10 "red" )'
         write(101, '(a)')'set palette rgbformulae 33,13,10'
         write(101, '(a)')'set style data linespoints'
         write(101, '(a)')'unset ztics'

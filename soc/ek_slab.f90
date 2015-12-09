@@ -57,8 +57,8 @@
     !ke(1,:)=(/0.5d0, 0.0d0/)  
     !kp(2,:)=(/0.5d0, 0.0d0/)  ; kpath_name(2)= 'X'
     !ke(2,:)=(/0.5d0, 0.20d0/)  ! K
-     kp(1,:)=(/0.0d0, 0.0d0/)  ; kpath_name(1)= 'G'
-     ke(1,:)=(/0.5d0, 0.0d0/)  
+     kp(1,:)=(/0.3d0, 0.0d0/)  ; kpath_name(1)= 'G'
+     ke(1,:)=(/0.0d0, 0.0d0/)  
      kp(2,:)=(/0.5d0, 0.0d0/)  ; kpath_name(2)= 'X'
      ke(2,:)=(/0.5d0, 0.50d0/)  ! K
      kp(3,:)=(/0.5d0, 0.50d0/) ; kpath_name(3)= 'M'     
@@ -73,7 +73,7 @@
   
 
 
-     nlines= 4
+     nlines= 1
      NN=Nk
      knv3=NN*nlines
      allocate( kpoint(knv3, 3))

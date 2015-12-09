@@ -157,8 +157,8 @@
         write(101, '(3a)')'set terminal  pngcairo truecolor enhanced', &
            ' font ",60" size 3680, 3360'
         write(101, '(a)')"set output 'arc_l.png'"
-        write(101,'(2a)') 'set palette defined ( -10 "white", ', &
-           '0 "yellow", 10 "red" )'
+        write(101,'(2a)') 'set palette defined ( -10 "#194eff", ', &
+           '0 "white", 10 "red" )'
         write(101, '(a)')'#set palette rgbformulae 33,13,10'
         write(101, '(a)')'unset ztics'
         write(101, '(a)')'unset key'
@@ -187,8 +187,8 @@
         write(101, '(3a)')'set terminal  pngcairo truecolor enhanced', &
            ' font ",60" size 3680, 3360'
         write(101, '(a)')"set output 'arc_r.png'"
-        write(101,'(2a)') 'set palette defined ( -10 "white", ', &
-           '0 "yellow", 10 "red" )'
+        write(101,'(2a)') 'set palette defined ( -10 "#194eff", ', &
+           '0 "white", 10 "red" )'
         write(101, '(a)')'#set palette rgbformulae 33,13,10'
         write(101, '(a)')'unset ztics'
         write(101, '(a)')'unset key'

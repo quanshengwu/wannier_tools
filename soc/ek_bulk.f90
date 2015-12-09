@@ -1,4 +1,5 @@
 ! calculate bulk's energy band using wannier TB method
+
   subroutine ek_bulk
 
      use mpi
@@ -28,6 +29,7 @@
 	  eigv_mpi= 0d0
 
      do ik= 1+cpuid, knv3, num_cpu
+	     if (cpuid==0) write(*, *)'ik, knv3 ', ik, knv3
 	     if (cpuid==0) write(stdout, *)'ik, knv3 ', ik, knv3
 
         k = k3points(:, ik)
@@ -254,4 +256,76 @@
      
    return
    end subroutine ek_bulk_spin
+
+   subroutine ek_bulk_fortomas
+
+     use mpi
+     use para
+
+     implicit none
+
+     integer :: ik1, ik2, ik3
+	  integer :: Nk_t
+     integer :: ierr
+     real(Dp) :: k(3), k1, k2, k3
+     real(Dp) :: W(Num_wann)
+     
+     ! Hamiltonian of bulk system
+     complex(Dp) :: Hamk_bulk(Num_wann,Num_wann) 
+
+     if (cpuid==0)then
+        open(unit=14, file='bulkek-fortomas.dat')
+        open(unit=15, file='bulkek-math.dat')
+     endif
+
+     Nk_t= 10
+     if (cpuid==0) write (15, '(A)', advance="NO")'{'
+     do ik1=0, Nk_t
+     if (cpuid==0) write (15, '(A)', advance="NO")'{'
+     do ik2=0, Nk_t
+     if (cpuid==0) write (15, '(A)', advance="NO")'{'
+     do ik3=0, Nk_t
+        k1= dble(ik1)/Nk_t
+        k2= dble(ik2)/Nk_t
+        k3= dble(ik3)/Nk_t
+
+        k(1)= 0.5d0*k2+ 0.5d0*k3
+        k(2)= 0.5d0*k3+ 0.5d0*k1
+        k(3)= 0.5d0*k1+ 0.5d0*k2
+
+        ! calculation bulk hamiltonian
+        Hamk_bulk= 0d0
+        call ham_bulk(k, Hamk_bulk)
+
+        !> diagonalization by call zheev in lapack
+        W= 0d0
+        call eigensystem_c( 'N', 'U', Num_wann ,Hamk_bulk, W)
+
+        if (cpuid==0) then
+           write(14, '(3i5, 4f12.8)')ik1, ik2, ik3, W(9:12)
+           if (ik3/=Nk_t) then
+              write(15, '(a, 4(f12.7, a))', advance="No")"{", W(9), ",", W(10), ",", W(11), ",", W(12), "},"
+           else
+              write(15, '(a, 4(f12.7, a))', advance="No")"{", W(9), ",", W(10), ",", W(11), ",", W(12), "}"
+           endif
+        endif
+     enddo !ik3
+     if (ik2/=Nk_t) then
+     if (cpuid==0) write (15, '(A)', advance="NO")'},'
+     else
+     if (cpuid==0) write (15, '(A)', advance="NO")'}'
+     endif
+     enddo !ik2
+     if (ik1/=Nk_t) then
+     if (cpuid==0) write (15, '(A)', advance="NO")'},'
+     else
+     if (cpuid==0) write (15, '(A)', advance="NO")'}'
+     endif
+     enddo !ik1
+     if (cpuid==0) write (15, '(A)', ADVANCE="NO")'}'
+     if (cpuid==0) close(14)
+   
+   return
+   end subroutine ek_bulk_fortomas
+
 
