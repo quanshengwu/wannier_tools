@@ -113,7 +113,8 @@
        !call fermisurface3D
        !call gapshape
        !call gapshape3D
-        call landau_level_k
+       !call landau_level_k
+        call landau_level_B
      endif
      if(cpuid.eq.0)write(stdout, *)'end calculate bulk band'
 

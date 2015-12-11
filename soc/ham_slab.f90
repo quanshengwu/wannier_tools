@@ -141,8 +141,6 @@
       
               R1= (i1-1)*Ruc_new
               R2= new_ia*Rua_new+ new_ib*Rub_new+ (i2-1)*Ruc_new
-              call rotate(R1, Rp1)
-              call rotate(R2, Rp2)
       
               do ia1=1, Num_atoms
               do ia2=1, Num_atoms
