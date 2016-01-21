@@ -19,10 +19,8 @@
 
      real(dp) :: kdotr
      real(dp) :: k(3)
+     real(dp) :: k11(3), k12(3), k21(3), k22(3)
 
-     real(dp) :: k1min, k1max, k2min, k2max, kz
-     real(dp) :: k1min_shape, k1max_shape, k2min_shape, k2max_shape
-   
      !> R points coordinates (3, nrpts)
      real(dp), allocatable :: crvec(:, :)
 
@@ -52,8 +50,8 @@
      nk1= Nk
      nk2= Nk
      knv2= nk1*nk2
-     allocate( kslice(2, knv2))
-     allocate( kslice_shape(2, knv2))
+     allocate( kslice(3, knv2))
+     allocate( kslice_shape(3, knv2))
      allocate( W       (Num_wann))
      allocate( crvec    (3, nrpts))
      allocate( Omega    (3, knv2))
@@ -70,25 +68,32 @@
      kslice=0d0
      kslice_shape=0d0
 
-     k1min= 0.00d0/1d0
-     k1max= 0.30d0/1d0
-     k2min= 0.00d0/1d0
-     k2max= 0.20d0/1d0
-     kz= 0.0d0
+     !TB
+    !k11=(/-0.5d0,  0.0d0, -0.5d0/) ! 
+    !k12=(/ 0.5d0,  0.0d0,  0.5d0/) ! X
+    !k21=(/ 0.0d0,  0.5d0,  0.5d0/) ! 
+    !k22=(/ 0.0d0, -0.5d0, -0.5d0/) ! Y
+     !DFT
+    !k11=(/ 0.0d0, -1.0d0, -1.0d0/) ! -X
+    !k12=(/ 0.0d0,  1.0d0,  1.0d0/) ! X
+    !k21=(/-1.0d0,  0.0d0, -1.0d0/) ! -Y
+    !k22=(/ 1.0d0,  0.0d0,  1.0d0/) ! Y
+     k11=(/ 0.0d0, -0.5d0, -0.5d0/) ! -X
+     k12=(/ 0.0d0,  0.5d0,  0.5d0/) ! X
+     k21=(/-0.5d0,  0.0d0, -0.5d0/) ! -Y
+     k22=(/ 0.5d0,  0.0d0,  0.5d0/) ! Y
+
+
+
      ik =0
      do i= 1, nk1
         do j= 1, nk2
            ik =ik +1
-           kslice(1, ik)=k1min+ (i-1)*(k1max-k1min)/dble(nk1-1)
-           kslice(2, ik)=k2min+ (j-1)*(k2max-k2min)/dble(nk2-1)
-           kslice_shape(1, ik)= kslice(1, ik)* Kua(1)+ kslice(2, ik)* Kub(1)
-           kslice_shape(2, ik)= kslice(1, ik)* Kua(2)+ kslice(2, ik)* Kub(2)
+           kslice(:, ik)= k11+ (k12-k11)*(i-1)/dble(nk1-1)  &
+                     + k21+ (k22-k21)*(j-1)/dble(nk2-1)  
+           kslice_shape(:, ik)= kslice(1, ik)* Kua+ kslice(2, ik)* Kub+ kslice(3, ik)* Kuc 
         enddo
      enddo
-     k2min_shape=minval(kslice_shape(2,:))
-     k2max_shape=maxval(kslice_shape(2,:))
-     k1min_shape=minval(kslice_shape(1,:))
-     k1max_shape=maxval(kslice_shape(1,:))
 
      !> get R coordinates 
      do iR=1, Nrpts
@@ -99,9 +104,7 @@
         if (cpuid==0) print *, ik, knv2
 
         !> diagonalize hamiltonian
-        k(1)= kslice(1, ik)
-        k(2)= kslice(2, ik)
-        k(3)= kz
+        k= kslice(:, ik)
 
         ! calculation bulk hamiltonian
         UU= 0d0
@@ -125,6 +128,7 @@
            vz= vz+ zi*crvec(3, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
         enddo ! iR
 
+        !> unitility rotate velocity
         call mat_mul(Num_wann, vx, UU, Amat) 
         call mat_mul(Num_wann, UU_dag, Amat, vx) 
         call mat_mul(Num_wann, vy, UU, Amat) 
@@ -134,8 +138,8 @@
 
         DHDk= 0d0
         DHDkdag= 0d0
-        do n= 1, Num_wann
-           do m= 1, Num_wann
+        do m= 1, Num_wann
+           do n= 1, Num_wann
               if (W(n) > 0d0 .and. W(m)<0d0) then
                  DHDk(n, m, 1)= zi*vx(n, m)/(W(m)-W(n))
                  DHDk(n, m, 2)= zi*vy(n, m)/(W(m)-W(n))
@@ -148,8 +152,8 @@
            enddo ! m
         enddo ! n
 
-        do n= 1, Num_wann
-           do m= 1, Num_wann
+        do m= 1, Num_wann
+           do n= 1, Num_wann
               if (W(m) > 0d0 .and. W(n)< 0d0) then
                  DHDkdag(n, m, 1)= zi*vx(n, m)/(W(m)-W(n))
                  DHDkdag(n, m, 2)= zi*vy(n, m)/(W(m)-W(n))
@@ -164,19 +168,19 @@
 
         !> rotate DHDk and DHDkdag to diagonal basis
         do i=1, 3
-        !  call mat_mul(Num_wann, DHDk(:, :, i), UU, Amat) 
-        !  call mat_mul(Num_wann, UU_dag, Amat, DHDk(:, :, i)) 
-        !  call mat_mul(Num_wann, DHDkdag(:, :, i), UU, Amat) 
-        !  call mat_mul(Num_wann, UU_dag, Amat, DHDkdag(:, :, i)) 
+           call mat_mul(Num_wann, DHDk(:, :, i), UU_dag, Amat) 
+           call mat_mul(Num_wann, UU, Amat, DHDk(:, :, i)) 
+           call mat_mul(Num_wann, DHDkdag(:, :, i), UU_dag, Amat) 
+           call mat_mul(Num_wann, UU, Amat, DHDkdag(:, :, i)) 
         enddo
 
         call mat_mul(Num_wann, DHDk(:, :, 1), DHDkdag(:, :, 2), vz)
         call mat_mul(Num_wann, DHDk(:, :, 2), DHDkdag(:, :, 3), vx)
         call mat_mul(Num_wann, DHDk(:, :, 3), DHDkdag(:, :, 1), vy)
 
-        call trace(Num_wann, vx, Omega(1, ik))
-        call trace(Num_wann, vy, Omega(2, ik))
-        call trace(Num_wann, vz, Omega(3, ik))
+        call Im_trace(Num_wann, vx, Omega(1, ik))
+        call Im_trace(Num_wann, vy, Omega(2, ik))
+        call Im_trace(Num_wann, vz, Omega(3, ik))
 
      enddo ! ik
 
@@ -190,7 +194,7 @@
         do i= 1, nk1
            do j= 1, nk2
               ik= ik+ 1
-              write(18, '(20f18.10)')kslice(:, ik), Omega_mpi(:, ik)
+              write(18, '(20f18.10)')kslice_shape(:, ik), Omega_mpi(:, ik)
            enddo
            write(18, *) ' '
         enddo
@@ -223,6 +227,23 @@
 
      return
   end subroutine Fourier_R_to_k
+
+  subroutine Im_trace(ndim, A, tr)
+     use para, only : dp
+     implicit none
+     integer :: ndim
+     complex(dp), intent(out) :: tr
+     complex(dp), intent(in) :: A(ndim, ndim)
+
+     integer :: i
+
+     tr = 0d0
+     do i=1, ndim
+        tr= tr+ aimag(A(i, i))
+     enddo
+
+     return
+  end subroutine Im_trace
 
   subroutine trace(ndim, A, tr)
      use para, only : dp

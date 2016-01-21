@@ -167,7 +167,9 @@
      lambda_p= 0d0
      lambda_d= 0d0
      read(1001, *) lambda_p(:)
+     write(*, '(a,100f7.4)')'lambda_p input', lambda_p
      read(1001, *) lambda_d(:)
+     write(*, '(a,100f7.4)')'lambda_d input', lambda_d
 
      write(*,*)'read input.dat file successfully'
 

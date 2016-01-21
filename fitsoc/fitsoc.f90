@@ -238,10 +238,10 @@
       do ik=1, knv3
          k= kpoints(:, ik)
          if (abs(k(1))<0.2d0 .and. abs(k(2))<0.2d0 .and. abs(k(3))<0.2d0)then
-        !   weight(:, ik)=30d0
+            weight(:, ik)=30d0
          endif
          if (abs(k(1))<0.1d0 .and. abs(k(2))<0.1d0 .and. abs(k(3))<0.1d0)then
-        !   weight(:, ik)=300d0
+            weight(:, ik)=300d0
          endif
          if (abs(k(1))<0.02d0 .and. abs(k(2))<0.02d0 .and. abs(k(3))<0.02d0)then
             weight(:, ik)=3000d0
@@ -288,8 +288,12 @@
 
       x= p(1, :)
       write(*,*)'iter', iter
-      write(*, '(30f10.4)')x
-      write(*, *)' '
+      write(*,*)'p(atoms)'
+      write(*, '(30f10.4)')lambda_p
+      write(*,*)'d(atoms)'
+      write(*, '(30f10.4)')lambda_d
+      write(*,*)'efermi'
+      write(*, *)x(Num_atom_type*2+ 1)
 
       open(unit=14, file='bulkek-soc.dat')
       do i=1, num_wann_soc

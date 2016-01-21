@@ -29,7 +29,7 @@
      real(dp) :: emin
      real(dp) :: emax
      real(dp) :: t1, temp
-     real(dp) :: k(2), w
+     real(dp) :: k(2), w, s
      real(dp) :: k1(2)
      real(dp) :: k2(2)
 
@@ -57,19 +57,42 @@
      real(dp), allocatable :: k_len(:)
 
      kpath_name= ' '
-     kp(1,:)=(/0.5d0, 0.0d0/)  ; kpath_name(1)= 'X'
-     ke(1,:)=(/0.0d0, 0.0d0/)  
-     kp(2,:)=(/0.0d0, 0.0d0/)  ; kpath_name(2)= 'G'
+     kp(1,:)=(/0.5d0, 0.00d0/)  ; kpath_name(1)= 'X'
+     ke(1,:)=(/0.0d0, 0.00d0/)  
+     kp(2,:)=(/0.0d0, 0.00d0/)  ; kpath_name(2)= 'G'
      ke(2,:)=(/0.5d0, 0.50d0/)  ! K
      kp(3,:)=(/0.5d0, 0.50d0/) ; kpath_name(3)= 'M'     
      ke(3,:)=(/0.0d0, 0.5d0/)  ! K
      kp(4,:)=(/0.0d0, 0.5d0/)  ; kpath_name(4)= 'Y'     
      ke(4,:)=(/0.0d0, 0.0d0/)  ; kpath_name(5)= 'G'  
 
-     kp(5,:)=(/0.0d0, 0.0d0/)  ! Gamma
-     kp(6,:)=(/5.0d0, 0.0d0/)  ! Z
-    
-     nlines=4
+    !kp(1,:)=(/0.5d0, 0.00d0/)  ; kpath_name(1)= 'X'
+    !ke(1,:)=(/0.0d0, 0.00d0/)  
+    !kp(1,:)=(/0.266666d0, 0.2666660d0/)  ; kpath_name(1)= 'G'
+    !ke(1,:)=(/0.311111d0, 0.3111111d0/)  ! K
+    !kp(2,:)=(/0.333333d0, 0.3333330d0/) ; kpath_name(2)= 'K'     
+    !ke(2,:)=(/0.5d0, 0.0d0/)  ! K
+    !kp(3,:)=(/0.5d0, 0.0d0/)  ; kpath_name(3)= 'Y'     
+    !ke(3,:)=(/0.333333d0, 0.3333330d0/)  ! K
+    !kp(5,:)=(/0.333333d0, 0.3333330d0/)  ! K
+    !ke(5,:)=(/0.0d0, 0.0d0/)  ; kpath_name(5)= 'G'  
+
+
+    !kp(1,:)=(/0.2d0, 0.2d0/)  ! Gamma
+    !ke(1,:)=(/0.5d0, 0.5d0/)  ! Z
+
+    !kp(1,:)=(/-0.5d0, 0.00d0/)  ; kpath_name(1)= 'A'
+    !ke(1,:)=(/0.0d0, 0.00d0/)  
+    !kp(2,:)=(/0.0d0, 0.00d0/)  ; kpath_name(2)= 'G'
+    !ke(2,:)=(/0.5d0, 0.00d0/)  ; kpath_name(3)= 'A'
+   
+     kp(1,:)=(/0.3d0, 0.00d0/)  ; kpath_name(1)= 'X'
+     ke(1,:)=(/0.0d0, 0.00d0/)  
+     kp(1, 2)= surf_onsite
+     ke(1, 2)= surf_onsite
+     kp(2,:)=(/0.0d0, 0.00d0/)  ; kpath_name(2)= 'G'
+
+     nlines=1
      NN= Nk
      knv2=NN*nlines
      allocate( kpoint(knv2, 2))
@@ -96,7 +119,28 @@
            k_len(i+(j-1)*NN)= t1
         enddo
         kpath_stop(j+1)= t1
+
      enddo
+
+     k1= -0.5d0*ka2+0.5d0*kb2
+     t1= 0d0
+     do i=1, NN
+        s= (i-1d0)/(NN-1d0)-0.5d0
+        k2= k1
+        kpoint(i, 1)= s
+        kpoint(i, 2)= -2.818d0*s**3-0.2955*s
+        k1= kpoint(i, 1)*ka2+ kpoint(i, 2)*kb2
+        temp= dsqrt((k2(1)- k1(1))**2 &
+              +(k2(2)- k1(2))**2)
+
+        if (i.gt.1) then
+           t1=t1+temp
+        endif
+        k_len(i)= t1
+        print *, i, t1
+     enddo
+     stop
+
 
 
      allocate( omega(omeganum))
@@ -132,7 +176,8 @@
      enddo
 
      do ikp= 1+cpuid, knv2, num_cpu
-        if (cpuid==0) write(*, *) ikp, 'in', knv2
+        if (cpuid==0) write(*, *) ikp, 'ik', knv2
+        if (cpuid==0) write(stdout, *) ikp, 'ik', knv2
         k= kpoint(ikp,:)
 
         !> get the hopping matrix between two principle layers
@@ -145,8 +190,8 @@
            ! there are two method to calculate surface green's function 
            ! the method in 1985 is better, you can find the ref in the
            ! subroutine
-           ! call surfgreen_1985(w,GLL,GRR,H00,H01,ones)
-           call surfgreen_1984(w,GLL,GRR,H00,H01,ones)
+           call surfgreen_1985(w,GLL,GRR,H00,H01,ones)
+           !call surfgreen_1984(w,GLL,GRR,H00,H01,ones)
 
            ! calculate spectral function
            do i= 1, ndim
@@ -192,11 +237,11 @@
         write(101, '(3a)')'set terminal  pngcairo truecolor enhanced', &
            ' font ", 36" size 1920, 1680'
         write(101, '(a)')"set output 'surfdos_l.png'"
-        write(101,'(2a)') 'set palette defined ( -10 "#194eff", ', &
+        write(101,'(2a)') 'set palette defined (-10 "#194eff", ', &
            '0 "white", 10 "red" )'
-        write(101, '(a)')'set palette rgbformulae 33,13,10'
+        write(101, '(a)')'#set palette rgbformulae 33,13,10'
         write(101, '(a)')'set style data linespoints'
-        write(101, '(a)')'set size ratio -1'
+        write(101, '(a)')'#set size ratio -1'
         write(101, '(a)')'unset ztics'
         write(101, '(a)')'unset key'
         write(101, '(a)')'set pointsize 0.8'
@@ -209,8 +254,8 @@
         write(101, '(a)')'set ytics font ",48"'
         write(101, '(a)')'set ylabel font ",48"'
         write(101, '(a)')'set ylabel "Energy (eV)"'
-        write(101, '(a)')'set xtics offset 0, -1'
-        write(101, '(a)')'set ylabel offset -6, 0 '
+        write(101, '(a)')'#set xtics offset 0, -1'
+        write(101, '(a)')'#set ylabel offset -6, 0 '
         write(101, '(a, f8.5, a)')'set xrange [0: ', maxval(k_len), ']'
         write(101, '(a, f8.5, a, f8.5, a)')'set yrange [', emin, ':', emax, ']'
         write(101, 202, advance="no") (kpath_name(i), kpath_stop(i), i=1, nlines)
@@ -232,16 +277,16 @@
         write(101, '(3a)')'set terminal  pngcairo truecolor enhanced', &
            ' font ", 36" size 1920, 1680'
         write(101, '(a)')"set output 'surfdos_r.png'"
-        write(101,'(2a)') 'set palette defined ( -10 "#194eff", ', &
+        write(101,'(2a)') 'set palette defined (-10 "#194eff", ', &
            '0 "white", 10 "red" )'
-        write(101, '(a)')'set palette rgbformulae 33,13,10'
+        write(101, '(a)')'#set palette rgbformulae 33,13,10'
         write(101, '(a)')'set style data linespoints'
         write(101, '(a)')'unset ztics'
         write(101, '(a)')'unset key'
         write(101, '(a)')'set pointsize 0.8'
         write(101, '(a)')'set pm3d'
         write(101, '(a)')'set border lw 3'
-        write(101, '(a)')'set size ratio -1'
+        write(101, '(a)')'#set size ratio -1'
         write(101, '(a)')'#set view equal xyz'
         write(101, '(a)')'set view map'
         write(101, '(a)')'set cbtics font ",48"'
@@ -249,8 +294,8 @@
         write(101, '(a)')'set ytics font ",48"'
         write(101, '(a)')'set ylabel font ",48"'
         write(101, '(a)')'set ylabel "Energy (eV)"'
-        write(101, '(a)')'set xtics offset 0, -1'
-        write(101, '(a)')'set ylabel offset -6, 0 '
+        write(101, '(a)')'#set xtics offset 0, -1'
+        write(101, '(a)')'#set ylabel offset -6, 0 '
         write(101, '(a, f8.5, a)')'set xrange [0: ', maxval(k_len), ']'
         write(101, '(a, f8.5, a, f8.5, a)')'set yrange [', emin, ':', emax, ']'
         write(101, 202, advance="no") (kpath_name(i), kpath_stop(i), i=1, nlines)
@@ -265,8 +310,8 @@
      endif
 
 
-     202 format('set xtics (',:20('"',A3,'" ',F8.5,','))
-     203 format(A3,'" ',F8.5,')')
+     202 format('set xtics (',:20('"',A1,'" ',F8.5,','))
+     203 format(A1,'" ',F8.5,')')
      204 format('set arrow from ',F8.5,',',F10.5,' to ',F8.5,',',F10.5, ' nohead front lw 3')
  
 

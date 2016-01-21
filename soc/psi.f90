@@ -3,7 +3,7 @@
 
   subroutine psik()
     
-     use para,only : Dp,Num_wann,Nslab
+     use para,only : Dp,Num_wann,Nslab, stdout
      implicit none 
 
 ! loop index
@@ -74,3 +74,71 @@
      write(stdout,*) 'calculate psi  done'
      
   end
+
+! This subroutine is used to caculate energy dispersion for 
+! bulk system
+
+  subroutine psik_bulk()
+    
+     use para,only : Dp,Num_wann, stdout, Numoccupied
+     implicit none 
+
+! loop index
+     integer     :: i,ik, ib
+     integer     :: info
+
+! wave vector 
+     real(Dp)    :: k(3)
+     real(Dp)    :: kpoints(3, 8)
+      
+! eigenvalue 
+     real(Dp)    :: eigenvalue (Num_wann)
+     
+   
+! energy dispersion
+     complex(Dp) :: psi   (Num_wann)
+
+! hamiltonian slab
+     complex(Dp),allocatable :: CHamk(:,:)
+     complex(Dp),allocatable :: eigenvector(:,:)
+
+
+     allocate(CHamk(Num_wann,Num_wann))
+     allocate(eigenvector(Num_wann,Num_wann))
+
+
+     kpoints(:, 1)= (/0.0d0, 0.0d0, 0.0d0/)
+     kpoints(:, 2)= (/0.5d0, 0.0d0, 0.0d0/)
+     kpoints(:, 3)= (/0.0d0, 0.5d0, 0.0d0/)
+     kpoints(:, 4)= (/0.0d0, 0.0d0, 0.5d0/)
+     kpoints(:, 5)= (/0.5d0, 0.5d0, 0.5d0/)
+     kpoints(:, 6)= (/0.5d0, 0.5d0, 0.0d0/)
+     kpoints(:, 7)= (/0.0d0, 0.5d0, 0.5d0/)
+     kpoints(:, 8)= (/0.5d0, 0.0d0, 0.5d0/)
+
+     ib= Numoccupied
+     open(unit=100, file='wavefunction.dat')
+     do ik=1, 8
+
+        k=kpoints(:, ik)
+        ! calculate Hamiltonian
+        call ham_bulk(k,Chamk)
+        eigenvalue=0.0d0
+        eigenvector=Chamk
+        
+        ! diagonal Chamk
+        call eigensystem_c('V', 'U', Num_wann, eigenvector, eigenvalue)
+       
+        psi(:)=eigenvector(:, ib)
+        write(stdout,*) 'eigenvalue',info,eigenvalue(ib)
+   
+        write(100, '(a,3f8.4)')'K point ', k
+        do i=1, Num_wann
+           write(100,'(i, 30f16.9)')i, eigenvector(i, ib-1), eigenvector(i, ib)
+        enddo
+        write(100,*)' '
+    
+     enddo ! ik
+        
+     close(100)
+  end subroutine psik_bulk

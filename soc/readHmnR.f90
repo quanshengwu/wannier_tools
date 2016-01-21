@@ -43,7 +43,7 @@
 
      else
 
-        !File socBi2Se3.HWR exist, We are using HmnR from WHM
+        !File *.HWR exist, We are using HmnR from WHM
         ! skip 8 lines
         do i=1,8
            read(12,*)
@@ -56,6 +56,11 @@
               read(12,*)n,m,rh,ih
               HmnR(n,m,iR)=rh+ zi*ih   ! in Hartree
            enddo
+           if (sum(abs(irvec(:, ir)))==0) then
+              do i=1, Num_wann
+                 HmnR(i,i,iR)= HmnR(i,i,iR)-E_fermi  ! in Hartree
+              enddo
+           endif
         enddo
         HmnR= HmnR*27.2114d0
 

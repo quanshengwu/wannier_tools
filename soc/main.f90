@@ -105,7 +105,9 @@
      !> bulk band
 	  if(cpuid.eq.0)write(stdout, *)'begin to calculate bulk band'
      if (BulkBand_calc) then
-       !call ek_bulk
+        call ek_bulk
+       !call psik_bulk
+       !call ek_bulk_polar
        !call ek_bulk_fortomas
        !call ek_bulk_spin
        !call dos_calc
@@ -114,7 +116,7 @@
        !call gapshape
        !call gapshape3D
        !call landau_level_k
-        call landau_level_B
+       !call landau_level_B
      endif
      if(cpuid.eq.0)write(stdout, *)'end calculate bulk band'
 
@@ -126,6 +128,7 @@
     !if (wanniercenter_calc)call wannier_center2D_alt
      if (wanniercenter_calc)call wannier_center3D
      if (berry_calc)call berry_curvarture 
+    !if (berry_calc)call berryphase
      
 
      !> surface state
