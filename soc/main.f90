@@ -112,6 +112,7 @@
        !call ek_bulk_spin
        !call dos_calc
        !call ek_bulk2D
+       !call ek_bulk2D_spin
        !call fermisurface3D
        !call gapshape
        !call gapshape3D
@@ -126,8 +127,10 @@
      !> wannier center calculate
     !if (wanniercenter_calc)call wannier_center2D
     !if (wanniercenter_calc)call wannier_center2D_alt
-     if (wanniercenter_calc)call wannier_center3D
-     if (berry_calc)call berry_curvarture 
+    !if (wanniercenter_calc)call wannier_center3D
+    !if (wanniercenter_calc)call wannier_center3D_plane
+     if (wanniercenter_calc)call wannier_center3D_plane_mirror
+    !if (berry_calc)call berry_curvarture 
     !if (berry_calc)call berryphase
      
 

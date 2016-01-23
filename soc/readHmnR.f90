@@ -11,7 +11,7 @@
 ! file existenct
      logical :: exists
 
-     integer :: i, j, ir
+     integer :: i, j, ir, ia
      integer :: n, m
      integer :: i1, i2, i3
      integer :: i4, i5    
@@ -93,6 +93,108 @@
            enddo
         endif
      enddo
+   
+     
+     !> set up symmetry operators
+     !> here we assume that the wannier functions have the symmetry 
+     !> as atomic orbitals
     
+     nwan= Num_wann/2
+     allocate(inversion(Num_wann, Num_wann))
+     allocate(mirror_z(Num_wann, Num_wann))
+     inversion= 0d0
+     mirror_z = 0d0
+
+     !> inversion symmetry
+     !> s-> s; p-> -p; d-> -d
+     n= 0
+     do ia=1, Num_atoms
+        do i=1, nprojs(ia)
+           n= n+ 1
+           select case (proj_name(i, ia))
+           case ('s', 'S')
+              inversion(n, n)= 1
+              inversion(n+ nwan, n+ nwan)= 1
+           case ('px', 'Px', 'PX')
+              inversion(n, n)=-1
+              inversion(n+ nwan, n+ nwan)=-1
+           case ('py', 'Py', 'PY')
+              inversion(n, n)=-1
+              inversion(n+ nwan, n+ nwan)=-1
+           case ('pz', 'Pz', 'PZ')
+              inversion(n, n)=-1
+              inversion(n+ nwan, n+ nwan)=-1
+           case ('dxy', 'Dxy', 'DXY')
+              inversion(n, n)= 1
+              inversion(n+ nwan, n+ nwan)= 1
+           case ('dyz', 'Dyz', 'DYZ')
+              inversion(n, n)= 1
+              inversion(n+ nwan, n+ nwan)= 1
+           case ('dxz', 'Dxz', 'DXZ', 'dzx', 'Dzx', 'DZX')
+              inversion(n, n)= 1
+              inversion(n+ nwan, n+ nwan)= 1
+           case ('dx2-y2', 'Dx2-y2', 'DX2-Y2', 'dx2', 'DX2')
+              inversion(n, n)= 1
+              inversion(n+ nwan, n+ nwan)= 1
+           case ('dz2', 'Dz2', 'DZ2')
+              inversion(n, n)= 1
+              inversion(n+ nwan, n+ nwan)= 1
+           case default
+              write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 &
+                 orbitals"
+              stop
+           end select
+        enddo ! i
+     enddo ! ia
+
+
+     !> mirror_z symmetry
+     !> s-> s; px->px, py->py, pz-> -pz
+     !> dxy-> dxy, dyz-> -dyz, dxz-> -dxz, dx2-> dx2 dz2->dz2 
+     !> up-> up  dn-> -dn
+     n= 0
+     do ia=1, Num_atoms
+        do i=1, nprojs(ia)
+           n= n+ 1
+           select case (proj_name(i, ia))
+           case ('s', 'S')
+              mirror_z(n, n)= 1
+              mirror_z(n+ nwan, n+ nwan)=-1
+           case ('px', 'Px', 'PX')
+              mirror_z(n, n)= 1
+              mirror_z(n+ nwan, n+ nwan)=-1
+           case ('py', 'Py', 'PY')
+              mirror_z(n, n)= 1
+              mirror_z(n+ nwan, n+ nwan)=-1
+           case ('pz', 'Pz', 'PZ')
+              mirror_z(n, n)=-1
+              mirror_z(n+ nwan, n+ nwan)= 1
+           case ('dxy', 'Dxy', 'DXY')
+              mirror_z(n, n)= 1
+              mirror_z(n+ nwan, n+ nwan)=-1
+           case ('dyz', 'Dyz', 'DYZ')
+
+              mirror_z(n, n)=-1
+              mirror_z(n+ nwan, n+ nwan)= 1
+           case ('dxz', 'Dxz', 'DXZ', 'dzx', 'Dzx', 'DZX')
+              mirror_z(n, n)=-1
+              mirror_z(n+ nwan, n+ nwan)= 1
+           case ('dx2-y2', 'Dx2-y2', 'DX2-Y2', 'dx2', 'DX2')
+              mirror_z(n, n)= 1
+              mirror_z(n+ nwan, n+ nwan)=-1
+           case ('dz2', 'Dz2', 'DZ2')
+              mirror_z(n, n)= 1
+              mirror_z(n+ nwan, n+ nwan)=-1
+           case default
+              write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 &
+                 orbitals"
+              stop
+           end select
+        enddo ! i
+     enddo ! ia
+
+
+
+
      return
   end subroutine readHmnR

@@ -15,15 +15,17 @@
      real(dp) :: cell_volume
      real(dp) :: cell_volume2
 
-     integer  :: i
+     integer  :: i, ia, n
      integer  :: j
      integer  :: NN
+     integer :: nwann
      real(dp) :: t1, temp
      real(dp) :: pos(3)
      real(dp) :: k1(3), k2(3)
      real(dp) :: kstart(3), kend(3)
      real(dp) :: R1(3), R2(3), R3(3) 
      real(dp), external :: norm
+
     
      inquire(file=fname,exist=exists)
      if (exists)then
@@ -287,13 +289,13 @@
         write(stdout, '(3f10.4)')kb2
      endif
 
-
-
      close(1001)
 
      eta=(omegamax- omegamin)/omeganum*eta
 
      if(cpuid==0)write(stdout,*)'read input.dat file successfully'
+
+
 
      return
   end subroutine readinput

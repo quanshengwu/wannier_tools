@@ -6,12 +6,13 @@
 
      implicit none
 
-     integer :: ik, i, j
+     integer :: ik, i, j, ia
      integer :: nkx, nky
 	  integer :: knv3
      integer :: ierr
      integer :: nktheta
      integer :: nkr
+     integer :: nwan
      real(Dp) :: k (3)
      real(Dp) :: k1(3)
      real(Dp) :: k2(3)
@@ -40,6 +41,18 @@
 	  real(dp), allocatable :: eigv(:,:)
 	  real(dp), allocatable :: eigv_mpi(:,:)
 
+     !> pauli matrix in basis
+     complex(dp), allocatable :: sigmax(:, :)
+     complex(dp), allocatable :: sigmay(:, :)
+     complex(dp), allocatable :: sigmaz(:, :)
+     complex(dp), allocatable :: mat1(:, :)
+     complex(dp), allocatable :: eigvec_conj(:, :)
+
+     !> spin expect value for each band and each k point
+     real(dp), allocatable :: sx(:, :)
+     real(dp), allocatable :: sy(:, :)
+     real(dp), allocatable :: sz(:, :)
+
 
      nktheta= 100 
      nkr= Nk
@@ -50,6 +63,14 @@
      allocate( gap    (4, nktheta))
      allocate( eigv    (4, knv3))
      allocate( eigv_mpi(4, knv3))
+     allocate( eigvec_conj(Num_wann, Num_wann))
+     allocate( sigmax(Num_wann, Num_wann))
+     allocate( sigmay(Num_wann, Num_wann))
+     allocate( sigmaz(Num_wann, Num_wann))
+     allocate( mat1(Num_wann, Num_wann))
+     allocate( sx(Num_wann, knv3))
+     allocate( sy(Num_wann, knv3))
+     allocate( sz(Num_wann, knv3))
      k12 = 0d0
      k123= 0d0
      krtheta = 0d0
@@ -164,6 +185,29 @@
     !enddo
 
 
+     !> set Pauli matrix
+     sigmax= 0d0
+     sigmay= 0d0
+     sigmaz= 0d0
+     if (soc>0) then
+        nwan= Num_wann/2
+     else
+        stop 'calculate spin texture need soc'
+     endif
+
+     i= 0
+     do ia=1, Num_atoms
+        do j=1, nprojs(ia)
+           i= i+ 1
+           sigmax(i, i+nwan) = 1d0
+           sigmax(i+nwan, i) = 1d0
+           sigmay(i, i+nwan) = -zi
+           sigmay(i+nwan, i) = zi
+           sigmaz(i, i) = 1d0
+           sigmaz(i+nwan, i+nwan) = -1d0
+        enddo  !> number of projectors
+     enddo  ! ia  number of atoms
+
 
      if (Numoccupied> Num_wann ) stop ' Numoccupied should less than Num_wann'
 
@@ -180,11 +224,26 @@
 
         !> diagonalization by call zheev in lapack
         W= 0d0
-        call eigensystem_c( 'N', 'U', Num_wann ,Hamk_bulk, W)
+        call eigensystem_c( 'V', 'U', Num_wann ,Hamk_bulk, W)
+        eigvec_conj= conjg(transpose(Hamk_bulk))
 
         eigv(:, ik)= W(Numoccupied-1:Numoccupied+2)
 
-     enddo
+        call mat_mul(eigvec_conj, sigmax, mat1)
+        call mat_mul(mat1, Hamk_bulk, sigmax)
+
+        call mat_mul(eigvec_conj, sigmay, mat1)
+        call mat_mul(mat1, Hamk_bulk, sigmay)
+
+        call mat_mul(eigvec_conj, sigmaz, mat1)
+        call mat_mul(mat1, Hamk_bulk, sigmaz)
+
+        do i=1, Num_wann
+           sx(i, ik)= sigmax(i, i)
+           sy(i, ik)= sigmay(i, i)
+           sz(i, ik)= sigmaz(i, i)
+        enddo
+     enddo ! ik
 
      call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)

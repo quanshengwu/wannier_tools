@@ -170,5 +170,9 @@
      integer, allocatable :: nprojs(:)
      character(10), allocatable :: proj_name(:, :)
 
+     !> symmetry operator
+     complex(dp), allocatable :: inversion(:, :)
+     complex(dp), allocatable :: mirror_z(:, :)
+     complex(dp), allocatable :: glide(:, :)
 
  end module para
