@@ -8,7 +8,7 @@ obj =  module.o main.o readHmnR.o inverse.o\
 		 landau_level.o berry.o
 
 
-f90  = mpif90 # -check all -pg -traceback
+f90  = mpif90   -check all -pg -traceback
 
 #FLAGS =  -O3 -nogen-interface  -warn all 
 flag = -O3 -nogen-interface  -warn all 

@@ -566,8 +566,12 @@
       integer :: ia
       integer :: ia1
       integer :: nfill
+      integer :: nfill_half
       integer :: imax
 
+      integer :: i1
+
+      integer :: i2
       integer :: ik1
       integer :: ik2
 
@@ -658,22 +662,28 @@
       real(dp) :: k11(3), k12(3)
       real(dp) :: k21(3), k22(3)
 
-
+      !> mirror eigenvalue
+      complex(dp), allocatable :: mirror_z_eig(:, :)
+      !> the band index that has plus mirror number
+      integer, allocatable :: mirror_plus(:, :)
+      integer, allocatable :: mirror_minus(:, :)
 
       Nk1= Nk
       Nk2= Nk
       knv2= Nk1*Nk2
 
       nfill= Numoccupied
+     !nfill_half= Numoccupied
+      nfill_half= Numoccupied/2
 
       allocate(kpoints(3, Nk1, Nk2))
       kpoints= 0d0
 
-      allocate(Lambda_eig(nfill))
-      allocate(Lambda(nfill, nfill))
-      allocate(Lambda0(nfill, nfill))
-      allocate(Mmnkb(nfill, nfill))
-      allocate(Mmnkb_com(nfill, nfill))
+      allocate(Lambda_eig(nfill_half))
+      allocate(Lambda(nfill_half, nfill_half))
+      allocate(Lambda0(nfill_half, nfill_half))
+      allocate(Mmnkb(nfill_half, nfill_half))
+      allocate(Mmnkb_com(nfill_half, nfill_half))
       allocate(Mmnkb_full(Num_wann, Num_wann))
       allocate(hamk(Num_wann, Num_wann))
       allocate(mat1(Num_wann, Num_wann))
@@ -681,15 +691,20 @@
       allocate(hamk_dag(Num_wann, Num_wann))
       allocate(Eigenvector(Num_wann, Num_wann, Nk1))
       allocate(eigenvalue(Num_wann))
-      allocate(U(nfill, nfill))
-      allocate(Sigma(nfill, nfill))
-      allocate(VT(nfill, nfill))
-      allocate(WannierCenterKy(nfill, Nk2))
-      allocate(WannierCenterKy_mpi(nfill, Nk2))
+      allocate(mirror_z_eig(nfill, Nk1))
+      allocate(mirror_plus(nfill, Nk1))
+      allocate(mirror_minus(nfill, Nk1))
+      allocate(U(nfill_half, nfill_half))
+      allocate(Sigma(nfill_half, nfill_half))
+      allocate(VT(nfill_half, nfill_half))
+      allocate(WannierCenterKy(nfill_half, Nk2))
+      allocate(WannierCenterKy_mpi(nfill_half, Nk2))
       allocate(AtomIndex_orbital(Num_wann))
-      allocate(xnm(nfill))
+      allocate(xnm(nfill_half))
       allocate(largestgap(Nk2))
       allocate(largestgap_mpi(Nk2))
+      mirror_minus= 0
+      mirror_plus= 0
       largestgap= 0d0
       largestgap_mpi= 0d0
       WannierCenterKy= 0d0
@@ -755,10 +770,12 @@
       do ik2=1+ cpuid, Nk2, num_cpu
          if (cpuid.eq.0) print *,  'ik', ik2
          Lambda0=0d0
-         do i=1, nfill
+         do i=1, nfill_half
             Lambda0(i, i)= 1d0
          enddo
 
+         mirror_plus= 0
+         mirror_minus= 0
          !> for each k1, we get the eigenvectors
          do ik1=1, Nk1
             !if (cpuid==0) print *, ik1, ik2, Nk1, Nk2
@@ -766,9 +783,9 @@
 
             call ham_bulk(k,hamk)
 
-            call mat_mul(Num_wann, mirror_z, hamk, mat1)
-            call mat_mul(Num_wann, mat1, mirror_z, mat2)
-            hamk= (hamk+ mat2)/2.d0
+           !call mat_mul(Num_wann, mirror_z, hamk, mat1)
+           !call mat_mul(Num_wann, mat1, mirror_z, mat2)
+           !hamk= (hamk+ mat2)/2.d0
 
             !> diagonal hamk
             call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
@@ -780,14 +797,30 @@
             !> calculate mirror eigenvalue
             call mat_mul(Num_wann, mat2, mirror_z, mat1)
             call mat_mul(Num_wann, mat1, hamk, mat2)
+            
+            !> get mirror_plus and mirror_minus
+            do i=1, nfill
+               if (abs(real(mat2(i, i))-1d0)< 1e-5) then
+                  mirror_plus(i, ik1)= 1
+               else
+                  mirror_minus(i, ik1)= 1
+               endif
+            enddo
 
-            if (cpuid.eq.0)write(*, '(1000f6.2)')kpoints(:, ik1, ik2), &
-               (real(mat2(i, i)), i=1, Num_wann) 
-            if (cpuid.eq.0)write(*, '(1000f5.1)') &
-               (real(mirror_z(i, i)), i=1, Num_wann) 
+           !if (cpuid.eq.0)write(*, '(3f6.2,1000i3)')kpoints(:, ik1, ik2), &
+           !   (mirror_plus(i, ik1), i=1, nfill) 
+           !if (cpuid.eq.0)write(*, '(3f6.2,1000i3)')kpoints(:, ik1, ik2), &
+           !   (mirror_minus(i, ik1), i=1, nfill) 
+           !if (cpuid.eq.0)write(*, '(1000f6.2)')kpoints(:, ik1, ik2), &
+           !   (real(mat2(i, i)), i=1, Num_wann) 
+           !if (cpuid.eq.0)write(*, '(1000f5.1)') &
+           !   (real(mirror_z(i, i)), i=1, Num_wann/2) 
+           !if (cpuid.eq.0)write(*, '(1000f5.1)') &
+           !   (real(mirror_z(i, i)), i=1+ Num_wann/2, Num_wann) 
 
-            write( *, *)' '
-            pause
+           !write( *, *)' '
+           !pause
+
          enddo
 
          !> sum over k1 to get wanniercenters
@@ -805,45 +838,53 @@
                br= b(1)*Atom_position(1, ia)+ &
                    b(2)*Atom_position(2, ia)+ &
                    b(3)*Atom_position(3, ia)
-              !ratio= cos(br)- zi* sin(br)
-               ratio= 1d0
-         
+               ratio= cos(br)- zi* sin(br)
+              !ratio= 1d0
+        
+               i1= 0
                do j=1, nfill
+                  if (mirror_plus(j, ik1)==1) cycle
+                  i1= i1+ 1
+                  i2= 0
                   do i=1, nfill
-                     Mmnkb(i, j)=  Mmnkb(i, j)+ &
+                     if (mirror_plus(i, ik1)==1) cycle
+                     i2= i2+ 1
+                     print *, ik1, i1, i2, i, j
+                     Mmnkb(i2, i1)=  Mmnkb(i2, i1)+ &
+                    !Mmnkb(i, j )=  Mmnkb(i , j )+ &
                         conjg(hamk_dag(m, i))* hamk(m, j)* ratio
                   enddo ! i
                enddo ! j
             enddo ! m
 
             !> perform Singluar Value Decomposed of Mmnkb
-            call zgesvd_pack(nfill, Mmnkb, U, Sigma, VT)
+            call zgesvd_pack(nfill_half, Mmnkb, U, Sigma, VT)
 
             !> after the calling of zgesvd_pack, Mmnkb becomes a temporal matrix
             U= conjg(transpose(U))
             VT= conjg(transpose(VT))
-            call mat_mul(nfill, VT, U, Mmnkb)
+            call mat_mul(nfill_half, VT, U, Mmnkb)
 
-            call mat_mul(nfill, Mmnkb, Lambda0, Lambda)
+            call mat_mul(nfill_half, Mmnkb, Lambda0, Lambda)
             Lambda0 = Lambda
          enddo  !< ik1
 
          !> diagonalize Lambda to get the eigenvalue 
-         call zgeev_pack(nfill, Lambda, Lambda_eig)
-         do i=1, nfill
+         call zgeev_pack(nfill_half, Lambda, Lambda_eig)
+         do i=1, nfill_half
             WannierCenterKy(i, ik2)= aimag(log(Lambda_eig(i)))/2d0/pi
             WannierCenterKy(i, ik2)= mod(WannierCenterKy(i, ik2)+10d0, 1d0) 
          enddo
 
-         call sortheap(nfill, WannierCenterKy(:, ik2))
+         call sortheap(nfill_half, WannierCenterKy(:, ik2))
 
          maxgap0= -99999d0
-         imax= nfill
-         do i=1, nfill
-            if (i/=nfill) then
+         imax= nfill_half
+         do i=1, nfill_half
+            if (i/=nfill_half) then
                maxgap= WannierCenterKy(i+1, ik2)- WannierCenterKy(i, ik2)
             else
-               maxgap=1d0+ WannierCenterKy(1, ik2)- WannierCenterKy(nfill, ik2)
+               maxgap=1d0+ WannierCenterKy(1, ik2)- WannierCenterKy(nfill_half, ik2)
             endif
 
             if (maxgap>maxgap0) then
@@ -853,9 +894,9 @@
 
          enddo
 
-         if (imax==nfill) then
+         if (imax==nfill_half) then
             largestgap(ik2)= (WannierCenterKy(1, ik2)+ &
-               WannierCenterKy(nfill, ik2) +1d0)/2d0
+               WannierCenterKy(nfill_half, ik2) +1d0)/2d0
             largestgap(ik2)= mod(largestgap(ik2), 1d0)
          else
             largestgap(ik2)= (WannierCenterKy(imax+1, ik2)+ &
@@ -894,13 +935,13 @@
          zm= largestgap_mpi(ik2)
         !if (ik2==nk2) then
         !   zm1= largestgap_mpi(1)
-        !   xnm= WannierCenterKy_mpi(1:nfill, 1)
+        !   xnm= WannierCenterKy_mpi(1:nfill_half, 1)
         !else
             zm1= largestgap_mpi(ik2+1)
-            xnm= WannierCenterKy_mpi(1:nfill, ik2+1)
+            xnm= WannierCenterKy_mpi(1:nfill_half, ik2+1)
         !endif
          Deltam= 1
-         do i=1, nfill
+         do i=1, nfill_half
             xnm1= xnm(i)
             phi1= 2d0*pi*zm
             phi2= 2d0*pi*zm1
@@ -1159,8 +1200,8 @@
                br= b(1)*Atom_position(1, ia)+ &
                    b(2)*Atom_position(2, ia)+ &
                    b(3)*Atom_position(3, ia)
-              !ratio= cos(br)- zi* sin(br)
-               ratio= 1d0
+               ratio= cos(br)- zi* sin(br)
+              !ratio= 1d0
          
                do j=1, nfill
                   do i=1, nfill
