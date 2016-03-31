@@ -1,4 +1,4 @@
-# wannier_tools
+# Wannier_tools
 Written by QuanSheng Wu in Fortran (wuquansheng@gmail.com)
 
 Use wannier functions to get the surface state of slab system 
