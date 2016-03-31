@@ -163,6 +163,7 @@
 
      !> number of atoms in one primitive cell
      integer :: Num_atoms
+     character(10) :: directOrcart
      character(10), allocatable :: atom_name(:)
      real(dp), allocatable :: Atom_position(:, :)
 
@@ -170,9 +171,17 @@
      integer, allocatable :: nprojs(:)
      character(10), allocatable :: proj_name(:, :)
 
-     !> symmetry operator
+     !> symmetry operator apply on function basis
      complex(dp), allocatable :: inversion(:, :)
+     complex(dp), allocatable :: mirror_x(:, :)
      complex(dp), allocatable :: mirror_z(:, :)
      complex(dp), allocatable :: glide(:, :)
+     
+     !> symmetry operator apply on coordinate system
+     real(dp), allocatable :: inv_op(:, :)
+     real(dp), allocatable :: mirror_z_op(:, :)
+     real(dp), allocatable :: mirror_x_op(:, :)
+     real(dp), allocatable :: mirror_y_op(:, :)
+     real(dp), allocatable :: glide_y_op(:, :)
 
  end module para

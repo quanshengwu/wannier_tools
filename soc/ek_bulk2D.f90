@@ -10,6 +10,7 @@
      integer :: nkx, nky
 	  integer :: knv3
      integer :: ierr
+     integer :: nwann
      real(Dp) :: k(3)
      real(Dp) :: k11(3), k12(3)
      real(Dp) :: k21(3), k22(3)
@@ -38,16 +39,21 @@
      complex(dp), allocatable :: sigmaz(:, :)
      complex(dp), allocatable :: psi(:)
 
+     nkx= Nk
+     nky= Nk
+     knv3= nkx*nky
      allocate( psi( Num_wann))
      allocate( sigmax( Num_wann, Num_wann))
      allocate( sigmay( Num_wann, Num_wann))
      allocate( sigmaz( Num_wann, Num_wann))
      allocate( spin    (3, Num_wann, knv3))
      allocate( spin_mpi(3, Num_wann, knv3))
+     spin = 0d0
+     spin_mpi = 0d0
+     sigmax= 0d0
+     sigmay= 0d0
+     sigmaz= 0d0
  
-     nkx= Nk
-     nky= Nk
-     knv3= nkx*nky
      allocate( kxy(3, knv3))
      allocate( kxy_shape(3, knv3))
      allocate( gap     (   knv3))
@@ -60,10 +66,29 @@
 	  eigv    = 0d0
 	  eigv_mpi= 0d0
 
-     k11=(/-1.0d0,  0.0d0, -1.0d0/) ! 
-     k12=(/ 1.0d0,  0.0d0,  1.0d0/) ! X
-     k21=(/-1.0d0, -1.0d0,  0.0d0/) ! 
-     k22=(/ 1.0d0,  1.0d0,  0.0d0/) ! Z
+     nwann= Num_wann/2
+     print *, 'nwann', nwann
+
+     if (SOC==0) stop 'you should set soc=0 in the input file'
+     !> construct spin matrix
+     do i= 1, nwann
+        sigmax(i, i+ nwann)= 1d0
+        sigmax(i+ nwann, i)= 1d0
+        sigmay(i, i+ nwann)= -zi
+        sigmay(i+ nwann, i)= zi
+        sigmaz(i, i)= 1d0
+        sigmaz(i+ nwann, i+ nwann)= -1d0
+     enddo
+
+    !k11=(/-0.5d0,  0.0d0, -0.5d0/) ! 
+    !k12=(/ 0.5d0,  0.0d0,  0.5d0/) ! X ! TB
+     k11=(/-0.0d0,  0.0d0, -0.0d0/) ! 
+     k12=(/ 1.0d0,  0.0d0,  1.0d0/) ! X ! TB
+    !k12=(/ 0.0d0, -1.0d0, -1.0d0/) ! X ! DFT
+     k21=(/-0.5d0, -0.5d0,  0.0d0/) ! 
+     k22=(/ 0.5d0,  0.5d0,  0.0d0/) ! Z
+    !k21=(/-0.0d0,  0.5d0,  0.5d0/) ! 
+    !k22=(/ 0.0d0, -0.5d0, -0.5d0/) ! Y
 
 
      ik =0
@@ -76,7 +101,7 @@
      enddo
 
      do ik= 1+cpuid, knv3, num_cpu
-	     if (cpuid==0) print * , ik
+	    !if (cpuid==0) print * , ik
 
         k = kxy(:, ik)
 
@@ -90,6 +115,7 @@
 
         do ib= 1, Num_wann
            psi(:)= Hamk_bulk(:, ib)
+          !print *, sum(conjg(psi(:))*psi(:))
            sx= 0d0
            sy= 0d0
            sz= 0d0
@@ -103,6 +129,7 @@
            spin(1, ib, ik)= sx
            spin(2, ib, ik)= sy
            spin(3, ib, ik)= sz
+          !print *, W(ib),sx*sx+sy*sy+sz*sz
         enddo ! ib
 
         !> for 44 bands
@@ -114,11 +141,13 @@
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
      call mpi_allreduce(gap ,gap_mpi,size(gap ),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
+     call mpi_allreduce(spin ,spin_mpi,size(spin ),&
+                       mpi_dp,mpi_sum,mpi_cmw,ierr)
 
      if (cpuid==0)then
         open(unit=14, file='bulkek2D.dat')
         do ik=1, knv3
-           write(14, '(1000f19.9)')kxy(:, ik), eigv_mpi(:, ik)
+           write(14, '(1000f19.9)')kxy_shape(:, ik), eigv_mpi(:, ik), (spin_mpi(:, ib, ik), ib=Numoccupied-1, Numoccupied+2)
         enddo
         close(14)
         open(unit=15, file='gap2D.dat')

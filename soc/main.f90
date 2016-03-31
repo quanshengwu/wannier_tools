@@ -1,12 +1,13 @@
 !--------+--------+--------+--------+--------+--------+--------+------!
-! main program of TB on BiSe infinte surface 
+! main program of a set of tools based on Wannier90 TB
 ! constructed by Q.S.Wu on 4/9/2010
 ! change      by Q.S.Wu on 4/22/2010
 ! changed     by Q.S.wu on July/15/2010
 ! version     HmnR.data  contains soc
 ! mpi-version is not test yet, take you own risk.
+! mpi-version is  tested , please report bugs to QSWU
 ! Jan 25 2015 by Q.S.Wu at ETH Zurich 
-! 
+! wuquansheng@gmail.com
 !--------+--------+--------+--------+--------+--------+--------+------!
 
   program main
@@ -102,10 +103,14 @@
      call MPI_bcast(HmnR,size(HmnR),mpi_dc,0,mpi_cmw,ierr)
      call MPI_bcast(ndegen,size(ndegen),mpi_in,0,mpi_cmw,ierr)
 
+     !> import symmetry 
+     call symmetry
      !> bulk band
 	  if(cpuid.eq.0)write(stdout, *)'begin to calculate bulk band'
      if (BulkBand_calc) then
         call ek_bulk
+       !call ek_bulk_mirror_x
+       !call ek_bulk_mirror_z
        !call psik_bulk
        !call ek_bulk_polar
        !call ek_bulk_fortomas
@@ -122,16 +127,22 @@
      if(cpuid.eq.0)write(stdout, *)'end calculate bulk band'
 
      !> slab band
-     if (SlabBand_calc)call ek_slab
+     if (SlabBand_calc)then
+        call ek_slab
+        call psik     
+     endif
     
      !> wannier center calculate
     !if (wanniercenter_calc)call wannier_center2D
     !if (wanniercenter_calc)call wannier_center2D_alt
     !if (wanniercenter_calc)call wannier_center3D
-    !if (wanniercenter_calc)call wannier_center3D_plane
-     if (wanniercenter_calc)call wannier_center3D_plane_mirror
+     if (wanniercenter_calc)then
+        call wannier_center3D_plane
+       !call wannier_center3D_plane_mirror_plus
+       !call wannier_center3D_plane_mirror_minus
+     endif
     !if (berry_calc)call berry_curvarture 
-    !if (berry_calc)call berryphase
+     if (berry_calc)call berryphase
      
 
      !> surface state

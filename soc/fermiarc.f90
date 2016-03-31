@@ -65,10 +65,10 @@
      dos_r=0d0
      dos_r_mpi=0d0
 
-     k1min= 0.00d0/1d0
-     k1max= 1.00d0/1d0
-     k2min=-0.50d0/1d0
-     k2max= 0.50d0/1d0
+     k1min=-0.10d0/1d0
+     k1max= 0.10d0/1d0
+     k2min=-0.10d0/1d0
+     k2max= 0.10d0/1d0
      ikp=0
      do i= 1, nk1
      do j= 1, nk2
@@ -155,7 +155,7 @@
         write(101, '(a)')'#set terminal  postscript enhanced color'
         write(101, '(a)')"#set output 'arc_l.eps'"
         write(101, '(3a)')'set terminal  pngcairo truecolor enhanced', &
-           ' font ",60" size 3680, 3360'
+           ' font ",60" size 1920, 1680'
         write(101, '(a)')"set output 'arc_l.png'"
         write(101,'(2a)') 'set palette defined ( -10 "#194eff", ', &
            '0 "white", 10 "red" )'
@@ -185,7 +185,7 @@
         write(101, '(a)')'#set terminal  postscript enhanced color'
         write(101, '(a)')"#set output 'arc_r.eps'"
         write(101, '(3a)')'set terminal  pngcairo truecolor enhanced', &
-           ' font ",60" size 3680, 3360'
+           ' font ",60" size 1920, 1680'
         write(101, '(a)')"set output 'arc_r.png'"
         write(101,'(2a)') 'set palette defined ( -10 "#194eff", ', &
            '0 "white", 10 "red" )'

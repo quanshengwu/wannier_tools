@@ -9,6 +9,7 @@
 
      integer :: ik, i, j
 	  integer :: knv3
+     integer :: Nwann
      integer :: ierr
      real(dp) :: emin
      real(dp) :: emax
@@ -21,10 +22,16 @@
      ! eigen value of H
 	  real(dp), allocatable :: eigv(:,:)
 	  real(dp), allocatable :: eigv_mpi(:,:)
+	  real(dp), allocatable :: weight(:,:,:)
+	  real(dp), allocatable :: weight_mpi(:,:,:)
+     weight = 0d0
+     weight_mpi = 0d0
 
      knv3= nk3_band
      allocate( eigv    (Num_wann, knv3))
      allocate( eigv_mpi(Num_wann, knv3))
+     allocate( weight    (Num_wann,Num_wann, knv3))
+     allocate( weight_mpi(Num_wann,Num_wann, knv3))
 	  eigv    = 0d0
 	  eigv_mpi= 0d0
 
@@ -36,25 +43,37 @@
 
         ! calculation bulk hamiltonian
         Hamk_bulk= 0d0
-        call ham_bulk(k, Hamk_bulk)
+       !call ham_bulk_old(k, Hamk_bulk)
+        call ham_bulk    (k, Hamk_bulk)
 
         !> diagonalization by call zheev in lapack
         W= 0d0
-        call eigensystem_c( 'N', 'U', Num_wann ,Hamk_bulk, W)
+        call eigensystem_c( 'V', 'U', Num_wann ,Hamk_bulk, W)
 
         eigv(:, ik)= W
-
-     enddo
+        do i=1, Num_wann  !> band 
+           do j=1, Num_wann/2  !> projector
+              weight(j, i, ik)= sqrt(abs(Hamk_bulk(j, i))**2+ &
+                 abs(Hamk_bulk(j+ Num_wann/2, i))**2)
+           enddo ! j
+        enddo ! i
+     enddo ! ik
 
      call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
+     call mpi_allreduce(weight, weight_mpi,size(weight),&
+                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+
+     weight= weight_mpi/maxval(weight_mpi)*255d0
+     print *,' max weight', maxval(weight_mpi)
 
      if (cpuid==0)then
         open(unit=14, file='bulkek.dat')
    
         do i=1, Num_wann
            do ik=1, knv3
-              write(14, '(1000f19.9)')k3len(ik),eigv_mpi(i, ik)
+              write(14, '(2f19.9, 1000i5)')k3len(ik),eigv_mpi(i, ik), &
+                 int(weight(:, i, ik))
            enddo
            write(14, *)' '
         enddo
@@ -62,8 +81,8 @@
      endif
 
      !> minimum and maximum value of energy bands
-     emin= minval(eigv_mpi)-0.5d0
-     emax= maxval(eigv_mpi)+0.5d0
+     emin=  minval(eigv_mpi)-0.5d0
+     emax=  maxval(eigv_mpi)+0.5d0
 
      !> write script for gnuplot
      if (cpuid==0) then
@@ -90,7 +109,7 @@
            write(101, 204)k3line_stop(i+1), emin, k3line_stop(i+1), emax
         enddo
         write(101, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
-            "w lp lw 2 pt 7  ps 0.2, 0 w l"
+            "w lp lw 2 pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2 dashtype 2"
         close(101)
      endif
 
@@ -327,5 +346,330 @@
    
    return
    end subroutine ek_bulk_fortomas
+
+
+  subroutine ek_bulk_mirror_z
+
+     use mpi
+     use para
+
+     implicit none
+
+     integer :: ik, i, j
+	  integer :: knv3
+     integer :: ierr
+     real(dp) :: emin
+     real(dp) :: emax
+     real(Dp) :: k(3)
+     real(Dp) :: W(Num_wann)
+     
+     ! Hamiltonian of bulk system
+     complex(Dp) :: Hamk_bulk(Num_wann,Num_wann) 
+     complex(Dp) :: Hamk     (Num_wann,Num_wann) 
+     complex(Dp) :: mat1     (Num_wann,Num_wann) 
+     complex(Dp) :: mat2     (Num_wann,Num_wann) 
+
+     ! eigen value of H
+	  real(dp), allocatable :: eigv(:,:)
+	  real(dp), allocatable :: eigv_mpi(:,:)
+     logical, allocatable :: mirror_plus(:, :)
+     logical, allocatable :: mirror_minus(:, :)
+
+     knv3= nk3_band
+     allocate( eigv    (Num_wann, knv3))
+     allocate( eigv_mpi(Num_wann, knv3))
+     allocate( mirror_plus(Num_wann, knv3))
+     allocate( mirror_minus(Num_wann, knv3))
+     mirror_plus= .False.
+     mirror_minus= .False.
+	  eigv    = 0d0
+	  eigv_mpi= 0d0
+
+     do ik= 1+cpuid, knv3, num_cpu
+	     if (cpuid==0) write(*, *)'ik, knv3 ', ik, knv3
+	     if (cpuid==0) write(stdout, *)'ik, knv3 ', ik, knv3
+
+        k = k3points(:, ik)
+
+        ! calculation bulk hamiltonian
+        Hamk_bulk= 0d0
+        call ham_bulk    (k, Hamk_bulk)
+
+        k = k3points(:, ik)
+        k(3)= -k(3)
+        Hamk= 0d0
+        call ham_bulk    (k, Hamk)
+
+        !> symmetrization
+        call mat_mul(Num_wann, mirror_z, hamk, mat1)
+        call mat_mul(Num_wann, mat1, mirror_z, mat2)
+        hamk= (Hamk_bulk+ mat2)/2.d0
+
+        !> diagonal hamk
+        call eigensystem_c('V', 'U', Num_wann, hamk, W)
+
+        mat2= conjg(transpose(hamk))
+
+        !> calculate mirror eigenvalue
+        call mat_mul(Num_wann, mat2, mirror_z, mat1)
+        call mat_mul(Num_wann, mat1, hamk, mat2)
+            
+        !> get mirror_plus and mirror_minus
+        do i=1, Num_wann
+           if (abs(real(mat2(i, i))-1d0)< 1e-3) then
+              mirror_plus(i, ik)= .true.
+           else
+              mirror_minus(i, ik)= .true.
+           endif
+        enddo
+
+       !if (cpuid.eq.0)write(*, *)ik,&
+       !   (mirror_plus(i, ik), i=1, Num_wann) 
+        eigv(:, ik)= W
+
+     enddo  ! ik
+
+     call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
+                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+
+     if (cpuid==0)then
+        open(unit=14, file='bulkek.dat')
+        do i=1, Num_wann
+           do ik=1, knv3
+              write(14, '(1000f19.9)')k3len(ik),eigv_mpi(i, ik)
+           enddo
+           write(14, *)' '
+        enddo
+        close(14)
+
+        open(unit=15, file='bulkekmirrorplus.dat')
+        open(unit=16, file='bulkekmirrorminus.dat')
+        do i=1, Num_wann
+           do ik=1, knv3
+              if (mirror_plus(i, ik)) then
+                 write(15, '(1000f19.9)')k3len(ik),eigv_mpi(i, ik)
+              else
+                 write(16, '(1000f19.9)')k3len(ik),eigv_mpi(i, ik)
+              endif
+           enddo
+           write(15, *)' '
+           write(16, *)' '
+        enddo
+        close(15)
+        close(16)
+ 
+
+     endif
+
+     !> minimum and maximum value of energy bands
+     emin= minval(eigv_mpi)-0.5d0
+     emax= maxval(eigv_mpi)+0.5d0
+
+     !> write script for gnuplot
+     if (cpuid==0) then
+        open(unit=101, file='bulkek.gnu')
+        write(101, '(a)') 'set terminal  postscript enhanced color'
+        write(101,'(2a)') '#set palette defined ( 0  "green", ', &
+           '5 "yellow", 10 "red" )'
+        write(101, '(a)')"set output 'bulkek.eps'"
+        write(101, '(a)')'set style data linespoints'
+        write(101, '(a)')'unset ztics'
+        write(101, '(a)')'unset key'
+        write(101, '(a)')'set pointsize 0.8'
+        write(101, '(a)')'set view 0,0'
+        write(101, '(a)')'set xtics font ",24"'
+        write(101, '(a)')'set ytics font ",24"'
+        write(101, '(a)')'set ylabel font ",24"'
+        write(101, '(a)')'set ylabel "Energy (eV)"'
+        write(101, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
+        write(101, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
+        write(101, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
+        write(101, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
+
+        do i=1, nk3lines-1
+           write(101, 204)k3line_stop(i+1), emin, k3line_stop(i+1), emax
+        enddo
+        write(101, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
+            "w lp lw 2 pt 7  ps 0.2, 0 w l"
+        close(101)
+     endif
+
+     202 format('set xtics (',:20('"',A3,'" ',F10.5,','))
+     203 format(A3,'" ',F10.5,')')
+     204 format('set arrow from ',F10.5,',',F10.5,' to ',F10.5,',',F10.5, ' nohead')
+     
+   return
+   end subroutine ek_bulk_mirror_z
+
+
+
+
+  subroutine ek_bulk_mirror_x
+
+     use mpi
+     use para
+
+     implicit none
+
+     integer :: ik, i, j
+	  integer :: knv3
+     integer :: ierr
+     real(dp) :: emin
+     real(dp) :: emax
+     real(Dp) :: k(3)
+     real(Dp) :: W(Num_wann)
+     
+     ! Hamiltonian of bulk system
+     complex(Dp) :: Hamk_bulk(Num_wann,Num_wann) 
+     complex(Dp) :: Hamk     (Num_wann,Num_wann) 
+     complex(Dp) :: mat1     (Num_wann,Num_wann) 
+     complex(Dp) :: mat2     (Num_wann,Num_wann) 
+     complex(dp) :: inv_mirror_x(Num_wann, Num_wann)
+
+     ! eigen value of H
+	  real(dp), allocatable :: eigv(:,:)
+	  real(dp), allocatable :: eigv_mpi(:,:)
+     logical, allocatable :: mirror_plus(:, :)
+     logical, allocatable :: mirror_minus(:, :)
+
+     knv3= nk3_band
+     allocate( eigv    (Num_wann, knv3))
+     allocate( eigv_mpi(Num_wann, knv3))
+     allocate( mirror_plus(Num_wann, knv3))
+     allocate( mirror_minus(Num_wann, knv3))
+     mirror_plus= .False.
+     mirror_minus= .False.
+	  eigv    = 0d0
+	  eigv_mpi= 0d0
+
+     do ik= 1+cpuid, knv3, num_cpu
+	     if (cpuid==0) write(*, *)'ik, knv3 ', ik, knv3
+	     if (cpuid==0) write(stdout, *)'ik, knv3 ', ik, knv3
+
+        k = k3points(:, ik)
+
+        ! calculation bulk hamiltonian
+        Hamk_bulk= 0d0
+        call ham_bulk    (k, Hamk_bulk)
+
+       !k = k3points(:, ik)
+       !k(1)= -k(1)
+       !Hamk= 0d0
+       !call ham_bulk    (k, Hamk)
+
+
+        hamk=  Hamk_bulk
+        !> symmetrization
+        inv_mirror_x=mirror_x
+
+        call inv(Num_wann, inv_mirror_x)
+
+       !print *, maxval(abs(inv_mirror_x-mirror_x))
+       !stop
+
+        call mat_mul(Num_wann, inv_mirror_x, hamk, mat1)
+        call mat_mul(Num_wann, mat1, mirror_x, mat2)
+        hamk= (Hamk_bulk+ mat2)/2.d0
+       !hamk=  mat2
+
+        !> diagonal hamk
+        call eigensystem_c('V', 'U', Num_wann, hamk, W)
+
+        mat2= conjg(transpose(hamk))
+
+        !> calculate mirror eigenvalue
+        call mat_mul(Num_wann, mat2, mirror_x, mat1)
+        call mat_mul(Num_wann, mat1, hamk, mat2)
+        write(*, '(i5,1000f6.2)')ik, (real(mat2(i, i)), i=1, num_wann)
+        write(*, '(i5,1000f6.2)')ik, (aimag(mat2(i, i)), i=1, num_wann)
+       !pause
+            
+        !> get mirror_plus and mirror_minus
+        do i=1, Num_wann
+           if (abs(real(mat2(i, i))-1d0)< 1e-3) then
+              mirror_plus(i, ik)= .true.
+           else
+              mirror_minus(i, ik)= .true.
+           endif
+        enddo
+
+       !if (cpuid.eq.0)write(*, *)ik,&
+       !   (mirror_plus(i, ik), i=1, Num_wann) 
+        eigv(:, ik)= W
+
+     enddo  ! ik
+
+     call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
+                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+
+     if (cpuid==0)then
+        open(unit=14, file='bulkek.dat')
+        do i=1, Num_wann
+           do ik=1, knv3
+              write(14, '(1000f19.9)')k3len(ik),eigv_mpi(i, ik)
+           enddo
+           write(14, *)' '
+        enddo
+        close(14)
+
+        open(unit=15, file='bulkekmirrorplus.dat')
+        open(unit=16, file='bulkekmirrorminus.dat')
+        do i=1, Num_wann
+           do ik=1, knv3
+              if (mirror_plus(i, ik)) then
+                 write(15, '(1000f19.9)')k3len(ik),eigv_mpi(i, ik)
+              else
+                 write(16, '(1000f19.9)')k3len(ik),eigv_mpi(i, ik)
+              endif
+           enddo
+           write(15, *)' '
+           write(16, *)' '
+        enddo
+        close(15)
+        close(16)
+ 
+
+     endif
+
+     !> minimum and maximum value of energy bands
+     emin= minval(eigv_mpi)-0.5d0
+     emax= maxval(eigv_mpi)+0.5d0
+
+     !> write script for gnuplot
+     if (cpuid==0) then
+        open(unit=101, file='bulkek.gnu')
+        write(101, '(a)') 'set terminal  postscript enhanced color'
+        write(101,'(2a)') '#set palette defined ( 0  "green", ', &
+           '5 "yellow", 10 "red" )'
+        write(101, '(a)')"set output 'bulkek.eps'"
+        write(101, '(a)')'set style data linespoints'
+        write(101, '(a)')'unset ztics'
+        write(101, '(a)')'unset key'
+        write(101, '(a)')'set pointsize 0.8'
+        write(101, '(a)')'set view 0,0'
+        write(101, '(a)')'set xtics font ",24"'
+        write(101, '(a)')'set ytics font ",24"'
+        write(101, '(a)')'set ylabel font ",24"'
+        write(101, '(a)')'set ylabel "Energy (eV)"'
+        write(101, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
+        write(101, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
+        write(101, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
+        write(101, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
+
+        do i=1, nk3lines-1
+           write(101, 204)k3line_stop(i+1), emin, k3line_stop(i+1), emax
+        enddo
+        write(101, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
+            "w lp lw 2 pt 7  ps 0.2, 0 w l"
+        close(101)
+     endif
+
+     202 format('set xtics (',:20('"',A3,'" ',F10.5,','))
+     203 format(A3,'" ',F10.5,')')
+     204 format('set arrow from ',F10.5,',',F10.5,' to ',F10.5,',',F10.5, ' nohead')
+     
+   return
+   end subroutine ek_bulk_mirror_x
+
 
 

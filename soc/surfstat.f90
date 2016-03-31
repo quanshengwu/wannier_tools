@@ -60,10 +60,10 @@
      kp(1,:)=(/0.5d0, 0.00d0/)  ; kpath_name(1)= 'X'
      ke(1,:)=(/0.0d0, 0.00d0/)  
      kp(2,:)=(/0.0d0, 0.00d0/)  ; kpath_name(2)= 'G'
-     ke(2,:)=(/0.5d0, 0.50d0/)  ! K
-     kp(3,:)=(/0.5d0, 0.50d0/) ; kpath_name(3)= 'M'     
-     ke(3,:)=(/0.0d0, 0.5d0/)  ! K
-     kp(4,:)=(/0.0d0, 0.5d0/)  ; kpath_name(4)= 'Y'     
+     ke(2,:)=(/0.0d0, 0.50d0/)  ! K
+     kp(3,:)=(/0.0d0, 0.50d0/) ; kpath_name(3)= 'Y'     
+     ke(3,:)=(/0.5d0, 0.5d0/)  ! K
+     kp(4,:)=(/0.5d0, 0.5d0/)  ; kpath_name(4)= 'M'     
      ke(4,:)=(/0.0d0, 0.0d0/)  ; kpath_name(5)= 'G'  
 
     !kp(1,:)=(/0.5d0, 0.00d0/)  ; kpath_name(1)= 'X'
@@ -86,13 +86,13 @@
     !kp(2,:)=(/0.0d0, 0.00d0/)  ; kpath_name(2)= 'G'
     !ke(2,:)=(/0.5d0, 0.00d0/)  ; kpath_name(3)= 'A'
    
-     kp(1,:)=(/0.3d0, 0.00d0/)  ; kpath_name(1)= 'X'
-     ke(1,:)=(/0.0d0, 0.00d0/)  
-     kp(1, 2)= surf_onsite
-     ke(1, 2)= surf_onsite
-     kp(2,:)=(/0.0d0, 0.00d0/)  ; kpath_name(2)= 'G'
+    !kp(1,:)=(/0.3d0, 0.00d0/)  ; kpath_name(1)= 'X'
+    !ke(1,:)=(/0.0d0, 0.00d0/)  
+    !kp(1, 2)= surf_onsite
+    !ke(1, 2)= surf_onsite
+    !kp(2,:)=(/0.0d0, 0.00d0/)  ; kpath_name(2)= 'G'
 
-     nlines=1
+     nlines=2
      NN= Nk
      knv2=NN*nlines
      allocate( kpoint(knv2, 2))
@@ -122,24 +122,23 @@
 
      enddo
 
-     k1= -0.5d0*ka2+0.5d0*kb2
-     t1= 0d0
-     do i=1, NN
-        s= (i-1d0)/(NN-1d0)-0.5d0
-        k2= k1
-        kpoint(i, 1)= s
-        kpoint(i, 2)= -2.818d0*s**3-0.2955*s
-        k1= kpoint(i, 1)*ka2+ kpoint(i, 2)*kb2
-        temp= dsqrt((k2(1)- k1(1))**2 &
-              +(k2(2)- k1(2))**2)
+    !k1= -0.5d0*ka2+0.5d0*kb2
+    !t1= 0d0
+    !do i=1, NN
+    !   s= (i-1d0)/(NN-1d0)-0.5d0
+    !   k2= k1
+    !   kpoint(i, 1)= s
+    !   kpoint(i, 2)= -2.818d0*s**3-0.2955*s
+    !   k1= kpoint(i, 1)*ka2+ kpoint(i, 2)*kb2
+    !   temp= dsqrt((k2(1)- k1(1))**2 &
+    !         +(k2(2)- k1(2))**2)
 
-        if (i.gt.1) then
-           t1=t1+temp
-        endif
-        k_len(i)= t1
-        print *, i, t1
-     enddo
-     stop
+    !   if (i.gt.1) then
+    !      t1=t1+temp
+    !   endif
+    !   k_len(i)= t1
+    !   print *, i, t1
+    !enddo
 
 
 
@@ -154,7 +153,7 @@
      dos_l_mpi=0d0
      dos_r_mpi=0d0
 
-     eta=(omegamax- omegamin)/dble(omeganum)*3.0d0
+     eta=(omegamax- omegamin)/dble(omeganum)*1.5d0
 
      do i= 1, omeganum
         omega(i)=omegamin+(i-1)*(omegamax-omegamin)/dble(omeganum)
@@ -176,8 +175,8 @@
      enddo
 
      do ikp= 1+cpuid, knv2, num_cpu
-        if (cpuid==0) write(*, *) ikp, 'ik', knv2
-        if (cpuid==0) write(stdout, *) ikp, 'ik', knv2
+        if (cpuid==0) write(*, *) 'ik', ikp, 'Nk', knv2
+        if (cpuid==0) write(stdout, *) 'ik', ikp, 'Nk', knv2
         k= kpoint(ikp,:)
 
         !> get the hopping matrix between two principle layers
@@ -235,13 +234,14 @@
         write(101, '(a)')'#set terminal  postscript enhanced color'
         write(101, '(a)')"#set output 'surfdos_l.eps'"
         write(101, '(3a)')'set terminal  pngcairo truecolor enhanced', &
-           ' font ", 36" size 1920, 1680'
+           ' font ", 60" size 1920, 1680'
         write(101, '(a)')"set output 'surfdos_l.png'"
         write(101,'(2a)') 'set palette defined (-10 "#194eff", ', &
            '0 "white", 10 "red" )'
         write(101, '(a)')'#set palette rgbformulae 33,13,10'
         write(101, '(a)')'set style data linespoints'
-        write(101, '(a)')'#set size ratio -1'
+        write(101, '(a)')'set size 0.8, 1'
+        write(101, '(a)')'set origin 0.1, 0'
         write(101, '(a)')'unset ztics'
         write(101, '(a)')'unset key'
         write(101, '(a)')'set pointsize 0.8'
@@ -249,10 +249,10 @@
         write(101, '(a)')'#set view equal xyz'
         write(101, '(a)')'set view map'
         write(101, '(a)')'set border lw 3'
-        write(101, '(a)')'set cbtics font ",48"'
-        write(101, '(a)')'set xtics font ",48"'
-        write(101, '(a)')'set ytics font ",48"'
-        write(101, '(a)')'set ylabel font ",48"'
+        write(101, '(a)')'#set cbtics font ",48"'
+        write(101, '(a)')'#set xtics font ",48"'
+        write(101, '(a)')'#set ytics font ",48"'
+        write(101, '(a)')'#set ylabel font ",48"'
         write(101, '(a)')'set ylabel "Energy (eV)"'
         write(101, '(a)')'#set xtics offset 0, -1'
         write(101, '(a)')'#set ylabel offset -6, 0 '
@@ -275,7 +275,7 @@
         write(101, '(a)')'#set terminal  postscript enhanced color'
         write(101, '(a)')"#set output 'surfdos_r.eps'"
         write(101, '(3a)')'set terminal  pngcairo truecolor enhanced', &
-           ' font ", 36" size 1920, 1680'
+           ' font ", 60" size 1920, 1680'
         write(101, '(a)')"set output 'surfdos_r.png'"
         write(101,'(2a)') 'set palette defined (-10 "#194eff", ', &
            '0 "white", 10 "red" )'
@@ -286,13 +286,15 @@
         write(101, '(a)')'set pointsize 0.8'
         write(101, '(a)')'set pm3d'
         write(101, '(a)')'set border lw 3'
+        write(101, '(a)')'set size 0.8, 1'
+        write(101, '(a)')'set origin 0.1, 0'
         write(101, '(a)')'#set size ratio -1'
         write(101, '(a)')'#set view equal xyz'
         write(101, '(a)')'set view map'
-        write(101, '(a)')'set cbtics font ",48"'
-        write(101, '(a)')'set xtics font ",48"'
-        write(101, '(a)')'set ytics font ",48"'
-        write(101, '(a)')'set ylabel font ",48"'
+        write(101, '(a)')'#set cbtics font ",48"'
+        write(101, '(a)')'#set xtics font ",48"'
+        write(101, '(a)')'#set ytics font ",48"'
+        write(101, '(a)')'#set ylabel font ",48"'
         write(101, '(a)')'set ylabel "Energy (eV)"'
         write(101, '(a)')'#set xtics offset 0, -1'
         write(101, '(a)')'#set ylabel offset -6, 0 '

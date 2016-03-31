@@ -117,7 +117,7 @@
             case ('dxz', 'Dxz', 'DXZ')
                orbital_index(i, ia)= 7
                lambda(i, ia)= lambda_d(it)/2d0
-            case ('dx2-y2', 'Dx2-y2', 'DX2-Y2', 'dx2', 'DX2')
+            case ('dx2-', 'dx2-y2', 'Dx2-y2', 'DX2-Y2', 'dx2', 'DX2')
                orbital_index(i, ia)= 8
                lambda(i, ia)= lambda_d(it)/2d0
             case ('dz2', 'Dz2', 'DZ2')
@@ -125,7 +125,7 @@
                lambda(i, ia)= lambda_d(it)/2d0
             case default
                write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 &
-                  orbitals"
+                  orbitals: ", proj_name(i, ia)
                stop
             end select
          enddo

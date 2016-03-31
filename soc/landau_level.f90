@@ -287,6 +287,7 @@
   end subroutine landau_level_B
 
   !> calculate hamiltonian for landau levels
+  !> consider the internal atom's position
   subroutine ham_3Dlandau(Ndimq, Nq, k, ham_landau)
      use para
      implicit none
@@ -582,6 +583,7 @@
 
 
   !> calculate hamiltonian for landau levels
+  !> don't consider the internal atom's position
   subroutine ham_3Dlandau2(Ndimq, Nq, k, ham_landau)
      use para
      implicit none

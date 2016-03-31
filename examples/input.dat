@@ -1,61 +1,49 @@
-wannier90_hr.dat hrmn.dat_WTe2  ! input file
-output        ! output file
-F             ! BulkBand_calc
-F             ! SlabBand_calc
-F             ! WireBand_calc
-F             ! SlabSS_calc
-F             ! SlabArc_calc
-F             ! SlabSpintexture_calc
-F             ! wanniercenter_calc
-F             ! berry
-50             ! Nk
-2000          ! omega number
-0.050 0.051   ! omegamin omegamax
-0.0600        ! E_arc
-10            ! nslab
-1             ! np   
-56            ! NumOccupied
-44            ! ntotch
-1             ! soc
-0.000040      ! eta
-7.3147  7.3747       ! e-fermi
-0.0           ! surf_onsite
-0 0 0         ! Bx By Bz
-3.477000       0.000          0.0000000
-0.000000       6.249          0.0000000
-0.000000       0.000          14.018000
- 12 ! number of atoms in unit cell
-  W     0.00000   0.60062   0.50000   
-  W     0.00000   0.03980   0.01522   
-  W     0.50000   0.39938   0.00000   
-  W     0.50000   0.96020   0.51522   
-  Te    0.00000   0.85761   0.65525   
-  Te    0.50000   0.14239   0.15525   
-  Te    0.00000   0.64631   0.11112   
-  Te    0.50000   0.35369   0.61112   
-  Te    0.00000   0.29845   0.85983   
-  Te    0.50000   0.70155   0.35983   
-  Te    0.00000   0.20722   0.40387   
-  Te    0.50000   0.79278   0.90387   
- 6 6 6 6 3 3 3 3 3 3 3 3  ! number of projectors for each atom
- W s dz2  dx2-y2  dyz  dxy  dxz
- W s dz2  dx2-y2  dyz  dxy  dxz
- W s dz2  dx2-y2  dyz  dxy  dxz
- W s dz2  dx2-y2  dyz  dxy  dxz
- Te   px  py  pz
- Te   px  py  pz
- Te   px  py  pz
- Te   px  py  pz
- Te   px  py  pz
- Te   px  py  pz
- Te   px  py  pz
- Te   px  py  pz
-     1        ! number of k line
-G 0.00000  0.00000  0.00000    X 0.50000  0.00000  0.00000    ! k point path
-1 0 0   ! Umatrix for new lattice 010 surface
-0 1 0 
+wannier90_hr.dat ! input file
+output           ! output file's filename
+F                ! BulkBand_calc
+F                ! SlabBand_calc
+F                ! WireBand_calc
+F                ! SlabSS_calc
+T                ! SlabArc_calc
+F                ! SlabSpintexture_calc
+F                ! wanniercenter_calc
+F                ! berry
+200              ! Nk
+500              ! omega number
+-2.00 2.00       ! omegamin omegamax
+0                ! E_arc
+10               ! nslab
+1                ! np   
+18               ! NumOccupied
+18               ! ntotch
+2                ! soc
+0.001            ! eta
+4.4195           ! e-fermi
+0.0              ! surf_onsite
+0 0 0            ! Bx By Bz
+-2.069  -3.583614  0.000000     ! crystal lattice information
+ 2.069  -3.583614  0.000000
+ 0.000   2.389075  9.546667
+5                               ! number of atoms in unit cell
+Direct                          ! Direct or Cartisen coordinate
+ Bi 0.3990    0.3990    1.1970
+ Bi 0.6010    0.6010    1.8030
+ Se 0     0     0
+ Se 0.2060    0.2060    0.6180
+ Se 0.7940    0.7940    2.3820
+ 3 3 3 3 3          ! number of projectors
+Bi px py pz         ! projectors
+Bi px py pz
+Se px py pz
+Se px py pz
+Se px py pz
+     5              ! number of k line only for bulk band
+G 0.00000 0.00000 0.0000 X 0.50000 0.00000 0.5000  ! k point path
+X 0.50000 0.00000 0.5000 W 0.75000 0.25000 0.5000
+W 0.75000 0.25000 0.5000 L 0.50000 0.50000 0.5000
+L 0.50000 0.50000 0.5000 G 0.00000 0.00000 0.0000
+G 0.00000 0.00000 0.0000 K 0.75000 0.37500 0.3750
+1 0 0    ! Umatrix for new lattice 001
+0 1 0
 0 0 1
-W1 0.1213 0.04766 0    W2  0.122 0.03603 0
-W1 -0.1213 0.04766 0    W2  -0.122 0.03603 0
-W1 -0.1213 -0.04766 0    W2  -0.122 -0.03603 0
-W1 0.1213 -0.04766 0    W2  0.122 -0.03603 0
+

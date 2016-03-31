@@ -159,6 +159,7 @@
      proj_name= ' '
      do i=1, Num_atoms
         read(1001, *)char_temp, proj_name(1:nprojs(i), i)
+        write(*, '(100a6)') char_temp, proj_name(1:nprojs(i), i)
      enddo
 
      !> spin orbital coupling strength

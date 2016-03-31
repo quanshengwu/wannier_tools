@@ -100,7 +100,7 @@
          call eigensystem_c('N', 'U', num_wann_soc, Hamk_nsoc, W)
          eigval_nsoc(:, ik)= W
 
-         do i=1, num_wann_soc-4
+         do i=1, num_wann_soc
         !do i= 51, 60
         !do i= 55, 58
         !do i= 1, 60
