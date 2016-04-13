@@ -1,8 +1,10 @@
 # Wannier_tools
 **Authorship**
+
 Written by QuanSheng Wu in Fortran (wuquansheng@gmail.com)
 
 **Brief introductions**
+
 Use wannier functions to get the surface state of slab system 
 or edge state of nanowire system or just bulk band. Especially
 usefull for topological insulator.
@@ -29,12 +31,14 @@ function to get beautifull surface state.
 
 
 **License and agreement**
+
 If you use our code, please cite this website “Q.S.Wu, https://github.com/quanshengwu/wannier_tools" . If you have good ideas to improve this code, do not hesitate to contact me. Your contribution will be recorded.
 
 **Publication**
-* [Nodal chain metals ](https://arxiv.org/abs/1604.03112)
-* [Surface states and bulk electronic structure in the candidate type-II Weyl semimetal WTe2] (https://arxiv.org/abs/1604.02411)
-* [Topological Phases in InAs1−xSbx: From Novel Topological Semimetal to Majorana Wire](https://arxiv.org/abs/1602.07001)
+
+* [Nodal chain metals, arXiv:1604.03112 ](https://arxiv.org/abs/1604.03112)
+* [Surface states and bulk electronic structure in the candidate type-II Weyl semimetal WTe2, arXiv:1604.02411](https://arxiv.org/abs/1604.02411)
+* [Topological Phases in InAs1−xSbx: From Novel Topological Semimetal to Majorana Wire, arxiv:1602.07001](https://arxiv.org/abs/1602.07001)
 * [Type-II Weyl semimetals, Nature 527, 495–498 (26 November 2015)](http://www.nature.com/nature/journal/v527/n7579/full/nature15768.html) 
 
 
