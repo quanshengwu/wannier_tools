@@ -1557,8 +1557,8 @@
                br= b(1)*Atom_position(1, ia)+ &
                    b(2)*Atom_position(2, ia)+ &
                    b(3)*Atom_position(3, ia)
-               ratio= cos(br)- zi* sin(br)
-              !ratio= 1d0
+              !ratio= cos(br)- zi* sin(br)
+               ratio= 1d0
          
                do j=1, nfill
                   do i=1, nfill

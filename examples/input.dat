@@ -51,6 +51,6 @@ X 0.5 0.0 G 0.0 0.0  ! k path for 2D case
 G 0.0 0.0 Y 0.5 0.0
 0.0 0.0 0.0 0.5  ! define 2d k space plane for arc plots
 0.0 0.0 0.5 0.5
-0.0 0.0 0.0  0.0  1.0 0.0  ! define 3d k space plane for gap plots
-0.0 0.0 0.0  0.5  0.0 0.0 
+0.0 0.0 0.5  0.0  1.0 0.5  ! define 3d k space plane for gap plots
+0.0 0.0 0.5  0.5  0.0 0.5 
 

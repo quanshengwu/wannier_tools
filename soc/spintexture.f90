@@ -14,7 +14,7 @@
 
     integer :: i, j, ikp
 
-	 integer :: knv2, nkz, nkx
+	 integer ::  nkz, nkx
     integer :: ierr
 
     integer :: Nband
@@ -61,7 +61,6 @@
     
     nkx = Nk 
     nkz = Nk
-	 knv2=nkx*nkz
 
     allocate( kxz(2, nkx*nkz))
     allocate( dos(nkx*nkz))
@@ -89,19 +88,16 @@
        ones(i,i)=1.0d0
     enddo
     
-    kxmin= 0.10d0/1d0
-    kxmax= 0.30d0/1d0
-    kzmin=-0.20d0/1d0
-    kzmax= 0.20d0/1d0
     ikp=0
     do i= 1, nkx
-    do j= 1, nkz
-       ikp=ikp+1
-       kxz(1, ikp)=kxmin+ (i-1)*(kxmax-kxmin)/dble(nkx)
-       kxz(2, ikp)=kzmin+ (j-1)*(kzmax-kzmin)/dble(nkz)
+       do j= 1, nkz
+          ikp=ikp+1
+          kxz(:, ikp)=K2D_start1+ (i-1)*(K2D_end1- K2D_start1)/dble(nkx-1) &
+                     +K2D_start2+ (j-1)*(K2D_end2- K2D_start2)/dble(nkz-1)
+       enddo
     enddo
-    enddo
-	
+
+
     Nband= Num_wann/2
 
     !> spin operator matrix
