@@ -1,5 +1,6 @@
 !> This subroutine is used for calculating energy 
 !> dispersion with wannier functions
+! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
   subroutine ek_slab
     
      use mpi

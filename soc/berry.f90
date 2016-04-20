@@ -5,6 +5,7 @@
 !          in kpoints
 ! Author : QuanSheng Wu (wuquansheng@gmail.com)
 ! 31 Mar 2016
+! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 !--------+--------+--------+--------+--------+--------+--------+------!
 
    subroutine  berryphase

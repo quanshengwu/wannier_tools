@@ -1,4 +1,5 @@
 ! this suboutine is used for wannier center calculation for slab system
+! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 
    subroutine  wannier_center2D
       use para

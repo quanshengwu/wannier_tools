@@ -7,6 +7,7 @@
 !            mpi version      4/21/2010
 !            change Kb to K=(Ka+Kb)/3 direction 4/22/2010
 !            Quansheng Wu on Jan 30 2015 at ETH Zurich
+! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 !+---------+---------+---------+---------+---------+---------+--------+!
   subroutine surfstat
 

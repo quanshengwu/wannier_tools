@@ -4,6 +4,7 @@
   !> B= (B cos\theta, B sin\theta, 0)
   !> construct on Dec 8 2015
   !> By QuanSheng Wu at ETH Zurich Honggerberg
+! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
   subroutine landau_level_k
      use para
      implicit none

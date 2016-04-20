@@ -8,6 +8,7 @@
 ! mpi-version is  tested , please report bugs to QSWU
 ! Jan 25 2015 by Q.S.Wu at ETH Zurich 
 ! wuquansheng@gmail.com
+! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 !--------+--------+--------+--------+--------+--------+--------+------!
 
   program main
@@ -129,7 +130,7 @@
      !> slab band
      if (SlabBand_calc)then
         call ek_slab
-       !call psik     
+        call psik     
      endif
     
      !> wannier center calculate

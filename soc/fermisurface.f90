@@ -1,4 +1,5 @@
 ! calculate bulk's energy band using wannier TB method
+! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
   subroutine fermisurface3D
 
      use mpi

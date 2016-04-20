@@ -3,6 +3,7 @@
 
 ! History  
 !        4/18/2010 by Quansheng Wu
+! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
   subroutine ham_slab(k,Hamk_slab)
   
      use para

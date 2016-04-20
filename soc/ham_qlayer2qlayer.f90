@@ -1,6 +1,7 @@
 ! this subroutine is used to caculate Hamiltonian between
 ! slabs  
 ! 4/23/2010 by QS Wu
+! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 
   subroutine ham_qlayer2qlayer(k,H00new,H01new)
 

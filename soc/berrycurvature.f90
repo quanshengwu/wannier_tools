@@ -2,6 +2,7 @@
 !> ref : Physical Review B 74, 195118(2006)
 !> eqn (34)
 !> Sep. 22 2015 by Quansheng Wu @ ETHZ
+! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
   subroutine berry_curvarture
 
      use para

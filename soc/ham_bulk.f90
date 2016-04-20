@@ -3,6 +3,7 @@
 
 ! History  
 !        May/29/2011 by Quansheng Wu
+! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
   subroutine ham_bulk(k,Hamk_bulk)
   
      use para

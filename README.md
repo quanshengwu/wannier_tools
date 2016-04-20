@@ -2,6 +2,7 @@
 **Authorship**
 
 Written by QuanSheng Wu in Fortran (wuquansheng@gmail.com)
+Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 
 **Brief introductions**
 

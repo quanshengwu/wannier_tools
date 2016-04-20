@@ -1,4 +1,5 @@
 ! some global parameters 
+! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 
   module para
 

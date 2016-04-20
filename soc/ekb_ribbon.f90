@@ -1,5 +1,6 @@
 ! This subroutine is used to caculate energy dispersion for 
 ! slab Bi2Se3
+! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 
   subroutine ekb_ribbon
     
