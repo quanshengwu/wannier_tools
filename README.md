@@ -4,6 +4,10 @@
 Written by QuanSheng Wu in Fortran (wuquansheng@gmail.com)
 Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 
+**Pull down the package**
+
+git clone https://github.com/quanshengwu/wannier_tools.git
+
 **Brief introductions**
 
 Use wannier functions to get the surface state of slab system 
