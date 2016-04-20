@@ -4,11 +4,11 @@ F                ! BulkBand_calc
 F                ! SlabBand_calc
 F                ! WireBand_calc
 F                ! SlabSS_calc
-T                ! SlabArc_calc
+F                ! SlabArc_calc
 F                ! SlabSpintexture_calc
-F                ! wanniercenter_calc
+T                ! wanniercenter_calc
 F                ! berry
-200              ! Nk
+40               ! Nk
 500              ! omega number
 -2.00 2.00       ! omegamin omegamax
 0                ! E_arc
@@ -46,4 +46,11 @@ G 0.00000 0.00000 0.0000 K 0.75000 0.37500 0.3750
 1 0 0    ! Umatrix for new lattice 001
 0 1 0
 0 0 1
+2        ! numker of k line for 2D case
+X 0.5 0.0 G 0.0 0.0  ! k path for 2D case
+G 0.0 0.0 Y 0.5 0.0
+0.0 0.0 0.0 0.5  ! define 2d k space plane for arc plots
+0.0 0.0 0.5 0.5
+0.0 0.0 0.0  0.0  1.0 0.0  ! define 3d k space plane for gap plots
+0.0 0.0 0.0  0.5  0.0 0.0 
 

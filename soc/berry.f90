@@ -24,6 +24,7 @@
       !> hamiltonian for each k point
       !> and also the eigenvector of hamiltonian after eigensystem_c
       complex(dp), allocatable :: Hamk(:, :)
+      complex(dp), allocatable :: Hamk1(:, :)
       complex(dp), allocatable :: Hamk_dag(:, :)
 
       !> eigenvector for each kx
@@ -51,9 +52,12 @@
       !> eigenvalue
       real(dp), allocatable :: eigenvalue(:)
 
+      complex(dp), allocatable :: mat1(:, :)
+      complex(dp), allocatable :: mat2(:, :)
       real(dp) :: kx
       real(dp) :: ky
       real(dp) :: kz
+      real(dp) :: r1, r2
       real(dp) :: k(3)
       real(dp) :: k1(3)
       real(dp) :: phi
@@ -70,7 +74,10 @@
       allocate(Mmnkb(nfill, nfill))
       allocate(Mmnkb_com(nfill, nfill))
       allocate(Mmnkb_full(Num_wann, Num_wann))
+      allocate(mat1(Num_wann, Num_wann))
+      allocate(mat2(Num_wann, Num_wann))
       allocate(hamk(Num_wann, Num_wann))
+      allocate(hamk1(Num_wann, Num_wann))
       allocate(hamk_dag(Num_wann, Num_wann))
       allocate(Eigenvector(Num_wann, Num_wann, Nk))
       allocate(eigenvalue(Num_wann))
@@ -79,6 +86,7 @@
       allocate(VT(nfill, nfill))
       allocate(phase(Num_wann))
       hamk=0d0
+      hamk1=0d0
       eigenvalue=0d0
       Eigenvector=0d0
       Mmnkb_full=0d0
@@ -90,12 +98,15 @@
       Sigma= 0d0
       VT= 0d0
 
-      !> define a k path
+      r1=0.020d0
+      r2=0.020d0
+
+      !> define a circle k path
       do ik=1, Nk
          phi= (ik-1d0)*2d0*pi/dble(Nk)
-         kx= 0.00d0+ cos(phi)*0.100d0!pi
-         ky= 0.20d0+ sin(phi)*0.100d0!pi
-         kz= 0.00d0
+         kx= 0.400000d0+ cos(phi)*r1
+         ky= 0.330000d0
+         kz= 0.0d0+ sin(phi)*r2
          kpoints(1, ik)= kx
          kpoints(2, ik)= ky
          kpoints(3, ik)= kz
@@ -107,10 +118,22 @@
          k(2)= kpoints(2, ik)
          k(3)= kpoints(3, ik)
 
-         call cart_direct(k, k1)
-         write(*, '(a, 3f7.3, a, 3f7.3)')'k',k,'  k1', k1
+         k1= k
+        !call cart_direct(k, k1)
+        if (cpuid.eq.0)write(*, '(a, 3f7.3, a, 3f7.3)')'k',k,'  k1', k1
 
-         call ham_bulk(k1,hamk)
+        !call ham_bulk(k1,hamk1)
+
+        !k = kpoints(:, ik)
+        !k(3)= -k(3)
+        !Hamk= 0d0
+         call ham_bulk    (k, Hamk)
+        
+         !> symmetrization
+        !call mat_mul(Num_wann, mirror_z, hamk, mat1)
+        !call mat_mul(Num_wann, mat1, mirror_z, mat2)
+        !hamk= (Hamk1+ mat2)/2.d0
+
 
          !> diagonal hamk
          call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
@@ -123,7 +146,7 @@
       do ik= 1, Nk
          hamk= Eigenvector(:, :, ik)
          hamk_dag= conjg(transpose(hamk))
-         if (ik==nk) then
+         if (ik==Nk) then
             hamk= Eigenvector(:, :, 1)
          else
             hamk= Eigenvector(:, :, ik+ 1)
@@ -136,13 +159,16 @@
                overlap= overlap+ hamk_dag(i, j)* hamk(j, i)
             enddo
            !phase(i)= phase(i)- aimag(log(overlap))/pi
-            phase(i)= phase(i)*overlap
+            phase(i)= overlap*phase(i)
          enddo
       enddo  !< ik
-      print *, 'berry phase'
+      if (cpuid==0) print *, 'berry phase'
       do i=1, Num_wann
-         write(*, '(10f10.5)')aimag(log(phase(i)))/pi
+        !if (cpuid==0)  write(*, '(10f10.5)')aimag(log(phase(i)))/pi
+        !write(*, '(10f10.5)')phase(i)
       enddo
+      if (cpuid==0) write(*, '(f18.6)')sum(aimag(log(phase(1:nfill)))/pi)
+     !print *, sum(phase(1:nfill))
 
       return
    end subroutine berryphase

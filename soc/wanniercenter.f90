@@ -7,7 +7,6 @@
 
       integer :: Nkx
       integer :: Nky
-      integer :: knv2
 
       integer :: i
       integer :: j
@@ -61,7 +60,6 @@
 
       Nkx= Nk
       Nky= 40
-      knv2= Nkx*Nky
 
       nfill= Numoccupied*Nslab
 
@@ -217,7 +215,6 @@
 
       integer :: Nkx
       integer :: Nky
-      integer :: knv2
 
       integer :: i
       integer :: j
@@ -306,7 +303,6 @@
 
       Nkx= Nk
       Nky= 40
-      knv2= Nkx*Nky
 
       nfill= Numoccupied*Nslab
 
@@ -556,7 +552,6 @@
 
       integer :: Nk1
       integer :: Nk2
-      integer :: knv2
 
       integer :: i
       integer :: j
@@ -662,7 +657,6 @@
 
       Nk1= Nk
       Nk2= Nk
-      knv2= Nk1*Nk2
 
       nfill= Numoccupied
      !nfill_half= Numoccupied
@@ -952,7 +946,6 @@
 
       integer :: Nk1
       integer :: Nk2
-      integer :: knv2
 
       integer :: i
       integer :: j
@@ -1058,7 +1051,6 @@
 
       Nk1= Nk
       Nk2= Nk
-      knv2= Nk1*Nk2
 
       nfill= Numoccupied
      !nfill_half= Numoccupied
@@ -1348,7 +1340,6 @@
 
       integer :: Nk1
       integer :: Nk2
-      integer :: knv2
 
       integer :: i
       integer :: j
@@ -1442,7 +1433,6 @@
 
       Nk1= Nk
       Nk2= Nk
-      knv2= Nk1*Nk2
 
       nfill= Numoccupied
 
@@ -1485,19 +1475,20 @@
       VT= 0d0
 
       !> set k plane
-      !> the first dimension should be in one primitive plane
-      k11=(/ 0.0d0,  0.0d0,  0.0d0/) ! 
-      k12=(/ 1.0d0,  0.0d0,  0.0d0/) ! X
-      k21=(/ 0.0d0,  0.0d0,  0.0d0/) ! 
-      k22=(/ 0.0d0,  1.0d0,  0.0d0/) ! Y
+      !> the first dimension should be in one primitive cell, [0, 2*pi]
+      k11= K3D_start1 ! 
+      k12= K3D_end1   !  
+      k21= K3D_start2 ! 
+      k22= K3D_end2   ! 
 
       do ik2=1, Nk2
          do ik1=1, Nk1
-            kpoints(:, ik1, ik2)= k11+(k12-k11)*(ik1-1)/dble(nk1)+  k21+ (k22-k21)*(ik2-1)/dble(nk2)
-            b= (k12-k11)/dble(nk1)
+            kpoints(:, ik1, ik2)= k11+ (k12-k11)*(ik1-1)/dble(Nk1)+ &
+                                  k21+ (k22-k21)*(ik2-1)/dble(Nk2-1)
          enddo
       enddo
-
+      b= (k12-k11)/dble(Nk1)
+      b= b(1)*kua+b(2)*kub+b(3)*kuc
 
       !> set up atom index for each orbitals in the basis
       if (soc>0) then  !> with spin orbital coupling
@@ -1565,7 +1556,7 @@
                br= b(1)*Atom_position(1, ia)+ &
                    b(2)*Atom_position(2, ia)+ &
                    b(3)*Atom_position(3, ia)
-               ratio= cos(br*2d0*pi)- zi* sin(br*2d0*pi)
+               ratio= cos(br)- zi* sin(br)
               !ratio= 1d0
          
                do j=1, nfill
@@ -1633,15 +1624,16 @@
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
 
       if (cpuid==0) then
-         open(unit=101, file='wanniercenterky0.dat')
+         open(unit=101, file='wcc.dat')
 
          do ik2=1, Nk2
-            write(101, '(10000f16.8)') dble(ik2-1)/dble(Nk2), &
+            write(101, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1), &
                largestgap_mpi(ik2), dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
                WannierCenterKy_mpi(:, ik2)
          enddo
          close(101)
       endif
+
 
 
       !> Z2 calculation Alexey Soluyanov arXiv:1102.5600
@@ -1676,7 +1668,29 @@
 
       Z2= mod(Delta, 2)
 
-      if (cpuid==0) print*,'Z2 for ky=0: ', Z2
+      if (cpuid==0) print*,'Z2 for the plane you choose: ', Z2
+
+
+      !> generate gnu script for wannier charge center plots
+      if (cpuid==0) then
+         open(unit=301, file='wcc.gnu')
+         write(301, '(a)')'set terminal  postscript enhanced color font ",30"'
+         write(301, '(a)')"set output 'wcc.eps'"
+         write(301, '(a)')'unset key '
+         write(301, '(a)')'set border lw 3 '
+         write(301, '(a)')'set xtics offset 0, 0.2'
+         write(301, '(a)')'set xtics format "%4.1f" nomirror out '
+         write(301, '(a)')'set xlabel "k" '
+         write(301, '(a)')'set xlabel offset 0, 0.7 '
+         write(301, '(a)')'set ytics 0.5 '
+         write(301, '(a)')'set ytics format "%4.1f" nomirror out'
+         write(301, '(a)')'set ylabel "WCC"'
+         write(301, '(a)')'set ylabel offset 2, 0.0 '
+         write(301, '(a)')'set xrange [0: 1]'
+         write(301, '(a)')'set yrange [0:1]'
+         write(301, '(a)')"plot 'wcc.dat' u 1:2 w l lw 2  lc 'blue', \"   
+         write(301, '(a, i5, a)')" for [i=4: ", nfill+3, "] 'wcc.dat' u 1:i w p  pt 7  ps 1.1 lc 'red'"
+      endif
 
       return
    end subroutine  wannier_center3D_plane
@@ -1692,7 +1706,6 @@
 
       integer :: Nk1
       integer :: Nk2
-      integer :: knv2
 
       integer :: i
       integer :: j
@@ -1785,7 +1798,6 @@
 
       Nk1= Nk
       Nk2= Nk
-      knv2= Nk1*Nk2
 
       nfill= Numoccupied
 

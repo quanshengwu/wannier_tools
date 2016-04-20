@@ -50,6 +50,18 @@
      read(1001,*) SlabSpintexture_calc
      read(1001,*) wanniercenter_calc
      read(1001,*) berry_calc
+
+     if (cpuid==0) then
+        write(stdout, *) "BulkBand_calc: ", BulkBand_calc
+        write(stdout, *) "SlabBand_calc: ", SlabBand_calc
+        write(stdout, *) "WireBand_calc: ", WireBand_calc
+        write(stdout, *) "SlabSS_calc  : " , SlabSS_calc
+        write(stdout, *) "SlabArc_calc : ",  SlabArc_calc
+        write(stdout, *) "SlabSpintexture_calc: ",  SlabSpintexture_calc
+        write(stdout, *) "wanniercenter_calc  : ", wanniercenter_calc
+        write(stdout, *) "berry_calc   : ", berry_calc
+     endif
+
      read(1001,*)Nk
      if(cpuid==0)write(stdout,*)'Nk',Nk
      read(1001,*)omeganum
@@ -147,7 +159,7 @@
      proj_name= ' '
      do i=1, Num_atoms
         read(1001, *)char_temp, proj_name(1:nprojs(i), i)
-        if(cpuid==0)write(stdout, '(40a)') &
+        if(cpuid==0)write(stdout, '(40a8)') &
            char_temp, proj_name(1:nprojs(i), i)
      enddo
 
@@ -167,7 +179,7 @@
      do i=1, nk3lines
         read(1001, *) k3line_name(i), k3line_start(:, i), &
                       char_temp, k3line_end(:, i)
-        if(cpuid==0)write(stdout, '(a, 3f9.4, a, 3f9.4)')&
+        if(cpuid==0)write(stdout, '(a5, 3f9.4, 2x, a5, 3f9.4)')&
           k3line_name(i), k3line_start(:, i), &
           char_temp, k3line_end(:, i)
 
@@ -234,6 +246,7 @@
      if (abs(abs(cell_volume2)-abs(cell_volume))> 0.001d0.and.cpuid==0) then
         write(stdout, *)' ERROR The Umatrix is wrong, the new cell', &
            'volume should be the same as the old ones'
+        write(stdout, '(a,2f10.4)')'cell_volume vs cell_volume-new', cell_volume, cell_volume2
         stop
      endif
 
@@ -292,12 +305,71 @@
         write(stdout, '(3f10.4)')kb2
      endif
 
+     !> read in k lines for 2D system
+     k2line_name= ' '
+     if (cpuid==0) write(stdout, *)'k lines for 2D system'
+     read(1001, *)nk2lines
+     if (cpuid==0) write(stdout, *)'No. of k lines for 2D system : ', nk2lines
+     do i=1, nk2lines
+        read(1001, *) k2line_name(i), kp(:, i), &
+                      char_temp, ke(:, i)
+        if(cpuid==0) write(stdout, '(a6, 2f9.5, 4x, a6, 2f9.5)')&
+                      k2line_name(i), kp(:, i), &
+                      char_temp, ke(:, i)
+     enddo
+     k2line_name(nk2lines+1) = char_temp
+ 
+     NN= Nk
+     knv2= NN*nk2lines
+     allocate( k2_path(knv2, 2))
+     allocate( k2len (knv2))
+     k2_path= 0d0
+     k2len= 0d0
+
+     t1=0d0
+     k2len=0d0
+     k2line_stop= 0d0
+     do j=1, nk2lines 
+        do i=1, NN
+           kstart(1:2)= kp(:, j)
+           kend(1:2)  = ke(:, j)
+           k1(1:2)= kstart(1)*Ka2+ kstart(2)*Kb2
+           k2(1:2)= kend(1)*Ka2+ kend(2)*Kb2
+           k2_path(i+(j-1)*NN,:)= kstart(1:2)+ (kend(1:2)-kstart(1:2))*(i-1)/dble(NN-1)
+           
+           temp= dsqrt((k2(1)- k1(1))**2 &
+                 +(k2(2)- k1(2))**2)/dble(NN-1) 
+
+           if (i.gt.1) then
+              t1=t1+temp
+           endif
+           k2len(i+(j-1)*NN)= t1
+        enddo
+        k2line_stop(j+1)= t1
+
+     enddo
+
+     !> kpoints plane for 2D system--> arcs  
+     if (cpuid==0) write(stdout, *)'>> Kpoints plane for 2D system--> arcs  '
+     read(1001, *)K2D_start1, K2D_end1
+     if (cpuid==0) write(stdout, '(2(a6, 2f8.4))')'start1', K2D_start1, 'end1', K2D_end1
+     read(1001, *)K2D_start2, K2D_end2
+     if (cpuid==0) write(stdout, '(2(a6, 2f8.4))')'start2', K2D_start2, 'end2', K2D_end2
+
+     !> kpoints plane for 3D system--> gapshape
+     if (cpuid==0) write(stdout, *)'>> Kpoints plane for 3D system--> gapshape  '
+     read(1001, *)K3D_start1, K3D_end1
+     if (cpuid==0) write(stdout, '(2(a6, 3f8.4))')'start1', K3D_start1, 'end1', K3D_end1
+     read(1001, *)K3D_start2, K3D_end2
+     if (cpuid==0) write(stdout, '(2(a6, 3f8.4))')'start2', K3D_start2, 'end2', K3D_end2
+
+
+     !> close input.dat
      close(1001)
 
      eta=(omegamax- omegamin)/omeganum*eta
 
      if(cpuid==0)write(stdout,*)'read input.dat file successfully'
-
 
 
      return

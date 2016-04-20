@@ -10,25 +10,16 @@
      integer :: i     
      integer :: j
      integer :: l
-     integer :: i1
-     integer :: i2
-     integer :: NN, nlines, knv3
 
      integer :: lwork
 
 ! wave vector 
-     real(dp) :: k1(2)
-     real(dp) :: k2(2)
-     real(Dp) :: k(2), kstart(2), kend(2)
-     real(dp) :: kp(16,2), ke(16,2), kpath_stop(16)
-     character(4) :: kpath_name(17)
+     real(Dp) :: k(2)
 
-     real(dp) :: cell_volume
-     real(dp) :: t1, temp
      real(dp) :: emin, emax
  
 ! parameters for zheev
-     integer :: info,ierr
+     integer :: ierr
      real(Dp), allocatable ::  rwork(:)
      complex(Dp), allocatable :: work(:)
       
@@ -40,7 +31,6 @@
      real(Dp),allocatable :: ekslab_mpi(:,:)
 
      real(dp), allocatable :: kpoint(:,:)
-     real(dp), allocatable :: k_len(:)
 
      !> color for plot, surface state weight
      real(dp), allocatable :: surf_weight(:, :)
@@ -52,32 +42,10 @@
      lwork= 16*Nslab*Num_wann
      ierr = 0
 
-     kpath_name= ' '
-     kp(1,:)=(/0.5d0, 0.0d0/)  ; kpath_name(1)= 'X'
-     ke(1,:)=(/0.0d0, 0.0d0/)  
-     kp(2,:)=(/0.0d0, 0.0d0/)  ; kpath_name(2)= 'G'
-     ke(2,:)=(/0.0d0, 0.50d0/)  ! K
-     kp(3,:)=(/0.0d0, 0.50d0/) ; kpath_name(3)= 'Y'     
-     ke(3,:)=(/0.5d0, 0.5d0/)  ! K
-     kp(4,:)=(/0.5d0, 0.5d0/)  ; kpath_name(4)= 'M'     
-     ke(4,:)=(/0.0d0, 0.0d0/)  ; kpath_name(5)= 'G'  
-
-     kp(5,:)=(/0.0d0, 0.0d0/)  ! K
-     ke(5,:)=(/0.5d0, 0.5d0/)  ! K
-     kp(6,:)=(/0.0d0, 0.0d0/)  ! K
-     ke(6,:)=(/1.0d0, 1.0d0/)  ! K
-  
-
-
-     nlines= 4
-     NN=Nk
-     knv3=NN*nlines
-     allocate( kpoint(knv3, 3))
-     allocate( k_len (knv3))
-     allocate( surf_weight (Nslab* Num_wann, knv3))
-     allocate( surf_weight_mpi (Nslab* Num_wann, knv3))
-     allocate(ekslab(Nslab*Num_wann,knv3))
-     allocate(ekslab_mpi(Nslab*Num_wann,knv3))
+     allocate( surf_weight (Nslab* Num_wann, knv2))
+     allocate( surf_weight_mpi (Nslab* Num_wann, knv2))
+     allocate(ekslab(Nslab*Num_wann,knv2))
+     allocate(ekslab_mpi(Nslab*Num_wann,knv2))
      allocate(CHamk(nslab*Num_wann,nslab*Num_wann))
      allocate(work(lwork))
      allocate(rwork(lwork))
@@ -86,37 +54,11 @@
      surf_weight= 0d0
      surf_weight_mpi= 0d0
 
-     t1=0d0
-     k_len=0d0
-     kpath_stop= 0d0
-     do j=1, nlines 
-        do i=1, NN
-           k = kp(j,:)
-           kstart=k
-           k1= kstart(1)*Ka2+ kstart(2)*Kb2
-
-           k = ke(j,:)
-           kend=k
-           k2= kend(1)*Ka2+ kend(2)*Kb2
-
-           kpoint(i+(j-1)*NN,:)= kstart+ (kend-kstart)*dble(i-1)/dble(NN-1)
-           
-           temp= dsqrt((k2(1)- k1(1))**2 &
-                 +(k2(2)- k1(2))**2)/dble(NN-1) 
-
-           if (i.gt.1) then
-              t1=t1+temp
-           endif
-           k_len(i+(j-1)*NN)= t1
-        enddo
-        kpath_stop(j+1)= t1
-     enddo
-
      ! sweep k
      ekslab=0.0d0
-     do i=1+cpuid,knv3,num_cpu
-        if (cpuid==0) print *, 'ik ',  i, knv3
-        k= kpoint(i, :)
+     do i=1+cpuid,knv2,num_cpu
+        if (cpuid==0) print *, 'ik ',  i, knv2
+        k= k2_path(i, :)
         chamk=0.0d0 
 
         !> no magnetgic field
@@ -149,7 +91,7 @@
            enddo ! l
            surf_weight(j, i)= sqrt(surf_weight(j, i))
         enddo ! j 
-        if (cpuid==0) write(stdout, *)'SlabEk,k', i, knv3
+        if (cpuid==0) write(stdout, *)'SlabEk,k', i, knv2
      enddo ! i
      call mpi_allreduce(ekslab,ekslab_mpi,size(ekslab),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
@@ -163,10 +105,10 @@
      if(cpuid==0)then
         open(unit=100, file='slabek.dat')
         do j=1, Num_wann*Nslab
-           do i=1, knv3
-             !write(100,'(3f15.7, i8)')k_len(i), ekslab(j,i), &
+           do i=1, knv2
+             !write(100,'(3f15.7, i8)')k2len(i), ekslab(j,i), &
              !   (surf_weight(j, i))
-              write(100,'(2f15.7, i8)')k_len(i), ekslab(j,i), &
+              write(100,'(2f15.7, i8)')k2len(i), ekslab(j,i), &
                  int(255-surf_weight(j, i)*255d0)
            enddo
            write(100 , *)''
@@ -199,13 +141,13 @@
         write(101, '(a)')'#set xtics offset 0, -1'
         write(101, '(a)')'set ylabel offset -1, 0 '
         write(101, '(a)')'set ylabel "Energy (eV)"'
-        write(101, '(a, f10.5, a)')'set xrange [0: ', maxval(k_len), ']'
+        write(101, '(a, f10.5, a)')'set xrange [0: ', maxval(k2len), ']'
         write(101, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
-        write(101, 202, advance="no") (trim(kpath_name(i)), kpath_stop(i), i=1, nlines)
-        write(101, 203)trim(kpath_name(nlines+1)), kpath_stop(nlines+1)
+        write(101, 202, advance="no") (trim(k2line_name(i)), k2line_stop(i), i=1, nk2lines)
+        write(101, 203)trim(k2line_name(nk2lines+1)), k2line_stop(nk2lines+1)
 
-        do i=1, nlines-1
-           write(101, 204)kpath_stop(i+1), emin, kpath_stop(i+1), emax
+        do i=1, nk2lines-1
+           write(101, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
         enddo
         write(101, '(a)')'rgb(r,g,b) = int(r)*65536 + int(g)*256 + int(b)'
         write(101, '(2a)')"plot 'slabek.dat' u 1:2:(rgb(255,$3, 3)) ",  &
@@ -237,25 +179,15 @@
      integer :: i     
      integer :: j
      integer :: l
-     integer :: i1
-     integer :: i2
-     integer :: NN, nlines, knv3
 
      integer :: lwork
 
-! wave vector 
-     real(dp) :: k1(2)
-     real(dp) :: k2(2)
-     real(Dp) :: k(2), kstart(2), kend(2)
-     real(dp) :: kp(16,2), ke(16,2), kpath_stop(16)
-     character(4) :: kpath_name(17)
+     real(Dp) :: k(2)
 
-     real(dp) :: cell_volume
-     real(dp) :: t1, temp
      real(dp) :: emin, emax
  
 ! parameters for zheev
-     integer :: info,ierr
+     integer :: ierr
      real(Dp), allocatable ::  rwork(:)
      complex(Dp), allocatable :: work(:)
       
@@ -265,9 +197,6 @@
 ! energy dispersion
      real(Dp),allocatable :: ekslab(:,:)
      real(Dp),allocatable :: ekslab_mpi(:,:)
-
-     real(dp), allocatable :: kpoint(:,:)
-     real(dp), allocatable :: k_len(:)
 
      !> color for plot, surface state weight
      real(dp), allocatable :: surf_weight(:, :)
@@ -279,75 +208,22 @@
      lwork= 16*Nslab*Num_wann
      ierr = 0
 
-     kpath_name= ' '
-    !kp(1,:)=(/0.7d0, 0.0d0/)  ; kpath_name(1)= 'X2'
-    !ke(1,:)=(/0.5d0, 0.0d0/)  
-    !kp(2,:)=(/0.5d0, 0.0d0/)  ; kpath_name(2)= 'X'
-    !ke(2,:)=(/0.5d0, 0.20d0/)  ! K
-     kp(1,:)=(/0.0d0, 0.0d0/)  ; kpath_name(1)= 'G'
-     ke(1,:)=(/0.5d0, 0.0d0/)  
-     kp(2,:)=(/0.5d0, 0.0d0/)  ; kpath_name(2)= 'X'
-     ke(2,:)=(/0.5d0, 0.50d0/)  ! K
-     kp(3,:)=(/0.5d0, 0.50d0/) ; kpath_name(3)= 'M'     
-     ke(3,:)=(/0.0d0, 0.0d0/)  ! K
-     kp(4,:)=(/0.0d0, 0.0d0/)  ; kpath_name(4)= 'G'     
-     ke(4,:)=(/0.0d0, 0.5d0/)  ; kpath_name(5)= 'Y'  
-
-     kp(5,:)=(/0.0d0, 0.0d0/)  ! K
-     ke(5,:)=(/0.5d0, 0.5d0/)  ! K
-     kp(6,:)=(/0.0d0, 0.0d0/)  ! K
-     ke(6,:)=(/1.0d0, 1.0d0/)  ! K
-  
-
-
-     nlines= 4
-     NN=Nk
-     knv3=NN*nlines
-     allocate( kpoint(knv3, 3))
-     allocate( k_len (knv3))
-     allocate( surf_weight (Nslab* Num_wann, knv3))
-     allocate( surf_weight_mpi (Nslab* Num_wann, knv3))
-     allocate(ekslab(Nslab*Num_wann,knv3))
-     allocate(ekslab_mpi(Nslab*Num_wann,knv3))
+     allocate( surf_weight (Nslab* Num_wann, knv2))
+     allocate( surf_weight_mpi (Nslab* Num_wann, knv2))
+     allocate(ekslab(Nslab*Num_wann,knv2))
+     allocate(ekslab_mpi(Nslab*Num_wann,knv2))
      allocate(CHamk(nslab*Num_wann,nslab*Num_wann))
      allocate(work(lwork))
      allocate(rwork(lwork))
  
-     kpoint= 0d0
      surf_weight= 0d0
      surf_weight_mpi= 0d0
 
-     t1=0d0
-     k_len=0d0
-     kpath_stop= 0d0
-     do j=1, nlines 
-        do i=1, NN
-           k = kp(j,:)
-           kstart=k
-           k1= kstart(1)*Ka2+ kstart(2)*Kb2
-
-           k = ke(j,:)
-           kend=k
-           k2= kend(1)*Ka2+ kend(2)*Kb2
-
-           kpoint(i+(j-1)*NN,:)= kstart+ (kend-kstart)*dble(i-1)/dble(NN-1)
-           
-           temp= dsqrt((k2(1)- k1(1))**2 &
-                 +(k2(2)- k1(2))**2)/dble(NN-1) 
-
-           if (i.gt.1) then
-              t1=t1+temp
-           endif
-           k_len(i+(j-1)*NN)= t1
-        enddo
-        kpath_stop(j+1)= t1
-     enddo
-
      ! sweep k
      ekslab=0.0d0
-     do i=1+cpuid,knv3,num_cpu
-        if (cpuid==0) print *, 'ik ',  i, knv3
-        k= kpoint(i, :)
+     do i=1+cpuid,knv2,num_cpu
+        if (cpuid==0) print *, 'ik ',  i, knv2
+        k= k2_path(i, :)
         chamk=0.0d0 
         eigenvalue=0.0d0
         ! diagonal Chamk
@@ -365,7 +241,7 @@
            enddo ! l
            surf_weight(j, i)= sqrt(surf_weight(j, i))
         enddo ! j 
-        if (cpuid==0) write(stdout, *)'SlabEk,k', i, knv3
+        if (cpuid==0) write(stdout, *)'SlabEk,k', i, knv2
      enddo ! i
      call mpi_allreduce(ekslab,ekslab_mpi,size(ekslab),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
@@ -379,10 +255,10 @@
      if(cpuid==0)then
         open(unit=100, file='slabek.dat')
         do j=1, Num_wann*Nslab
-           do i=1, knv3
-             !write(100,'(3f15.7, i8)')k_len(i), ekslab(j,i), &
+           do i=1, knv2
+             !write(100,'(3f15.7, i8)')k2len(i), ekslab(j,i), &
              !   (surf_weight(j, i))
-              write(100,'(2f15.7, i8)')k_len(i), ekslab(j,i), &
+              write(100,'(2f15.7, i8)')k2len(i), ekslab(j,i), &
                  int(255-surf_weight(j, i)*255d0)
            enddo
            write(100 , *)''
@@ -415,13 +291,13 @@
         write(101, '(a)')'#set xtics offset 0, -1'
         write(101, '(a)')'set ylabel offset -1, 0 '
         write(101, '(a)')'set ylabel "Energy (eV)"'
-        write(101, '(a, f10.5, a)')'set xrange [0: ', maxval(k_len), ']'
+        write(101, '(a, f10.5, a)')'set xrange [0: ', maxval(k2len), ']'
         write(101, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
-        write(101, 202, advance="no") (trim(kpath_name(i)), kpath_stop(i), i=1, nlines)
-        write(101, 203)trim(kpath_name(nlines+1)), kpath_stop(nlines+1)
+        write(101, 202, advance="no") (trim(k2line_name(i)), k2line_stop(i), i=1, nk2lines)
+        write(101, 203)trim(k2line_name(nk2lines+1)), k2line_stop(nk2lines+1)
 
-        do i=1, nlines-1
-           write(101, 204)kpath_stop(i+1), emin, kpath_stop(i+1), emax
+        do i=1, nk2lines-1
+           write(101, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
         enddo
         write(101, '(a)')'rgb(r,g,b) = int(r)*65536 + int(g)*256 + int(b)'
         write(101, '(2a)')"plot 'slabek.dat' u 1:2:(rgb(255,$3, 3)) ",  &

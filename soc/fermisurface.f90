@@ -509,10 +509,10 @@
 
       !> for space group 43 model
       !> ky-kz plane
-      k11=(/ 0.0d0, 1d0,1.0d0/) !  
-      k12=(/ 0.0d0,-1.0d0,-1.0d0/) ! y
-      k21=(/-1.0d0,-1.0d0,0.0d0/) ! 
-      k22=(/ 1.0d0, 1.0d0,0.0d0/) ! z
+     !k11=(/ 0.0d0, 1d0,1.0d0/) !  
+     !k12=(/ 0.0d0,-1.0d0,-1.0d0/) ! y
+     !k21=(/-1.0d0,-1.0d0,0.0d0/) ! 
+     !k22=(/ 1.0d0, 1.0d0,0.0d0/) ! z
 
       !> kx-kz plane
      !k11=(/0.0d0, 0d0, 0.0d0/) ! Y
@@ -541,6 +541,17 @@
      !k21=(/-1.0d0,-1.0d0,0.0d0/) ! 
      !k22=(/ 1.0d0, 1.0d0,0.0d0/) ! z
 
+     !> for space group 187
+      !> kx-ky plane
+     !k11=(/ 0.2d0, 0.0d0, 0.0d0/) !  
+     !k12=(/ 0.5d0, 0.0d0, 0.0d0/) ! y
+     !k21=(/ 0.0d0, 0.2d0, 0.0d0/) ! 
+     !k22=(/ 0.0d0, 0.5d0, 0.0d0/) ! z
+      
+      k11= K3D_start1
+      k12= K3D_end1
+      k21= K3D_start2
+      k22= K3D_end2
 
       i1=2
       i2=3
@@ -604,9 +615,9 @@
          open(unit=14, file='gap.dat')
       
          do ik=1, knv3
-           !write(14, '(3f16.8)')kxy      (:, ik), (gap_mpi(ik))
-            write(14, '(8f16.8)')kxy_shape (:, ik), log(gap_mpi(1, ik)), &
-            gap_mpi(2:3, ik)
+            write(14, '(30f16.8)')kxy      (:, ik), (gap_mpi(1, ik))
+           !write(14, '(8f16.8)')kxy_shape (:, ik), log(gap_mpi(1, ik)), &
+           !gap_mpi(2:3, ik)
             if (mod(ik, nky)==0) write(14, *)' '
          enddo
          close(14)
@@ -631,7 +642,7 @@
          write(101, '(a)')'#set terminal  postscript enhanced color'
          write(101, '(a)')"#set output 'gap.eps'"
          write(101, '(3a)')'set terminal  png      truecolor enhanced', &
-            ' size 1920, 1680 font ",36"'
+            ' size 1920, 1680 font ",60"'
          write(101, '(a)')"set output 'gap.png'"
          write(101,'(a, f10.4, a, f10.4, a, f10.4, a)') &
             'set palette defined ( ', zmin, ' "black", ', &

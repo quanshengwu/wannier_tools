@@ -2,8 +2,8 @@
 ! slab Bi2Se3
 
   subroutine psik()
-    
-     use para,only : Dp,Num_wann,Nslab, stdout
+
+     use para,only : Dp,Num_wann,Nslab, stdout, cpuid
      implicit none 
 
 ! loop index
@@ -47,7 +47,6 @@
      eigenvector=Chamk
 
 ! diagonal Chamk
-     print *, 'here'
      call eigensystem_c('V', 'U', Num_wann*nslab, eigenvector, eigenvalue)
     
      ekslab=eigenvalue
@@ -55,7 +54,7 @@
      info=18*Nslab+10
 
      psi(:)=eigenvector(:, info)
-     write(stdout,*) 'eigenvalue',info,ekslab(info)
+     if (cpuid.eq.0) write(stdout,*) 'eigenvalue',info,ekslab(info)
 
      j=0
      psi2=0.0d0

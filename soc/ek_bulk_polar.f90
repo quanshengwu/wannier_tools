@@ -74,8 +74,8 @@
      k12 = 0d0
      k123= 0d0
      krtheta = 0d0
-	  eigv    = 0d0
-	  eigv_mpi= 0d0
+     eigv    = 0d0
+     eigv_mpi= 0d0
 
      krmax= 0.6d0
      kz= 0d0
@@ -124,23 +124,23 @@
 
      !>> for TB
      !> xy plane, center is (0.0, 0.0, 0.0)
-     center_direct= (/ 0.0d0,  0.0d0, -0.0d0/)
-     call direct_cart(center_direct, center_cart)
-     ik = 0
-     do i= 1, nktheta
-        ktheta= 2d0*pi*(i-1)/dble(nktheta)
-        do j= 1, nkr
-           kr= krmax*(j-1)/dble(nkr)
-           ik =ik +1
-           k12(1, ik)= kr*cos(ktheta)+ center_cart(1)
-           k12(2, ik)= kr*sin(ktheta)+ center_cart(2)
-           krtheta(1, ik)= ktheta
-           krtheta(2, ik)= kr
-           k123(1, ik) = k12(1, ik)
-           k123(2, ik) = k12(2, ik)
-           k123(3, ik)= center_cart(3)
-        enddo
-     enddo
+    !center_direct= (/ 0.0d0,  0.0d0, -0.0d0/)
+    !call direct_cart(center_direct, center_cart)
+    !ik = 0
+    !do i= 1, nktheta
+    !   ktheta= 2d0*pi*(i-1)/dble(nktheta)
+    !   do j= 1, nkr
+    !      kr= krmax*(j-1)/dble(nkr)
+    !      ik =ik +1
+    !      k12(1, ik)= kr*cos(ktheta)+ center_cart(1)
+    !      k12(2, ik)= kr*sin(ktheta)+ center_cart(2)
+    !      krtheta(1, ik)= ktheta
+    !      krtheta(2, ik)= kr
+    !      k123(1, ik) = k12(1, ik)
+    !      k123(2, ik) = k12(2, ik)
+    !      k123(3, ik)= center_cart(3)
+    !   enddo
+    !enddo
 
 
      !> xz plane, center is (0.5, 0.0, 0.5)
@@ -185,6 +185,51 @@
     !enddo
 
 
+     !>> for CuTlTe2
+     !> 110 plane, center is X (0.0, 0.0, 0.5)
+     center_direct= (/ 0.0d0,  0.0d0,  0.5d0/)
+     call direct_cart(center_direct, center_cart)
+
+     if (cpuid.eq.0) write(*, '(10f8.5)') center_direct
+     if (cpuid.eq.0) write(*, '(10f8.5)') center_cart
+
+     ik = 0
+     krmax= 0.3d0
+     do i= 1, nktheta
+        ktheta= 2d0*pi*(i-1)/dble(nktheta)
+        do j= 1, nkr
+           kr= krmax*(j-1)/dble(nkr)
+           ik =ik +1
+           k123(1, ik)= kr*cos(ktheta)+ center_cart(1)
+           k123(2, ik)= kr*cos(ktheta)+ center_cart(2)
+           k123(3, ik)= kr*sin(ktheta)+ center_cart(3)
+        enddo
+     enddo
+
+     !>> for CuTlTe2
+     !> 1-10 plane, center is U (0.5, 0.5, 0.0)
+    !center_direct= (/ 0.5d0,  0.5d0,  0.0d0/)
+    !call direct_cart(center_direct, center_cart)
+
+    !if (cpuid.eq.0) write(*, '(10f8.5)') center_direct
+    !if (cpuid.eq.0) write(*, '(10f8.5)') center_cart
+
+    !ik = 0
+    !krmax= 0.3d0
+    !do i= 1, nktheta
+    !   ktheta= 2d0*pi*(i-1)/dble(nktheta)
+    !   do j= 1, nkr
+    !      kr= krmax*(j-1)/dble(nkr)
+    !      ik =ik +1
+    !      k123(1, ik)= kr*cos(ktheta)+ center_cart(1)
+    !      k123(2, ik)= -kr*cos(ktheta)+ center_cart(2)
+    !      k123(3, ik)= kr*sin(ktheta)+ center_cart(3)
+    !   enddo
+    !enddo
+
+
+
+
      !> set Pauli matrix
      sigmax= 0d0
      sigmay= 0d0
@@ -212,7 +257,7 @@
      if (Numoccupied> Num_wann ) stop ' Numoccupied should less than Num_wann'
 
      do ik= 1+cpuid, knv3, num_cpu
-	     if (cpuid==0) print * , ik
+	     if (cpuid==0) print * , 'ik' , ik
 
         k1= k123(:, ik)
         !> from cartisen coordinate to direct coordinate
@@ -229,14 +274,14 @@
 
         eigv(:, ik)= W(Numoccupied-1:Numoccupied+2)
 
-        call mat_mul(eigvec_conj, sigmax, mat1)
-        call mat_mul(mat1, Hamk_bulk, sigmax)
+        call mat_mul(Num_wann,eigvec_conj, sigmax, mat1)
+        call mat_mul(Num_wann,mat1, Hamk_bulk, sigmax)
 
-        call mat_mul(eigvec_conj, sigmay, mat1)
-        call mat_mul(mat1, Hamk_bulk, sigmay)
+        call mat_mul(Num_wann,eigvec_conj, sigmay, mat1)
+        call mat_mul(Num_wann,mat1, Hamk_bulk, sigmay)
 
-        call mat_mul(eigvec_conj, sigmaz, mat1)
-        call mat_mul(mat1, Hamk_bulk, sigmaz)
+        call mat_mul(Num_wann,eigvec_conj, sigmaz, mat1)
+        call mat_mul(Num_wann,mat1, Hamk_bulk, sigmaz)
 
         do i=1, Num_wann
            sx(i, ik)= sigmax(i, i)

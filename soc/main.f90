@@ -129,7 +129,7 @@
      !> slab band
      if (SlabBand_calc)then
         call ek_slab
-        call psik     
+       !call psik     
      endif
     
      !> wannier center calculate

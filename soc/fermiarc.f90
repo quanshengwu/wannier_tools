@@ -65,28 +65,20 @@
      dos_r=0d0
      dos_r_mpi=0d0
 
-     k1min=-0.10d0/1d0
-     k1max= 0.10d0/1d0
-     k2min=-0.10d0/1d0
-     k2max= 0.10d0/1d0
      ikp=0
      do i= 1, nk1
-     do j= 1, nk2
-        ikp=ikp+1
-        k12(1, ikp)=k1min+ (i-1)*(k1max-k1min)/dble(nk1-1)
-        k12(2, ikp)=k2min+ (j-1)*(k2max-k2min)/dble(nk2-1)
-        k12_shape(:, ikp)= k12(1, ikp)* Ka2+ k12(2, ikp)* Kb2
-     enddo
+        do j= 1, nk2
+           ikp=ikp+1
+           k12(:, ikp)=K2D_start1+ (i-1)*(K2D_end1- K2D_start1)/dble(nk1-1) &
+                      +K2D_start2+ (j-1)*(K2D_end2- K2D_start2)/dble(nk2-1)
+           k12_shape(:, ikp)= k12(1, ikp)* Ka2+ k12(2, ikp)* Kb2
+        enddo
      enddo
 
-     k1= k1min*Ka2+ k2min*Kb2
-     k2= k1max*ka2+ k2max*kb2
-     k3= k1min*Ka2+ k2max*Kb2
-     k4= k1max*ka2+ k2min*kb2
-     k1min_shape= min(k1(1), k2(1), k3(1), k4(1))
-     k2min_shape= min(k1(2), k2(2), k3(2), k4(2))
-     k1max_shape= max(k1(1), k2(1), k3(1), k4(1))
-     k2max_shape= max(k1(2), k2(2), k3(2), k4(2))
+     k1min_shape= minval(k12_shape(1, :))
+     k2min_shape= minval(k12_shape(2, :))
+     k1max_shape= maxval(k12_shape(1, :))
+     k2max_shape= maxval(k12_shape(2, :))
 
      allocate(H00(Ndim, Ndim))
      allocate(H01(Ndim, Ndim))
@@ -116,8 +108,8 @@
         ! there are two method to calculate surface green's function 
         ! the method in 1985 is better, you can find the ref in the
         ! subroutine
-        ! call surfgreen_1985(omega,GLL,GRR,H00,H01,ones)
-        call surfgreen_1984(omega,GLL,GRR,H00,H01,ones)
+        call surfgreen_1985(omega,GLL,GRR,H00,H01,ones)
+        ! call surfgreen_1984(omega,GLL,GRR,H00,H01,ones)
 
 
         ! calculate spectral function

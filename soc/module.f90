@@ -125,7 +125,7 @@
      real(dp),public, save :: Kuc(3)
      real(dp),public, save :: Urot(3, 3)
 
-     ! k list for band
+     ! k list for 3D case band
      integer :: nk3lines
      integer :: nk3_band
      character(4), allocatable :: k3line_name(:)
@@ -135,6 +135,29 @@
      real(dp),allocatable :: K3list_band(:, :)
      real(dp),allocatable :: K3len(:)
      real(dp),allocatable :: K3points(:, :)
+
+     !>  klist for 2D case include all 2D system
+     integer :: nk2lines
+     integer :: knv2
+     real(dp) :: kp(2, 32)
+     real(dp) :: ke(2, 32)
+     real(dp) :: k2line_stop(32)
+     character(4) :: k2line_name(32)
+     real(dp),allocatable :: k2len(:)
+     real(dp),allocatable :: k2_path(:, :)
+
+     !> kpoints plane for 2D system--> arcs  
+     real(dp) :: K2D_start1(2)
+     real(dp) :: K2D_end1(2)
+     real(dp) :: K2D_start2(2)
+     real(dp) :: K2D_end2(2)
+
+     !> kpoints plane for 3D system --> gapshape
+     real(dp) :: K3D_start1(3)
+     real(dp) :: K3D_end1(3)
+     real(dp) :: K3D_start2(3)
+     real(dp) :: K3D_end2(3)
+
 
      ! R coordinates  
      integer, allocatable     :: irvec(:,:)

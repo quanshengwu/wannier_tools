@@ -19,28 +19,15 @@
      ! general loop index
      integer :: i,j 
 
-     integer :: knv2
-
      ! kpoint loop index
      integer :: ikp
 
-     integer :: NN, nlines
-
      real(dp) :: emin
      real(dp) :: emax
-     real(dp) :: t1, temp
      real(dp) :: k(2), w, s
      real(dp) :: k1(2)
      real(dp) :: k2(2)
 
-     real(dp) :: kp(16, 2)
-     real(dp) :: ke(16, 2)
-     real(dp) :: kpath_stop(16)
-     character(4) :: kpath_name(17)
-
-     real(dp) :: kstart(2), kend(2)
-
-     real(dp), allocatable :: kpoint(:,:)
      real(dp), allocatable :: omega(:)
      
      real(dp), allocatable :: dos_l(:,:)
@@ -54,74 +41,11 @@
      complex(dp), allocatable :: H01(:,:)
      complex(dp), allocatable :: ones(:,:)
 
-     real(dp), allocatable :: k_len(:)
-
-     kpath_name= ' '
-     kp(1,:)=(/0.5d0, 0.00d0/)  ; kpath_name(1)= 'X'
-     ke(1,:)=(/0.0d0, 0.00d0/)  
-     kp(2,:)=(/0.0d0, 0.00d0/)  ; kpath_name(2)= 'G'
-     ke(2,:)=(/0.0d0, 0.50d0/)  ! K
-     kp(3,:)=(/0.0d0, 0.50d0/) ; kpath_name(3)= 'Y'     
-     ke(3,:)=(/0.5d0, 0.5d0/)  ! K
-     kp(4,:)=(/0.5d0, 0.5d0/)  ; kpath_name(4)= 'M'     
-     ke(4,:)=(/0.0d0, 0.0d0/)  ; kpath_name(5)= 'G'  
-
-    !kp(1,:)=(/0.5d0, 0.00d0/)  ; kpath_name(1)= 'X'
-    !ke(1,:)=(/0.0d0, 0.00d0/)  
-    !kp(1,:)=(/0.266666d0, 0.2666660d0/)  ; kpath_name(1)= 'G'
-    !ke(1,:)=(/0.311111d0, 0.3111111d0/)  ! K
-    !kp(2,:)=(/0.333333d0, 0.3333330d0/) ; kpath_name(2)= 'K'     
-    !ke(2,:)=(/0.5d0, 0.0d0/)  ! K
-    !kp(3,:)=(/0.5d0, 0.0d0/)  ; kpath_name(3)= 'Y'     
-    !ke(3,:)=(/0.333333d0, 0.3333330d0/)  ! K
-    !kp(5,:)=(/0.333333d0, 0.3333330d0/)  ! K
-    !ke(5,:)=(/0.0d0, 0.0d0/)  ; kpath_name(5)= 'G'  
-
-
-    !kp(1,:)=(/0.2d0, 0.2d0/)  ! Gamma
-    !ke(1,:)=(/0.5d0, 0.5d0/)  ! Z
-
-    !kp(1,:)=(/-0.5d0, 0.00d0/)  ; kpath_name(1)= 'A'
-    !ke(1,:)=(/0.0d0, 0.00d0/)  
-    !kp(2,:)=(/0.0d0, 0.00d0/)  ; kpath_name(2)= 'G'
-    !ke(2,:)=(/0.5d0, 0.00d0/)  ; kpath_name(3)= 'A'
-   
-    !kp(1,:)=(/0.3d0, 0.00d0/)  ; kpath_name(1)= 'X'
+     !> for special line
     !ke(1,:)=(/0.0d0, 0.00d0/)  
     !kp(1, 2)= surf_onsite
     !ke(1, 2)= surf_onsite
-    !kp(2,:)=(/0.0d0, 0.00d0/)  ; kpath_name(2)= 'G'
-
-     nlines=2
-     NN= Nk
-     knv2=NN*nlines
-     allocate( kpoint(knv2, 2))
-     allocate( k_len (knv2))
-     kpoint= 0d0
-
-     t1=0d0
-     k_len=0d0
-     kpath_stop= 0d0
-     do j=1, nlines 
-        do i=1, NN
-           kstart= kp(j,:)
-           kend  = ke(j,:)
-           k1= kstart(1)*Ka2+ kstart(2)*Kb2
-           k2= kend(1)*Ka2+ kend(2)*Kb2
-           kpoint(i+(j-1)*NN,:)= kstart+ (kend-kstart)*(i-1)/dble(NN-1)
-           
-           temp= dsqrt((k2(1)- k1(1))**2 &
-                 +(k2(2)- k1(2))**2)/dble(NN-1) 
-
-           if (i.gt.1) then
-              t1=t1+temp
-           endif
-           k_len(i+(j-1)*NN)= t1
-        enddo
-        kpath_stop(j+1)= t1
-
-     enddo
-
+    !kp(2,:)=(/0.0d0, 0.00d0/)  ; k2line_name(2)= 'G'
     !k1= -0.5d0*ka2+0.5d0*kb2
     !t1= 0d0
     !do i=1, NN
@@ -136,7 +60,7 @@
     !   if (i.gt.1) then
     !      t1=t1+temp
     !   endif
-    !   k_len(i)= t1
+    !   k2len(i)= t1
     !   print *, i, t1
     !enddo
 
@@ -177,7 +101,7 @@
      do ikp= 1+cpuid, knv2, num_cpu
         if (cpuid==0) write(*, *) 'ik', ikp, 'Nk', knv2
         if (cpuid==0) write(stdout, *) 'ik', ikp, 'Nk', knv2
-        k= kpoint(ikp,:)
+        k= k2_path(ikp,:)
 
         !> get the hopping matrix between two principle layers
         call ham_qlayer2qlayer(k,H00,H01) 
@@ -213,8 +137,8 @@
         open (unit=13, file='dos.dat_r')
         do ikp=1, knv2
            do j=1, omeganum 
-              write(12, '(3f16.8)')k_len(ikp), omega(j), dos_l(ikp, j)
-              write(13, '(3f16.8)')k_len(ikp), omega(j), dos_r(ikp, j)
+              write(12, '(3f16.8)')k2len(ikp), omega(j), dos_l(ikp, j)
+              write(13, '(3f16.8)')k2len(ikp), omega(j), dos_r(ikp, j)
            enddo
            write(12, *) ' '
            write(13, *) ' '
@@ -256,13 +180,13 @@
         write(101, '(a)')'set ylabel "Energy (eV)"'
         write(101, '(a)')'#set xtics offset 0, -1'
         write(101, '(a)')'#set ylabel offset -6, 0 '
-        write(101, '(a, f8.5, a)')'set xrange [0: ', maxval(k_len), ']'
+        write(101, '(a, f8.5, a)')'set xrange [0: ', maxval(k2len), ']'
         write(101, '(a, f8.5, a, f8.5, a)')'set yrange [', emin, ':', emax, ']'
-        write(101, 202, advance="no") (kpath_name(i), kpath_stop(i), i=1, nlines)
-        write(101, 203)kpath_name(nlines+1), kpath_stop(nlines+1)
+        write(101, 202, advance="no") (k2line_name(i), k2line_stop(i), i=1, nk2lines)
+        write(101, 203)k2line_name(nk2lines+1), k2line_stop(nk2lines+1)
 
-        do i=1, nlines-1
-           write(101, 204)kpath_stop(i+1), emin, kpath_stop(i+1), emax
+        do i=1, nk2lines-1
+           write(101, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
         enddo
         write(101, '(a)')'set pm3d interpolate 2,2'
         write(101, '(2a)')"splot 'dos.dat_l' u 1:2:3 w pm3d"
@@ -298,13 +222,13 @@
         write(101, '(a)')'set ylabel "Energy (eV)"'
         write(101, '(a)')'#set xtics offset 0, -1'
         write(101, '(a)')'#set ylabel offset -6, 0 '
-        write(101, '(a, f8.5, a)')'set xrange [0: ', maxval(k_len), ']'
+        write(101, '(a, f8.5, a)')'set xrange [0: ', maxval(k2len), ']'
         write(101, '(a, f8.5, a, f8.5, a)')'set yrange [', emin, ':', emax, ']'
-        write(101, 202, advance="no") (kpath_name(i), kpath_stop(i), i=1, nlines)
-        write(101, 203)kpath_name(nlines+1), kpath_stop(nlines+1)
+        write(101, 202, advance="no") (k2line_name(i), k2line_stop(i), i=1, nk2lines)
+        write(101, 203)k2line_name(nk2lines+1), k2line_stop(nk2lines+1)
 
-        do i=1, nlines-1
-           write(101, 204)kpath_stop(i+1), emin, kpath_stop(i+1), emax
+        do i=1, nk2lines-1
+           write(101, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
         enddo
         write(101, '(a)')'set pm3d interpolate 2,2'
         write(101, '(2a)')"splot 'dos.dat_r' u 1:2:3 w pm3d"
