@@ -37,7 +37,16 @@ function to get beautifull surface state.
 
 **License and agreement**
 
-If you use our code, please cite this website “The surface spectrum is calculated by the software package Wannier_tools Q.S.Wu, https://github.com/quanshengwu/wannier_tools" . If you have good ideas to improve this code, do not hesitate to contact me. Your contribution will be recorded.
+If you use our code, please cite this website  “ The surface spectrums are calculated by the software package Wannier_tools~\cite{wannier_tools}, which is based on the iterative Green’s function~\cite{Sancho1985}.” 
+
+
+Reference 
+
+wannier_tools:  Q.S.Wu, https://github.com/quanshengwu/wannier_tools
+
+Sancho1985: J.Phys.F.Met.Phys.15(1985)851-858
+ 
+If you have good ideas to improve this code, do not hesitate to contact me. Your contribution will be recorded.
 
 **Publication**
 
