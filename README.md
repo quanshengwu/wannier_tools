@@ -37,7 +37,7 @@ function to get beautifull surface state.
 
 **License and agreement**
 
-If you use our code, please cite this website “Q.S.Wu, https://github.com/quanshengwu/wannier_tools" . If you have good ideas to improve this code, do not hesitate to contact me. Your contribution will be recorded.
+If you use our code, please cite this website “The surface spectrum is calculated by the software package Wannier_tools Q.S.Wu, https://github.com/quanshengwu/wannier_tools" . If you have good ideas to improve this code, do not hesitate to contact me. Your contribution will be recorded.
 
 **Publication**
 
