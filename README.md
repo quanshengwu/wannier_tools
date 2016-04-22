@@ -1,7 +1,8 @@
 # Wannier_tools
 **Authorship**
 
-Written by QuanSheng Wu in Fortran (wuquansheng@gmail.com)
+Written by QuanSheng Wu in Fortran 90 (wuquansheng@gmail.com)
+
 Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 
 **Pull down the package**
