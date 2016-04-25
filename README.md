@@ -3,7 +3,7 @@
 
 Written by QuanSheng Wu in Fortran 90 (wuquansheng@gmail.com)
 
-Copyright (c) 2010 QuanSheng Wu. All rights reserved.
+Copyright (c) 2010 QuanSheng Wu and ShengNan Zhang. All rights reserved.
 
 **Pull down the package**
 
@@ -43,7 +43,7 @@ If you use our code, please cite this website  “ The surface spectrums are cal
 
 Reference 
 
-wannier_tools:  Q.S.Wu, https://github.com/quanshengwu/wannier_tools
+wannier_tools:  Q.S.Wu, S.N.Zhang, https://github.com/quanshengwu/wannier_tools
 
 Sancho1985: [J.Phys.F.Met.Phys.15(1985)851-858](http://iopscience.iop.org/article/10.1088/0305-4608/15/4/009/meta;jsessionid=A349A81FE38B2B55DB42032F6792B275.c1)
  
