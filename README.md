@@ -50,7 +50,7 @@ Sancho1985: [J.Phys.F.Met.Phys.15(1985)851-858](http://iopscience.iop.org/articl
 If you have good ideas to improve this code, do not hesitate to contact me. Your contribution will be recorded.
 
 **Publication**
-
+* [Fermi arcs and their topological character in the candidate type-II Weyl semimetal MoTe2, A. Tamai, **Q. S. Wu**, I. Cucchi, F. Y. Bruno, S. Ricco, T.K. Kim, M. Hoesch, C. Barreteau, E. Giannini, C. Bernard, A. A. Soluyanov, F. Baumberger, arXiv:1604.08228](http://arxiv.org/abs/1604.08228) 
 * [Nodal chain metals, arXiv:1604.03112, 2016 ](https://arxiv.org/abs/1604.03112)
 * [Surface states and bulk electronic structure in the candidate type-II Weyl semimetal WTe2, arXiv:1604.02411, 2016](https://arxiv.org/abs/1604.02411)
 * [Topological Phases in InAs1−xSbx: From Novel Topological Semimetal to Majorana Wire, arxiv:1602.07001, 2016](https://arxiv.org/abs/1602.07001)
