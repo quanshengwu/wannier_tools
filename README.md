@@ -45,7 +45,7 @@ Reference
 
 wannier_tools:  Q.S.Wu, S.N.Zhang, https://github.com/quanshengwu/wannier_tools
 
-Sancho1985: [J.Phys.F.Met.Phys.15(1985)851-858](http://iopscience.iop.org/article/10.1088/0305-4608/15/4/009/meta;jsessionid=A349A81FE38B2B55DB42032F6792B275.c1)
+Sancho1985: [Highly convergent schemes for the calculation of bulk and surface Green functions, M P Lopez Sancho, J M Lopez Sancho, J M L Sancho and J Rubio, J.Phys.F.Met.Phys.15(1985)851-858](http://iopscience.iop.org/article/10.1088/0305-4608/15/4/009/meta;jsessionid=A349A81FE38B2B55DB42032F6792B275.c1)
  
 If you have good ideas to improve this code, do not hesitate to contact me. Your contribution will be recorded.
 
