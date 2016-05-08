@@ -401,3 +401,32 @@
 
      return
   end subroutine rotate
+
+
+   subroutine cart_direct_real(R1, R2)
+      use para
+      implicit none
+      real(dp), intent(in) :: R1(3)
+      real(dp), intent(inout) :: R2(3)
+      real(dp) :: mata(3, 3)
+
+      mata(1, :)= Rua
+      mata(2, :)= Rub
+      mata(3, :)= Ruc
+
+      call inv_r(3, mata)
+      R2= R1(1)*mata(1, :)+ R1(2)*mata(2, :)+ R1(3)*mata(3, :)
+
+      return
+   end subroutine cart_direct_real
+
+   subroutine direct_cart_real(R1, R2)
+      use para
+      implicit none
+      real(dp), intent(in) :: R1(3)
+      real(dp), intent(inout) :: R2(3)
+
+      R2= R1(1)*Rua+ R1(2)*Rub+ R1(3)*Ruc
+
+      return
+   end subroutine direct_cart_real

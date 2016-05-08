@@ -707,11 +707,11 @@
       VT= 0d0
 
       !> set k plane
-      !> the first dimension should be in one primitive plane
-      k11=(/ 0.0d0,  0.0d0,  0.0d0/) ! 
-      k12=(/ 1.0d0,  0.0d0,  0.0d0/) ! X
-      k21=(/ 0.0d0,  0.0d0,  0.0d0/) ! 
-      k22=(/ 0.0d0,  1.0d0,  0.0d0/) ! Y
+      !> the first dimension should be in one primitive cell, [0, 2*pi]
+      k11= K3D_start1 ! 
+      k12= K3D_end1   !  
+      k21= K3D_start2 ! 
+      k22= K3D_end2   ! 
 
       do ik2=1, Nk2
          do ik1=1, Nk1
@@ -812,7 +812,7 @@
                br= b(1)*Atom_position(1, ia)+ &
                    b(2)*Atom_position(2, ia)+ &
                    b(3)*Atom_position(3, ia)
-               ratio= cos(br*2d0*pi)- zi* sin(br*2d0*pi)
+               ratio= cos(br)- zi* sin(br)
               !ratio= 1d0
         
                i1= 0
@@ -886,7 +886,7 @@
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
 
       if (cpuid==0) then
-         open(unit=101, file='wanniercenterky0-mirrorminus.dat')
+         open(unit=101, file='wcc-mirrorminus.dat')
 
          do ik2=1, Nk2
             write(101, '(10000f16.8)') dble(ik2-1)/dble(Nk2), &
@@ -1101,11 +1101,11 @@
       VT= 0d0
 
       !> set k plane
-      !> the first dimension should be in one primitive plane
-      k11=(/ 0.0d0,  0.0d0,  0.0d0/) ! 
-      k12=(/ 1.0d0,  0.0d0,  0.0d0/) ! X
-      k21=(/ 0.0d0,  0.0d0,  0.0d0/) ! 
-      k22=(/ 0.0d0,  1.0d0,  0.0d0/) ! Y
+      !> the first dimension should be in one primitive cell, [0, 2*pi]
+      k11= K3D_start1 ! 
+      k12= K3D_end1   !  
+      k21= K3D_start2 ! 
+      k22= K3D_end2   ! 
 
       do ik2=1, Nk2
          do ik1=1, Nk1
@@ -1206,7 +1206,7 @@
                br= b(1)*Atom_position(1, ia)+ &
                    b(2)*Atom_position(2, ia)+ &
                    b(3)*Atom_position(3, ia)
-               ratio= cos(br*2d0*pi)- zi* sin(br*2d0*pi)
+               ratio= cos(br)- zi* sin(br)
               !ratio= 1d0
         
                i1= 0
@@ -1280,7 +1280,7 @@
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
 
       if (cpuid==0) then
-         open(unit=101, file='wanniercenterky0-mirrorplus.dat')
+         open(unit=101, file='wcc-mirrorplus.dat')
 
          do ik2=1, Nk2
             write(101, '(10000f16.8)') dble(ik2-1)/dble(Nk2), &
@@ -1402,7 +1402,7 @@
 
       real(dp) :: Umatrix_t(3, 3)
 
-      !> b.R
+      !> b.r
       real(dp) :: br
 
       !> exp(-i*b.R)
@@ -1477,6 +1477,8 @@
 
       !> set k plane
       !> the first dimension should be in one primitive cell, [0, 2*pi]
+      !> the first dimension is the integration direction
+      !> the WCCs are calculated along the second k line
       k11= K3D_start1 ! 
       k12= K3D_end1   !  
       k21= K3D_start2 ! 
@@ -1534,7 +1536,7 @@
             !if (cpuid==0) print *, ik1, ik2, Nk1, Nk2
             k= kpoints(:, ik1, ik2)
 
-            call ham_bulk(k,hamk)
+            call ham_bulk_old(k,hamk)
 
             !> diagonal hamk
             call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
@@ -1557,8 +1559,8 @@
                br= b(1)*Atom_position(1, ia)+ &
                    b(2)*Atom_position(2, ia)+ &
                    b(3)*Atom_position(3, ia)
-              !ratio= cos(br)- zi* sin(br)
-               ratio= 1d0
+               ratio= cos(br)- zi* sin(br)
+              !ratio= 1d0
          
                do j=1, nfill
                   do i=1, nfill

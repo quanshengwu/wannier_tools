@@ -51,8 +51,8 @@
      integer :: LDU
      integer :: LDVT
      integer :: LWORK
-     complex(dp), allocatable :: WORK(:)
      real(dp), allocatable :: RWORK(:)
+     complex(dp), allocatable :: WORK(:)
      integer :: INFO
 
      N= M

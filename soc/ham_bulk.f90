@@ -21,6 +21,7 @@
 
      ! coordinates of R vector 
      real(Dp) :: R(3), R1(3), R2(3)
+     real(dp), allocatable :: Atom_position_direct(:, :)
 
 ! Hamiltonian of bulk system
      complex(Dp),intent(out) ::Hamk_bulk(Num_wann, Num_wann) 
@@ -28,6 +29,12 @@
      complex(dp), allocatable :: mat2(:, :)
      allocate(mat1(Num_wann, Num_wann))
      allocate(mat2(Num_wann, Num_wann))
+     allocate( Atom_position_direct(3, Num_atoms))
+     Atom_position_direct= 0d0
+
+     do ia=1, Num_atoms
+        call cart_direct_real(Atom_position(:, ia), Atom_position_direct(:, ia))
+     enddo
 
      nwann= Num_wann/2
      Hamk_bulk=0d0
@@ -44,14 +51,12 @@
         do ia1= 1, Num_atoms
            istart1= sum(nprojs(1:ia1-1))+1
            iend1= sum(nprojs(1:ia1))
-          !print *, ia1, istart1, iend1
-          !pause
            do ia2= 1, Num_atoms
               istart2= sum(nprojs(1:ia2-1))+1
               iend2= sum(nprojs(1:ia2))
-              R1= Atom_position(:, ia1)
-              R2= Atom_position(:, ia2)
-              R2= R-R1+R2
+              R1= Atom_position_direct(:, ia1)
+              R2= Atom_position_direct(:, ia2)
+              R2= R+R1-R2
               kdotr=k(1)*R2(1) + k(2)*R2(2) + k(3)*R2(3)
              !kdotr=k(1)*R (1) + k(2)*R (2) + k(3)*R (3)
 
@@ -140,7 +145,7 @@
 
         Hamk_bulk(:, :)=&
         Hamk_bulk(:, :)+ &
-        +HmnR(:, :, iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
+        + HmnR(:, :, iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
      enddo ! iR
 
     !call mat_mul(Num_wann, mirror_z, Hamk_bulk, mat1)

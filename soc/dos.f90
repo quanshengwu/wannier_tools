@@ -117,6 +117,7 @@ subroutine dos_calc
    emax= maxval(eigval(iband_high,:))
    eta= (emax- emin)/ dble(NE)*3d0
 
+
    !> energy
    do ie=1, NE
       omega(ie)= emin+ (emax-emin)* (ie-1d0)/dble(NE-1)
