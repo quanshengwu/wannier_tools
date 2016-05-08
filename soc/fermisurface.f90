@@ -549,11 +549,6 @@
      !k21=(/ 0.0d0, 0.2d0, 0.0d0/) ! 
      !k22=(/ 0.0d0, 0.5d0, 0.0d0/) ! z
       
-      k11= K3D_start1
-      k12= K3D_end1
-      k21= K3D_start2
-      k22= K3D_end2
-
       i1=2
       i2=3
       do i= 1, nkx
@@ -561,7 +556,7 @@
             ik =ik +1
             !kxy(1, ik)=kxmin+ (i-1)*(kxmax-kxmin)/dble(nkx-1)
             !kxy(2, ik)=kymin+ (j-1)*(kymax-kymin)/dble(nky-1)
-            kxy(:, ik)= k11+(k12-k11)*(i-1)/dble(nkx-1)+  k21+ (k22-k21)*(j-1)/dble(nky-1)
+            kxy(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(nkx-1)+ K3D_vec2*(j-1)/dble(nky-1)
             kxy_shape(:, ik)= kxy(1, ik)* Kua+ kxy(2, ik)* Kub+ kxy(3, ik)* Kuc 
          enddo
       enddo

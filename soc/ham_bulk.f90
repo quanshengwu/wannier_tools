@@ -20,7 +20,7 @@
      real(Dp) :: k(3)      
 
      ! coordinates of R vector 
-     real(Dp) :: R(3), R1(3), R2(3)
+     real(Dp) :: R(3), R1(3), R2(3), R3(3)
      real(dp), allocatable :: Atom_position_direct(:, :)
 
 ! Hamiltonian of bulk system
@@ -56,8 +56,8 @@
               iend2= sum(nprojs(1:ia2))
               R1= Atom_position_direct(:, ia1)
               R2= Atom_position_direct(:, ia2)
-              R2= R+R1-R2
-              kdotr=k(1)*R2(1) + k(2)*R2(2) + k(3)*R2(3)
+              R3= R+ R1- R2
+              kdotr=k(1)*R3(1) + k(2)*R3(2) + k(3)*R3(3)
              !kdotr=k(1)*R (1) + k(2)*R (2) + k(3)*R (3)
 
               Hamk_bulk(istart1:iend1,istart2:iend2)=&

@@ -148,16 +148,14 @@
      real(dp),allocatable :: k2_path(:, :)
 
      !> kpoints plane for 2D system--> arcs  
-     real(dp) :: K2D_start1(2)
-     real(dp) :: K2D_end1(2)
-     real(dp) :: K2D_start2(2)
-     real(dp) :: K2D_end2(2)
+     real(dp) :: K2D_start(2)
+     real(dp) :: K2D_vec1(2)
+     real(dp) :: K2D_vec2(2)
 
      !> kpoints plane for 3D system --> gapshape
-     real(dp) :: K3D_start1(3)
-     real(dp) :: K3D_end1(3)
-     real(dp) :: K3D_start2(3)
-     real(dp) :: K3D_end2(3)
+     real(dp) :: K3D_start(3)
+     real(dp) :: K3D_vec1(3)
+     real(dp) :: K3D_vec2(3)
 
 
      ! R coordinates  

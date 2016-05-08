@@ -92,8 +92,8 @@
     do i= 1, nkx
        do j= 1, nkz
           ikp=ikp+1
-          kxz(:, ikp)=K2D_start1+ (i-1)*(K2D_end1- K2D_start1)/dble(nkx-1) &
-                     +K2D_start2+ (j-1)*(K2D_end2- K2D_start2)/dble(nkz-1)
+          kxz(:, ikp)=K2D_start+ (i-1)*K2D_vec1/dble(nkx-1) &
+                     + (j-1)*K2D_vec2/dble(nkz-1)
        enddo
     enddo
 

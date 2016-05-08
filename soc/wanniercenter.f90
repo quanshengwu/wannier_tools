@@ -10,8 +10,6 @@
       integer :: Nky
 
       integer :: i
-      integer :: j
-      integer :: l 
       integer :: nfill
 
       integer :: ikx
@@ -558,7 +556,6 @@
       integer :: j
       integer :: l 
       integer :: m 
-      integer :: n
       integer :: ia
       integer :: nfill
       integer :: nfill_half
@@ -647,8 +644,7 @@
       real(dp) :: xnm1
       real(dp) :: Deltam
       real(dp), allocatable :: xnm(:)
-      real(dp) :: k11(3), k12(3)
-      real(dp) :: k21(3), k22(3)
+      real(dp) :: k0(3), k1(3), k2(3)
 
       !> mirror eigenvalue
       complex(dp), allocatable :: mirror_z_eig(:, :)
@@ -708,17 +704,17 @@
 
       !> set k plane
       !> the first dimension should be in one primitive cell, [0, 2*pi]
-      k11= K3D_start1 ! 
-      k12= K3D_end1   !  
-      k21= K3D_start2 ! 
-      k22= K3D_end2   ! 
+      k0= K3D_start ! 
+      k1= K3D_vec1   !  
+      k2= K3D_vec2   ! 
 
       do ik2=1, Nk2
          do ik1=1, Nk1
-            kpoints(:, ik1, ik2)= k11+(k12-k11)*(ik1-1)/dble(nk1)+  k21+ (k22-k21)*(ik2-1)/dble(nk2)
-            b= (k12-k11)/dble(nk1)
+            kpoints(:, ik1, ik2)= k0+k1*(ik1-1)/dble(nk1)+ k2*(ik2-1)/dble(nk2-1)
          enddo
       enddo
+      b= k1/dble(nk1)
+      b= b(1)*kua+b(2)*kub+b(3)*kuc
 
 
       !> set up atom index for each orbitals in the basis
@@ -889,7 +885,7 @@
          open(unit=101, file='wcc-mirrorminus.dat')
 
          do ik2=1, Nk2
-            write(101, '(10000f16.8)') dble(ik2-1)/dble(Nk2), &
+            write(101, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1)/2d0, &
                largestgap_mpi(ik2), dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
                WannierCenterKy_mpi(:, ik2)
          enddo
@@ -952,7 +948,6 @@
       integer :: j
       integer :: l 
       integer :: m 
-      integer :: n
       integer :: ia
       integer :: nfill
       integer :: nfill_half
@@ -1041,8 +1036,7 @@
       real(dp) :: xnm1
       real(dp) :: Deltam
       real(dp), allocatable :: xnm(:)
-      real(dp) :: k11(3), k12(3)
-      real(dp) :: k21(3), k22(3)
+      real(dp) :: k0(3), k1(3), k2(3)
 
       !> mirror eigenvalue
       complex(dp), allocatable :: mirror_z_eig(:, :)
@@ -1102,18 +1096,17 @@
 
       !> set k plane
       !> the first dimension should be in one primitive cell, [0, 2*pi]
-      k11= K3D_start1 ! 
-      k12= K3D_end1   !  
-      k21= K3D_start2 ! 
-      k22= K3D_end2   ! 
+      k0= K3D_start ! 
+      k1= K3D_vec1   !  
+      k2= K3D_vec2   ! 
 
       do ik2=1, Nk2
          do ik1=1, Nk1
-            kpoints(:, ik1, ik2)= k11+(k12-k11)*(ik1-1)/dble(nk1)+  k21+ (k22-k21)*(ik2-1)/dble(nk2)
-            b= (k12-k11)/dble(nk1)
+            kpoints(:, ik1, ik2)= k0+k1*(ik1-1)/dble(nk1)+ k2*(ik2-1)/dble(nk2-1)
          enddo
       enddo
-
+      b= k1/dble(nk1)
+      b= b(1)*kua+b(2)*kub+b(3)*kuc
 
       !> set up atom index for each orbitals in the basis
       if (soc>0) then  !> with spin orbital coupling
@@ -1283,7 +1276,7 @@
          open(unit=101, file='wcc-mirrorplus.dat')
 
          do ik2=1, Nk2
-            write(101, '(10000f16.8)') dble(ik2-1)/dble(Nk2), &
+            write(101, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1)/2, &
                largestgap_mpi(ik2), dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
                WannierCenterKy_mpi(:, ik2)
          enddo
@@ -1427,8 +1420,7 @@
       real(dp) :: xnm1
       real(dp) :: Deltam
       real(dp), allocatable :: xnm(:)
-      real(dp) :: k11(3), k12(3)
-      real(dp) :: k21(3), k22(3)
+      real(dp) :: k0(3), k1(3), k2(3)
 
 
 
@@ -1479,18 +1471,16 @@
       !> the first dimension should be in one primitive cell, [0, 2*pi]
       !> the first dimension is the integration direction
       !> the WCCs are calculated along the second k line
-      k11= K3D_start1 ! 
-      k12= K3D_end1   !  
-      k21= K3D_start2 ! 
-      k22= K3D_end2   ! 
+      k0= K3D_start ! 
+      k1= K3D_vec1   !  
+      k2= K3D_vec2   ! 
 
       do ik2=1, Nk2
          do ik1=1, Nk1
-            kpoints(:, ik1, ik2)= k11+ (k12-k11)*(ik1-1)/dble(Nk1)+ &
-                                  k21+ (k22-k21)*(ik2-1)/dble(Nk2-1)
+            kpoints(:, ik1, ik2)= k0+k1*(ik1-1)/dble(nk1)+ k2*(ik2-1)/dble(nk2)
          enddo
       enddo
-      b= (k12-k11)/dble(Nk1)
+      b= k1/dble(nk1)
       b= b(1)*kua+b(2)*kub+b(3)*kuc
 
       !> set up atom index for each orbitals in the basis
@@ -1537,6 +1527,7 @@
             k= kpoints(:, ik1, ik2)
 
             call ham_bulk_old(k,hamk)
+           !call ham_bulk    (k,hamk)
 
             !> diagonal hamk
             call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
@@ -1630,7 +1621,7 @@
          open(unit=101, file='wcc.dat')
 
          do ik2=1, Nk2
-            write(101, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1), &
+            write(101, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1)/2d0, &
                largestgap_mpi(ik2), dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
                WannierCenterKy_mpi(:, ik2)
          enddo

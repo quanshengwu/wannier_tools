@@ -3,14 +3,14 @@ output           ! output file's filename
 T                ! BulkBand_calc
 F                ! SlabBand_calc
 F                ! WireBand_calc
-T                ! SlabSS_calc
-T                ! SlabArc_calc
+F                ! SlabSS_calc
+F                ! SlabArc_calc
 F                ! SlabSpintexture_calc
-F                ! wanniercenter_calc
+T                ! wanniercenter_calc
 F                ! berry
-100              ! Nk
+40               ! Nk
 500              ! omega number
--2.00 2.00       ! omegamin omegamax
+-0.60 0.50       ! omegamin omegamax
 0                ! E_arc
 10               ! nslab
 1                ! np   
@@ -46,10 +46,11 @@ G 0.00000 0.00000 0.0000 L 0.50000 0.00000 0.0000  ! k point path
 0 1 0
 0 0 1
 2        ! numker of k line for 2D case
-K 0.33 0.33 G 0.0 0.0  ! k path for 2D case
+K 0.33 0.67 G 0.0 0.0  ! k path for 2D case
 G 0.0 0.0 M 0.5 0.5
-0.0 -0.1 0.0 0.1  ! define 2d k space plane for arc plots
--0.1 0.0 0.1 0.0
-0.0 0.0 0.00  1.0  0.0 0.00  ! define 3d k space plane for gap plots
-0.0 0.0 0.00  0.0  0.50 0.00 
-
+-0.1 -0.1      ! Original point for 2D k plane
+ 0.2  0.0      ! The first vector to define 2D k plane 
+ 0.0  0.2      ! The second vector to define 2D k plane  for arc plots
+0.0 0.0 0.00   ! Original point for 3D k plane 
+0.0  1.00 0.00 ! The first vector to define 3d k space plane
+0.0  0.00 0.50 ! The second vector to define 3d k space plane

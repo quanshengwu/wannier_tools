@@ -351,17 +351,21 @@
 
      !> kpoints plane for 2D system--> arcs  
      if (cpuid==0) write(stdout, *)'>> Kpoints plane for 2D system--> arcs  '
-     read(1001, *)K2D_start1, K2D_end1
-     if (cpuid==0) write(stdout, '(2(a6, 2f8.4))')'start1', K2D_start1, 'end1', K2D_end1
-     read(1001, *)K2D_start2, K2D_end2
-     if (cpuid==0) write(stdout, '(2(a6, 2f8.4))')'start2', K2D_start2, 'end2', K2D_end2
+     read(1001, *)K2D_start
+     if (cpuid==0) write(stdout, '((a6, 2f8.4))')'K2D_start', K2D_start
+     read(1001, *)K2D_vec1
+     if (cpuid==0) write(stdout, '((a, 2f8.4))')'The first vector: ', K2D_vec1
+     read(1001, *)K2D_vec2
+     if (cpuid==0) write(stdout, '((a, 2f8.4))')'The second vector: ', K2D_vec2
 
      !> kpoints plane for 3D system--> gapshape
      if (cpuid==0) write(stdout, *)'>> Kpoints plane for 3D system--> gapshape  '
-     read(1001, *)K3D_start1, K3D_end1
-     if (cpuid==0) write(stdout, '(2(a6, 3f8.4))')'start1', K3D_start1, 'end1', K3D_end1
-     read(1001, *)K3D_start2, K3D_end2
-     if (cpuid==0) write(stdout, '(2(a6, 3f8.4))')'start2', K3D_start2, 'end2', K3D_end2
+     read(1001, *)K3D_start
+     if (cpuid==0) write(stdout, '((a6, 3f8.4))')'k3D_start', K3D_start
+     read(1001, *)K3D_vec1
+     if (cpuid==0) write(stdout, '((a, 3f8.4))')'The first vector: ', K3D_vec1
+     read(1001, *)K3D_vec2
+     if (cpuid==0) write(stdout, '((a, 3f8.4))')'The second vector: ', K3D_vec2
 
 
      !> close input.dat

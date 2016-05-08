@@ -69,8 +69,8 @@
      do i= 1, nk1
         do j= 1, nk2
            ikp=ikp+1
-           k12(:, ikp)=K2D_start1+ (i-1)*(K2D_end1- K2D_start1)/dble(nk1-1) &
-                      +K2D_start2+ (j-1)*(K2D_end2- K2D_start2)/dble(nk2-1)
+           k12(:, ikp)=K2D_start+ (i-1)*K2D_vec1/dble(nk1-1) &
+                      + (j-1)*K2D_vec2/dble(nk2-1)
            k12_shape(:, ikp)= k12(1, ikp)* Ka2+ k12(2, ikp)* Kb2
         enddo
      enddo

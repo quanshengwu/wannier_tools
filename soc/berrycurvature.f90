@@ -68,19 +68,13 @@
      kslice=0d0
      kslice_shape=0d0
 
-     k11= K3D_start1 ! -X
-     k12= K3D_end1 ! X
-     k21= K3D_start2 ! -Y
-     k22= K3D_end2 ! Y
-
-
 
      ik =0
      do i= 1, nk1
         do j= 1, nk2
            ik =ik +1
-           kslice(:, ik)= k11+ (k12-k11)*(i-1)/dble(nk1-1)  &
-                     + k21+ (k22-k21)*(j-1)/dble(nk2-1)  
+           kslice(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(nk1-1)  &
+                     + K3D_vec2*(j-1)/dble(nk2-1)  
            kslice_shape(:, ik)= kslice(1, ik)* Kua+ kslice(2, ik)* Kub+ kslice(3, ik)* Kuc 
         enddo
      enddo
