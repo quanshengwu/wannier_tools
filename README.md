@@ -1,6 +1,7 @@
 # Wannier_tools
 
 [Wiki for Wannier_tools](https://github.com/quanshengwu/wannier_tools/wiki)
+![](https://lh3.googleusercontent.com/-NGkPcF7iUDY/Vy-34BbICBI/AAAAAAAAASY/e2YiWSnQJD4jpHh-kDWceThf2jKKSGAxwCCo/s526/wannier_tools-logo-purple.jpg)
 
 **Authorship**
 
