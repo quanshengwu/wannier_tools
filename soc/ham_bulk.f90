@@ -28,8 +28,6 @@
      complex(dp), allocatable :: mat2(:, :)
      allocate(mat1(Num_wann, Num_wann))
      allocate(mat2(Num_wann, Num_wann))
-     allocate( Atom_position_direct(3, Num_atoms))
-     Atom_position_direct= 0d0
 
      nwann= Num_wann/2
      Hamk_bulk=0d0

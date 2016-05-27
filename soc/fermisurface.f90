@@ -282,7 +282,7 @@
       real(Dp) :: k3
       
       ! Hamiltonian of bulk system
-      complex(Dp) :: Hamk_bulk(Num_wann,Num_wann) 
+      complex(Dp), allocatable :: Hamk_bulk(:, :) 
       
       real(dp) :: zmin, zmax
       real(dp) :: kxmin, kxmax, kymin, kymax, kzmin, kzmax
@@ -319,10 +319,10 @@
          enddo
       enddo
 
-      kxmin_shape=minval(kxy_shape(i1,:))
-      kxmax_shape=maxval(kxy_shape(i1,:))
-      kymin_shape=minval(kxy_shape(i2,:))
-      kymax_shape=maxval(kxy_shape(i2,:))
+      kxmin_shape=minval(kxy_shape(1,:))
+      kxmax_shape=maxval(kxy_shape(1,:))
+      kymin_shape=minval(kxy_shape(2,:))
+      kymax_shape=maxval(kxy_shape(2,:))
       
       
       knv3= nkx*nky*nkz
@@ -333,6 +333,7 @@
       
       allocate(W(Num_wann))
       allocate(ones(Num_wann, Num_wann))
+      allocate(Hamk_bulk(Num_wann, Num_wann))
       W= 0d0
       ones= 0d0
       do i=1, Num_wann

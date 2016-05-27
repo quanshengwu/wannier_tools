@@ -19,7 +19,6 @@
 
      real(dp) :: kdotr
      real(dp) :: k(3)
-     real(dp) :: k11(3), k12(3), k21(3), k22(3)
 
      !> R points coordinates (3, nrpts)
      real(dp), allocatable :: crvec(:, :)

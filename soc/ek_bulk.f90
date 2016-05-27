@@ -25,8 +25,6 @@
 	  real(dp), allocatable :: eigv_mpi(:,:)
 	  real(dp), allocatable :: weight(:,:,:)
 	  real(dp), allocatable :: weight_mpi(:,:,:)
-     weight = 0d0
-     weight_mpi = 0d0
 
      knv3= nk3_band
      allocate( eigv    (Num_wann, knv3))
@@ -35,6 +33,8 @@
      allocate( weight_mpi(Num_wann,Num_wann, knv3))
 	  eigv    = 0d0
 	  eigv_mpi= 0d0
+     weight = 0d0
+     weight_mpi = 0d0
 
      do ik= 1+cpuid, knv3, num_cpu
 	     if (cpuid==0) write(*, *)'ik, knv3 ', ik, knv3
