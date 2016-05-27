@@ -156,6 +156,7 @@
      real(dp) :: K3D_start(3)
      real(dp) :: K3D_vec1(3)
      real(dp) :: K3D_vec2(3)
+     real(dp) :: K3D_vec3(3)
 
 
      ! R coordinates  
@@ -188,6 +189,7 @@
      character(10) :: directOrcart
      character(10), allocatable :: atom_name(:)
      real(dp), allocatable :: Atom_position(:, :)
+     real(dp), allocatable :: Atom_position_direct(:, :)
 
      integer :: max_projs
      integer, allocatable :: nprojs(:)

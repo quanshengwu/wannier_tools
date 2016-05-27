@@ -280,9 +280,6 @@
       real(Dp) :: k1
       real(Dp) :: k2
       real(Dp) :: k3
-      real(Dp) :: k11(3), k12(3)
-      real(Dp) :: k21(3), k22(3)
-      real(Dp) :: k31(3), k32(3)
       
       ! Hamiltonian of bulk system
       complex(Dp) :: Hamk_bulk(Num_wann,Num_wann) 
@@ -308,43 +305,15 @@
       kxy=0d0
       kxy_shape=0d0
       
-      kxmin= 0.00d0/1d0
-      kxmax= 1.00d0/1d0
-      kymin= 0.00d0/1d0
-      kymax= 1.00d0/1d0
-      kzmin= 0.00d0/1d0
-      kzmax= 1.00d0/1d0
       ik =0
-
-      !DFT
-     !k11=(/-1.0d0,  0.0d0, -1.0d0/) ! G
-     !k12=(/ 1.0d0,  0.0d0,  1.0d0/) ! X
-     !k21=(/ 0.0d0,  1.0d0,  1.0d0/) ! G
-     !k22=(/ 0.0d0, -1.0d0, -1.0d0/) ! Y
-     !k31=(/-1.0d0, -1.0d0,  0.0d0/) ! G
-     !k32=(/ 1.0d0,  1.0d0,  0.0d0/) ! Z
-
-      !TB
-      k11=(/-1.0d0,  0.0d0, -1.0d0/) ! 
-      k12=(/ 1.0d0,  0.0d0,  1.0d0/) ! X
-      k21=(/ 0.0d0,  1.0d0,  1.0d0/) ! 
-      k22=(/ 0.0d0, -1.0d0, -1.0d0/) ! Y
-      k31=(/-1.0d0, -1.0d0,  0.0d0/) ! 
-      k32=(/ 1.0d0,  1.0d0,  0.0d0/) ! Z
 
       do i= 1, nkx
          do j= 1, nky
             do l= 1, nkz
                ik= ik+ 1
-              !k1=kxmin+ (i-1)*(kxmax-kxmin)/dble(nkx-1)
-              !k2=kymin+ (j-1)*(kymax-kymin)/dble(nky-1)
-              !k3=kzmin+ (l-1)*(kzmax-kzmin)/dble(nkz-1)
-              !kxy(1, ik)=  (k2+ k3)/1d0
-              !kxy(2, ik)=  (k3+ k1)/1d0
-              !kxy(3, ik)=  (k1+ k2)/1d0
-               kxy(:, ik)= k11+ (k12-k11)*(i-1)/dble(nkx-1)  &
-                         + k21+ (k22-k21)*(j-1)/dble(nky-1)  &
-                         + k31+ (k32-k31)*(l-1)/dble(nkz-1)
+               kxy(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(nkx-1)  &
+                         + K3D_vec2*(j-1)/dble(nky-1)  &
+                         + K3D_vec3*(l-1)/dble(nkz-1)
                kxy_shape(:, ik)= kxy(1, ik)* Kua+ kxy(2, ik)* Kub+ kxy(3, ik)* Kuc 
             enddo
          enddo

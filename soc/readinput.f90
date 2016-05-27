@@ -133,6 +133,7 @@
      if(cpuid==0)write(stdout, '(a, i)')'Num_atoms', Num_atoms
      allocate(atom_name(Num_atoms))
      allocate(Atom_position(3, Num_atoms))
+     allocate(Atom_position_direct(3, Num_atoms))
      read(1001, *) directOrcart
      do i=1, Num_atoms
         read(1001, *) atom_name(i), Atom_position(:, i)
@@ -146,6 +147,13 @@
      do i=1, Num_atoms
         if(cpuid==0)write(stdout, '(a4,3f6.3)')atom_name(i), Atom_position(:, i)
      enddo
+
+     if(cpuid==0)write(stdout,'(a)')'Atom position in direct coordinate'
+     do ia=1, Num_atoms
+        call cart_direct_real(Atom_position(:, ia), Atom_position_direct(:, ia))
+        if(cpuid==0)write(stdout, '(a4,3f6.3)')atom_name(i), Atom_position_direct(:, i)
+     enddo
+
 
 
      !> read projectors

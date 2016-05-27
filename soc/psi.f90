@@ -3,7 +3,8 @@
 
   subroutine psik()
 
-     use para,only : Dp,Num_wann,Nslab, stdout, cpuid
+     use para,only : Dp,Num_wann,Nslab, stdout, cpuid 
+     
      implicit none 
 
 ! loop index
@@ -79,7 +80,7 @@
 
   subroutine psik_bulk()
     
-     use para,only : Dp,Num_wann, stdout, Numoccupied
+     use para,only : Dp,Num_wann, stdout, Numoccupied, cpuid
      implicit none 
 
 ! loop index
@@ -116,7 +117,7 @@
      kpoints(:, 8)= (/0.5d0, 0.0d0, 0.5d0/)
 
      ib= Numoccupied
-     open(unit=100, file='wavefunction.dat')
+     if (cpuid==0)open(unit=100, file='wavefunction.dat')
      do ik=1, 8
 
         k=kpoints(:, ik)
@@ -129,15 +130,15 @@
         call eigensystem_c('V', 'U', Num_wann, eigenvector, eigenvalue)
        
         psi(:)=eigenvector(:, ib)
-        write(stdout,*) 'eigenvalue',info,eigenvalue(ib)
+        if (cpuid==0)write(stdout,*) 'eigenvalue',info,eigenvalue(ib)
    
-        write(100, '(a,3f8.4)')'K point ', k
+        if (cpuid==0)write(100, '(a,3f8.4)')'K point ', k
         do i=1, Num_wann
-           write(100,'(i, 30f16.9)')i, eigenvector(i, ib-1), eigenvector(i, ib)
+           if (cpuid==0)write(100,'(i, 30f16.9)')i, eigenvector(i, ib-1), eigenvector(i, ib)
         enddo
-        write(100,*)' '
+        if (cpuid==0)write(100,*)' '
     
      enddo ! ik
         
-     close(100)
+     if (cpuid==0)close(100)
   end subroutine psik_bulk

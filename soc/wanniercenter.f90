@@ -1477,10 +1477,10 @@
 
       do ik2=1, Nk2
          do ik1=1, Nk1
-            kpoints(:, ik1, ik2)= k0+k1*(ik1-1)/dble(nk1)+ k2*(ik2-1)/dble(nk2)
+            kpoints(:, ik1, ik2)= k0+ k1*(ik1-1d0)/dble(Nk1)+ k2*(ik2-1d0)/dble(Nk2-1)
          enddo
       enddo
-      b= k1/dble(nk1)
+      b= k1/dble(Nk1)
       b= b(1)*kua+b(2)*kub+b(3)*kuc
 
       !> set up atom index for each orbitals in the basis
@@ -1680,7 +1680,7 @@
          write(301, '(a)')'set ytics format "%4.1f" nomirror out'
          write(301, '(a)')'set ylabel "WCC"'
          write(301, '(a)')'set ylabel offset 2, 0.0 '
-         write(301, '(a)')'set xrange [0: 1]'
+         write(301, '(a)')'set xrange [0: 0.5]'
          write(301, '(a)')'set yrange [0:1]'
          write(301, '(a)')"plot 'wcc.dat' u 1:2 w l lw 2  lc 'blue', \"   
          write(301, '(a, i5, a)')" for [i=4: ", nfill+3, "] 'wcc.dat' u 1:i w p  pt 7  ps 1.1 lc 'red'"
