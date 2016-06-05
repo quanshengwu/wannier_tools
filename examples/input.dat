@@ -54,3 +54,4 @@ G 0.0 0.0 M 0.5 0.5
 0.0 0.0 0.00   ! Original point for 3D k plane 
 0.0  1.00 0.00 ! The first vector to define 3d k space plane
 0.0  0.00 0.50 ! The second vector to define 3d k space plane
+1.0  0.00 0.00 ! The third vector to define 3d k cube 

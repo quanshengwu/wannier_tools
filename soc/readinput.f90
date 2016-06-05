@@ -43,6 +43,9 @@
      if(cpuid==0)write(stdout,'(2a)')' output file:',outfilename
      if(cpuid==0)open(unit=stdout, file=outfilename)
      read(1001,*) BulkBand_calc
+     read(1001,*) BulkFS_calc
+     read(1001,*) BulkGap_cube_calc
+     read(1001,*) BulkGap_plane_calc
      read(1001,*) SlabBand_calc
      read(1001,*) WireBand_calc
      read(1001,*) SlabSS_calc
@@ -52,14 +55,16 @@
      read(1001,*) berry_calc
 
      if (cpuid==0) then
-        write(stdout, *) "BulkBand_calc: ", BulkBand_calc
-        write(stdout, *) "SlabBand_calc: ", SlabBand_calc
-        write(stdout, *) "WireBand_calc: ", WireBand_calc
-        write(stdout, *) "SlabSS_calc  : " , SlabSS_calc
-        write(stdout, *) "SlabArc_calc : ",  SlabArc_calc
+        write(stdout, *) "BulkBand_calc       : ",  BulkBand_calc
+        write(stdout, *) "BulkFS_calc         : ",  BulkFS_calc
+        write(stdout, *) "BulkGap_cube_calc   : ",  BulkGap_cube_calc
+        write(stdout, *) "BulkGap_plane_calc  : ", BulkGap_plane_calc
+        write(stdout, *) "SlabBand_calc       : ",  SlabBand_calc
+        write(stdout, *) "SlabSS_calc         : ",  SlabSS_calc
+        write(stdout, *) "SlabArc_calc        : ",  SlabArc_calc
         write(stdout, *) "SlabSpintexture_calc: ",  SlabSpintexture_calc
         write(stdout, *) "wanniercenter_calc  : ", wanniercenter_calc
-        write(stdout, *) "berry_calc   : ", berry_calc
+        write(stdout, *) "berry_calc          : ", berry_calc
      endif
 
      read(1001,*)Nk
@@ -138,7 +143,7 @@
      do i=1, Num_atoms
         read(1001, *) atom_name(i), Atom_position(:, i)
         if(cpuid==0)write(stdout, '(a4,3f6.3)')atom_name(i), Atom_position(:, i)
-        if (index(directOrcart, "D"))then
+        if (index(directOrcart, "D")>0)then
            pos= Atom_position(:, i)
            Atom_position(:, i)= pos(1)*Rua+ pos(2)*Rub+ pos(3)*Ruc
         endif
@@ -151,7 +156,7 @@
      if(cpuid==0)write(stdout,'(a)')'Atom position in direct coordinate'
      do ia=1, Num_atoms
         call cart_direct_real(Atom_position(:, ia), Atom_position_direct(:, ia))
-        if(cpuid==0)write(stdout, '(a4,3f6.3)')atom_name(i), Atom_position_direct(:, i)
+        if(cpuid==0)write(stdout, '(a4,3f6.3)')atom_name(ia), Atom_position_direct(:, ia)
      enddo
 
 

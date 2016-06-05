@@ -17,7 +17,7 @@
     use mpi
     implicit none
 
-    ! file existence
+    !> file existence
     logical  :: exists
 
      character*4 :: c_temp
@@ -32,7 +32,7 @@
      call mpi_comm_rank(mpi_cmw,cpuid,ierr)
      call mpi_comm_size(mpi_cmw,num_cpu,ierr)
 
-     ! if mpi initial wrong, alarm 
+     !> if mpi initial wrong, alarm 
      if (cpuid==0.and.ierr.ne.0)then
         write(stdout,*)'mpi initialize wrong'
         stop 
@@ -40,12 +40,12 @@
 
      call readinput
 
-     ! open file Hmn_R.data to get Num_wann and Nrpts
+     !> open file Hmn_R.data to get Num_wann and Nrpts
      if (cpuid.eq.0)then
         write(stdout,*)''
         inquire (file =infilename, EXIST = exists)
         if (exists)then
-           if (.not.index(infilename, 'HWR')) then
+           if (index(infilename, 'HWR')==0) then
               write(stdout,'(2x,a,a,a)')'File ',trim(infilename), &
                  ' exist, We are using HmnR from wannier90'
               open(unit=1001,file=infilename,status='old')
@@ -78,16 +78,16 @@
      endif ! cpuid
 
 
-	  ! broadcast and Nrpts to every cpu
+     !> broadcast and Nrpts to every cpu
      call MPI_bcast(Num_wann,1,mpi_in,0,mpi_cmw,ierr)
      call MPI_bcast(Nrpts,1,mpi_in,0,mpi_cmw,ierr)
-	  
+     
      !> dimension for surface green's function
      Ndim= Num_wann* Np
 
 
-	  allocate(irvec(3,nrpts))
-	  allocate(ndegen(nrpts))
+     allocate(irvec(3,nrpts))
+     allocate(ndegen(nrpts))
      allocate(HmnR(num_wann,num_wann,nrpts))
 
      if(cpuid==0)then
@@ -99,7 +99,7 @@
      endif
 
 
-	  ! broadcast data to every cpu
+     !> broadcast data to every cpu
      call MPI_bcast(irvec,size(irvec),mpi_in,0,mpi_cmw,ierr)
      call MPI_bcast(HmnR,size(HmnR),mpi_dc,0,mpi_cmw,ierr)
      call MPI_bcast(ndegen,size(ndegen),mpi_in,0,mpi_cmw,ierr)
@@ -107,11 +107,16 @@
      !> import symmetry 
      call symmetry
      !> bulk band
-	  if(cpuid.eq.0)write(stdout, *)'begin to calculate bulk band'
+     if(cpuid.eq.0)write(stdout, *)'begin to calculate bulk band'
      if (BulkBand_calc) then
         call ek_bulk
        !call ek_bulk_mirror_x
        !call ek_bulk_mirror_z
+     endif
+     if (BulkFS_calc) then
+        call fermisurface3D
+     endif
+     if (BulkGap_plane_calc) then
        !call psik_bulk
        !call ek_bulk_polar
        !call ek_bulk_fortomas
@@ -119,9 +124,10 @@
        !call dos_calc
        !call ek_bulk2D
        !call ek_bulk2D_spin
-       !call fermisurface3D
-       !call gapshape
-       !call gapshape3D
+        call gapshape
+     endif
+     if (BulkGap_cube_calc) then
+        call gapshape3D
        !call landau_level_k
        !call landau_level_B
      endif
@@ -147,19 +153,19 @@
      
 
      !> surface state
-	  if(cpuid.eq.0)write(stdout, *)'begin to calculate surface state'
+     if(cpuid.eq.0)write(stdout, *)'begin to calculate surface state'
      if (SlabSS_calc)call surfstat
      if(cpuid.eq.0)write(stdout, *)'end calculate surface state'
     
-	  if(cpuid.eq.0)write(stdout, *)'begin to calculate surface state'
+     if(cpuid.eq.0)write(stdout, *)'begin to calculate surface state'
      if (WireBand_calc) then
-   	  if(cpuid.eq.0)write(stdout, *)'begin to calculate ribbon band'
+        if(cpuid.eq.0)write(stdout, *)'begin to calculate ribbon band'
         call ek_ribbon
         if(cpuid.eq.0)write(stdout, *)'end calculate ribbon band'
      endif
 
      !> fermi arc
-	  if(cpuid.eq.0)write(stdout, *)'begin to calculate fermi arc'
+     if(cpuid.eq.0)write(stdout, *)'begin to calculate fermi arc'
      if (SlabArc_calc)call fermiarc
      if(cpuid.eq.0)write(stdout, *)'end calculate fermi arc'
      

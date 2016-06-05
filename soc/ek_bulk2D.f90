@@ -13,8 +13,6 @@
      integer :: ierr
      integer :: nwann
      real(Dp) :: k(3)
-     real(Dp) :: k11(3), k12(3)
-     real(Dp) :: k21(3), k22(3)
      real(dp) :: sx
      real(dp) :: sy
      real(dp) :: sz
@@ -67,7 +65,8 @@
 	  eigv    = 0d0
 	  eigv_mpi= 0d0
 
-     nwann= Num_wann/2
+     nwann= Num_wann
+     if (soc>0) nwann= Num_wann/2
      print *, 'nwann', nwann
 
      if (SOC==0) stop 'you should set soc=0 in the input file'
@@ -81,28 +80,17 @@
         sigmaz(i+ nwann, i+ nwann)= -1d0
      enddo
 
-    !k11=(/-0.5d0,  0.0d0, -0.5d0/) ! 
-    !k12=(/ 0.5d0,  0.0d0,  0.5d0/) ! X ! TB
-     k11=(/-0.0d0,  0.0d0, -0.0d0/) ! 
-     k12=(/ 1.0d0,  0.0d0,  1.0d0/) ! X ! TB
-    !k12=(/ 0.0d0, -1.0d0, -1.0d0/) ! X ! DFT
-     k21=(/-0.5d0, -0.5d0,  0.0d0/) ! 
-     k22=(/ 0.5d0,  0.5d0,  0.0d0/) ! Z
-    !k21=(/-0.0d0,  0.5d0,  0.5d0/) ! 
-    !k22=(/ 0.0d0, -0.5d0, -0.5d0/) ! Y
-
-
      ik =0
      do i= 1, nkx
      do j= 1, nky
         ik =ik +1
-        kxy(:, ik)= k11+(k12-k11)*(i-1)/dble(nkx-1)+  k21+ (k22-k21)*(j-1)/dble(nky-1)
+        kxy(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(nkx-1)+ K3D_vec2*(j-1)/dble(nky-1)
         kxy_shape(:, ik)= kxy(1, ik)* Kua+ kxy(2, ik)* Kub+ kxy(3, ik)* Kuc 
      enddo
      enddo
 
      do ik= 1+cpuid, knv3, num_cpu
-	    !if (cpuid==0) print * , ik
+        if (cpuid==0) print * , ik, knv3
 
         k = kxy(:, ik)
 

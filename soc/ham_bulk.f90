@@ -54,20 +54,20 @@
              !kdotr=k(1)*R (1) + k(2)*R (2) + k(3)*R (3)
 
               Hamk_bulk(istart1:iend1,istart2:iend2)=&
-              Hamk_bulk(istart1:iend1,istart2:iend2)+ &
+              Hamk_bulk(istart1:iend1,istart2:iend2) &
               +HmnR(istart1:iend1,istart2:iend2,iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
 
               if (soc>0) then
                   Hamk_bulk(istart1+nwann:iend1+nwann,istart2:iend2)=&
-                  Hamk_bulk(istart1+nwann:iend1+nwann,istart2:iend2)+ &
+                  Hamk_bulk(istart1+nwann:iend1+nwann,istart2:iend2) &
                   +HmnR(istart1+nwann:iend1+nwann,istart2:iend2,iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
 
                   Hamk_bulk(istart1+nwann:iend1+nwann,istart2+nwann:iend2+nwann)=&
-                  Hamk_bulk(istart1+nwann:iend1+nwann,istart2+nwann:iend2+nwann)+ &
+                  Hamk_bulk(istart1+nwann:iend1+nwann,istart2+nwann:iend2+nwann) &
                   +HmnR(istart1+nwann:iend1+nwann,istart2+nwann:iend2+nwann,iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
 
                   Hamk_bulk(istart1:iend1,istart2+nwann:iend2+nwann)=&
-                  Hamk_bulk(istart1:iend1,istart2+nwann:iend2+nwann)+ &
+                  Hamk_bulk(istart1:iend1,istart2+nwann:iend2+nwann) &
                   +HmnR(istart1:iend1,istart2+nwann:iend2+nwann,iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
 
               endif
@@ -137,7 +137,7 @@
         kdotr=k(1)*R (1) + k(2)*R (2) + k(3)*R (3)
 
         Hamk_bulk(:, :)=&
-        Hamk_bulk(:, :)+ &
+        Hamk_bulk(:, :) &
         + HmnR(:, :, iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
      enddo ! iR
 

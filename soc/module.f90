@@ -12,6 +12,9 @@
      character*80 :: infilename
 
      logical :: BulkBand_calc
+     logical :: BulkFS_calc
+     logical :: BulkGap_cube_calc
+     logical :: BulkGap_plane_calc
      logical :: SlabBand_calc
      logical :: WireBand_calc
      logical :: SlabSS_calc

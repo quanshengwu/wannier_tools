@@ -7,12 +7,13 @@ obj =  module.o main.o symmetry.o readHmnR.o inverse.o\
 		 wanniercenter.o dos.o  \
 		 landau_level.o berry.o
 
-
-f90  = mpif90 # -check all -pg -traceback
+# compiler
+f90  = mpif90   -check all -pg -traceback
 
 #FLAGS =  -O3 -nogen-interface  -warn all 
 flag = -O3 -nogen-interface  -warn all 
 
+# blas and lapack libraries
 libs = -L/opt/intel/mkl/lib/ \
 		-lmkl_intel_lp64 -lmkl_sequential \
 		-lmkl_core -liomp5
