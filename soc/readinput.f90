@@ -11,10 +11,13 @@
 
      character*12 :: fname='input.dat'
      character*25 :: char_temp 
+     character*80 :: inline
      logical ::  exists
+     logical ::  lfound
      real(dp) :: cell_volume
      real(dp) :: cell_volume2
 
+     integer  :: stat
      integer  :: i, ia, n
      integer  :: j
      integer  :: NN
@@ -29,78 +32,176 @@
     
      inquire(file=fname,exist=exists)
      if (exists)then
-        if(cpuid==0)write(stdout,*) 'read some paramters from input.dat'
+        if(cpuid==0)write(stdout,*) '>>>Read some paramters from input.dat'
         open(unit=1001,file=fname,status='old')
      else
         if(cpuid==0)write(stdout,*)'file' ,fname, 'dosnot exist'
         stop
      endif
- 
 
-     read(1001,*)infilename
-     if(cpuid==0)write(stdout,'(a,a25)')' input file:',infilename
-     read(1001,*)outfilename
-     if(cpuid==0)write(stdout,'(2a)')' output file:',outfilename
-     if(cpuid==0)open(unit=stdout, file=outfilename)
-     read(1001,*) BulkBand_calc
-     read(1001,*) BulkFS_calc
-     read(1001,*) BulkGap_cube_calc
-     read(1001,*) BulkGap_plane_calc
-     read(1001,*) SlabBand_calc
-     read(1001,*) WireBand_calc
-     read(1001,*) SlabSS_calc
-     read(1001,*) SlabArc_calc
-     read(1001,*) SlabSpintexture_calc
-     read(1001,*) wanniercenter_calc
-     read(1001,*) berry_calc
+     !> inout file
 
+
+
+    !read(1001,*)Hrfile
+     read(1001, TB_FILE, iostat= stat)
+     if (stat/=0) then
+        Hrfile='wannier90_hr.dat'
+        inquire(file='wannier90_hr.dat',exist=exists)
+        if (.not.exists) stop "TB_FIlE namelist should be given or wannier90_hr.dat should exist"
+     endif
+     if(cpuid==0)write(stdout,'(1x, a, a25)')"Tight binding Hamiltonian file: ",Hrfile
+    
+
+     BulkBand_calc         = .FALSE.
+     BulkFS_calc           = .FALSE.
+     BulkGap_cube_calc     = .FALSE.
+     BulkGap_plane_calc    = .FALSE.
+     SlabBand_calc         = .FALSE.
+     WireBand_calc         = .FALSE.
+     SlabSS_calc           = .FALSE.
+     SlabArc_calc          = .FALSE.
+     SlabSpintexture_calc  = .FALSE.
+     wanniercenter_calc    = .FALSE.
+     BerryPhase_calc       = .FALSE.
+     BerryCurvature_calc   = .FALSE.
+     
+     read(1001, CONTROL, iostat=stat)
+
+     if (stat/=0) then
+        write(*, *)"ERROR: namelist CONTROL should be set"
+        write(*, *)"You should set one of these functions to be T"
+        write(*, *)"BulkBand_calc,BulkFS_calc,BulkGap_cube_calc,BulkGap_plane_calc"
+        write(*, *)"SlabBand_calc,WireBand_calc,SlabSS_calc,SlabArc_calc "
+        write(*, *)"SlabSpintexture,wanniercenter_calc"
+        write(*, *)"BerryPhase_calc,BerryCurvature_calc"
+        write(*, *)"The default Vaule is F"
+        stop
+     endif
+
+     !> control parameter
      if (cpuid==0) then
+        write(stdout, *) "  "
+        write(stdout, *) ">>>Control parameters: " 
         write(stdout, *) "BulkBand_calc       : ",  BulkBand_calc
         write(stdout, *) "BulkFS_calc         : ",  BulkFS_calc
         write(stdout, *) "BulkGap_cube_calc   : ",  BulkGap_cube_calc
-        write(stdout, *) "BulkGap_plane_calc  : ", BulkGap_plane_calc
+        write(stdout, *) "BulkGap_plane_calc  : ",  BulkGap_plane_calc
         write(stdout, *) "SlabBand_calc       : ",  SlabBand_calc
         write(stdout, *) "SlabSS_calc         : ",  SlabSS_calc
         write(stdout, *) "SlabArc_calc        : ",  SlabArc_calc
         write(stdout, *) "SlabSpintexture_calc: ",  SlabSpintexture_calc
         write(stdout, *) "wanniercenter_calc  : ", wanniercenter_calc
-        write(stdout, *) "berry_calc          : ", berry_calc
+        write(stdout, *) "BerryPhase_calc     : ", BerryPhase_calc
+        write(stdout, *) "BerryCurvature_calc : ", BerryCurvature_calc
      endif
 
-     read(1001,*)Nk
-     if(cpuid==0)write(stdout,*)'Nk',Nk
-     read(1001,*)omeganum
-     if(cpuid==0)write(stdout,*)'omeganum',omeganum
-     read(1001,*)omegamin, omegamax
-     if(cpuid==0)write(stdout,*)'omegamin, omegamax', omegamin, omegamax
-     read(1001,*)E_arc
-     if(cpuid==0)write(stdout,*)'E_arc', E_arc
-     read(1001,*)nslab
-     if(cpuid==0)write(stdout,*)'nslab',nslab
-     read(1001,*)Np
-     if(cpuid==0)write(stdout,*)'Np',Np
-     read(1001,*)Numoccupied
-     if(cpuid==0)write(stdout,*)'Numoccupied', Numoccupied
-     read(1001,*)Ntotch
-     if(cpuid==0)write(stdout,*)'Ntotch', Ntotch
-     read(1001,*)Soc
-     if(cpuid==0)write(stdout,*)'soc',Soc
-     read(1001,*)eta_arc
-     if(cpuid==0)write(stdout,*)'eta_arc',eta_arc
-     read(1001,*)E_fermi
-     if(cpuid==0)write(stdout,*)'E_fermi',E_fermi
-     read(1001,*)surf_onsite
-     if(cpuid==0)write(stdout,*)'surf_onsite',surf_onsite
-     read(1001,*)Bx, By, Bz
-     if(cpuid==0)write(stdout,'(a,3f16.10)')'Bx, By, Bz', Bx, By, Bz
+     !> set system parameter by default
+     Nslab= 10
+     Nslab1= 1 
+     Nslab2= 1 
+     Numoccupied = 0
+     Ntotch = 0
+     SOC = -1
+     E_FERMI = 0
+     Bx = 0
+     By = 0
+     Bz = 0
+     surf_onsite = 0
+     
+     !> read system parameter from file
+     read(1001, SYSTEM, iostat=stat)
+     if (stat/=0) then
+        write(*, *)"ERROR: namelist SYSTEM is wrong and should be set correctly"
+       !stop
+     endif
 
-     Nslab1= Nslab
-     Nslab2= Np
+     if (SOC == -1) then
+        write(*, *)"ERROR: you should set SOC in namelist SYSTEM correctly"
+        stop
+     endif
 
-     !> lattice information
-     read(1001, *)Rua
-     read(1001, *)Rub
-     read(1001, *)Ruc
+     if (Numoccupied == 0) then
+        write(*, *)"ERROR: you should set Numoccupied in namelist SYSTEM correctly"
+        stop
+     endif
+
+     if (Ntotch == 0) then
+        Ntotch = Numoccupied
+     endif
+
+     if (cpuid==0) then
+        write(stdout, *) "  "
+        write(stdout, *) ">>>System parameters: " 
+        write(stdout, '(1x, a, i6 )')"NumSlabs :", Nslab
+        write(stdout, '(1x, a, i6)')"Nslab1 for ribbon  :", Nslab1
+        write(stdout, '(1x, a, i6)')"Nslab2 for ribbon  :", Nslab2
+        write(stdout, '(1x, a, i6)')"Number of Occupied bands:", NumOccupied
+        write(stdout, '(1x, a, i6)')"Number of total electrons:", Ntotch
+        write(stdout, '(1x, a, i6)')"With SOC or not in Hrfile:", SOC
+        write(stdout, '(1x, a, 3f16.6)')"Fermi energy :", E_FERMI
+        write(stdout, '(1x, a, 3f16.6)')"Bx, By, Bz :", Bx, By, Bz
+        write(stdout, '(1x, a, 3f16.6)')"surf_onsite :", surf_onsite
+     endif
+
+     !> set up parameters for calculation
+     E_arc = 0.0d0
+     Eta_Arc= 0.001d0
+     OmegaNum = 100
+     OmegaMin = -1d0
+     OmegaMax =  1d0
+     Nk1 = 50
+     Nk2 = 50
+     Nk3 = 50
+     NP = 2
+    
+     read(1001, PARAMETERS, iostat= stat)
+
+     if (cpuid==0) then
+        write(stdout, *) "  "
+        write(stdout, *) ">>>calculation parameters : " 
+        write(stdout, '(1x, a, f16.5)')'E_arc : ', E_arc
+        write(stdout, '(1x, a, f16.5)')'Eta_arc : ', Eta_arc
+        write(stdout, '(1x, a, f16.5)')'OmegaMin : ', OmegaMin
+        write(stdout, '(1x, a, f16.5)')'OmegaMax : ', OmegaMax
+        write(stdout, '(1x, a, i6   )')'OmegaNum : ', OmegaNum
+        write(stdout, '(1x, a, i6   )')'Nk1 : ', Nk1
+        write(stdout, '(1x, a, i6   )')'Nk2 : ', Nk2
+        write(stdout, '(1x, a, i6   )')'Nk3 : ', Nk3
+        write(stdout, '(1x, a, i6   )')'NP number of principle layers  : ', Np
+     endif
+   
+     NK = Nk1
+
+     !> read lattice information
+     rewind(1001)
+     lfound = .false.
+     do while (.true.)
+        read(1001, *, end= 100)inline
+        if (trim(adjustl(inline))=='LATTICE') then
+           lfound= .true.
+           if (cpuid==0) write(stdout, *)' '
+           if (cpuid==0) write(stdout, *)'We found LATTICE card'
+           exit
+        endif
+     enddo
+     100 continue
+
+     if (lfound) then
+        read(1001, *)inline   ! The unit of lattice vector
+        AngOrBohr=trim(adjustl(inline))
+        read(1001, *)Rua
+        read(1001, *)Rub
+        read(1001, *)Ruc
+     else 
+        stop 'ERROR: please set lattice information'
+     endif
+
+     if (index(AngOrBohr, 'Bohr')>0) then
+        Rua= Rua*0.529177d0
+        Rub= Rub*0.529177d0
+        Ruc= Ruc*0.529177d0
+     endif
 
      !> transform lattice from direct space to reciprocal space
 
@@ -123,117 +224,112 @@
      Kuc(2)= cell_volume*(Rua(3)*Rub(1)- Rua(1)*Rub(3))
      Kuc(3)= cell_volume*(Rua(1)*Rub(2)- Rua(2)*Rub(1))
 
-     if(cpuid==0)write(stdout, '(a)') '>> lattice information'
-     if(cpuid==0)write(stdout, '(3f10.6)')Rua
-     if(cpuid==0)write(stdout, '(3f10.6)')Rub
-     if(cpuid==0)write(stdout, '(3f10.6)')Ruc
+     if(cpuid==0)write(stdout, '(a)') '>> lattice information (Angstrom)'
+     if(cpuid==0)write(stdout, '(3f12.6)')Rua
+     if(cpuid==0)write(stdout, '(3f12.6)')Rub
+     if(cpuid==0)write(stdout, '(3f12.6)')Ruc
 
-     if(cpuid==0)write(stdout, '(a)') '>> Reciprocal lattice information'
-     if(cpuid==0)write(stdout, '(3f10.6)')Kua
-     if(cpuid==0)write(stdout, '(3f10.6)')Kub
-     if(cpuid==0)write(stdout, '(3f10.6)')Kuc
+     if(cpuid==0)write(stdout, '(a)') '>> Reciprocal lattice information (1/Angstrom)'
+     if(cpuid==0)write(stdout, '(3f12.6)')Kua
+     if(cpuid==0)write(stdout, '(3f12.6)')Kub
+     if(cpuid==0)write(stdout, '(3f12.6)')Kuc
 
-     !> read atom position
-     read(1001, *)Num_atoms
-     if(cpuid==0)write(stdout, '(a, i)')'Num_atoms', Num_atoms
-     allocate(atom_name(Num_atoms))
-     allocate(Atom_position(3, Num_atoms))
-     allocate(Atom_position_direct(3, Num_atoms))
-     read(1001, *) directOrcart
-     do i=1, Num_atoms
-        read(1001, *) atom_name(i), Atom_position(:, i)
-        if(cpuid==0)write(stdout, '(a4,3f6.3)')atom_name(i), Atom_position(:, i)
-        if (index(directOrcart, "D")>0)then
-           pos= Atom_position(:, i)
-           Atom_position(:, i)= pos(1)*Rua+ pos(2)*Rub+ pos(3)*Ruc
+     !> Read atom positions information
+     rewind(1001)
+     lfound = .false.
+     do while (.true.)
+        read(1001, *, end= 101)inline
+        if (trim(adjustl(inline))=='ATOM_POSITIONS') then
+           lfound= .true.
+           if (cpuid==0) write(stdout, *)' '
+           if (cpuid==0) write(stdout, *)'We found ATOM_POSITIONS card'
+           exit
         endif
      enddo
-     if(cpuid==0)write(stdout,'(a)')'Atom position in cartisen coordinate'
-     do i=1, Num_atoms
-        if(cpuid==0)write(stdout, '(a4,3f6.3)')atom_name(i), Atom_position(:, i)
-     enddo
+     101 continue
 
-     if(cpuid==0)write(stdout,'(a)')'Atom position in direct coordinate'
-     do ia=1, Num_atoms
-        call cart_direct_real(Atom_position(:, ia), Atom_position_direct(:, ia))
-        if(cpuid==0)write(stdout, '(a4,3f6.3)')atom_name(ia), Atom_position_direct(:, ia)
-     enddo
-
-
-
-     !> read projectors
-     allocate(nprojs(Num_atoms))
-     nprojs= 0
-     read(1001, *)nprojs
-     if(cpuid==0)write(stdout, '(a, 40i5)')'nprojs', nprojs
-
-     max_projs= maxval(nprojs)
-     allocate(proj_name(max_projs, Num_atoms))
-     proj_name= ' '
-     do i=1, Num_atoms
-        read(1001, *)char_temp, proj_name(1:nprojs(i), i)
-        if(cpuid==0)write(stdout, '(40a8)') &
-           char_temp, proj_name(1:nprojs(i), i)
-     enddo
-
-
-     !> kline for 3d band structure
-     !> high symmetry k points
-     read(1001, *) nk3lines
-     if(cpuid==0)write(stdout, '(a, 40i5)')'nk3lines', nk3lines
-     allocate(k3line_start(3, nk3lines))
-     allocate(k3line_end(3, nk3lines))
-     allocate(k3line_name(nk3lines+1))
-     allocate(k3line_stop(nk3lines+1))
-     k3line_stop= 0d0
-     k3line_start= 0d0
-     k3line_end= 0d0
-     k3line_name= ' '
-     do i=1, nk3lines
-        read(1001, *) k3line_name(i), k3line_start(:, i), &
-                      char_temp, k3line_end(:, i)
-        if(cpuid==0)write(stdout, '(a5, 3f9.4, 2x, a5, 3f9.4)')&
-          k3line_name(i), k3line_start(:, i), &
-          char_temp, k3line_end(:, i)
-
-
-     enddo
-     k3line_name(nk3lines+1)= char_temp
-
-     NN= Nk
-     nk3_band= NN*nk3lines
-     allocate(k3len(nk3_band))
-     allocate(k3points(3, nk3_band))
-     k3len=0d0
-     k3points= 0d0
-     t1= 0d0
-     do j=1, nk3lines
-        do i=1, NN
-           kstart= k3line_start(:, j)
-           kend  = k3line_end(:, j)
-           k1= kstart(1)*Kua+ kstart(2)*Kub+ kstart(3)*Kuc
-           k2= kend(1)*Kua+ kend(2)*Kub+ kend(3)*Kuc
-          !k1= kstart
-          !k2= kend
-
-           k3points(:, i+ (j-1)*NN)= kstart+ (kend- kstart)*dble(i-1)/dble(NN-1)
-           
-           temp= dsqrt((k2(1)- k1(1))**2 &
-                 +(k2(2)- k1(2))**2  &
-                 +(k2(3)- k1(3))**2)/dble(NN-1) 
-
-          !temp= dsqrt((kend(1)- kstart(1))**2 &
-          !      +(kend(2)- kstart(2))**2  &
-          !      +(kend(3)- kstart(3))**2)/dble(NN-1) 
-
-           if (i.gt.1) then
-              t1=t1+temp
+     if (lfound) then
+        read(1001, *)Num_atoms   ! The unit of lattice vector
+        if(cpuid==0)write(stdout, '(a, i)')'Num_atoms', Num_atoms
+        allocate(atom_name(Num_atoms))
+        allocate(Atom_position(3, Num_atoms))
+        allocate(Atom_position_direct(3, Num_atoms))
+        read(1001, *)inline   ! The unit of lattice vector
+        DirectOrCart= trim(adjustl(inline))
+        do i=1, Num_atoms
+           read(1001, *) atom_name(i), Atom_position(:, i)
+           if(cpuid==0)write(stdout, '(a4,3f12.6)')atom_name(i), Atom_position(:, i)
+           if (index(DirectOrCart, "D")>0)then
+              pos= Atom_position(:, i)
+              Atom_position(:, i)= pos(1)*Rua+ pos(2)*Rub+ pos(3)*Ruc
            endif
-           k3len(i+(j-1)*NN)= t1
         enddo
-        k3line_stop(j+1)= t1
-     enddo
+        if(cpuid==0)write(stdout,'(a)')'Atom position in cartisen coordinate'
+        do i=1, Num_atoms
+           if(cpuid==0)write(stdout, '(a4,3f12.6)')atom_name(i), Atom_position(:, i)
+        enddo
+     
+        if(cpuid==0)write(stdout,'(a)')'Atom position in direct coordinate'
+        do ia=1, Num_atoms
+           call cart_direct_real(Atom_position(:, ia), Atom_position_direct(:, ia))
+           if(cpuid==0)write(stdout, '(a4,3f12.6)')atom_name(ia), Atom_position_direct(:, ia)
+        enddo
+     else
+        stop "ERROR: please set atom's positions information"
+     endif
 
+     !> Read projectors information
+     rewind(1001)
+     lfound = .false.
+     do while (.true.)
+        read(1001, *, end= 102)inline
+        if (trim(adjustl(inline))=='PROJECTORS'.or.&
+            trim(adjustl(inline))=='PROJECTOR') then
+           lfound= .true.
+           if (cpuid==0) write(stdout, *)' '
+           if (cpuid==0) write(stdout, *)'We found PROJECTORS card'
+           exit
+        endif
+     enddo
+     102 continue
+
+     if (lfound) then
+        allocate(nprojs(Num_atoms))
+        nprojs= 0
+        read(1001, *)nprojs
+        if(cpuid==0)write(stdout, '(a, 40i5)')'nprojs', nprojs
+
+        max_projs= maxval(nprojs)
+        allocate(proj_name(max_projs, Num_atoms))
+        proj_name= ' '
+        do i=1, Num_atoms
+           read(1001, *)char_temp, proj_name(1:nprojs(i), i)
+           if(cpuid==0)write(stdout, '(40a8)') &
+              char_temp, proj_name(1:nprojs(i), i)
+        enddo
+     else
+        stop "ERROR: please set projectors for Wannier functions information"
+     endif
+
+
+     !> read surface information
+     rewind(1001)
+     lfound = .false.
+     do while (.true.)
+        read(1001, *, end= 103)inline
+        if (trim(adjustl(inline))=='SURFACE') then
+           lfound= .true.
+           if (cpuid==0) write(stdout, *)' '
+           if (cpuid==0) write(stdout, *)'We found SURFACE card'
+           exit
+        endif
+     enddo
+     103 continue
+
+     if (.not.lfound) then
+        print *, inline
+        stop 'ERROR: please set surface information'
+     endif
 
      !> read information for new lattice 
      !> in order to get different surface state
@@ -243,6 +339,13 @@
      read(1001, *)Umatrix(1, :)
      read(1001, *)Umatrix(2, :)
      read(1001, *)Umatrix(3, :)
+
+     if (cpuid==0) then
+        write(stdout, '(a)')'>> new vectors to define the surface (in unit of lattice vector)' 
+        write(stdout, '(a, 3f12.6)')' The 1st vector on surface :', Umatrix(1, :)
+        write(stdout, '(a, 3f12.6)')' The 2nd vector on surface :', Umatrix(2, :)
+        write(stdout, '(a, 3f12.6)')' The 3rd vector out surface :', Umatrix(3, :)
+     endif
 
      !> check whether Umatrix is right
      !> the volume of the new cell should be the same as the old ones
@@ -309,7 +412,7 @@
      Kb2(2)= 2d0*pi/cell_volume*Ra2(1)
 
      if (cpuid==0) then
-        write(stdout, *)'cell_volume: ', cell_volume
+        write(stdout, *)'Cell_Volume: ', Cell_Volume
         write(stdout, *)'Ra2, Rb2'
         write(stdout, '(3f10.4)')Ra2
         write(stdout, '(3f10.4)')Rb2
@@ -317,6 +420,90 @@
         write(stdout, '(3f10.4)')ka2
         write(stdout, '(3f10.4)')kb2
      endif
+
+
+     !> read kpath_bulk information
+     rewind(1001)
+     lfound = .false.
+     do while (.true.)
+        read(1001, *, end= 104)inline
+        if (trim(adjustl(inline))=='KPATH_BULK') then
+           lfound= .true.
+           if (cpuid==0) write(stdout, *)' '
+           if (cpuid==0) write(stdout, *)'We found KPATH_BULK card'
+           exit
+        endif
+     enddo
+
+     !> kline for 3d band structure
+     !> high symmetry k points
+     read(1001, *) nk3lines
+     if(cpuid==0)write(stdout, '(a, 40i5)')'Number of K lines : ', nk3lines
+     allocate(k3line_start(3, nk3lines))
+     allocate(k3line_end(3, nk3lines))
+     allocate(k3line_name(nk3lines+1))
+     allocate(k3line_stop(nk3lines+1))
+     k3line_stop= 0d0
+     k3line_start= 0d0
+     k3line_end= 0d0
+     k3line_name= ' '
+     do i=1, nk3lines
+        read(1001, *) k3line_name(i), k3line_start(:, i), &
+                      char_temp, k3line_end(:, i)
+        if(cpuid==0)write(stdout, '(a5, 3f9.4, 2x, a5, 3f9.4)')&
+          k3line_name(i), k3line_start(:, i), &
+          char_temp, k3line_end(:, i)
+
+     enddo
+     k3line_name(nk3lines+1)= char_temp
+
+     NN= Nk
+     nk3_band= NN*nk3lines
+     allocate(k3len(nk3_band))
+     allocate(k3points(3, nk3_band))
+     k3len=0d0
+     k3points= 0d0
+     t1= 0d0
+     do j=1, nk3lines
+        do i=1, NN
+           kstart= k3line_start(:, j)
+           kend  = k3line_end(:, j)
+           k1= kstart(1)*Kua+ kstart(2)*Kub+ kstart(3)*Kuc
+           k2= kend(1)*Kua+ kend(2)*Kub+ kend(3)*Kuc
+          !k1= kstart
+          !k2= kend
+
+           k3points(:, i+ (j-1)*NN)= kstart+ (kend- kstart)*dble(i-1)/dble(NN-1)
+           
+           temp= dsqrt((k2(1)- k1(1))**2 &
+                 +(k2(2)- k1(2))**2  &
+                 +(k2(3)- k1(3))**2)/dble(NN-1) 
+
+           if (i.gt.1) then
+              t1=t1+temp
+           endif
+           k3len(i+(j-1)*NN)= t1
+        enddo
+        k3line_stop(j+1)= t1
+     enddo
+
+     104 continue
+     if (.not.lfound .and. BulkBand_calc == .TRUE.) then
+        stop 'ERROR: please set KPATH_BULK for bulk band structure calculation'
+     endif
+
+     !> read kpath_slab information
+     rewind(1001)
+     lfound = .false.
+     do while (.true.)
+        read(1001, *, end= 105)inline
+        if (trim(adjustl(inline))=='KPATH_SLAB') then
+           lfound= .true.
+           if (cpuid==0) write(stdout, *)' '
+           if (cpuid==0) write(stdout, *)'We found KPATH_SLAB card'
+           exit
+        endif
+     enddo
 
      !> read in k lines for 2D system
      k2line_name= ' '
@@ -362,6 +549,26 @@
 
      enddo
 
+
+     105 continue
+     if (.not.lfound .and.(SlabBand_calc == .TRUE. .or. SlabSS_calc==.TRUE.)) then
+        stop 'ERROR: please set KPATH_SLAB for slab band structure calculation'
+     endif
+
+
+     !> read kplane_slab information
+     rewind(1001)
+     lfound = .false.
+     do while (.true.)
+        read(1001, *, end= 106)inline
+        if (trim(adjustl(inline))=='KPLANE_SLAB') then
+           lfound= .true.
+           if (cpuid==0) write(stdout, *)' '
+           if (cpuid==0) write(stdout, *)'We found KPLANE_SLAB card'
+           exit
+        endif
+     enddo
+
      !> kpoints plane for 2D system--> arcs  
      if (cpuid==0) write(stdout, *)'>> Kpoints plane for 2D system--> arcs  '
      read(1001, *)K2D_start
@@ -371,22 +578,77 @@
      read(1001, *)K2D_vec2
      if (cpuid==0) write(stdout, '((a, 2f8.4))')'The second vector: ', K2D_vec2
 
+     106 continue
+     if (.not.lfound .and.(SlabArc_calc == .TRUE. .or. SlabSpintexture_calc==.TRUE.)) then
+        stop 'ERROR: please set KPLANE_SLAB for arc or spintexture calculations'
+     endif
+
+
+
+     !> read kplane_bulk information
+     rewind(1001)
+     lfound = .false.
+     do while (.true.)
+        read(1001, *, end= 107)inline
+        if (trim(adjustl(inline))=='KPLANE_BULK') then
+           lfound= .true.
+           if (cpuid==0) write(stdout, *)' '
+           if (cpuid==0) write(stdout, *)'We found KPLANE_BULK card'
+           exit
+        endif
+     enddo
+
      !> kpoints plane for 3D system--> gapshape
      if (cpuid==0) write(stdout, *)'>> Kpoints plane for 3D system--> gapshape  '
      read(1001, *)K3D_start
      if (cpuid==0) write(stdout, '((a6, 3f8.4))')'k3D_start', K3D_start
      read(1001, *)K3D_vec1
-     if (cpuid==0) write(stdout, '((a, 3f8.4))')'The first vector: ', K3D_vec1
+     if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 1st vector: ', K3D_vec1
      read(1001, *)K3D_vec2
-     if (cpuid==0) write(stdout, '((a, 3f8.4))')'The second vector: ', K3D_vec2
+     if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 2nd vector: ', K3D_vec2
 
+     107 continue
+     if (.not.lfound .and.(BulkGap_plane_calc == .TRUE. .or. wanniercenter_calc==.TRUE.)) then
+        stop 'ERROR: please set KPLANE_bulk for gap or WCC calculations'
+     endif
+
+
+
+     !> read kcube_bulk information
+     rewind(1001)
+     lfound = .false.
+     do while (.true.)
+        read(1001, *, end= 108)inline
+        if (trim(adjustl(inline))=='KCUBE_BULK') then
+           lfound= .true.
+           if (cpuid==0) write(stdout, *)' '
+           if (cpuid==0) write(stdout, *)'We found KCUBE_BULK card'
+           exit
+        endif
+     enddo
+
+     !> kpoints plane for 3D system--> gapshape
+     if (cpuid==0) write(stdout, *)'>> Kpoints plane for 3D system--> gapshape3D  '
+     read(1001, *)K3D_start_cube
+     if (cpuid==0) write(stdout, '((a6, 3f8.4))')'k3D_start', K3D_start_cube
+     read(1001, *)K3D_vec1_cube
+     if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 1st vector: ', K3D_vec1_cube
+     read(1001, *)K3D_vec2_cube
+     if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 2nd vector: ', K3D_vec2_cube
+     read(1001, *)K3D_vec3_cube
+     if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 3rd vector: ', K3D_vec3_cube
+
+     108 continue
+     if (.not.lfound .and.(BulkGap_cube_calc == .TRUE.)) then
+        stop 'ERROR: please set KCUBE_BULK for gap3D calculations'
+     endif
 
      !> close input.dat
      close(1001)
 
-     eta=(omegamax- omegamin)/omeganum*eta
+     eta=(omegamax- omegamin)/omeganum*2d0
 
-     if(cpuid==0)write(stdout,*)'read input.dat file successfully'
+     if(cpuid==0)write(stdout,*)'<<<Read input.dat file successfully'
 
 
      return

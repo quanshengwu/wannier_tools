@@ -3,7 +3,7 @@
 
   subroutine ek_bulk
 
-     use mpi
+     use wmpi
      use para
 
      implicit none
@@ -37,8 +37,8 @@
      weight_mpi = 0d0
 
      do ik= 1+cpuid, knv3, num_cpu
-	     if (cpuid==0) write(*, *)'ik, knv3 ', ik, knv3
-	     if (cpuid==0) write(stdout, *)'ik, knv3 ', ik, knv3
+	     if (cpuid==0) write(*, *)'BulkBand, ik, knv3 ', ik, knv3
+	     if (cpuid==0) write(stdout, *)'BulkBand, ik, knv3 ', ik, knv3
 
         k = k3points(:, ik)
 
@@ -66,7 +66,6 @@
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
 
      weight= weight_mpi/maxval(weight_mpi)*255d0
-     print *,' max weight', maxval(weight_mpi)
 
      if (cpuid==0)then
         open(unit=14, file='bulkek.dat')
@@ -127,7 +126,7 @@
   !> calculate spin direction for each band and each kpoint
   subroutine ek_bulk_spin
 
-     use mpi
+     use wmpi
      use para
 
      implicit none
@@ -188,8 +187,8 @@
      enddo
 
      do ik= 1+cpuid, knv3, num_cpu
-	     if (cpuid==0) write(*, *)'ik, knv3 ', ik, knv3
-	     if (cpuid==0) write(stdout, *)'ik, knv3 ', ik, knv3
+	     if (cpuid==0) write(*, *)'BulkBandSpin, ik, knv3 ', ik, knv3
+	     if (cpuid==0) write(stdout, *)'BulkBandSpin, ik, knv3 ', ik, knv3
 
         k = k3points(:, ik)
 
@@ -280,7 +279,7 @@
 
    subroutine ek_bulk_fortomas
 
-     use mpi
+     use wmpi
      use para
 
      implicit none
@@ -352,7 +351,7 @@
 
   subroutine ek_bulk_mirror_z
 
-     use mpi
+     use wmpi
      use para
 
      implicit none
@@ -388,8 +387,8 @@
 	  eigv_mpi= 0d0
 
      do ik= 1+cpuid, knv3, num_cpu
-	     if (cpuid==0) write(*, *)'ik, knv3 ', ik, knv3
-	     if (cpuid==0) write(stdout, *)'ik, knv3 ', ik, knv3
+	     if (cpuid==0) write(*, *)'BulkBandmirrorz, ik, knv3 ', ik, knv3
+	     if (cpuid==0) write(stdout, *)'BulkBandmirrorz, ik, knv3 ', ik, knv3
 
         k = k3points(:, ik)
 
@@ -508,7 +507,7 @@
 
   subroutine ek_bulk_mirror_x
 
-     use mpi
+     use wmpi
      use para
 
      implicit none

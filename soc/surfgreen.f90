@@ -145,7 +145,7 @@
 !+---------+---------+---------+---------+---------+---------+--------+!
   subroutine surfgreen_1984(omega,GLL,GRR,H00,H01,ones)
 
-     use mpi
+     use wmpi
      use para
      implicit none
      

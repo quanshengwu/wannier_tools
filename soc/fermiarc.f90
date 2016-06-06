@@ -10,7 +10,7 @@
   subroutine fermiarc
 
 
-     use mpi
+     use wmpi
      use para
      implicit none
      
@@ -20,9 +20,6 @@
 
 ! general loop index
      integer :: i,j 
-
-     integer :: nk1
-     integer :: nk2
 
 ! kpoint loop index
      integer :: ikp
@@ -48,8 +45,6 @@
      complex(dp), allocatable :: GLL(:,:), GRR(:,:)
      complex(dp), allocatable :: H00(:,:), H01(:,:)
 
-     nk1 = Nk 
-     nk2 = Nk
 
      allocate( k12(2, nk1*nk2))
      allocate( k12_shape(2, nk1*nk2))

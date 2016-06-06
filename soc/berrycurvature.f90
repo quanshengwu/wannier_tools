@@ -10,7 +10,6 @@
     
      integer :: iR
      integer :: ik
-     integer :: nk1, nk2
 
      integer :: m, n, i, j
 
@@ -46,8 +45,6 @@
      complex(dp), allocatable :: Omega_mpi(:, :)
 
 
-     nk1= Nk
-     nk2= Nk
      knv2= nk1*nk2
      allocate( kslice(3, knv2))
      allocate( kslice_shape(3, knv2))

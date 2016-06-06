@@ -3,7 +3,7 @@
 
    subroutine  wannier_center2D
       use para
-      use mpi
+      use wmpi
       implicit none
 
       integer :: Nkx
@@ -209,7 +209,7 @@
 
    subroutine  wannier_center2D_alt
       use para
-      use mpi
+      use wmpi
       implicit none
 
       integer :: Nkx
@@ -546,11 +546,9 @@
    !> which have the same mirror eigenvalue
    subroutine  wannier_center3D_plane_mirror_minus
       use para
-      use mpi
+      use wmpi
       implicit none
 
-      integer :: Nk1
-      integer :: Nk2
 
       integer :: i
       integer :: j
@@ -652,11 +650,8 @@
       logical, allocatable :: mirror_plus(:, :)
       logical, allocatable :: mirror_minus(:, :)
 
-      Nk1= Nk
-      Nk2= Nk
 
       nfill= Numoccupied
-     !nfill_half= Numoccupied
       nfill_half= Numoccupied/2
 
       allocate(kpoints(3, Nk1, Nk2))
@@ -938,11 +933,9 @@
    !> which have the same mirror eigenvalue
    subroutine  wannier_center3D_plane_mirror_plus
       use para
-      use mpi
+      use wmpi
       implicit none
 
-      integer :: Nk1
-      integer :: Nk2
 
       integer :: i
       integer :: j
@@ -1044,8 +1037,6 @@
       logical, allocatable :: mirror_plus(:, :)
       logical, allocatable :: mirror_minus(:, :)
 
-      Nk1= Nk
-      Nk2= Nk
 
       nfill= Numoccupied
      !nfill_half= Numoccupied
@@ -1329,11 +1320,8 @@
 
    subroutine  wannier_center3D_plane
       use para
-      use mpi
+      use wmpi
       implicit none
-
-      integer :: Nk1
-      integer :: Nk2
 
       integer :: i
       integer :: j
@@ -1423,9 +1411,6 @@
       real(dp) :: k0(3), k1(3), k2(3)
 
 
-
-      Nk1= Nk
-      Nk2= Nk
 
       nfill= Numoccupied
 
@@ -1695,11 +1680,8 @@
 
    subroutine  wannier_center3D
       use para
-      use mpi
+      use wmpi
       implicit none
-
-      integer :: Nk1
-      integer :: Nk2
 
       integer :: i
       integer :: j
@@ -1789,9 +1771,6 @@
       real(dp) :: Deltam
       real(dp), allocatable :: xnm(:)
 
-
-      Nk1= Nk
-      Nk2= Nk
 
       nfill= Numoccupied
 

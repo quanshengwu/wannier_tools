@@ -11,7 +11,7 @@
 !+---------+---------+---------+---------+---------+---------+--------+!
   subroutine surfstat
 
-     use mpi
+     use wmpi
      use para
      implicit none
      
@@ -100,8 +100,8 @@
      enddo
 
      do ikp= 1+cpuid, knv2, num_cpu
-        if (cpuid==0) write(*, *) 'ik', ikp, 'Nk', knv2
-        if (cpuid==0) write(stdout, *) 'ik', ikp, 'Nk', knv2
+        if (cpuid==0) write(*, *) 'SurfaceSS, ik', ikp, 'Nk', knv2
+        if (cpuid==0) write(stdout, *) 'SurfaceSS, ik', ikp, 'Nk', knv2
         k= k2_path(ikp,:)
 
         !> get the hopping matrix between two principle layers

@@ -1,16 +1,26 @@
-! some global parameters 
-! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
+!> some global parameters 
+!> Copyright (c) 2010 QuanSheng Wu. All rights reserved.
+!> add namelist for convenience  June 5th 2016 by QuanSheng Wu
+
+  module wmpi
+     include 'mpif.h'
+  end module wmpi
+
 
   module para
 
-     use mpi
+     use wmpi
      implicit none
 
      ! output file name
 
-     character*40 :: outfilename
-     character*80 :: infilename
+     integer,parameter :: stdout= 6
 
+     character*80 :: Hrfile
+     namelist / TB_FILE / Hrfile
+
+
+     !> control parameters
      logical :: BulkBand_calc
      logical :: BulkFS_calc
      logical :: BulkGap_cube_calc
@@ -21,9 +31,14 @@
      logical :: SlabArc_calc
      logical :: SlabSpintexture_calc
      logical :: wanniercenter_calc
-     logical :: berry_calc
+     logical :: BerryPhase_calc
+     logical :: BerryCurvature_calc
+     
+     namelist / Control / BulkBand_calc, BulkFS_calc, BulkGap_plane_calc, &
+                          BulkGap_cube_calc, SlabBand_calc, WireBand_calc, &
+                          SlabSS_calc, SlabArc_calc, SlabSpintexture_calc, &
+                          wanniercenter_calc,BerryPhase_calc,BerryCurvature_calc
 
-     integer,parameter :: stdout= 6
 
      ! double precision  
      integer,parameter :: Dp=kind(1.0d0)
@@ -55,6 +70,9 @@
 
      ! number of k points used in ek_slab
      integer :: Nk  
+     integer :: Nk1
+     integer :: Nk2
+     integer :: Nk3
 
      integer, public, save :: Nr1=5
      integer, public, save :: Nr2=5
@@ -72,16 +90,20 @@
 
      ! used to calculate dos epsilon+i eta
      real(Dp) :: eta 
-     real(Dp) :: eta_arc
+     real(Dp) :: Eta_Arc
 
      ! the number of omega
-     integer :: omeganum 
+     integer :: OmegaNum 
 
      ! omega interval 
-     real(dp) :: omegamin, omegamax
+     real(dp) :: OmegaMin, OmegaMax
 
      ! Fermi energy for arc calculation
      real(Dp) :: E_arc
+
+     !> namelist parameters
+     namelist /PARAMETERS/ Eta_Arc, OmegaNum, OmegaMin, OmegaMax, &
+        E_arc, Nk1, Nk2, Nk3, NP
 
      ! Fermi energy
      real(Dp) :: E_fermi
@@ -91,6 +113,10 @@
 
      !> magnetic field (Tesla)
      real(dp) :: Bx, By, Bz
+
+     !> system parameters namelist
+     namelist / SYSTEM / Soc, E_fermi, Bx, By, Bz, surf_onsite, &
+        Nslab, Nslab1, Nslab2, Numoccupied, Ntotch
 
      !> e/2/h*a*a   a=1d-10m, h is the planck constant
      !> then the flux equals alpha*B*s
@@ -127,6 +153,7 @@
      real(dp),public, save :: Kua(3)
      real(dp),public, save :: Kub(3)
      real(dp),public, save :: Kuc(3)
+
      real(dp),public, save :: Urot(3, 3)
 
      ! k list for 3D case band
@@ -139,6 +166,8 @@
      real(dp),allocatable :: K3list_band(:, :)
      real(dp),allocatable :: K3len(:)
      real(dp),allocatable :: K3points(:, :)
+
+     namelist / KPATH_BULK / nk3lines, k3line_name, k3line_start
 
      !>  klist for 2D case include all 2D system
      integer :: nk2lines
@@ -160,6 +189,13 @@
      real(dp) :: K3D_vec1(3)
      real(dp) :: K3D_vec2(3)
      real(dp) :: K3D_vec3(3)
+
+     !> kpoints plane for 3D system --> gapshape3D
+     real(dp) :: K3D_start_cube(3)
+     real(dp) :: K3D_vec1_cube(3)
+     real(dp) :: K3D_vec2_cube(3)
+     real(dp) :: K3D_vec3_cube(3)
+
 
 
      ! R coordinates  
@@ -189,6 +225,7 @@
 
      !> number of atoms in one primitive cell
      integer :: Num_atoms
+     character(10) :: AngOrBohr
      character(10) :: directOrcart
      character(10), allocatable :: atom_name(:)
      real(dp), allocatable :: Atom_position(:, :)
@@ -210,5 +247,6 @@
      real(dp), allocatable :: mirror_x_op(:, :)
      real(dp), allocatable :: mirror_y_op(:, :)
      real(dp), allocatable :: glide_y_op(:, :)
+
 
  end module para

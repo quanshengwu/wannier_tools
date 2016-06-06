@@ -3,7 +3,7 @@
 ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
   subroutine ek_slab
     
-     use mpi
+     use wmpi
      use para
      implicit none 
 
@@ -58,7 +58,7 @@
      ! sweep k
      ekslab=0.0d0
      do i=1+cpuid,knv2,num_cpu
-        if (cpuid==0) print *, 'ik ',  i, knv2
+        if (cpuid==0) print *, 'SlabEk, ik ',  i, knv2
         k= k2_path(i, :)
         chamk=0.0d0 
 
@@ -172,7 +172,7 @@
   !> 
   subroutine ek_slab_b
     
-     use mpi
+     use wmpi
      use para
      implicit none 
 
@@ -223,7 +223,7 @@
      ! sweep k
      ekslab=0.0d0
      do i=1+cpuid,knv2,num_cpu
-        if (cpuid==0) print *, 'ik ',  i, knv2
+        if (cpuid==0) print *, 'SlabEkB, ik ',  i, knv2
         k= k2_path(i, :)
         chamk=0.0d0 
         eigenvalue=0.0d0

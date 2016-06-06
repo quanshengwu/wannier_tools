@@ -20,8 +20,6 @@
      integer :: il,iu
 
 
-     integer,parameter :: Nk1=50
-
      ! wave vector 
      real(Dp) :: k
 

@@ -13,24 +13,22 @@
 
   program main
 
-    use para
-    use mpi
-    implicit none
+     use para
+     use mpi
+     implicit none
 
-    !> file existence
-    logical  :: exists
+     !> file existence
+     logical  :: exists
 
-     character*4 :: c_temp
-     integer :: i_temp
-	  real(dp) :: r_temp
-
-     integer :: namelen
+     character*4 :: cht
      integer :: ierr
 
-     ! initial the environment of mpi 
+     !> initial the environment of mpi 
      call mpi_init(ierr)
      call mpi_comm_rank(mpi_cmw,cpuid,ierr)
      call mpi_comm_size(mpi_cmw,num_cpu,ierr)
+
+     if (cpuid==0) open(unit=stdout, file='WT.out')
 
      !> if mpi initial wrong, alarm 
      if (cpuid==0.and.ierr.ne.0)then
@@ -43,12 +41,12 @@
      !> open file Hmn_R.data to get Num_wann and Nrpts
      if (cpuid.eq.0)then
         write(stdout,*)''
-        inquire (file =infilename, EXIST = exists)
+        inquire (file =Hrfile, EXIST = exists)
         if (exists)then
-           if (index(infilename, 'HWR')==0) then
-              write(stdout,'(2x,a,a,a)')'File ',trim(infilename), &
+           if (index(Hrfile, 'HWR')==0) then
+              write(stdout,'(2x,a,a,a)')'File ',trim(Hrfile), &
                  ' exist, We are using HmnR from wannier90'
-              open(unit=1001,file=infilename,status='old')
+              open(unit=1001,file=Hrfile,status='old')
               read(1001,*)
               read(1001,'(i)') Num_wann
               read(1001,'(i)') Nrpts
@@ -56,12 +54,12 @@
               write(stdout,*)'>> NRPTS', NRPTS
               close(1001)
            else 
-              write(stdout,'(2x, 3a)')'File ',trim(infilename), &
+              write(stdout,'(2x, 3a)')'File ',trim(Hrfile), &
                  ' exist, We are using HmnR from HWR'
-              open(unit=1001,file=infilename,status='old')
+              open(unit=1001,file=Hrfile,status='old')
               read(1001,*)
-              read(1001,'(a26, i3)') c_temp, Num_wann
-              read(1001,'(a32,i10)')c_temp,Nrpts
+              read(1001,'(a26, i3)')cht, Num_wann
+              read(1001,'(a32,i10)')cht,Nrpts
               write(stdout,*)'>> Num_wann', Num_wann 
               write(stdout,*)'>> NRPTS', NRPTS
               close(1001)
@@ -148,8 +146,8 @@
        !call wannier_center3D_plane_mirror_plus
        !call wannier_center3D_plane_mirror_minus
      endif
-    !if (berry_calc)call berry_curvarture 
-     if (berry_calc)call berryphase
+     if (BerryPhase_calc)call berryphase
+     if (BerryCurvature_calc)call berry_curvarture 
      
 
      !> surface state

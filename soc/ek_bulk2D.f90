@@ -2,7 +2,7 @@
 ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
   subroutine ek_bulk2D
 
-     use mpi
+     use wmpi
      use para
 
      implicit none
@@ -153,7 +153,7 @@
    !> using green's function
   subroutine ek_bulk2D_spin
 
-     use mpi
+     use wmpi
      use para
 
      implicit none
@@ -164,9 +164,6 @@
 	  integer :: knv3
      integer :: ierr
      real(Dp) :: k(3)
-     real(dp) :: kx
-     real(dp) :: ky
-     real(dp) :: kz
      real(Dp) :: k11(3), k12(3)
      real(Dp) :: k21(3), k22(3)
      real(Dp) :: W(Num_wann)

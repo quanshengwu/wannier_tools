@@ -8,13 +8,12 @@
   subroutine spintext
      
     use para
-    use mpi
+    use wmpi
 
     implicit none
 
     integer :: i, j, ikp
 
-    integer ::  nk2, nk1
     integer :: ierr
 
     integer :: Nband
@@ -60,8 +59,6 @@
     surfgreen =0.0d0
     ctemp     =0.0d0
     
-    nk1 = Nk 
-    nk2 = Nk
 
     allocate( k12(2, nk1*nk2))
     allocate( k12_shape(2, nk1*nk2))

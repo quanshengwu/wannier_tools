@@ -2,7 +2,7 @@
 ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
   subroutine fermisurface3D
 
-     use mpi
+     use wmpi
      use para
 
      implicit none
@@ -120,7 +120,7 @@
 ! calculate bulk's energy band using wannier TB method
   subroutine fermisurface
 
-     use mpi
+     use wmpi
      use para
 
      implicit none
@@ -189,7 +189,7 @@
         ones(i, i)= 1d0
      enddo
      do ik= 1+cpuid, knv3, num_cpu
-	     if (cpuid==0) print * , ik
+	     if (cpuid==0) print *,'FS, ik, knv3' , ik
 
         k(1) = kxy(1, ik)
         k(2) = kxy(2, ik)
@@ -264,7 +264,7 @@
 !  calculate bulk's energy band using wannier TB method
    subroutine gapshape3D
 
-      use mpi
+      use wmpi
       use para
       
       implicit none
@@ -275,18 +275,12 @@
       integer :: nky
       integer :: nkz
       
-      integer :: ierr, i1, i2
-      real(dp) :: kz
+      integer :: ierr
       real(Dp) :: k(3)
-      real(Dp) :: k1
-      real(Dp) :: k2
-      real(Dp) :: k3
       
       ! Hamiltonian of bulk system
       complex(Dp), allocatable :: Hamk_bulk(:, :) 
       
-      real(dp) :: zmin, zmax
-      real(dp) :: kxmin, kxmax, kymin, kymax, kzmin, kzmax
       real(dp) :: kxmin_shape, kxmax_shape, kymin_shape, kymax_shape
       
       real(dp), allocatable :: kxy(:,:)
@@ -312,9 +306,9 @@
          do j= 1, nky
             do l= 1, nkz
                ik= ik+ 1
-               kxy(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(nkx-1)  &
-                         + K3D_vec2*(j-1)/dble(nky-1)  &
-                         + K3D_vec3*(l-1)/dble(nkz-1)
+               kxy(:, ik)= K3D_start_cube+ K3D_vec1_cube*(i-1)/dble(nkx-1)  &
+                         + K3D_vec2_cube*(j-1)/dble(nky-1)  &
+                         + K3D_vec3_cube*(l-1)/dble(nkz-1)
                kxy_shape(:, ik)= kxy(1, ik)* Kua+ kxy(2, ik)* Kub+ kxy(3, ik)* Kuc 
             enddo
          enddo
@@ -346,8 +340,8 @@
       endif
       
       do ik= 1+cpuid, knv3, num_cpu
-	      if (cpuid==0) print * , ik, knv3
-	      if (cpuid==0) write(stdout, *) ik, knv3
+	      if (cpuid==0) print *, 'Gap3D, ik, knv3' , ik, knv3
+	      if (cpuid==0) write(stdout, *) 'Gap3D, ik, knv3', ik, knv3
       
          k(1) = kxy(1, ik)
          k(2) = kxy(2, ik)
@@ -423,7 +417,7 @@
 !  calculate bulk's energy band using wannier TB method
    subroutine gapshape
 
-      use mpi
+      use wmpi
       use para
       
       implicit none
@@ -434,20 +428,12 @@
       integer :: nky
       
       integer :: ierr, i1, i2
-      real(dp) :: kz
       real(Dp) :: k(3)
-      real(Dp) :: k1(3)
-      real(Dp) :: k2(3)
-      real(Dp) :: k11(3)
-      real(Dp) :: k12(3)
-      real(Dp) :: k21(3)
-      real(Dp) :: k22(3)
       
       ! Hamiltonian of bulk system
       complex(Dp) :: Hamk_bulk(Num_wann,Num_wann) 
       
       real(dp) :: zmin, zmax
-      real(dp) :: kxmin, kxmax, kymin, kymax
       real(dp) :: kxmin_shape, kxmax_shape, kymin_shape, kymax_shape
       
       real(dp), allocatable :: kxy(:,:)
@@ -528,7 +514,7 @@
       if (cpuid==0)then
          open(unit=14, file='gap.dat')
      
-         write(14, '(100a16)')'kx', 'ky', 'kz', 'gap', 'Ev', 'Ec', 'k1', 'k2', 'k3'
+         write(14, '(100a16)')'# kx', 'ky', 'kz', 'gap', 'Ev', 'Ec', 'k1', 'k2', 'k3'
          do ik=1, knv3
             write(14, '(30f16.8)')kxy_shape(:, ik), (gap_mpi(:, ik)), kxy(:, ik)
             if (mod(ik, nky)==0) write(14, *)' '
@@ -576,10 +562,10 @@
          write(101, '(a)')'set colorbox'
          !write(101, '(a, f10.5, a, f10.5, a)')'set xrange [', kxmin      , ':', kxmax      , ']'
          !write(101, '(a, f10.5, a, f10.5, a)')'set yrange [', kymin      , ':', kymax      , ']'
-          write(101, '(a, f10.5, a, f10.5, a)')'set xrange [', kxmin_shape, ':', kxmax_shape, ']'
-          write(101, '(a, f10.5, a, f10.5, a)')'set yrange [', kymin_shape, ':', kymax_shape, ']'
+          write(101, '(a, f10.5, a, f10.5, a)')'#set xrange [', kxmin_shape, ':', kxmax_shape, ']'
+          write(101, '(a, f10.5, a, f10.5, a)')'#set yrange [', kymin_shape, ':', kymax_shape, ']'
          write(101, '(a)')'set pm3d interpolate 2,2'
-         write(101, '(2a)')"splot 'gap.dat' u 1:2:3 w pm3d"
+         write(101, '(2a)')"splot 'gap.dat' u 1:2:4 w pm3d"
       
       endif
       
@@ -590,7 +576,7 @@
 
    !> get fermilevel for the given hamiltonian
    subroutine get_fermilevel
-      use mpi
+      use wmpi
       use para
       implicit none
 

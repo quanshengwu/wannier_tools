@@ -2,7 +2,7 @@
 ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
   subroutine ek_bulk_polar
 
-     use mpi
+     use wmpi
      use para
 
      implicit none

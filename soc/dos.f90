@@ -1,6 +1,6 @@
 subroutine dos_calc
 
-   use mpi
+   use wmpi
    use para
    implicit none
 

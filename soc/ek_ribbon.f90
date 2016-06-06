@@ -4,7 +4,7 @@
 
   subroutine ek_ribbon
 
-     use mpi
+     use wmpi
      use para
      implicit none 
 
@@ -17,8 +17,6 @@
      integer :: m
      integer :: l
 
-
-     integer:: Nk1
 
      ! wave vector 
      real(Dp) :: k
@@ -66,8 +64,6 @@
 
      Ndim1=Num_wann*nslab1*nslab2
      lwork=64*Ndim1
-
-     Nk1= Nk
 
      allocate(ekribbon(Ndim1,Nk1))
      allocate(ekribbon_mpi(Ndim1,Nk1))

@@ -23,8 +23,8 @@
      real(dp) :: rh,ih
      
      if(cpuid.eq.0)write(stdout,*)''
-     open(12, file=infilename)
-     if (index(infilename, 'HWR')==0) then
+     open(12, file=Hrfile)
+     if (index(Hrfile, 'HWR')==0) then
         read(12, *)
         read(12, *)nwan
         read(12, *)nrpts
