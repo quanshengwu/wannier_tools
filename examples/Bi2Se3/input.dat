@@ -14,13 +14,15 @@ WireBand_calc         = F
 SlabSS_calc           = T
 SlabArc_calc          = T
 SlabSpintexture_calc  = T
-wanniercenter_calc    = F
+wanniercenter_calc    = T
 BerryPhase_calc       = F
-BerryCurvature_calc   = F
+BerryCurvature_calc   = T
 /
 
 &SYSTEM
 NSLAB = 10 
+NSLAB1= 4  
+NSLAB2= 4  
 NumOccupied = 18        ! NumOccupied
 SOC = 1                 ! soc
 E_FERMI = 4.4195        ! e-fermi
