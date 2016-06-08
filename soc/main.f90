@@ -180,7 +180,18 @@
         call print_time_cost(time_start, time_end, 'SlabBand')
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the slab band structure'
      endif
-    
+ 
+     if (BerryCurvature_calc)then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Berry curvature'
+        call now(time_start)
+        call berry_curvarture 
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'BerryCurvature')
+        if(cpuid.eq.0)write(stdout, *)'End of calculating the Berry curvature'
+     endif
+     
+   
      if (WireBand_calc) then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the wire band'
@@ -216,17 +227,6 @@
         call print_time_cost(time_start, time_end, 'BerryPhase')
         if(cpuid.eq.0)write(stdout, *)'End of calculating the Berry phase'
      endif
-
-     if (BerryCurvature_calc)then
-        if(cpuid.eq.0)write(stdout, *)' '
-        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Berry curvature'
-        call now(time_start)
-        call berry_curvarture 
-        call now(time_end)
-        call print_time_cost(time_start, time_end, 'BerryCurvature')
-        if(cpuid.eq.0)write(stdout, *)'End of calculating the Berry curvature'
-     endif
-     
 
      !> surface state
      if (SlabSS_calc) then

@@ -5,16 +5,16 @@ Hrfile = wannier90_hr.dat
 
 &CONTROL
 !> bulk band structure calculation flag
-BulkBand_calc         = T
+BulkBand_calc         = F
 BulkFS_calc           = F
 BulkGap_cube_calc     = F
 BulkGap_plane_calc    = F
 SlabBand_calc         = T
 WireBand_calc         = F
-SlabSS_calc           = T
-SlabArc_calc          = T
-SlabSpintexture_calc  = T
-wanniercenter_calc    = T
+SlabSS_calc           = F
+SlabArc_calc          = F
+SlabSpintexture_calc  = F
+wanniercenter_calc    = F
 BerryPhase_calc       = F
 BerryCurvature_calc   = T
 /
@@ -33,11 +33,11 @@ surf_onsite= 0.0        ! surf_onsite
 &PARAMETERS
 Eta_Arc = 0.001     ! infinite small value, like brodening 
 E_arc = 0.0         ! energy for calculate Fermi Arc
-OmegaNum = 500      ! omega number       
+OmegaNum = 100      ! omega number       
 OmegaMin = -0.6     ! energy interval
 OmegaMax =  0.5     ! energy interval
-Nk1 = 100           ! number k points 
-Nk2 = 100           ! number k points 
+Nk1 = 20            ! number k points 
+Nk2 = 20            ! number k points 
 Nk3 = 20            ! number k points 
 NP = 2              ! number of principle layers
 Gap_threshold = 1.0 ! threshold for GapCube output

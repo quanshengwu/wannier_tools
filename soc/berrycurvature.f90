@@ -250,18 +250,18 @@
   end subroutine berry_curvarture
 
   subroutine Fourier_R_to_k(k, ham)
-     use para
+     use para, only, Rua, irvec, HmnR
      implicit none
 
      real(dp), intent(in) :: k(3)
      complex(dp), intent(out) :: ham(Num_wann, Num_wann)
      integer :: iR
-     real(dp) :: R(3)
+    !real(dp) :: R(3)
      real(dp) :: kdotr
 
      ham= 0d0
      do iR= 1, Nrpts
-        R= Rua*irvec(1,iR) + Rub*irvec(2,iR) + Ruc*irvec(3,iR)
+       !R= Rua*irvec(1,iR) + Rub*irvec(2,iR) + Ruc*irvec(3,iR)
         kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
         Ham= Ham+ HmnR(:,:,iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
      enddo

@@ -20,8 +20,9 @@
      complex(Dp),intent(out) ::Hamk_slab(Num_wann*nslab,Num_wann*nslab) 
 
      ! the factor 2 is induced by spin
-     complex(Dp) :: Hij(-ijmax:ijmax,Num_wann,Num_wann)
+     complex(Dp), allocatable :: Hij(:, :, :)
 
+     allocate( Hij(-ijmax:ijmax,Num_wann,Num_wann))
      call ham_qlayer2qlayer2(k,Hij)
 
      Hamk_slab=0.0d0 

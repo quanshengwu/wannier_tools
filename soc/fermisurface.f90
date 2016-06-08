@@ -363,9 +363,12 @@
       
       if (cpuid==0)then
          open(unit=15, file='GapCube.dat')
+         write(15, '(80a16)')'kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
+            'Energy gap', 'Ev', 'Ec', &
+            'k1 (2pi/a)', 'k2 (2pi/b)', 'k3 (2pi/c)'
          do ik=1, knv3
             if (abs(gap_mpi(1, ik))< Gap_threshold) then
-               write(15, '(8f16.8)') kxy_shape(:, ik), (gap_mpi(:, ik))
+               write(15, '(80f16.8)') kxy_shape(:, ik), (gap_mpi(:, ik)), kxy(:, ik)
             endif
          enddo
          close(15)
