@@ -13,8 +13,6 @@
      integer :: nky
      integer :: nkz
 
-     integer :: bxsf_unit
-
      integer :: ierr
      real(dp) :: kz
      real(Dp) :: k(3)

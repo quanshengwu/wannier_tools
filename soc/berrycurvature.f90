@@ -250,7 +250,7 @@
   end subroutine berry_curvarture
 
   subroutine Fourier_R_to_k(k, ham)
-     use para, only, Rua, irvec, HmnR
+     use para, only: Rua, irvec, HmnR, Nrpts, ndegen, pi, zi, Num_wann, dp
      implicit none
 
      real(dp), intent(in) :: k(3)

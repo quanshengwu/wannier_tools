@@ -62,6 +62,7 @@
 
         !> no magnetgic field
         if (abs(Bx)<eps9.and. abs(By)<eps9.and. abs(Bz)<eps9)then
+           write(stdout, *)'>> magnetic field is larger than zero'
            call ham_slab(k,Chamk)
         !> in-plane magnetic field
         elseif (abs(Bx)>eps9 .or. abs(By)>eps9)then
