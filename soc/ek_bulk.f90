@@ -9,7 +9,7 @@
      implicit none
 
      integer :: ik, i, j
-	  integer :: knv3
+     integer :: knv3
      integer :: Nwann
      integer :: ierr
      real(dp) :: emin
@@ -31,14 +31,13 @@
      allocate( eigv_mpi(Num_wann, knv3))
      allocate( weight    (Num_wann,Num_wann, knv3))
      allocate( weight_mpi(Num_wann,Num_wann, knv3))
-	  eigv    = 0d0
-	  eigv_mpi= 0d0
+     eigv    = 0d0
+     eigv_mpi= 0d0
      weight = 0d0
      weight_mpi = 0d0
 
      do ik= 1+cpuid, knv3, num_cpu
-	     if (cpuid==0) write(*, *)'BulkBand, ik, knv3 ', ik, knv3
-	     if (cpuid==0) write(stdout, *)'BulkBand, ik, knv3 ', ik, knv3
+        if (cpuid==0) write(stdout, *)'BulkBand, ik, knv3 ', ik, knv3
 
         k = k3points(:, ik)
 
@@ -110,7 +109,7 @@
            write(101, 204)k3line_stop(i+1), emin, k3line_stop(i+1), emax
         enddo
         write(101, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
-            "w lp lw 2 pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2 dashtype 2"
+            "w lp lw 2 pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2"
         close(101)
      endif
 
@@ -187,8 +186,7 @@
      enddo
 
      do ik= 1+cpuid, knv3, num_cpu
-	     if (cpuid==0) write(*, *)'BulkBandSpin, ik, knv3 ', ik, knv3
-	     if (cpuid==0) write(stdout, *)'BulkBandSpin, ik, knv3 ', ik, knv3
+        if (cpuid==0) write(stdout, *)'BulkBandSpin, ik, knv3 ', ik, knv3
 
         k = k3points(:, ik)
 
@@ -383,12 +381,11 @@
      allocate( mirror_minus(Num_wann, knv3))
      mirror_plus= .False.
      mirror_minus= .False.
-	  eigv    = 0d0
-	  eigv_mpi= 0d0
+     eigv    = 0d0
+     eigv_mpi= 0d0
 
      do ik= 1+cpuid, knv3, num_cpu
-	     if (cpuid==0) write(*, *)'BulkBandmirrorz, ik, knv3 ', ik, knv3
-	     if (cpuid==0) write(stdout, *)'BulkBandmirrorz, ik, knv3 ', ik, knv3
+        if (cpuid==0) write(stdout, *)'BulkBandmirrorz, ik, knv3 ', ik, knv3
 
         k = k3points(:, ik)
 
@@ -505,6 +502,7 @@
 
 
 
+  !> calculate bulk band for a given mirror symmetry
   subroutine ek_bulk_mirror_x
 
      use wmpi
@@ -513,7 +511,7 @@
      implicit none
 
      integer :: ik, i, j
-	  integer :: knv3
+     integer :: knv3
      integer :: ierr
      real(dp) :: emin
      real(dp) :: emax
@@ -540,12 +538,11 @@
      allocate( mirror_minus(Num_wann, knv3))
      mirror_plus= .False.
      mirror_minus= .False.
-	  eigv    = 0d0
-	  eigv_mpi= 0d0
+     eigv    = 0d0
+     eigv_mpi= 0d0
 
      do ik= 1+cpuid, knv3, num_cpu
-	     if (cpuid==0) write(*, *)'ik, knv3 ', ik, knv3
-	     if (cpuid==0) write(stdout, *)'ik, knv3 ', ik, knv3
+        if (cpuid==0) write(stdout, *)'EkBulk_mirror, ik, knv3 ', ik, knv3
 
         k = k3points(:, ik)
 
@@ -581,9 +578,6 @@
         !> calculate mirror eigenvalue
         call mat_mul(Num_wann, mat2, mirror_x, mat1)
         call mat_mul(Num_wann, mat1, hamk, mat2)
-        write(*, '(i5,1000f6.2)')ik, (real(mat2(i, i)), i=1, num_wann)
-        write(*, '(i5,1000f6.2)')ik, (aimag(mat2(i, i)), i=1, num_wann)
-       !pause
             
         !> get mirror_plus and mirror_minus
         do i=1, Num_wann

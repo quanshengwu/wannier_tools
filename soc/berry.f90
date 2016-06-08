@@ -121,7 +121,7 @@
 
          k1= k
         !call cart_direct(k, k1)
-        if (cpuid.eq.0)write(*, '(a, 3f7.3, a, 3f7.3)')'k',k,'  k1', k1
+        !if (cpuid.eq.0)write(stdout, '(a, 3f7.3, a, 3f7.3)')'k',k,'  k1', k1
 
         !call ham_bulk(k1,hamk1)
 
@@ -163,12 +163,12 @@
             phase(i)= overlap*phase(i)
          enddo
       enddo  !< ik
-      if (cpuid==0) print *, 'berry phase'
+      if (cpuid==0)write(stdout, *) 'berry phase'
       do i=1, Num_wann
         !if (cpuid==0)  write(*, '(10f10.5)')aimag(log(phase(i)))/pi
         !write(*, '(10f10.5)')phase(i)
       enddo
-      if (cpuid==0) write(*, '(f18.6)')sum(aimag(log(phase(1:nfill)))/pi)
+      if (cpuid==0) write(stdout, '(f18.6)')sum(aimag(log(phase(1:nfill)))/pi)
      !print *, sum(phase(1:nfill))
 
       return

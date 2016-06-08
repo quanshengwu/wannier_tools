@@ -20,8 +20,9 @@
         Num_wann*nslab1*nslab2) 
 
 ! the factor 2 is induced by spin
-     complex(Dp) :: Hij(-ijmax:ijmax,-ijmax:ijmax,Num_wann,Num_wann)
+     complex(Dp), allocatable :: Hij(:, :, :, :)
 
+     allocate(Hij(-ijmax:ijmax,-ijmax:ijmax,Num_wann,Num_wann))
      call ham_qlayer2qlayerribbon(k,Hij)
 
      Hamk_ribbon=0.0d0 

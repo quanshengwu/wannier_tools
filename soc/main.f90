@@ -19,9 +19,11 @@
 
      !> file existence
      logical  :: exists
-
-     character*4 :: cht
      integer :: ierr
+     character(8) :: cht
+
+     !> time measure
+     real(dp) :: time_start, time_end, time_init
 
      !> initial the environment of mpi 
      call mpi_init(ierr)
@@ -36,6 +38,16 @@
         stop 
      endif
 
+     call now(time_init)
+     call header
+
+     !> print information for mpi
+     if (cpuid==0) then
+        write(stdout, '(1x, a, i5, a)')'You are using ', num_cpu, ' CPU cores'
+        write(stdout, *)' '
+     endif
+
+     !> readin the control parameters for this program 
      call readinput
 
      !> open file Hmn_R.data to get Num_wann and Nrpts
@@ -84,16 +96,17 @@
      Ndim= Num_wann* Np
 
 
+     !> allocate necessary arrays for tight binding hamiltonians
      allocate(irvec(3,nrpts))
      allocate(ndegen(nrpts))
      allocate(HmnR(num_wann,num_wann,nrpts))
 
-     if(cpuid==0)then
-       write(stdout,*) 'begin reading Hmn_R.data'
+     if (cpuid==0)then
+        write(stdout,*) ' >> Begin to read Hmn_R.data'
      endif
      call readHmnR() 
-     if(cpuid==0)then
-       write(stdout,*) 'read Hmn_R.data successfully'
+     if (cpuid==0)then
+        write(stdout,*) ' << Read Hmn_R.data successfully'
      endif
 
 
@@ -104,17 +117,34 @@
 
      !> import symmetry 
      call symmetry
+
      !> bulk band
-     if(cpuid.eq.0)write(stdout, *)'begin to calculate bulk band'
      if (BulkBand_calc) then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating bulk band'
+        call now(time_start)
         call ek_bulk
        !call ek_bulk_mirror_x
        !call ek_bulk_mirror_z
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'BulkBand')
+        if(cpuid.eq.0)write(stdout, *)'<< End of calculating bulk band'
      endif
+
      if (BulkFS_calc) then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the bulk FS'
+        call now(time_start)
         call fermisurface3D
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'BulkFS')
+        if(cpuid.eq.0)write(stdout, *)'<< End of calculating the bulk FS'
      endif
+
      if (BulkGap_plane_calc) then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the bulk gap in plane'
+        call now(time_start)
        !call psik_bulk
        !call ek_bulk_polar
        !call ek_bulk_fortomas
@@ -123,57 +153,122 @@
        !call ek_bulk2D
        !call ek_bulk2D_spin
         call gapshape
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'BulkGap_plane')
+        if(cpuid.eq.0)write(stdout, *)'<< End of calculating the bulk gap in plane'
      endif
-     if (BulkGap_cube_calc) then
+     if (BulkGap_Cube_calc) then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> start of calculating the bulk gap in Cube'
+        call now(time_start)
         call gapshape3D
        !call landau_level_k
        !call landau_level_B
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'BulkGap_Cube')
+        if(cpuid.eq.0)write(stdout, *)'<< End of calculating the bulk gap in Cube'
      endif
-     if(cpuid.eq.0)write(stdout, *)'end calculate bulk band'
 
      !> slab band
      if (SlabBand_calc)then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the slab band structure'
+        call now(time_start)
         call ek_slab
        !call psik     
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'SlabBand')
+        if(cpuid.eq.0)write(stdout, *)'<< End of calculating the slab band structure'
      endif
     
+     if (WireBand_calc) then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the wire band'
+        call now(time_start)
+        call ek_ribbon
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'WireBand')
+        if(cpuid.eq.0)write(stdout, *)'End of calculating the wire band'
+     endif
+ 
      !> wannier center calculate
-    !if (wanniercenter_calc)call wannier_center2D
-    !if (wanniercenter_calc)call wannier_center2D_alt
-    !if (wanniercenter_calc)call wannier_center3D
      if (wanniercenter_calc)then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Wilson loop'
+        call now(time_start)
         call wannier_center3D_plane
+       !call wannier_center2D
+       !call wannier_center2D_alt
+       !call wannier_center3D
        !call wannier_center3D_plane_mirror_plus
        !call wannier_center3D_plane_mirror_minus
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'WannierCenter')
+        if(cpuid.eq.0)write(stdout, *)'<< End of calculating the Wilson loop'
      endif
-     if (BerryPhase_calc)call berryphase
-     if (BerryCurvature_calc)call berry_curvarture 
+
+     if (BerryPhase_calc) then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Berry phase'
+        call now(time_start)
+        call berryphase
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'BerryPhase')
+        if(cpuid.eq.0)write(stdout, *)'End of calculating the Berry phase'
+     endif
+
+     if (BerryCurvature_calc)then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Berry curvature'
+        call now(time_start)
+        call berry_curvarture 
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'BerryCurvature')
+        if(cpuid.eq.0)write(stdout, *)'End of calculating the Berry curvature'
+     endif
      
 
      !> surface state
-     if(cpuid.eq.0)write(stdout, *)'begin to calculate surface state'
-     if (SlabSS_calc)call surfstat
-     if(cpuid.eq.0)write(stdout, *)'end calculate surface state'
-    
-     if(cpuid.eq.0)write(stdout, *)'begin to calculate surface state'
-     if (WireBand_calc) then
-        if(cpuid.eq.0)write(stdout, *)'begin to calculate ribbon band'
-        call ek_ribbon
-        if(cpuid.eq.0)write(stdout, *)'end calculate ribbon band'
+     if (SlabSS_calc) then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the surface state'
+        call now(time_start)
+        call surfstat
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'BerryCurvature')
+        if(cpuid.eq.0)write(stdout, *)'End of calculating the surface state'
      endif
-
+   
      !> fermi arc
-     if(cpuid.eq.0)write(stdout, *)'begin to calculate fermi arc'
-     if (SlabArc_calc)call fermiarc
-     if(cpuid.eq.0)write(stdout, *)'end calculate fermi arc'
+     if (SlabArc_calc) then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the surface arc'
+        call now(time_start)
+        call fermiarc
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'SlabArc')
+        if(cpuid.eq.0)write(stdout, *)'End of calculating the surface arc'
+     endif
      
      !> calculate spin-texture     
-     if(cpuid.eq.0)write(stdout, *)'begin to calculate spin texture'
-     if (SlabSpintexture_calc)call spintext
-     if(cpuid.eq.0)write(stdout, *)'end calculate spin texture'
-   
+     if (SlabSpintexture_calc)then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the spin texture for surface'
+        call now(time_start)
+        call spintext
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'SlabSpintexture')
+        if(cpuid.eq.0)write(stdout, *)'End of calculating the spin texture for surface'
+     endif
+
+     call now(time_end)
+
+     if(cpuid.eq.0)write(stdout, *)' '
+     call print_time_cost(time_init, time_end, 'whole program')
      if (cpuid.eq.0)write(stdout,*)'Congratulations! you finished the calculation.'
+     if (cpuid.eq.0)write(stdout,*)'See you next time :)'
+
      
      call mpi_finalize(ierr)
 
-  end
+  end  !<< end of main program

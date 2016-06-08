@@ -32,6 +32,7 @@
     
      inquire(file=fname,exist=exists)
      if (exists)then
+        if(cpuid==0)write(stdout,*) '  '
         if(cpuid==0)write(stdout,*) '>>>Read some paramters from input.dat'
         open(unit=1001,file=fname,status='old')
      else
@@ -154,6 +155,7 @@
      Nk2 = 50
      Nk3 = 50
      NP = 2
+     Gap_threshold= 0.01d0
     
      read(1001, PARAMETERS, iostat= stat)
 
@@ -162,6 +164,7 @@
         write(stdout, *) ">>>calculation parameters : " 
         write(stdout, '(1x, a, f16.5)')'E_arc : ', E_arc
         write(stdout, '(1x, a, f16.5)')'Eta_arc : ', Eta_arc
+        write(stdout, '(1x, a, f16.5)')'Gap_threshold', Gap_threshold
         write(stdout, '(1x, a, f16.5)')'OmegaMin : ', OmegaMin
         write(stdout, '(1x, a, f16.5)')'OmegaMax : ', OmegaMax
         write(stdout, '(1x, a, i6   )')'OmegaNum : ', OmegaNum
@@ -557,6 +560,11 @@
 
 
      !> read kplane_slab information
+     !> default value for KPLANE_SLAB
+     K2D_start= (/-0.5, -0.5/)
+     K2D_vec1 = (/ 1.0,  0.0/)
+     K2D_vec2 = (/ 0.0,  1.0/)
+
      rewind(1001)
      lfound = .false.
      do while (.true.)
@@ -570,15 +578,15 @@
      enddo
 
      !> kpoints plane for 2D system--> arcs  
-     if (cpuid==0) write(stdout, *)'>> Kpoints plane for 2D system--> arcs  '
      read(1001, *)K2D_start
-     if (cpuid==0) write(stdout, '((a6, 2f8.4))')'K2D_start', K2D_start
      read(1001, *)K2D_vec1
-     if (cpuid==0) write(stdout, '((a, 2f8.4))')'The first vector: ', K2D_vec1
      read(1001, *)K2D_vec2
-     if (cpuid==0) write(stdout, '((a, 2f8.4))')'The second vector: ', K2D_vec2
-
      106 continue
+
+     if (cpuid==0) write(stdout, *)'>> Kpoints plane for 2D system--> arcs  '
+     if (cpuid==0) write(stdout, '((a6, 2f8.4))')'K2D_start', K2D_start
+     if (cpuid==0) write(stdout, '((a, 2f8.4))')'The first vector: ', K2D_vec1
+     if (cpuid==0) write(stdout, '((a, 2f8.4))')'The second vector: ', K2D_vec2
      if (.not.lfound .and.(SlabArc_calc == .TRUE. .or. SlabSpintexture_calc==.TRUE.)) then
         stop 'ERROR: please set KPLANE_SLAB for arc or spintexture calculations'
      endif
@@ -586,6 +594,11 @@
 
 
      !> read kplane_bulk information
+     !> default value for KPLANE_BULK
+     K3D_start= (/ 0.0,  0.0,   0.0/)
+     K3D_vec1 = (/ 1.0,  0.0,   0.0/)
+     K3D_vec2 = (/ 0.0,  0.5,   0.0/)
+
      rewind(1001)
      lfound = .false.
      do while (.true.)
@@ -599,15 +612,15 @@
      enddo
 
      !> kpoints plane for 3D system--> gapshape
-     if (cpuid==0) write(stdout, *)'>> Kpoints plane for 3D system--> gapshape  '
      read(1001, *)K3D_start
-     if (cpuid==0) write(stdout, '((a6, 3f8.4))')'k3D_start', K3D_start
      read(1001, *)K3D_vec1
-     if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 1st vector: ', K3D_vec1
      read(1001, *)K3D_vec2
-     if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 2nd vector: ', K3D_vec2
-
      107 continue
+
+     if (cpuid==0) write(stdout, *)'>> Kpoints plane for 3D system--> gapshape  '
+     if (cpuid==0) write(stdout, '((a6, 3f8.4))')'k3D_start', K3D_start
+     if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 1st vector: ', K3D_vec1
+     if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 2nd vector: ', K3D_vec2
      if (.not.lfound .and.(BulkGap_plane_calc == .TRUE. .or. wanniercenter_calc==.TRUE.)) then
         stop 'ERROR: please set KPLANE_bulk for gap or WCC calculations'
      endif
@@ -615,6 +628,12 @@
 
 
      !> read kcube_bulk information
+     !> default value for KCUBE_BULK
+     K3D_start_cube= (/-0.5, -0.5,  -0.5/)
+     K3D_vec1_cube = (/ 1.0,  0.0,   0.0/)
+     K3D_vec2_cube = (/ 0.0,  1.0,   0.0/)
+     K3D_vec3_cube = (/ 0.0,  0.0,   1.0/)
+
      rewind(1001)
      lfound = .false.
      do while (.true.)
@@ -628,17 +647,17 @@
      enddo
 
      !> kpoints plane for 3D system--> gapshape
-     if (cpuid==0) write(stdout, *)'>> Kpoints plane for 3D system--> gapshape3D  '
      read(1001, *)K3D_start_cube
-     if (cpuid==0) write(stdout, '((a6, 3f8.4))')'k3D_start', K3D_start_cube
      read(1001, *)K3D_vec1_cube
-     if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 1st vector: ', K3D_vec1_cube
      read(1001, *)K3D_vec2_cube
-     if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 2nd vector: ', K3D_vec2_cube
      read(1001, *)K3D_vec3_cube
-     if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 3rd vector: ', K3D_vec3_cube
 
      108 continue
+     if (cpuid==0) write(stdout, *)'>> Kpoints plane for 3D system--> gapshape3D  '
+     if (cpuid==0) write(stdout, '((a6, 3f8.4))')'k3D_start', K3D_start_cube
+     if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 1st vector: ', K3D_vec1_cube
+     if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 2nd vector: ', K3D_vec2_cube
+     if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 3rd vector: ', K3D_vec3_cube
      if (.not.lfound .and.(BulkGap_cube_calc == .TRUE.)) then
         stop 'ERROR: please set KCUBE_BULK for gap3D calculations'
      endif

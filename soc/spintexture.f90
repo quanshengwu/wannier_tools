@@ -113,19 +113,19 @@
        enddo
     enddo
 
-    if (cpuid.eq.0)write(stdout,*)'sigma_x'
+   !if (cpuid.eq.0)write(stdout,*)'sigma_x'
     do i=1, ndim
-       if (cpuid.eq.0)write(stdout,'(240f3.0)')real(sigma_x(i,:)) 
+      !if (cpuid.eq.0)write(stdout,'(240f3.0)')real(sigma_x(i,:)) 
     enddo
 
-    if (cpuid.eq.0)write(stdout,*)'sigma_y'
+   !if (cpuid.eq.0)write(stdout,*)'sigma_y'
     do i=1, ndim
-       if (cpuid.eq.0)write(stdout,'(240f3.0)')aimag(sigma_y(i,:)) 
+      !if (cpuid.eq.0)write(stdout,'(240f3.0)')aimag(sigma_y(i,:)) 
     enddo
 
-    if (cpuid.eq.0)write(stdout,*)'sigma_z'
+   !if (cpuid.eq.0)write(stdout,*)'sigma_z'
     do i=1, ndim
-       if (cpuid.eq.0)write(stdout,'(240f3.0)')real(sigma_z(i,:)) 
+      !if (cpuid.eq.0)write(stdout,'(240f3.0)')real(sigma_z(i,:)) 
     enddo
 
     sx=0.0d0
@@ -136,8 +136,7 @@
     eta= eta_arc
 
     do ikp=1+cpuid,nk1*nk2,num_cpu 
-       if (cpuid==0) write(stdout, *)'spintexture',ikp, nk1*nk2
-       if (cpuid==0) write(*, *)'spintexture',ikp, nk1*nk2
+       if (cpuid==0) write(stdout, *)'spintexture, ik, Nk1*Nk2 ',ikp, nk1*nk2
 
        k=k12(:,ikp) 
 
@@ -201,8 +200,9 @@
              k=k12_shape(:, ikp)
              write(300,'(60f16.8)')k, (log(dos(ikp))), &
                 real(sx(ikp)),real(sy(ikp)),real(sz(ikp))                 
-             if (dos(ikp).gt.dos(ikp+1).and.dos(ikp).gt.dos(ikp-1).and. &
-                real(log(dos(ikp)))>0.5) then
+             if (ikp>1 .and. ikp< (NK1*Nk2-1)) then
+                if(dos(ikp)>dos(ikp+1).and.dos(ikp)>dos(ikp-1).and. &
+                real(log(dos(ikp)))>0.5d0) & 
                 write(301,'(60f16.8)')k, (log(dos(ikp))), &
                    real(sx(ikp)),real(sy(ikp)),real(sz(ikp))                 
              endif
@@ -214,11 +214,12 @@
        close(301)
     endif
 
-
     !> generate gnuplot scripts for plotting the spin texture
     if (cpuid.eq.0) then
        open(302,file='spintext.gnu')
-       write(302, '(a)')'set terminal pngcairo truecolor enhanced font ",80" size 3680, 3360'
+       write(302, '(a)')"set encoding iso_8859_1"
+       write(302, '(a)')'#set terminal pngcairo truecolor enhanced font ",80" size 3680, 3360'
+       write(302, '(a)')'set terminal png truecolor enhanced font ",80" size 3680, 3360'
        write(302, '(a)')"set output 'spintext.png'"
        write(302, '(a)')'set palette defined ( -6 "white", 0 "gray", 10 "blue" )'
        write(302, '(a)')"set multiplot layout 1,1 "
@@ -229,8 +230,8 @@
        write(302, '(a)')"set ylabel 'K_2'"
        write(302, '(a)')"unset key"
        write(302, '(a)')"set pm3d"
-       write(302, '(a)')"set xtics 0.1"
-       write(302, '(a)')"set ytics 0.2"
+       write(302, '(a)')"set xtics nomirror scale 0.5"
+       write(302, '(a)')"set ytics nomirror scale 0.5"
        write(302, '(a)')"set border lw 6"
        write(302, '(a)')"set size ratio -1"
        write(302, '(a)')"set view map"

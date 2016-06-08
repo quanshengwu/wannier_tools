@@ -40,9 +40,6 @@
      ! a real type temp variable
      real(Dp) :: real_temp
 
-     ! time measure
-     real(Dp) :: time1,time2
-
      ! omegac=omega(i)+I * eta
      complex(Dp) :: omegac 
 

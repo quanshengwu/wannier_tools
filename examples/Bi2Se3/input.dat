@@ -2,23 +2,25 @@
 Hrfile = wannier90_hr.dat
 /
 
+
 &CONTROL
-BulkBand_calc         = F
+BulkBand_calc         = F        ! bulk band structure calculation flag
 BulkFS_calc           = F
 BulkGap_cube_calc     = F
 BulkGap_plane_calc    = F
 SlabBand_calc         = F
 WireBand_calc         = F
 SlabSS_calc           = F
-SlabArc_calc          = F
-SlabSpintexture_calc  = F
-wanniercenter_calc    = F
-BerryPhase_calc       = F
+SlabArc_calc          = T
+SlabSpintexture_calc  = T
+Wanniercenter_calc    = F
 BerryCurvature_calc   = F
 /
 
 &SYSTEM
-NSLAB = 10 
+Nslab = 10 
+Nslab1= 2 
+Nslab2= 2 
 NumOccupied = 18        ! NumOccupied
 SOC = 1                 ! soc
 E_FERMI = 4.4195        ! e-fermi
@@ -27,15 +29,16 @@ surf_onsite= 0.0        ! surf_onsite
 /
 
 &PARAMETERS
-Eta_Arc = 0.001     ! infinite small value, like brodening 
 E_arc = 0.0         ! energy for calculate Fermi Arc
-OmegaNum = 100      ! omega number       
+Eta_Arc = 0.001     ! infinite small value, like brodening 
+OmegaNum = 500      ! omega number       
 OmegaMin = -0.6     ! energy interval
 OmegaMax =  0.5     ! energy interval
-Nk1 = 50            ! number k points 
-Nk2 = 50            ! number k points 
+Nk1 = 100           ! number k points 
+Nk2 = 100           ! number k points 
 Nk3 = 50            ! number k points 
 NP = 2              ! number of principle layers
+Gap_threshold = 1.0 ! threshold for GapCube output
 /
 
 LATTICE
@@ -84,13 +87,13 @@ KPLANE_SLAB
  0.0  0.2      ! The second vector to define 2D k plane  for arc plots
 
 KPLANE_BULK
- 0.00  0.00  0.00   ! Original point for 3D k plane 
+-0.50 -0.50  0.00   ! Original point for 3D k plane 
  1.00  0.00  0.00   ! The first vector to define 3d k space plane
- 0.00  0.50  0.00   ! The second vector to define 3d k space plane
+ 0.00  1.00  0.00   ! The second vector to define 3d k space plane
 
 
 KCUBE_BULK
- 0.00  0.00  0.00   ! Original point for 3D k plane 
+-0.50 -0.50 -0.50   ! Original point for 3D k plane 
  1.00  0.00  0.00   ! The first vector to define 3d k space plane
  0.00  1.00  0.00   ! The second vector to define 3d k space plane
  0.00  0.00  1.00   ! The third vector to define 3d k cube

@@ -85,9 +85,7 @@
      return
   end subroutine zgesvd_pack
 
-  !============================================================!
-  subroutine utility_diagonalize(mat,dim,eig,rot)
-    !============================================================!
+  subroutine zhpevx_pack(mat,dim,eig,rot)
     !                                                            !
     ! Diagonalize the dim x dim  hermitian matrix 'mat' and      !
     ! return the eigenvalues 'eig' and the unitary rotation 'rot'!
@@ -122,14 +120,14 @@
     if(info < 0) then
        write(stdout,'(a,i3,a)') 'THE ',-info,&
             ' ARGUMENT OF ZHPEVX HAD AN ILLEGAL VALUE'
-       stop 'Error in utility_diagonalize'
+       stop 'Error in zhpevx_pack'
     endif
     if(info > 0) then
        write(stdout,'(i3,a)') info,' EIGENVECTORS FAILED TO CONVERGE'
-       stop 'Error in utility_diagonalize'
+       stop 'Error in zhpevx_pack'
     endif
 
     return
-  end subroutine utility_diagonalize
+  end subroutine zhpevx_pack
 
  

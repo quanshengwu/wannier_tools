@@ -25,9 +25,7 @@
 
      real(dp) :: emin
      real(dp) :: emax
-     real(dp) :: k(2), w, s
-     real(dp) :: k1(2)
-     real(dp) :: k2(2)
+     real(dp) :: k(2), w
 
      real(dp), allocatable :: omega(:)
      
@@ -100,7 +98,6 @@
      enddo
 
      do ikp= 1+cpuid, knv2, num_cpu
-        if (cpuid==0) write(*, *) 'SurfaceSS, ik', ikp, 'Nk', knv2
         if (cpuid==0) write(stdout, *) 'SurfaceSS, ik', ikp, 'Nk', knv2
         k= k2_path(ikp,:)
 
@@ -155,84 +152,92 @@
      emax= maxval(omega)
      !> write script for gnuplot
      if (cpuid==0) then
-        open(unit=101, file='surfdos_l.gnu')
-        write(101, '(a)')'#set terminal  postscript enhanced color'
-        write(101, '(a)')"#set output 'surfdos_l.eps'"
-        write(101, '(3a)')'set terminal  pngcairo truecolor enhanced', &
+        open(unit=116, file='surfdos_l.gnu')
+        write(116, '(a)')"set encoding iso_8859_1"
+        write(116, '(a)')'#set terminal  postscript enhanced color'
+        write(116, '(a)')"#set output 'surfdos_l.eps'"
+        write(116, '(3a)')'#set terminal  pngcairo truecolor enhanced', &
+           '# font ", 60" size 1920, 1680'
+        write(116, '(3a)')'set terminal  png truecolor enhanced', &
            ' font ", 60" size 1920, 1680'
-        write(101, '(a)')"set output 'surfdos_l.png'"
-        write(101,'(2a)') 'set palette defined (-10 "#194eff", ', &
+        write(116, '(a)')"set output 'surfdos_l.png'"
+        write(116,'(2a)') 'set palette defined (-10 "#194eff", ', &
            '0 "white", 10 "red" )'
-        write(101, '(a)')'#set palette rgbformulae 33,13,10'
-        write(101, '(a)')'set style data linespoints'
-        write(101, '(a)')'set size 0.8, 1'
-        write(101, '(a)')'set origin 0.1, 0'
-        write(101, '(a)')'unset ztics'
-        write(101, '(a)')'unset key'
-        write(101, '(a)')'set pointsize 0.8'
-        write(101, '(a)')'set pm3d'
-        write(101, '(a)')'#set view equal xyz'
-        write(101, '(a)')'set view map'
-        write(101, '(a)')'set border lw 3'
-        write(101, '(a)')'#set cbtics font ",48"'
-        write(101, '(a)')'#set xtics font ",48"'
-        write(101, '(a)')'#set ytics font ",48"'
-        write(101, '(a)')'#set ylabel font ",48"'
-        write(101, '(a)')'set ylabel "Energy (eV)"'
-        write(101, '(a)')'#set xtics offset 0, -1'
-        write(101, '(a)')'#set ylabel offset -6, 0 '
-        write(101, '(a, f8.5, a)')'set xrange [0: ', maxval(k2len), ']'
-        write(101, '(a, f8.5, a, f8.5, a)')'set yrange [', emin, ':', emax, ']'
-        write(101, 202, advance="no") (k2line_name(i), k2line_stop(i), i=1, nk2lines)
-        write(101, 203)k2line_name(nk2lines+1), k2line_stop(nk2lines+1)
+        write(116, '(a)')'#set palette rgbformulae 33,13,10'
+        write(116, '(a)')'set style data linespoints'
+        write(116, '(a)')'set size 0.8, 1'
+        write(116, '(a)')'set origin 0.1, 0'
+        write(116, '(a)')'unset ztics'
+        write(116, '(a)')'unset key'
+        write(116, '(a)')'set pointsize 0.8'
+        write(116, '(a)')'set pm3d'
+        write(116, '(a)')'#set view equal xyz'
+        write(116, '(a)')'set view map'
+        write(116, '(a)')'set border lw 3'
+        write(116, '(a)')'#set cbtics font ",48"'
+        write(116, '(a)')'#set xtics font ",48"'
+        write(116, '(a)')'#set ytics font ",48"'
+        write(116, '(a)')'#set ylabel font ",48"'
+        write(116, '(a)')'set ylabel "Energy (eV)"'
+        write(116, '(a)')'#set xtics offset 0, -1'
+        write(116, '(a)')'#set ylabel offset -6, 0 '
+        write(116, '(a, f8.5, a)')'set xrange [0: ', maxval(k2len), ']'
+        write(116, '(a, f8.5, a, f8.5, a)')'set yrange [', emin, ':', emax, ']'
+        write(116, 202, advance="no") (k2line_name(i), k2line_stop(i), i=1, nk2lines)
+        write(116, 203)k2line_name(nk2lines+1), k2line_stop(nk2lines+1)
 
         do i=1, nk2lines-1
-           write(101, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
+           write(116, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
         enddo
-        write(101, '(a)')'set pm3d interpolate 2,2'
-        write(101, '(2a)')"splot 'dos.dat_l' u 1:2:3 w pm3d"
+        write(116, '(a)')'set pm3d interpolate 2,2'
+        write(116, '(2a)')"splot 'dos.dat_l' u 1:2:3 w pm3d"
+        close(116)
 
      endif
 
      !> write script for gnuplot
      if (cpuid==0) then
-        open(unit=101, file='surfdos_r.gnu')
-        write(101, '(a)')'#set terminal  postscript enhanced color'
-        write(101, '(a)')"#set output 'surfdos_r.eps'"
-        write(101, '(3a)')'set terminal  pngcairo truecolor enhanced', &
+        open(unit=117, file='surfdos_r.gnu')
+        write(117, '(a)')"set encoding iso_8859_1"
+        write(117, '(a)')'#set terminal  postscript enhanced color'
+        write(117, '(a)')"#set output 'surfdos_r.eps'"
+        write(117, '(3a)')'#set terminal pngcairo truecolor enhanced', &
+           '# font ", 60" size 1920, 1680'
+        write(117, '(3a)')'set terminal png truecolor enhanced', &
            ' font ", 60" size 1920, 1680'
-        write(101, '(a)')"set output 'surfdos_r.png'"
-        write(101,'(2a)') 'set palette defined (-10 "#194eff", ', &
+        write(117, '(a)')"set output 'surfdos_r.png'"
+        write(117,'(2a)') 'set palette defined (-10 "#194eff", ', &
            '0 "white", 10 "red" )'
-        write(101, '(a)')'#set palette rgbformulae 33,13,10'
-        write(101, '(a)')'set style data linespoints'
-        write(101, '(a)')'unset ztics'
-        write(101, '(a)')'unset key'
-        write(101, '(a)')'set pointsize 0.8'
-        write(101, '(a)')'set pm3d'
-        write(101, '(a)')'set border lw 3'
-        write(101, '(a)')'set size 0.8, 1'
-        write(101, '(a)')'set origin 0.1, 0'
-        write(101, '(a)')'#set size ratio -1'
-        write(101, '(a)')'#set view equal xyz'
-        write(101, '(a)')'set view map'
-        write(101, '(a)')'#set cbtics font ",48"'
-        write(101, '(a)')'#set xtics font ",48"'
-        write(101, '(a)')'#set ytics font ",48"'
-        write(101, '(a)')'#set ylabel font ",48"'
-        write(101, '(a)')'set ylabel "Energy (eV)"'
-        write(101, '(a)')'#set xtics offset 0, -1'
-        write(101, '(a)')'#set ylabel offset -6, 0 '
-        write(101, '(a, f8.5, a)')'set xrange [0: ', maxval(k2len), ']'
-        write(101, '(a, f8.5, a, f8.5, a)')'set yrange [', emin, ':', emax, ']'
-        write(101, 202, advance="no") (k2line_name(i), k2line_stop(i), i=1, nk2lines)
-        write(101, 203)k2line_name(nk2lines+1), k2line_stop(nk2lines+1)
+        write(117, '(a)')'#set palette rgbformulae 33,13,10'
+        write(117, '(a)')'set style data linespoints'
+        write(117, '(a)')'unset ztics'
+        write(117, '(a)')'unset key'
+        write(117, '(a)')'set pointsize 0.8'
+        write(117, '(a)')'set pm3d'
+        write(117, '(a)')'set border lw 3'
+        write(117, '(a)')'set size 0.8, 1'
+        write(117, '(a)')'set origin 0.1, 0'
+        write(117, '(a)')'#set size ratio -1'
+        write(117, '(a)')'#set view equal xyz'
+        write(117, '(a)')'set view map'
+        write(117, '(a)')'#set cbtics font ",48"'
+        write(117, '(a)')'#set xtics font ",48"'
+        write(117, '(a)')'#set ytics font ",48"'
+        write(117, '(a)')'#set ylabel font ",48"'
+        write(117, '(a)')'set ylabel "Energy (eV)"'
+        write(117, '(a)')'#set xtics offset 0, -1'
+        write(117, '(a)')'#set ylabel offset -6, 0 '
+        write(117, '(a, f8.5, a)')'set xrange [0: ', maxval(k2len), ']'
+        write(117, '(a, f8.5, a, f8.5, a)')'set yrange [', emin, ':', emax, ']'
+        write(117, 202, advance="no") (k2line_name(i), k2line_stop(i), i=1, nk2lines)
+        write(117, 203)k2line_name(nk2lines+1), k2line_stop(nk2lines+1)
 
         do i=1, nk2lines-1
-           write(101, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
+           write(117, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
         enddo
-        write(101, '(a)')'set pm3d interpolate 2,2'
-        write(101, '(2a)')"splot 'dos.dat_r' u 1:2:3 w pm3d"
+        write(117, '(a)')'set pm3d interpolate 2,2'
+        write(117, '(2a)')"splot 'dos.dat_r' u 1:2:3 w pm3d"
+        close(117)
 
      endif
 

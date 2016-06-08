@@ -12,13 +12,10 @@
      use wmpi
      implicit none
 
-     ! output file name
-
-     integer,parameter :: stdout= 6
+     integer,parameter :: stdout= 8
 
      character*80 :: Hrfile
      namelist / TB_FILE / Hrfile
-
 
      !> control parameters
      logical :: BulkBand_calc
@@ -101,9 +98,12 @@
      ! Fermi energy for arc calculation
      real(Dp) :: E_arc
 
+     ! threshold value for output the gap data for Gap3D
+     real(Dp) :: Gap_threshold
+
      !> namelist parameters
      namelist /PARAMETERS/ Eta_Arc, OmegaNum, OmegaMin, OmegaMax, &
-        E_arc, Nk1, Nk2, Nk3, NP
+        E_arc, Nk1, Nk2, Nk3, NP, Gap_threshold
 
      ! Fermi energy
      real(Dp) :: E_fermi
@@ -196,8 +196,6 @@
      real(dp) :: K3D_vec2_cube(3)
      real(dp) :: K3D_vec3_cube(3)
 
-
-
      ! R coordinates  
      integer, allocatable     :: irvec(:,:)
 
@@ -247,6 +245,5 @@
      real(dp), allocatable :: mirror_x_op(:, :)
      real(dp), allocatable :: mirror_y_op(:, :)
      real(dp), allocatable :: glide_y_op(:, :)
-
 
  end module para

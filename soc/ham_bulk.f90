@@ -91,7 +91,7 @@
      enddo
 
   return
-  end
+  end  subroutine ham_bulk
 
 
 
@@ -106,8 +106,7 @@
      implicit none
 
 ! loop index  
-     integer :: i1,i2,ia,ib,ic,iR, ia1, ia2
-     integer :: istart1, istart2, iend1, iend2
+     integer :: i1,i2,ia,ib,ic,iR
      integer :: nwann
 
      real(dp) :: kdotr

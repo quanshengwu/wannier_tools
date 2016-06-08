@@ -18,19 +18,15 @@
 
      integer :: ierr
 
-! general loop index
+     ! general loop index
      integer :: i,j 
 
-! kpoint loop index
+     ! kpoint loop index
      integer :: ikp
 
-     real(dp) :: k1(2)
-     real(dp) :: k2(2)
-     real(dp) :: k3(2)
-     real(dp) :: k4(2)
      real(dp) :: k(2)
 
-     real(dp) :: k1min, k1max, k2min, k2max, omega
+     real(dp) :: omega
      real(dp) :: k1min_shape, k1max_shape, k2min_shape, k2max_shape
 
      real(dp), allocatable :: k12(:,:)
@@ -93,7 +89,7 @@
      eta= eta_arc
 
      do ikp= 1+cpuid, nk1*nk2, num_cpu
-        if (cpuid==0) write(*, *) 'Arc', ikp, nk1*nk2
+        if (cpuid==0) write(stdout, *) 'Arc, ik, knv2', ikp, nk1*nk2
         k(1)= k12(1, ikp)
         k(2)= k12(2, ikp)
 
@@ -138,62 +134,68 @@
 
      !> write script for gnuplot
      if (cpuid==0) then
-        open(unit=101, file='arc_l.gnu')
-        write(101, '(a)')'#set terminal  postscript enhanced color'
-        write(101, '(a)')"#set output 'arc_l.eps'"
-        write(101, '(3a)')'set terminal  pngcairo truecolor enhanced', &
+        open(unit=114, file='arc_l.gnu')
+        write(114, '(a)')"set encoding iso_8859_1"
+        write(114, '(a)')'#set terminal  postscript enhanced color'
+        write(114, '(a)')"#set output 'arc_l.eps'"
+        write(114, '(3a)')'#set terminal pngcairo truecolor enhanced', &
+           '# font ",60" size 1920, 1680'
+        write(114, '(3a)')'set terminal png truecolor enhanced', &
            ' font ",60" size 1920, 1680'
-        write(101, '(a)')"set output 'arc_l.png'"
-        write(101,'(2a)') 'set palette defined ( -10 "#194eff", ', &
+        write(114, '(a)')"set output 'arc_l.png'"
+        write(114,'(2a)') 'set palette defined ( -10 "#194eff", ', &
            '0 "white", 10 "red" )'
-        write(101, '(a)')'#set palette rgbformulae 33,13,10'
-        write(101, '(a)')'unset ztics'
-        write(101, '(a)')'unset key'
-        write(101, '(a)')'set pm3d'
-        write(101, '(a)')'set border lw 6'
-        write(101, '(a)')'set size ratio -1'
-        write(101, '(a)')'set view map'
-        write(101, '(a)')'set xtics'
-        write(101, '(a)')'set ytics'
-        write(101, '(a)')'set xlabel "K1"'
-        write(101, '(a)')'set ylabel "K2"'
-        write(101, '(a)')'set colorbox'
-        write(101, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape, ':', k1max_shape, ']'
-        write(101, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape, ':', k2max_shape, ']'
-        write(101, '(a)')'set pm3d interpolate 2,2'
-        write(101, '(2a)')"splot 'arc.dat_l' u 1:2:3 w pm3d"
+        write(114, '(a)')'#set palette rgbformulae 33,13,10'
+        write(114, '(a)')'unset ztics'
+        write(114, '(a)')'unset key'
+        write(114, '(a)')'set pm3d'
+        write(114, '(a)')'set border lw 6'
+        write(114, '(a)')'set size ratio -1'
+        write(114, '(a)')'set view map'
+        write(114, '(a)')'set xtics'
+        write(114, '(a)')'set ytics'
+        write(114, '(a)')'set xlabel "K1"'
+        write(114, '(a)')'set ylabel "K2"'
+        write(114, '(a)')'set colorbox'
+        write(114, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape, ':', k1max_shape, ']'
+        write(114, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape, ':', k2max_shape, ']'
+        write(114, '(a)')'set pm3d interpolate 2,2'
+        write(114, '(2a)')"splot 'arc.dat_l' u 1:2:3 w pm3d"
 
-        close(101)
+        close(114)
      endif
 
      !> write script for gnuplot
      if (cpuid==0) then
-        open(unit=101, file='arc_r.gnu')
-        write(101, '(a)')'#set terminal  postscript enhanced color'
-        write(101, '(a)')"#set output 'arc_r.eps'"
-        write(101, '(3a)')'set terminal  pngcairo truecolor enhanced', &
+        open(unit=115, file='arc_r.gnu')
+        write(115, '(a)')"set encoding iso_8859_1"
+        write(115, '(a)')'#set terminal  postscript enhanced color'
+        write(115, '(a)')"#set output 'arc_r.eps'"
+        write(115, '(3a)')'#set terminal pngcairo truecolor enhanced', &
+           '# font ",60" size 1920, 1680'
+        write(115, '(3a)')'set terminal png truecolor enhanced', &
            ' font ",60" size 1920, 1680'
-        write(101, '(a)')"set output 'arc_r.png'"
-        write(101,'(2a)') 'set palette defined ( -10 "#194eff", ', &
+        write(115, '(a)')"set output 'arc_r.png'"
+        write(115,'(2a)') 'set palette defined ( -10 "#194eff", ', &
            '0 "white", 10 "red" )'
-        write(101, '(a)')'#set palette rgbformulae 33,13,10'
-        write(101, '(a)')'unset ztics'
-        write(101, '(a)')'unset key'
-        write(101, '(a)')'set pm3d'
-        write(101, '(a)')'set border lw 6'
-        write(101, '(a)')'set size ratio -1'
-        write(101, '(a)')'set view map'
-        write(101, '(a)')'set xtics'
-        write(101, '(a)')'set ytics'
-        write(101, '(a)')'set xlabel "K1"'
-        write(101, '(a)')'set ylabel "K2"'
-        write(101, '(a)')'set colorbox'
-        write(101, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape, ':', k1max_shape, ']'
-        write(101, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape, ':', k2max_shape, ']'
-        write(101, '(a)')'set pm3d interpolate 2,2'
-        write(101, '(2a)')"splot 'arc.dat_r' u 1:2:3 w pm3d"
+        write(115, '(a)')'#set palette rgbformulae 33,13,10'
+        write(115, '(a)')'unset ztics'
+        write(115, '(a)')'unset key'
+        write(115, '(a)')'set pm3d'
+        write(115, '(a)')'set border lw 6'
+        write(115, '(a)')'set size ratio -1'
+        write(115, '(a)')'set view map'
+        write(115, '(a)')'set xtics'
+        write(115, '(a)')'set ytics'
+        write(115, '(a)')'set xlabel "K1"'
+        write(115, '(a)')'set ylabel "K2"'
+        write(115, '(a)')'set colorbox'
+        write(115, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape, ':', k1max_shape, ']'
+        write(115, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape, ':', k2max_shape, ']'
+        write(115, '(a)')'set pm3d interpolate 2,2'
+        write(115, '(2a)')"splot 'arc.dat_r' u 1:2:3 w pm3d"
 
-        close(101)
+        close(115)
      endif
 
 

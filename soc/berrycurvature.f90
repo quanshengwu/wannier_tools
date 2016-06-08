@@ -45,13 +45,12 @@
      complex(dp), allocatable :: Omega_mpi(:, :)
 
 
-     knv2= nk1*nk2
-     allocate( kslice(3, knv2))
-     allocate( kslice_shape(3, knv2))
+     allocate( kslice(3, Nk1*Nk2))
+     allocate( kslice_shape(3, Nk1*Nk2))
      allocate( W       (Num_wann))
      allocate( crvec    (3, nrpts))
-     allocate( Omega    (3, knv2))
-     allocate( Omega_mpi(3, knv2))
+     allocate( Omega    (3, Nk1*Nk2))
+     allocate( Omega_mpi(3, Nk1*Nk2))
      allocate( vx      (Num_wann, Num_wann))
      allocate( vy      (Num_wann, Num_wann))
      allocate( vz      (Num_wann, Num_wann))
@@ -80,21 +79,21 @@
         crvec(:, iR)= Rua*irvec(1,iR) + Rub*irvec(2,iR) + Ruc*irvec(3,iR)
      enddo
 
-     do ik= 1+ cpuid, knv2, num_cpu
-        if (cpuid==0) print *, ik, knv2
+     do ik= 1+ cpuid, Nk1*Nk2, num_cpu
+        if (cpuid==0) write(stdout, *)'Berry curvature ik, nk1*nk2 ', ik, Nk1*Nk2
 
         !> diagonalize hamiltonian
         k= kslice(:, ik)
 
         ! calculation bulk hamiltonian
         UU= 0d0
-        call ham_bulk(k, Hamk_bulk)
+        call ham_bulk_old(k, Hamk_bulk)
         
 
         !> diagonalization by call zheev in lapack
         W= 0d0
        !call eigensystem_c( 'V', 'U', Num_wann, UU, W)
-        call utility_diagonalize(hamk_bulk,Num_wann, W, UU)
+        call zhpevx_pack(hamk_bulk,Num_wann, W, UU)
 
         UU_dag= conjg(transpose(UU))
 
@@ -168,21 +167,83 @@
      call mpi_allreduce(Omega,Omega_mpi,size(Omega_mpi),&
                        mpi_dc,mpi_sum,mpi_cmw,ierr)
 
+     !> output the Berry curvature to file
      if (cpuid==0) then
-        open(unit=18, file='berry.dat')
+        open(unit=191, file='Berrycurvature.dat')
+        write(191, '(20a18)')'# kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
+           'real(Omega_x)', 'imag(omega_x)', &
+           'real(Omega_y)', 'imag(omega_y)', &
+           'real(Omega_z)', 'imag(omega_z)'
         ik= 0
         do i= 1, nk1
            do j= 1, nk2
               ik= ik+ 1
-              write(18, '(20f18.10)')kslice_shape(:, ik), Omega_mpi(:, ik)
+              write(191, '(20f18.10)')kslice_shape(:, ik), Omega_mpi(:, ik)
            enddo
-           write(18, *) ' '
+           write(191, *) ' '
         enddo
 
-        close(18)
+        close(191)
 
      endif
 
+     !> generate gnuplot script to plot the Berry curvature
+     if (cpuid==0) then
+
+        open(unit=190, file='Berrycurvature.gnu')
+        write(190, '(a)')"set encoding iso_8859_1"
+        write(190, '(a)')'#set terminal  pngcairo  truecolor enhanced size 1920, 1680 font ",40"'
+        write(190, '(a)')'set terminal  png       truecolor enhanced size 1920, 1680 font ",40"'
+        write(190, '(a)')"set output 'Berrycurvature.png'"
+        write(190, '(a)')'if (!exists("MP_LEFT"))   MP_LEFT = .12'
+        write(190, '(a)')'if (!exists("MP_RIGHT"))  MP_RIGHT = .92'
+        write(190, '(a)')'if (!exists("MP_BOTTOM")) MP_BOTTOM = .12'
+        write(190, '(a)')'if (!exists("MP_TOP"))    MP_TOP = .88'
+        write(190, '(a)')'if (!exists("MP_GAP"))    MP_GAP = 0.08'
+        write(190, '(a)')'set multiplot layout 2,3 rowsfirst title "\{ Berry Curvature\}" \'
+        write(190, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
+        write(190, '(a)')" "
+        write(190, '(a)')"set palette rgbformulae 33,13,10"
+        write(190, '(a)')"unset ztics"
+        write(190, '(a)')"unset key"
+        write(190, '(a)')"set pm3d"
+        write(190, '(a)')"set view map"
+        write(190, '(a)')"set border lw 3"
+        write(190, '(a)')"set xlabel 'k (1/{\305})'"
+        write(190, '(a)')"set ylabel 'k (1/{\305})'"
+        write(190, '(a)')"unset colorbox"
+        write(190, '(a)')"unset xtics"
+        write(190, '(a)')"unset xlabel"
+        write(190, '(a)')"set xrange [] noextend"
+        write(190, '(a)')"set yrange [] noextend"
+        write(190, '(a)')"set ytics 0.5 nomirror scale 0.5"
+        write(190, '(a)')"set pm3d interpolate 2,2"
+        write(190, '(a)')"set title 'Omega_x real'"
+        write(190, '(a)')"splot 'Berrycurvature.dat' u 1:2:4 w pm3d"
+        write(190, '(a)')"unset ylabel"
+        write(190, '(a)')"unset ytics"
+        write(190, '(a)')"set title 'Omega_y real'"
+        write(190, '(a)')"splot 'Berrycurvature.dat' u 1:2:6 w pm3d"
+        write(190, '(a)')"set title 'Omega_z real'"
+        write(190, '(a)')"set colorbox"
+        write(190, '(a)')"splot 'Berrycurvature.dat' u 1:2:8 w pm3d"
+ 
+        write(190, '(a)')"set xtics 0.5 nomirror scale 0.5"
+        write(190, '(a)')"set ytics nomirror scale 0.5"
+        write(190, '(a)')"set ylabel 'k (1/{\305})'"
+        write(190, '(a)')"set xlabel 'k (1/{\305})'"
+        write(190, '(a)')"unset colorbox"
+        write(190, '(a)')"set title 'Omega_x imag'"
+        write(190, '(a)')"splot 'Berrycurvature.dat' u 1:2:5 w pm3d"
+        write(190, '(a)')"unset ylabel"
+        write(190, '(a)')"unset ytics"
+        write(190, '(a)')"set title 'Omega_y imag'"
+        write(190, '(a)')"splot 'Berrycurvature.dat' u 1:2:7 w pm3d"
+        write(190, '(a)')"set title 'Omega_z imag'"
+        write(190, '(a)')"set colorbox"
+        write(190, '(a)')"splot 'Berrycurvature.dat' u 1:2:9 w pm3d"
+        close(190)
+     endif
 
      return
 

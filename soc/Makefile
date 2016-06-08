@@ -1,11 +1,12 @@
-obj =  module.o main.o symmetry.o readHmnR.o inverse.o\
+obj =  module.o aux.o symmetry.o readHmnR.o inverse.o\
        eigen.o ham_qlayer2qlayer.o psi.o \
 		 ham_slab.o ek_slab.o ek_bulk_polar.o ek_bulk2D.o \
        readinput.o fermisurface.o surfgreen.o surfstat.o \
 		 mat_mul.o ham_ribbon.o ek_ribbon.o ham_bulk.o ek_bulk.o \
        fermiarc.o spintexture.o berrycurvature.o \
 		 wanniercenter.o dos.o  \
-		 landau_level.o berry.o
+		 landau_level.o berry.o \
+       main.o
 
 # compiler
 f90  = mpif90 # -check all -pg -traceback

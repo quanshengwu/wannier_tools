@@ -190,14 +190,14 @@
            size(WannierCenterKy), mpi_dp, mpi_sum, mpi_cmw, ierr)
 
       if (cpuid==0) then
-         open(unit=101, file='wanniercenter.dat')
+         open(unit=106, file='wanniercenter.dat')
 
          do iky=1, Nky
-            write(101, '(10000f16.8)') kpoints(2, 1, iky), &
+            write(106, '(10000f16.8)') kpoints(2, 1, iky), &
                dmod(sum(WannierCenterKy_mpi(:, iky)), 1d0), & 
                WannierCenterKy_mpi(:, iky)
          enddo
-         close(101)
+         close(106)
       endif
 
       return
@@ -521,18 +521,18 @@
 
 
       if (cpuid==0) then
-         open(unit=101, file='wanniercenter.dat')
-         open(unit=102, file='largestgap.dat')
+         open(unit=107, file='wanniercenter.dat')
+         open(unit=108, file='largestgap.dat')
 
          do iky=1, Nky
-            write(101, '(10000f16.8)') kpoints(2, 1, iky), &
+            write(107, '(10000f16.8)') kpoints(2, 1, iky), &
                dmod(sum(WannierCenterKy_mpi(:, iky)), 1d0), & 
                WannierCenterKy_mpi(:, iky)
-            write(102, '(10000f16.8)') kpoints(2, 1, iky), &
+            write(108, '(10000f16.8)') kpoints(2, 1, iky), &
                largestgap_mpi(iky)
          enddo
-         close(101)
-         close(102)
+         close(107)
+         close(108)
       endif
 
       return
@@ -877,14 +877,14 @@
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
 
       if (cpuid==0) then
-         open(unit=101, file='wcc-mirrorminus.dat')
+         open(unit=111, file='wcc-mirrorminus.dat')
 
          do ik2=1, Nk2
-            write(101, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1)/2d0, &
+            write(111, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1)/2d0, &
                largestgap_mpi(ik2), dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
                WannierCenterKy_mpi(:, ik2)
          enddo
-         close(101)
+         close(111)
       endif
 
 
@@ -920,7 +920,7 @@
 
       Z2= mod(Delta, 2)
 
-      if (cpuid==0) print*,'Z2 for ky=0 mirror -i : ', Z2
+      if (cpuid==0) write(stdout, *)'Z2 for ky=0 mirror -i : ', Z2
 
       return
    end subroutine  wannier_center3D_plane_mirror_minus
@@ -1264,14 +1264,14 @@
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
 
       if (cpuid==0) then
-         open(unit=101, file='wcc-mirrorplus.dat')
+         open(unit=109, file='wcc-mirrorplus.dat')
 
          do ik2=1, Nk2
-            write(101, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1)/2, &
+            write(109, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1)/2, &
                largestgap_mpi(ik2), dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
                WannierCenterKy_mpi(:, ik2)
          enddo
-         close(101)
+         close(109)
       endif
 
 
@@ -1307,7 +1307,7 @@
 
       Z2= mod(Delta, 2)
 
-      if (cpuid==0) print*,'Z2 for ky=0: ', Z2
+      if (cpuid==0) write(stdout, *)'Z2 for ky=0: ', Z2
 
       return
    end subroutine  wannier_center3D_plane_mirror_plus
@@ -1500,7 +1500,7 @@
       !>> Get wannier center for ky=0 plane
       !> for each ky, we can get wanniercenter
       do ik2=1+ cpuid, Nk2, num_cpu
-         if (cpuid.eq.0) print *,  'ik', ik2
+         if (cpuid.eq.0) write(stdout, *)' Wilson loop ',  'ik, Nk', ik2, nk2
          Lambda0=0d0
          do i=1, nfill
             Lambda0(i, i)= 1d0
@@ -1603,14 +1603,14 @@
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
 
       if (cpuid==0) then
-         open(unit=101, file='wcc.dat')
+         open(unit=110, file='wcc.dat')
 
          do ik2=1, Nk2
-            write(101, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1)/2d0, &
+            write(110, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1)/2d0, &
                largestgap_mpi(ik2), dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
                WannierCenterKy_mpi(:, ik2)
          enddo
-         close(101)
+         close(110)
       endif
 
 
@@ -1647,12 +1647,13 @@
 
       Z2= mod(Delta, 2)
 
-      if (cpuid==0) print*,'Z2 for the plane you choose: ', Z2
+      if (cpuid==0) write(stdout, *)'Z2 for the plane you choose: ', Z2
 
 
       !> generate gnu script for wannier charge center plots
       if (cpuid==0) then
          open(unit=301, file='wcc.gnu')
+         write(301, '(a)')"set encoding iso_8859_1"
          write(301, '(a)')'set terminal  postscript enhanced color font ",30"'
          write(301, '(a)')"set output 'wcc.eps'"
          write(301, '(a)')'unset key '
@@ -1669,6 +1670,7 @@
          write(301, '(a)')'set yrange [0:1]'
          write(301, '(a)')"plot 'wcc.dat' u 1:2 w l lw 2  lc 'blue', \"   
          write(301, '(a, i5, a)')" for [i=4: ", nfill+3, "] 'wcc.dat' u 1:i w p  pt 7  ps 1.1 lc 'red'"
+         close(301)
       endif
 
       return
@@ -1857,6 +1859,7 @@
       !>> Get wannier center for ky=0 plane
       !> for each ky, we can get wanniercenter
       do ik2=1+ cpuid, Nk2, num_cpu
+         if (cpuid.eq.0) write(stdout, *)' Wilson loop',  'ik, Nk', ik2, nk2
          Lambda0=0d0
          do i=1, nfill
             Lambda0(i, i)= 1d0
@@ -1960,14 +1963,14 @@
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
 
       if (cpuid==0) then
-         open(unit=101, file='wanniercenterky0.dat')
+         open(unit=104, file='wanniercenterky0.dat')
 
          do ik2=1, Nk2
-            write(101, '(10000f16.8)') kpoints(2, 1, ik2), &
+            write(104, '(10000f16.8)') kpoints(2, 1, ik2), &
                largestgap_mpi(ik2), dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
                WannierCenterKy_mpi(:, ik2)
          enddo
-         close(101)
+         close(104)
       endif
 
 
@@ -2111,15 +2114,15 @@
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
 
       if (cpuid==0) then
-         open(unit=101, file='wanniercenterky05.dat')
+         open(unit=105, file='wanniercenterky05.dat')
 
          do ik2=1, Nk2
-            write(101, '(10000f16.8)') kpoints(2, 1, ik2), &
+            write(105, '(10000f16.8)') kpoints(2, 1, ik2), &
                largestgap_mpi(ik2), &
                dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
                WannierCenterKy_mpi(:, ik2)
          enddo
-         close(101)
+         close(105)
       endif
 
 

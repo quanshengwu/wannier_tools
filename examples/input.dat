@@ -1,29 +1,53 @@
-wannier90_hr.dat ! input file
-output           ! output file's filename
-T                ! BulkBand_calc
-F                ! SlabBand_calc
-F                ! WireBand_calc
-F                ! SlabSS_calc
-F                ! SlabArc_calc
-F                ! SlabSpintexture_calc
-T                ! wanniercenter_calc
-F                ! berry
-40               ! Nk
-500              ! omega number
--0.60 0.50       ! omegamin omegamax
-0                ! E_arc
-10               ! nslab
-1                ! np   
-18               ! NumOccupied
-18               ! ntotch
-2                ! soc
-0.001            ! eta
-4.4195           ! e-fermi
-0.0              ! surf_onsite
-0 0 0            ! Bx By Bz
+&TB_FILE
+Hrfile = wannier90_hr.dat
+/
+
+
+&CONTROL
+!> bulk band structure calculation flag
+BulkBand_calc         = F
+BulkFS_calc           = F
+BulkGap_cube_calc     = T
+BulkGap_plane_calc    = F
+SlabBand_calc         = F
+WireBand_calc         = F
+SlabSS_calc           = F
+SlabArc_calc          = F
+SlabSpintexture_calc  = F
+wanniercenter_calc    = F
+BerryPhase_calc       = F
+BerryCurvature_calc   = F
+/
+
+&SYSTEM
+NSLAB = 10 
+NumOccupied = 18        ! NumOccupied
+SOC = 1                 ! soc
+E_FERMI = 4.4195        ! e-fermi
+Bx= 0, By= 0, Bz= 0     ! Bx By Bz
+surf_onsite= 0.0        ! surf_onsite
+/
+
+&PARAMETERS
+Eta_Arc = 0.001     ! infinite small value, like brodening 
+E_arc = 0.0         ! energy for calculate Fermi Arc
+OmegaNum = 200      ! omega number       
+OmegaMin = -0.6     ! energy interval
+OmegaMax =  0.5     ! energy interval
+Nk1 = 20            ! number k points 
+Nk2 = 20            ! number k points 
+Nk3 = 20            ! number k points 
+NP = 2              ! number of principle layers
+Gap_threshold = 1.0 ! threshold for GapCube output
+/
+
+LATTICE
+Angstrom
 -2.069  -3.583614  0.000000     ! crystal lattice information
  2.069  -3.583614  0.000000
  0.000   2.389075  9.546667
+
+ATOM_POSITIONS
 5                               ! number of atoms for projectors
 Direct                          ! Direct or Cartisen coordinate
  Bi 0.3990    0.3990    0.6970
@@ -31,27 +55,45 @@ Direct                          ! Direct or Cartisen coordinate
  Se 0     0     0.5
  Se 0.2060    0.2060    0.1180
  Se 0.7940    0.7940    0.8820
+
+PROJECTORS
  3 3 3 3 3          ! number of projectors
 Bi px py pz         ! projectors
 Bi px py pz
 Se px py pz
 Se px py pz
 Se px py pz
-     4              ! number of k line only for bulk band
+
+SURFACE            ! See doc for details
+ 1  0  0
+ 0  1  0
+ 0  0  1
+
+KPATH_BULK            ! k point path
+4              ! number of k line only for bulk band
 G 0.00000 0.00000 0.0000 Z 0.00000 0.00000 0.5000
 Z 0.00000 0.00000 0.5000 F 0.50000 0.50000 0.0000
 F 0.50000 0.50000 0.0000 G 0.00000 0.00000 0.0000
-G 0.00000 0.00000 0.0000 L 0.50000 0.00000 0.0000  ! k point path
-1 0 0    ! Umatrix for new lattice 001
-0 1 0
-0 0 1
+G 0.00000 0.00000 0.0000 L 0.50000 0.00000 0.0000  
+
+KPATH_SLAB
 2        ! numker of k line for 2D case
 K 0.33 0.67 G 0.0 0.0  ! k path for 2D case
 G 0.0 0.0 M 0.5 0.5
--0.1 -0.1      ! Original point for 2D k plane
- 0.2  0.0      ! The first vector to define 2D k plane 
- 0.0  0.2      ! The second vector to define 2D k plane  for arc plots
-0.0 0.0 0.00   ! Original point for 3D k plane 
-0.0  1.00 0.00 ! The first vector to define 3d k space plane
-0.0  0.00 0.50 ! The second vector to define 3d k space plane
-1.0  0.00 0.00 ! The third vector to define 3d k cube 
+
+KPLANE_SLAB
+-0.5 -0.5      ! Original point for 2D k plane
+ 1.0  0.0      ! The first vector to define 2D k plane 
+ 0.0  1.0      ! The second vector to define 2D k plane  for arc plots
+
+KPLANE_BULK
+-0.50 -0.50  0.00   ! Original point for 3D k plane 
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  1.00  0.00   ! The second vector to define 3d k space plane
+
+
+KCUBE_BULK
+-0.50 -0.50 -0.50   ! Original point for 3D k plane 
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  1.00  0.00   ! The second vector to define 3d k space plane
+ 0.00  0.00  1.00   ! The third vector to define 3d k cube
