@@ -224,8 +224,8 @@
      !> number of atoms in one primitive cell
      integer :: Num_atoms
      character(10) :: AngOrBohr
-     character(10) :: directOrcart
-     character(10), allocatable :: atom_name(:)
+     character(10) :: DirectOrCart
+     character(10), allocatable :: Atom_name(:)
      real(dp), allocatable :: Atom_position(:, :)
      real(dp), allocatable :: Atom_position_direct(:, :)
 

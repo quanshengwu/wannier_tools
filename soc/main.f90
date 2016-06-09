@@ -13,8 +13,8 @@
 
   program main
 
+     use wmpi
      use para
-     use mpi
      implicit none
 
      !> file existence

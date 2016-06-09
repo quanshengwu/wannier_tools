@@ -25,7 +25,7 @@
      complex(Dp), allocatable :: work(:)
       
 ! eigenvalue 
-     real(Dp) :: eigenvalue(nslab*Num_wann)
+     real(Dp), allocatable :: eigenvalue(:)
    
 ! energy dispersion
      real(Dp),allocatable :: ekslab(:,:)
@@ -42,6 +42,8 @@
      lwork= 16*Nslab*Num_wann
      ierr = 0
 
+
+     allocate(eigenvalue(nslab*Num_wann))
      allocate( surf_weight (Nslab* Num_wann, knv2))
      allocate( surf_weight_mpi (Nslab* Num_wann, knv2))
      allocate(ekslab(Nslab*Num_wann,knv2))
@@ -55,6 +57,7 @@
 
      ! sweep k
      ekslab=0.0d0
+     ekslab_mpi=0.0d0
      do i=1+cpuid,knv2,num_cpu
         if (cpuid==0) write(stdout, *), 'SlabEk, ik ',  i, knv2
         k= k2_path(i, :)
@@ -62,10 +65,10 @@
 
         !> no magnetgic field
         if (abs(Bx)<eps9.and. abs(By)<eps9.and. abs(Bz)<eps9)then
-           write(stdout, *)'>> magnetic field is larger than zero'
            call ham_slab(k,Chamk)
         !> in-plane magnetic field
         elseif (abs(Bx)>eps9 .or. abs(By)>eps9)then
+           write(stdout, *)'>> magnetic field is larger than zero'
            call ham_slab_parallel_B(k,Chamk)
         !> vertical magnetic field
         else
@@ -92,6 +95,7 @@
            surf_weight(j, i)= sqrt(surf_weight(j, i))
         enddo ! j 
      enddo ! i
+
      call mpi_allreduce(ekslab,ekslab_mpi,size(ekslab),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
      call mpi_allreduce(surf_weight, surf_weight_mpi,size(surf_weight),&
@@ -99,8 +103,10 @@
  
 
      ekslab=ekslab_mpi
+     if (maxval(surf_weight_mpi)<0.00001d0)surf_weight_mpi=1d0
      surf_weight= surf_weight_mpi/ maxval(surf_weight_mpi)
-        
+     
+
      if(cpuid==0)then
         open(unit=100, file='slabek.dat')
         do j=1, Num_wann*Nslab
@@ -211,8 +217,8 @@
      lwork= 16*Nslab*Num_wann
      ierr = 0
 
-     allocate( surf_weight (Nslab* Num_wann, knv2))
-     allocate( surf_weight_mpi (Nslab* Num_wann, knv2))
+     allocate(surf_weight (Nslab* Num_wann, knv2))
+     allocate(surf_weight_mpi (Nslab* Num_wann, knv2))
      allocate(ekslab(Nslab*Num_wann,knv2))
      allocate(ekslab_mpi(Nslab*Num_wann,knv2))
      allocate(CHamk(nslab*Num_wann,nslab*Num_wann))
@@ -224,6 +230,7 @@
 
      ! sweep k
      ekslab=0.0d0
+     ekslab_mpi=0.0d0
      do i=1+cpuid,knv2,num_cpu
         if (cpuid==0)write(stdout, *) 'SlabEkB, ik ',  i, knv2
         k= k2_path(i, :)

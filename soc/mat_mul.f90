@@ -85,38 +85,38 @@
      return
   end subroutine zgesvd_pack
 
-  subroutine zhpevx_pack(mat,dim,eig,rot)
+  subroutine zhpevx_pack(mat,ndim,eig,rot)
     !                                                            !
-    ! Diagonalize the dim x dim  hermitian matrix 'mat' and      !
+    ! Diagonalize the ndim x ndim  hermitian matrix 'mat' and      !
     ! return the eigenvalues 'eig' and the unitary rotation 'rot'!
     !                                                            !
     !============================================================!
 
     use para, only : dp, stdout
 
-    integer, intent(in)           :: dim
-    complex(kind=dp), intent(in)  :: mat(dim,dim)
-    real(kind=dp), intent(out)    :: eig(dim)
-    complex(kind=dp), intent(out) :: rot(dim,dim)
+    integer, intent(in)           :: ndim
+    complex(dp), intent(in)  :: mat(ndim,ndim)
+    real(dp), intent(out)    :: eig(ndim)
+    complex(dp), intent(out) :: rot(ndim,ndim)
 
-    complex(kind=dp), allocatable :: mat_pack(:),cwork(:)
-    real(kind=dp), allocatable    :: rwork(:)
+    complex(dp), allocatable :: mat_pack(:),cwork(:)
+    real(dp), allocatable    :: rwork(:)
     integer            :: i,j,info,nfound
     integer, allocatable :: iwork(:),ifail(:)
 
-    allocate(mat_pack((dim*(dim+1))/2))
-    allocate(cwork(2*dim))
-    allocate(rwork(7*dim))
-    allocate(iwork(5*dim))
-    allocate(ifail(dim))
-    do j=1,dim
+    allocate(mat_pack((ndim*(ndim+1))/2))
+    allocate(cwork(2*ndim))
+    allocate(rwork(7*ndim))
+    allocate(iwork(5*ndim))
+    allocate(ifail(ndim))
+    do j=1,ndim
        do i=1,j
           mat_pack(i+((j-1)*j)/2)=mat(i,j)
        enddo
     enddo
     rot=0d0;eig=0.0_dp;cwork=0d0;rwork=0.0_dp;iwork=0
-    call ZHPEVX('V','A','U',dim,mat_pack,0.0_dp,0.0_dp,0,0,-1.0_dp, &
-         nfound,eig(1),rot,dim,cwork,rwork,iwork,ifail,info)
+    call ZHPEVX('V','A','U',ndim,mat_pack,0.0_dp,0.0_dp,0,0,-1.0_dp, &
+         nfound,eig(1),rot,ndim,cwork,rwork,iwork,ifail,info)
     if(info < 0) then
        write(stdout,'(a,i3,a)') 'THE ',-info,&
             ' ARGUMENT OF ZHPEVX HAD AN ILLEGAL VALUE'

@@ -36,9 +36,9 @@ E_arc = 0.0         ! energy for calculate Fermi Arc
 OmegaNum = 100      ! omega number       
 OmegaMin = -0.6     ! energy interval
 OmegaMax =  0.5     ! energy interval
-Nk1 = 20            ! number k points 
-Nk2 = 20            ! number k points 
-Nk3 = 20            ! number k points 
+Nk1 = 10            ! number k points 
+Nk2 = 10            ! number k points 
+Nk3 = 10            ! number k points 
 NP = 2              ! number of principle layers
 Gap_threshold = 1.0 ! threshold for GapCube output
 /

@@ -5,6 +5,7 @@
 ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
   subroutine berry_curvarture
 
+     use wmpi
      use para
      implicit none
     
@@ -44,7 +45,6 @@
      complex(dp), allocatable :: Omega(:, :)
      complex(dp), allocatable :: Omega_mpi(:, :)
 
-
      allocate( kslice(3, Nk1*Nk2))
      allocate( kslice_shape(3, Nk1*Nk2))
      allocate( W       (Num_wann))
@@ -62,6 +62,19 @@
      allocate( DHDkdag (Num_wann, Num_wann, 3))
      kslice=0d0
      kslice_shape=0d0
+     crvec= 0d0
+     omega= 0d0
+     omega_mpi= 0d0
+     vx=0d0
+     vy=0d0
+     vz=0d0
+     Hamk_bulk=0d0
+     Amat= 0d0
+     UU_dag=0d0
+     UU= 0d0
+     DHDk= 0d0
+     DHDkdag= 0d0
+     
 
 
      ik =0
@@ -92,8 +105,9 @@
 
         !> diagonalization by call zheev in lapack
         W= 0d0
-       !call eigensystem_c( 'V', 'U', Num_wann, UU, W)
-        call zhpevx_pack(hamk_bulk,Num_wann, W, UU)
+        UU=Hamk_bulk
+        call eigensystem_c( 'V', 'U', Num_wann, UU, W)
+       !call zhpevx_pack(hamk_bulk,Num_wann, W, UU)
 
         UU_dag= conjg(transpose(UU))
 
@@ -106,6 +120,7 @@
            vy= vy+ zi*crvec(2, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
            vz= vz+ zi*crvec(3, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
         enddo ! iR
+
 
         !> unitility rotate velocity
         call mat_mul(Num_wann, vx, UU, Amat) 
@@ -250,7 +265,7 @@
   end subroutine berry_curvarture
 
   subroutine Fourier_R_to_k(k, ham)
-     use para, only: Rua, irvec, HmnR, Nrpts, ndegen, pi, zi, Num_wann, dp
+     use para, only: irvec, HmnR, Nrpts, ndegen, pi, zi, Num_wann, dp
      implicit none
 
      real(dp), intent(in) :: k(3)

@@ -6,6 +6,7 @@
 
   subroutine readinput
 
+     use wmpi
      use para
      implicit none
 
@@ -345,8 +346,8 @@
 
      if (cpuid==0) then
         write(stdout, '(a)')'>> new vectors to define the surface (in unit of lattice vector)' 
-        write(stdout, '(a, 3f12.6)')' The 1st vector on surface :', Umatrix(1, :)
-        write(stdout, '(a, 3f12.6)')' The 2nd vector on surface :', Umatrix(2, :)
+        write(stdout, '(a, 3f12.6)')' The 1st vector on surface  :', Umatrix(1, :)
+        write(stdout, '(a, 3f12.6)')' The 2nd vector on surface  :', Umatrix(2, :)
         write(stdout, '(a, 3f12.6)')' The 3rd vector out surface :', Umatrix(3, :)
      endif
 
@@ -584,7 +585,7 @@
      106 continue
 
      if (cpuid==0) write(stdout, *)'>> Kpoints plane for 2D system--> arcs  '
-     if (cpuid==0) write(stdout, '((a6, 2f8.4))')'K2D_start', K2D_start
+     if (cpuid==0) write(stdout, '((a, 2f8.4))')'K2D_start:', K2D_start
      if (cpuid==0) write(stdout, '((a, 2f8.4))')'The first vector: ', K2D_vec1
      if (cpuid==0) write(stdout, '((a, 2f8.4))')'The second vector: ', K2D_vec2
      if (.not.lfound .and.(SlabArc_calc == .TRUE. .or. SlabSpintexture_calc==.TRUE.)) then
@@ -618,7 +619,7 @@
      107 continue
 
      if (cpuid==0) write(stdout, *)'>> Kpoints plane for 3D system--> gapshape  '
-     if (cpuid==0) write(stdout, '((a6, 3f8.4))')'k3D_start', K3D_start
+     if (cpuid==0) write(stdout, '((a, 3f8.4))')'k3D_start : ', K3D_start
      if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 1st vector: ', K3D_vec1
      if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 2nd vector: ', K3D_vec2
      if (.not.lfound .and.(BulkGap_plane_calc == .TRUE. .or. wanniercenter_calc==.TRUE.)) then
@@ -654,7 +655,7 @@
 
      108 continue
      if (cpuid==0) write(stdout, *)'>> Kpoints plane for 3D system--> gapshape3D  '
-     if (cpuid==0) write(stdout, '((a6, 3f8.4))')'k3D_start', K3D_start_cube
+     if (cpuid==0) write(stdout, '((a, 3f8.4))')'k3D_start :', K3D_start_cube
      if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 1st vector: ', K3D_vec1_cube
      if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 2nd vector: ', K3D_vec2_cube
      if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 3rd vector: ', K3D_vec3_cube

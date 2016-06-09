@@ -355,7 +355,8 @@
          gap(3, ik)= W(Numoccupied+1)
       
       enddo
-      
+     
+      gap_mpi = 0d0
       call mpi_allreduce(gap,gap_mpi,size(gap),&
                         mpi_dp,mpi_sum,mpi_cmw,ierr)
       
@@ -686,7 +687,7 @@
          endif
 
          if (cpuid==0) then
-             write(*, 100)iter, tot-Ntotch, EF, '  Charge: ', tot
+             write(stdout, 100)iter, tot-Ntotch, EF, '  Charge: ', tot
          endif
       100   format(2x,">iter",i4,2x,"diff:",f12.6,2x,"EF: ",f12.6,a,f12.6)
 
