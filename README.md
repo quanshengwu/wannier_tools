@@ -20,7 +20,6 @@ Use tight binding model to get the surface states of slab systems
 or edge states of nanowire systems or just bulk bands. Especially
 usefull for topological novel systems, including topological insulator, Dirac semimetal, Weyl semimetal, nodal line systems, nodal chain systems, triple point systems and unknown topological systems.
 
-Jan 29 2015 at ETH
 With given tight binding model well written in the format of wannier90_hr.dat in [Wannier90](http://wannier.org), 
 
 0. There are several examples in the examples folder, including Bi2Se3, WTe2, IrF4. The user guide is in the doc folder. Please read the user guide first. 
