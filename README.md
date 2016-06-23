@@ -5,7 +5,7 @@
 
 **Authorship**
 
-Written by QuanSheng Wu in Fortran 90 (wuquansheng@gmail.com)
+Written by QuanSheng Wu in Fortran 90 (wuquansheng@gmail.com  wuq@phys.ethz.ch)
 
 Copyright (c) 2010 QuanSheng Wu and ShengNan Zhang. All rights reserved.
 
