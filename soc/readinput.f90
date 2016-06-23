@@ -363,6 +363,11 @@
                  +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1)) 
      cell_volume2= 2d0*3.1415926535d0/cell_volume2
 
+     if (cell_volume2<0) then
+        R3=-R3
+        Umatrix(3, :)= -Umatrix(3, :)
+     endif
+
      if (abs(abs(cell_volume2)-abs(cell_volume))> 0.001d0.and.cpuid==0) then
         write(stdout, *)' ERROR The Umatrix is wrong, the new cell', &
            'volume should be the same as the old ones'

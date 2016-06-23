@@ -131,7 +131,7 @@
         write(113, '(a)')'#set terminal  postscript enhanced color'
         write(113, '(a)')"#set output 'slabek.eps'"
         write(113, '(3a)')'#set terminal  pngcairo truecolor enhanced', &
-           '# font ",60" size 1920, 1680'
+           '  font ",60" size 1920, 1680'
         write(113, '(3a)')'set terminal  png truecolor enhanced', &
            '  font ",60" size 1920, 1680'
         write(113, '(a)')"set output 'slabek.png'"
@@ -286,7 +286,7 @@
         write(112, '(a)')'#set terminal  postscript enhanced color'
         write(112, '(a)')"#set output 'slabek.eps'"
         write(112, '(3a)')'#set terminal  pngcairo truecolor enhanced', &
-           '# font ",60" size 1920, 1680'
+           '  font ",60" size 1920, 1680'
         write(112, '(3a)')'set terminal  png truecolor enhanced', &
            '  font ",60" size 1920, 1680'
         write(112, '(a)')"set output 'slabek.png'"

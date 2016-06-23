@@ -139,7 +139,7 @@
         write(114, '(a)')'#set terminal  postscript enhanced color'
         write(114, '(a)')"#set output 'arc_l.eps'"
         write(114, '(3a)')'#set terminal pngcairo truecolor enhanced', &
-           '# font ",60" size 1920, 1680'
+           '  font ",60" size 1920, 1680'
         write(114, '(3a)')'set terminal png truecolor enhanced', &
            ' font ",60" size 1920, 1680'
         write(114, '(a)')"set output 'arc_l.png'"
@@ -154,8 +154,8 @@
         write(114, '(a)')'set view map'
         write(114, '(a)')'set xtics'
         write(114, '(a)')'set ytics'
-        write(114, '(a)')'set xlabel "K1"'
-        write(114, '(a)')'set ylabel "K2"'
+        write(114, '(a)')'set xlabel "K_1 (1/{\305})"'
+        write(114, '(a)')'set ylabel "K_2 (1/{\305})"'
         write(114, '(a)')'set colorbox'
         write(114, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape, ':', k1max_shape, ']'
         write(114, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape, ':', k2max_shape, ']'
@@ -172,7 +172,7 @@
         write(115, '(a)')'#set terminal  postscript enhanced color'
         write(115, '(a)')"#set output 'arc_r.eps'"
         write(115, '(3a)')'#set terminal pngcairo truecolor enhanced', &
-           '# font ",60" size 1920, 1680'
+           '  font ",60" size 1920, 1680'
         write(115, '(3a)')'set terminal png truecolor enhanced', &
            ' font ",60" size 1920, 1680'
         write(115, '(a)')"set output 'arc_r.png'"
@@ -187,8 +187,8 @@
         write(115, '(a)')'set view map'
         write(115, '(a)')'set xtics'
         write(115, '(a)')'set ytics'
-        write(115, '(a)')'set xlabel "K1"'
-        write(115, '(a)')'set ylabel "K2"'
+        write(115, '(a)')'set xlabel "K_1 (1/{\305})"'
+        write(115, '(a)')'set ylabel "K_2 (1/{\305})"'
         write(115, '(a)')'set colorbox'
         write(115, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape, ':', k1max_shape, ']'
         write(115, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape, ':', k2max_shape, ']'

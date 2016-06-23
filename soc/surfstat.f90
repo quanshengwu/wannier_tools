@@ -157,7 +157,7 @@
         write(116, '(a)')'#set terminal  postscript enhanced color'
         write(116, '(a)')"#set output 'surfdos_l.eps'"
         write(116, '(3a)')'#set terminal  pngcairo truecolor enhanced', &
-           '# font ", 60" size 1920, 1680'
+           '  font ", 60" size 1920, 1680'
         write(116, '(3a)')'set terminal  png truecolor enhanced', &
            ' font ", 60" size 1920, 1680'
         write(116, '(a)')"set output 'surfdos_l.png'"
@@ -202,7 +202,7 @@
         write(117, '(a)')'#set terminal  postscript enhanced color'
         write(117, '(a)')"#set output 'surfdos_r.eps'"
         write(117, '(3a)')'#set terminal pngcairo truecolor enhanced', &
-           '# font ", 60" size 1920, 1680'
+           '  font ", 60" size 1920, 1680'
         write(117, '(3a)')'set terminal png truecolor enhanced', &
            ' font ", 60" size 1920, 1680'
         write(117, '(a)')"set output 'surfdos_r.png'"

@@ -14,7 +14,7 @@ WireBand_calc         = F
 SlabSS_calc           = F
 SlabArc_calc          = F
 SlabSpintexture_calc  = F
-wanniercenter_calc    = F
+Wanniercenter_calc    = F
 BerryPhase_calc       = F
 BerryCurvature_calc   = T
 /

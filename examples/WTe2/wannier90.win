@@ -1,0 +1,16 @@
+num_bands = 192 
+num_wann = 96
+
+dis_num_iter = 2000
+num_iter = 100
+
+dis_win_min = -1.0
+dis_win_max = 16     
+dis_froz_min = 6.0000
+dis_froz_max = 8.0000
+hr_plot =.true.
+
+begin projections
+W : s; dxy; dyz; dxz; dx2-y2; dz2
+Te : px; py; pz
+end projections

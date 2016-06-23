@@ -543,13 +543,13 @@
          write(103, '(a)')'#set terminal  postscript enhanced color'
          write(103, '(a)')"#set output 'GapPlane.eps'"
          write(103, '(3a)')'#set terminal  pngcairo   truecolor enhanced', &
-            '# size 1920, 1680 font ",60"'
+            '  size 1920, 1680 font ",60"'
          write(103, '(3a)')'set terminal  png   truecolor enhanced', &
             ' size 1920, 1680 font ",60"'
          write(103, '(a)')"set output 'GapPlane.png'"
          write(103,'(a, f10.4, a, f10.4, a, f10.4, a)') &
             'set palette defined ( ', zmin, ' "black", ', &
-            (zmin+zmax)/6d0,' "orange", ',zmax,'  "white" )'
+            (zmin+zmax)/20d0,' "orange", ',zmax,'  "white" )'
          write(103, '(a)')"set origin 0.10, 0.0"
          write(103, '(a)')"set size 0.85, 1.0"
          write(103, '(a)')'unset ztics'
