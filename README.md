@@ -44,7 +44,7 @@ Sancho1985: [Highly convergent schemes for the calculation of bulk and surface G
 If you have good ideas to improve this code, do not hesitate to contact me. Your contribution will be recorded.
 
 **Publication**
-* Triple Point Topological Metals Ziming Zhu, Georg W. Winkler, **QuanSheng Wu**, Ju Li, Alexey A. Soluyanov  [arXiv:1605.04653](http://arxiv.org/abs/1605.04653) Shown in PRX Soon.
+* Triple Point Topological Metals Ziming Zhu, Georg W. Winkler, **QuanSheng Wu**, Ju Li, Alexey A. Soluyanov  [arXiv:1605.04653](http://arxiv.org/abs/1605.04653) Phys. Rev. X 6, 031003 – Published 7 July 2016.
 * Fermi arcs and their topological character in the candidate type-II Weyl semimetal MoTe2, A. Tamai, **Q. S. Wu**, I. Cucchi, F. Y. Bruno, S. Ricco, T.K. Kim, M. Hoesch, C. Barreteau, E. Giannini, C. Bernard, A. A. Soluyanov, F. Baumberger  [arXiv:1604.08228](http://arxiv.org/abs/1604.08228) 
 * Nodal chain metals, Tomáš Bzdušek, **QuanSheng Wu**, Andreas Rüegg, Manfred Sigrist, Alexey A. Soluyanov [arXiv:1604.03112, 2016 ](https://arxiv.org/abs/1604.03112) Shown in Nature soon.
 * Surface states and bulk electronic structure in the candidate type-II Weyl semimetal WTe2, F. Y. Bruno, A. Tamai, **Q. S. Wu**, I. Cucchi, C. Barreteau, A. de la Torre, S. McKeown Walker, S. Riccò, Z. Wang, T. K. Kim, M. Hoesch, M. Shi, N. C. Plumb, E. Giannini, A. A. Soluyanov, F. Baumberger [arXiv:1604.02411, 2016](https://arxiv.org/abs/1604.02411)
