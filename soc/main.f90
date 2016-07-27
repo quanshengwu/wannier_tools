@@ -116,7 +116,7 @@
      call MPI_bcast(ndegen,size(ndegen),mpi_in,0,mpi_cmw,ierr)
 
      !> import symmetry 
-     call symmetry
+    !call symmetry
 
      !> bulk band
      if (BulkBand_calc) then

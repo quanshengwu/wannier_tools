@@ -27,14 +27,14 @@
      logical :: SlabSS_calc
      logical :: SlabArc_calc
      logical :: SlabSpintexture_calc
-     logical :: wanniercenter_calc
+     logical :: WannierCenter_calc
      logical :: BerryPhase_calc
      logical :: BerryCurvature_calc
      
      namelist / Control / BulkBand_calc, BulkFS_calc, BulkGap_plane_calc, &
                           BulkGap_cube_calc, SlabBand_calc, WireBand_calc, &
                           SlabSS_calc, SlabArc_calc, SlabSpintexture_calc, &
-                          wanniercenter_calc,BerryPhase_calc,BerryCurvature_calc
+                          WannierCenter_calc,BerryPhase_calc,BerryCurvature_calc
 
 
      ! double precision  

@@ -192,6 +192,10 @@
     if (cpuid.eq.0)then
        open(300,file='spindos.dat')
        open(301,file='spintext.dat')
+       write(300,'(60a16)')'#kx', 'ky', 'kz', 'log(dos)', &
+                           'sx', 'sy', 'sz'
+       write(301,'(60a16)')'#kx', 'ky', 'kz', 'log(dos)', &
+                           'sx', 'sy', 'sz'
 
        ikp= 0
        do i= 1, nk1

@@ -83,8 +83,8 @@ G 0.0 0.0 M 0.5 0.5
 
 KPLANE_SLAB
 -0.1 -0.1      ! Original point for 2D k plane
- 0.2  0.0      ! The first vector to define 2D k plane 
- 0.0  0.2      ! The second vector to define 2D k plane  for arc plots
+ 1.0  0.0      ! The first vector to define 2D k plane 
+ 0.0  1.0      ! The second vector to define 2D k plane  for arc plots
 
 KPLANE_BULK
 -0.50 -0.50  0.00   ! Original point for 3D k plane 

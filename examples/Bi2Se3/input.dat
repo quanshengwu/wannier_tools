@@ -16,11 +16,11 @@ SlabArc_calc          = F
 SlabSpintexture_calc  = F
 Wanniercenter_calc    = F
 BerryPhase_calc       = F
-BerryCurvature_calc   = T
+BerryCurvature_calc   = F
 /
 
 &SYSTEM
-NSLAB = 10 
+NSLAB = 32 
 NSLAB1= 4  
 NSLAB2= 4  
 NumOccupied = 18        ! NumOccupied
@@ -36,7 +36,7 @@ E_arc = 0.0         ! energy for calculate Fermi Arc
 OmegaNum = 100      ! omega number       
 OmegaMin = -0.6     ! energy interval
 OmegaMax =  0.5     ! energy interval
-Nk1 = 10            ! number k points 
+Nk1 = 20            ! number k points 
 Nk2 = 10            ! number k points 
 Nk3 = 10            ! number k points 
 NP = 2              ! number of principle layers

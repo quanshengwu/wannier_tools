@@ -81,7 +81,7 @@
         stop
      endif
 
-     !> control parameter
+     !> control parameters
      if (cpuid==0) then
         write(stdout, *) "  "
         write(stdout, *) ">>>Control parameters: " 
@@ -98,7 +98,7 @@
         write(stdout, *) "BerryCurvature_calc : ", BerryCurvature_calc
      endif
 
-     !> set system parameter by default
+     !> set system parameters by default
      Nslab= 10
      Nslab1= 1 
      Nslab2= 1 
@@ -111,7 +111,7 @@
      Bz = 0
      surf_onsite = 0
      
-     !> read system parameter from file
+     !> read system parameters from file
      read(1001, SYSTEM, iostat=stat)
      if (stat/=0) then
         write(*, *)"ERROR: namelist SYSTEM is wrong and should be set correctly"

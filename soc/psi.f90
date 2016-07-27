@@ -51,8 +51,9 @@
      call eigensystem_c('V', 'U', Num_wann*nslab, eigenvector, eigenvalue)
     
      ekslab=eigenvalue
-     
-     info=18*Nslab+10
+    
+     !> with given band index
+     info=18*Nslab+2 
 
      psi(:)=eigenvector(:, info)
      if (cpuid.eq.0) write(stdout,*) 'eigenvalue',info,ekslab(info)
