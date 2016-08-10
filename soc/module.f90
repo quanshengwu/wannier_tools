@@ -25,6 +25,8 @@
      logical :: SlabBand_calc
      logical :: WireBand_calc
      logical :: SlabSS_calc
+     logical :: Dos_calc
+     logical :: JDos_calc
      logical :: SlabArc_calc
      logical :: SlabSpintexture_calc
      logical :: WannierCenter_calc
@@ -34,7 +36,8 @@
      namelist / Control / BulkBand_calc, BulkFS_calc, BulkGap_plane_calc, &
                           BulkGap_cube_calc, SlabBand_calc, WireBand_calc, &
                           SlabSS_calc, SlabArc_calc, SlabSpintexture_calc, &
-                          WannierCenter_calc,BerryPhase_calc,BerryCurvature_calc
+                          WannierCenter_calc,BerryPhase_calc,BerryCurvature_calc, &
+                          Dos_calc, JDos_calc
 
 
      ! double precision  
@@ -226,6 +229,9 @@
      character(10) :: AngOrBohr
      character(10) :: DirectOrCart
      character(10), allocatable :: Atom_name(:)
+     real(dp) :: CellVolume
+     real(dp) :: kCubeVolume
+     real(dp) :: PrimitiveCellVolume
      real(dp), allocatable :: Atom_position(:, :)
      real(dp), allocatable :: Atom_position_direct(:, :)
 

@@ -141,6 +141,38 @@
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the bulk FS'
      endif
 
+     if (JDos_calc.and.Dos_calc) then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating DOS and Jdos for bulk system'
+        call now(time_start)
+        call dos_joint_dos
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'Dos_calc and Jdos_calc')
+        if(cpuid.eq.0)write(stdout, *)'<< End of calculating the DOS and Jdos for bulk system'
+     else
+        if (Dos_calc) then
+           if(cpuid.eq.0)write(stdout, *)' '
+           if(cpuid.eq.0)write(stdout, *)'>> Start of calculating DOS for bulk system'
+           call now(time_start)
+           call dos_sub
+           call now(time_end)
+           call print_time_cost(time_start, time_end, 'Dos_calc')
+           if(cpuid.eq.0)write(stdout, *)'<< End of calculating the DOS for bulk system'
+        endif
+   
+        if (JDos_calc) then
+           if(cpuid.eq.0)write(stdout, *)' '
+           if(cpuid.eq.0)write(stdout, *)'>> Start of calculating JDOS for bulk system'
+           call now(time_start)
+           call Joint_dos
+           call now(time_end)
+           call print_time_cost(time_start, time_end, 'JDos_calc')
+           if(cpuid.eq.0)write(stdout, *)'<< End of calculating the JDOS for bulk system'
+        endif
+     endif
+
+
+
      if (BulkGap_plane_calc) then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the bulk gap in plane'
@@ -157,6 +189,7 @@
         call print_time_cost(time_start, time_end, 'BulkGap_plane')
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the bulk gap in plane'
      endif
+
      if (BulkGap_Cube_calc) then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> start of calculating the bulk gap in Cube'

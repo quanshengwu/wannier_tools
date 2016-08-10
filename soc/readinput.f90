@@ -67,6 +67,8 @@
      wanniercenter_calc    = .FALSE.
      BerryPhase_calc       = .FALSE.
      BerryCurvature_calc   = .FALSE.
+     Dos_calc              = .FALSE.
+     JDos_calc             = .FALSE.
      
      read(1001, CONTROL, iostat=stat)
 
@@ -215,7 +217,10 @@
      cell_volume= Rua(1)*(Rub(2)*Ruc(3)- Rub(3)*Ruc(2)) &
                  +Rua(2)*(Rub(3)*Ruc(1)- Rub(1)*Ruc(3)) &
                  +Rua(3)*(Rub(1)*Ruc(2)- Rub(2)*Ruc(1)) 
+     CellVolume= cell_volume
      cell_volume= 2d0*3.1415926535d0/cell_volume
+
+     PrimitiveCellVolume= cell_volume
      Kua(1)= cell_volume*(Rub(2)*Ruc(3)- Rub(3)*Ruc(2))
      Kua(2)= cell_volume*(Rub(3)*Ruc(1)- Rub(1)*Ruc(3))
      Kua(3)= cell_volume*(Rub(1)*Ruc(2)- Rub(2)*Ruc(1))
@@ -657,6 +662,15 @@
      read(1001, *)K3D_vec1_cube
      read(1001, *)K3D_vec2_cube
      read(1001, *)K3D_vec3_cube
+
+     kCubeVolume= K3D_vec1_cube(1)*(K3D_vec2_cube(2)*K3D_vec3_cube(3) &
+                  - K3D_vec2_cube(3)*K3D_vec3_cube(2)) &
+                 + K3D_vec1_cube(2)*(K3D_vec2_cube(3)*K3D_vec3_cube(1) &
+                  - K3D_vec2_cube(1)*K3D_vec3_cube(3)) &
+                 + K3D_vec1_cube(3)*(K3D_vec2_cube(1)*K3D_vec3_cube(2) &
+                  - K3D_vec2_cube(2)*K3D_vec3_cube(1)) 
+
+     kCubeVolume= kCubeVolume*PrimitiveCellVolume 
 
      108 continue
      if (cpuid==0) write(stdout, *)'>> Kpoints plane for 3D system--> gapshape3D  '
