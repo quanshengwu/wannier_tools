@@ -54,7 +54,7 @@ subroutine dos_sub
    iband_high= Numoccupied+ 10
 
    if (iband_low <1) iband_low = 1
-   if (iband_high >Num_wann) iband_low = Num_wann
+   if (iband_high >Num_wann) iband_high = Num_wann
 
    iband_tot= iband_high- iband_low+ 1
 
@@ -192,7 +192,7 @@ subroutine joint_dos
    iband_high= Numoccupied+ 10
 
    if (iband_low <1) iband_low = 1
-   if (iband_high >Num_wann) iband_low = Num_wann
+   if (iband_high >Num_wann) iband_high = Num_wann
 
    iband_tot= iband_high- iband_low+ 1
 
@@ -340,7 +340,6 @@ subroutine dos_joint_dos
 
    real(dp) :: k(3)
 
-   real(dp), allocatable :: kpoints(:, :)
    real(dp), allocatable :: W(:)
    real(dp), allocatable :: omega_dos(:)
    real(dp), allocatable :: omega_jdos(:)
@@ -359,11 +358,11 @@ subroutine dos_joint_dos
    knv3= Nk1*Nk2*Nk3
 
    NE= OmegaNum
-   iband_low= Numoccupied- 10
-   iband_high= Numoccupied+ 10
+   iband_low= Numoccupied- 40
+   iband_high= Numoccupied+ 40
 
    if (iband_low <1) iband_low = 1
-   if (iband_high >Num_wann) iband_low = Num_wann
+   if (iband_high >Num_wann) iband_high = Num_wann
 
    iband_tot= iband_high- iband_low+ 1
 
@@ -375,13 +374,11 @@ subroutine dos_joint_dos
    allocate(omega_dos(NE))
    allocate(omega_jdos(NE))
    allocate(W(Num_wann))
-   allocate(kpoints(3, knv3))
    allocate(Hk(Num_wann, Num_wann))
    allocate(fermi_dis(Num_wann))
    W= 0d0
    Hk= 0d0
    fermi_dis= 0d0
-   kpoints= 0d0
    jdos= 0d0
    jdos_mpi= 0d0
    dos= 0d0
@@ -389,24 +386,12 @@ subroutine dos_joint_dos
    omega_dos= 0d0
    omega_jdos= 0d0
  
-   ik =0
-
-   do ikx= 1, nk1
-      do iky= 1, nk2
-         do ikz= 1, nk3
-            ik= ik+ 1
-            kpoints(:, ik)= K3D_start_cube+ K3D_vec1_cube*(ikx-1)/dble(nk1-1)  &
-                      + K3D_vec2_cube*(iky-1)/dble(nk2-1)  &
-                      + K3D_vec3_cube*(ikz-1)/dble(nk3-1)
-         enddo
-      enddo
-   enddo
 
    dk3= kCubeVolume/dble(knv3)
 
    emin= 0d0
    emax= OmegaMax
-   eta= (emax- emin)/ dble(NE)*3d0
+   eta= (emax- emin)/ dble(NE)*5d0
 
    !> energy
    do ie=1, NE
@@ -427,7 +412,13 @@ subroutine dos_joint_dos
    jdos_mpi= 0d0
    do ik=1+cpuid, knv3, num_cpu
       if (cpuid.eq.0) write(stdout, *) 'ik, knv3', ik, knv3
-      k= kpoints(:, ik)
+      ikx= (ik- 1)/(Nk2*Nk3)+ 1
+      iky= (ik- (ikx-1)*Nk2*Nk3- 1)/Nk3+ 1
+      ikz= ik- (ikx-1)*Nk2*Nk3- (iky-1)*Nk3 
+
+      k= K3D_start_cube+ K3D_vec1_cube*(ikx-1)/dble(nk1-1)  &
+                + K3D_vec2_cube*(iky-1)/dble(nk2-1)  &
+                + K3D_vec3_cube*(ikz-1)/dble(nk3-1)
       call ham_bulk(k, Hk)
       W= 0d0
       call eigensystem_c( 'N', 'U', Num_wann ,Hk, W)
@@ -475,7 +466,7 @@ subroutine dos_joint_dos
       close(100)
    endif
 
-      if (cpuid.eq.0) then
+   if (cpuid.eq.0) then
       open(unit=100, file='dos.dat')
       do ie=1, NE
          write(100, *)omega_dos(ie), dos(ie)*dk3
