@@ -24,6 +24,7 @@
 
      ! R coordinates  
      integer, allocatable     :: irvec(:,:)
+     integer, allocatable     :: irvec_2d(:,:)
 
      ! Hamiltonian m,n are band indexes
      complex(dp), allocatable :: HmnR(:,:,:)

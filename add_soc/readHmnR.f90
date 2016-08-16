@@ -54,3 +54,58 @@
          
      return
   end subroutine readHmnR
+
+! read data from HmnR.data   constructed by quansheng wu 4/2/2010
+
+  subroutine readHmnR_2d()
+
+     use para
+
+     implicit none
+
+! file existenct
+     logical :: exists
+
+     integer :: i, j, ir
+     integer :: i1, i2, i3
+     integer :: i4, i5    
+     integer :: nwan
+     real(dp) :: r1, r2
+
+     !> for InSb soc-hyb 666
+
+     inquire (file =infilename, EXIST = exists)
+     if (exists)then
+        open(12, file=infilename, status='old')
+        read(12, *)
+        read(12, *)nwan
+        read(12, *)nrpts
+        num_wann= nwan
+        allocate(irvec_2d(2,nrpts))
+        allocate(ndegen(nrpts))
+        allocate(HmnR(num_wann*2,num_wann*2,nrpts))
+        read(12,*)(ndegen(i), i=1, nrpts)
+        do ir=1, nrpts
+           do i=1, nwan
+              do j=1, nwan
+                 read(12,*)i1, i2, i4, i5, r1, r2
+                 HmnR(i4,i5,ir)= dcmplx(r1, r2) ! in eV
+                 HmnR(i4+nwan,i5+nwan,ir)= dcmplx(r1,-r2) ! in eV
+                 !write(*,'(5i5,2f10.5)')i1, i2, i3, i4, i5, r1, r2
+              enddo
+           enddo
+           irvec_2d(1, ir)=i1
+           irvec_2d(2, ir)=i2
+        enddo
+        close(12)
+        do ir=1, nrpts
+           if (sum(abs(irvec_2d(:, ir)))<0.1) then
+              do i=1, nwan*2
+                 HmnR(i, i, ir)= HmnR(i, i, ir)- E_fermi
+              enddo
+           endif
+        enddo
+     endif
+         
+     return
+  end subroutine readHmnR_2d
