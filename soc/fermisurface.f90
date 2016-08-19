@@ -145,30 +145,28 @@
 
      nkx= Nk
      nky= Nk
-     allocate( kxy(2, nkx*nky))
-     allocate( kxy_shape(2, nkx*nky))
+     allocate( kxy(3, nkx*nky))
+     allocate( kxy_shape(3, nkx*nky))
      kxy=0d0
      kxy_shape=0d0
-
-     kxmin= 0.10d0/1d0
-     kxmax= 0.30d0/1d0
-     kymin=-0.05d0/1d0
-     kymax= 0.05d0/1d0
-     kz= 0.0d0
+     
+     
      ik =0
      do i= 1, nkx
         do j= 1, nky
            ik =ik +1
-           kxy(1, ik)=kxmin+ (i-1)*(kxmax-kxmin)/dble(nkx-1)
-           kxy(2, ik)=kymin+ (j-1)*(kymax-kymin)/dble(nky-1)
-           kxy_shape(1, ik)= kxy(1, ik)* Kua(1)+ kxy(2, ik)* Kub(1)
-           kxy_shape(2, ik)= kxy(1, ik)* Kua(2)+ kxy(2, ik)* Kub(2)
+           kxy(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(nkx-1)+ K3D_vec2*(j-1)/dble(nky-1)
+           kxy_shape(:, ik)= kxy(1, ik)* Kua+ kxy(2, ik)* Kub+ kxy(3, ik)* Kuc 
         enddo
      enddo
-     kymin_shape=minval(kxy_shape(2,:))
-     kymax_shape=maxval(kxy_shape(2,:))
-     kxmin_shape=minval(kxy_shape(1,:))
-     kxmax_shape=maxval(kxy_shape(1,:))
+
+     i1=1
+     i2=2
+     kxmin_shape=minval(kxy_shape(i1,:))
+     kxmax_shape=maxval(kxy_shape(i1,:))
+     kymin_shape=minval(kxy_shape(i2,:))
+     kymax_shape=maxval(kxy_shape(i2,:))
+      
 
 
      knv3= nkx*nky
@@ -182,12 +180,11 @@
      do i=1, Num_wann
         ones(i, i)= 1d0
      enddo
+
      do ik= 1+cpuid, knv3, num_cpu
         if (cpuid==0) write(stdout, *),'FS, ik, knv3' , ik, knv3
 
-        k(1) = kxy(1, ik)
-        k(2) = kxy(2, ik)
-        k(3) = kz
+        k = kxy(:, ik)
 
         ! calculation bulk hamiltonian
         Hamk_bulk= 0d0
