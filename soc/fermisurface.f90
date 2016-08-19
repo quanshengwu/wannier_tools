@@ -119,7 +119,7 @@
 
      implicit none
 
-     integer :: ik, i, j
+     integer :: ik, i, j, i1, i2
      integer :: knv3
      integer :: nkx
      integer :: nky
