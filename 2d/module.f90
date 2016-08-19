@@ -22,12 +22,16 @@
      logical :: RibbonBand_calc
      logical :: SlabSS_calc
      logical :: Dos_calc
+     logical :: FS_calc
+     logical :: GapPlane_calc
      logical :: WannierCenter_calc
      
      namelist / Control / BulkBand_calc, &
                           RibbonBand_calc,  &
                           SlabSS_calc, &
                           Dos_calc, &
+                          FS_calc, &
+                          GapPlane_calc, &
                           WannierCenter_calc
 
 

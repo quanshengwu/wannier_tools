@@ -59,6 +59,8 @@
      RibbonBand_calc         = .FALSE.
      SlabSS_calc           = .FALSE.
      Dos_calc           = .FALSE.
+     FS_calc           = .FALSE.
+     GapPlane_calc           = .FALSE.
      wanniercenter_calc    = .FALSE.
      
      read(1001, CONTROL, iostat=stat)

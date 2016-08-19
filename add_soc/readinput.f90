@@ -37,6 +37,12 @@
      read(1001, *)Num_atoms
      allocate(atom_name(Num_atoms))
      allocate(Atom_position(3, Num_atoms))
+     allocate(magmomx_p(Num_atoms))
+     allocate(magmomx_d(Num_atoms))
+     allocate(magmomy_p(Num_atoms))
+     allocate(magmomy_d(Num_atoms))
+     allocate(magmomz_p(Num_atoms))
+     allocate(magmomz_d(Num_atoms))
      do i=1, Num_atoms
         read(1001, *) atom_name(i), Atom_position(:, i)
         write(*, '(a4,3f6.3)')atom_name(i), Atom_position(:, i)
@@ -77,6 +83,12 @@
      allocate(lambda_d(Num_atom_type))
      read(1001, *) lambda_p(:)
      read(1001, *) lambda_d(:)
+     read(1001, *) magmomx_p(:)
+     read(1001, *) magmomx_d(:)
+     read(1001, *) magmomy_p(:)
+     read(1001, *) magmomy_d(:)
+     read(1001, *) magmomz_p(:)
+     read(1001, *) magmomz_d(:)
 
      write(*,*)'read input.dat file successfully'
 

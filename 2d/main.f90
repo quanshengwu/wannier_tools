@@ -126,6 +126,30 @@
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating DOS'
      endif
 
+     !> FS
+     if (Fs_calc) then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating FS'
+        call now(time_start)
+        call fermisurface
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'FS')
+        if(cpuid.eq.0)write(stdout, *)'<< End of calculating FS'
+     endif
+
+     !> FS
+     if (GapPlane_calc) then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating GapPlane'
+        call now(time_start)
+        call gapshape
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'GapPlane')
+        if(cpuid.eq.0)write(stdout, *)'<< End of calculating GapPlane'
+     endif
+
+
+
 
      !> bulk band
      if (BulkBand_calc) then

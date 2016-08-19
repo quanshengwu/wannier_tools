@@ -2,7 +2,7 @@ obj =  module.o aux.o symmetry.o readHmnR.o inverse.o\
        eigen.o ham_qlayer2qlayer.o \
        readinput.o surfgreen.o surfstat.o \
 		 mat_mul.o ham_ribbon.o ek_ribbon.o ham_bulk.o ek_bulk.o \
-		 wanniercenter.o dos.o \
+		 wanniercenter.o fermisurface.o dos.o \
        main.o
 
 # compiler

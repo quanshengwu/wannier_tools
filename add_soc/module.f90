@@ -51,7 +51,16 @@
      character(8), allocatable :: proj_name(:, :)
 
      !> spin orbital coupling strength
+     !> for each atom's type
      real(dp), allocatable :: lambda_p(:)
      real(dp), allocatable :: lambda_d(:)
+
+     !> for every atom's 
+     real(dp), allocatable :: magmomx_p(:)
+     real(dp), allocatable :: magmomx_d(:)
+     real(dp), allocatable :: magmomy_p(:)
+     real(dp), allocatable :: magmomy_d(:)
+     real(dp), allocatable :: magmomz_p(:)
+     real(dp), allocatable :: magmomz_d(:)
 
  end module para
