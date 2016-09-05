@@ -69,6 +69,7 @@
      BerryCurvature_calc   = .FALSE.
      Dos_calc              = .FALSE.
      JDos_calc             = .FALSE.
+     EffectiveMass_calc    = .FALSE.
      
      read(1001, CONTROL, iostat=stat)
 
@@ -682,6 +683,38 @@
         stop 'ERROR: please set KCUBE_BULK for gap3D calculations'
      endif
 
+     !> default parameters for effective mass calculation
+     dk_mass= 0.01  ! in unit of 1/Ang
+     iband_mass= NumOccupied
+     k_mass= 0 
+     rewind(1001)
+     lfound = .false.
+     do while (.true.)
+        read(1001, *, end= 109)inline
+        if (trim(adjustl(inline))=='EFFECTIVE_MASS') then
+           lfound= .true.
+           if (cpuid==0) write(stdout, *)' '
+           if (cpuid==0) write(stdout, *)'We found EFFECTIVE_MASS card'
+           exit
+        endif
+     enddo
+
+     read(1001, *)iband_mass
+     read(1001, *)dk_mass
+     read(1001, *)k_mass
+
+     109 continue
+     if (cpuid==0) write(stdout, *)' '
+     if (.not.lfound.and.cpuid==0)write(stdout, *)'>> Using default parameters for effective mass calculation'
+     if (cpuid==0) write(stdout, *)'>> Effective mass calculation parameters  '
+     if (cpuid==0) write(stdout, '(a, i5, a)')'>> The ', iband_mass, "'th band"
+     if (cpuid==0) write(stdout, '(a, f7.4, a)')'>> k step ', dk_mass, " in unit of 1/Angstrom"
+     if (cpuid==0) write(stdout, '(a, 3f7.4, a)')'>> k points ', k_mass, " in unit of reciprocal primitive cell"
+     k1=k_mass
+     call direct_cart_rec(k1, k_mass)
+     if (cpuid==0) write(stdout, '(a, 3f7.4, a)')'>> k points ', k_mass, " in unit of 1/Angstrom"
+     
+
      !> close input.dat
      close(1001)
 
@@ -721,6 +754,7 @@
   end subroutine rotate
 
 
+  !> transform from Cartesian coordinates to direct lattice vector basis
    subroutine cart_direct_real(R1, R2)
       use para
       implicit none
@@ -738,6 +772,7 @@
       return
    end subroutine cart_direct_real
 
+  !> transform from direct lattice vector basis to Cartesian coordinates
    subroutine direct_cart_real(R1, R2)
       use para
       implicit none
@@ -748,3 +783,33 @@
 
       return
    end subroutine direct_cart_real
+
+
+  !> transform from Cartesian coordinates to reciprocal lattice vector basis
+   subroutine cart_direct_rec(k1, k2)
+      use para
+      implicit none
+      real(dp), intent(in) :: k1(3)
+      real(dp), intent(inout) :: k2(3)
+      real(dp) :: mata(3, 3)
+
+      mata(1, :)= Kua
+      mata(2, :)= Kub
+      mata(3, :)= Kuc
+
+      call inv_r(3, mata)
+      K2= k1(1)*mata(1, :)+ k1(2)*mata(2, :)+ k1(3)*mata(3, :)
+
+      return
+   end subroutine cart_direct_rec
+
+   subroutine direct_cart_rec(k1, k2)
+      use para
+      implicit none
+      real(dp), intent(in) :: k1(3)
+      real(dp), intent(inout) :: k2(3)
+
+      K2= k1(1)*Kua+ k1(2)*Kub+ k1(3)*Kuc
+
+      return
+   end subroutine direct_cart_rec

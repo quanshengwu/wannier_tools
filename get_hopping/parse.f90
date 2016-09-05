@@ -48,8 +48,8 @@
      real(dp) :: dis
      real(dp) :: pos1(3)
      real(dp) :: pos2(3)
-     max_NN= 4
-     max_neighbours= 20
+     max_NN= 10
+     max_neighbours= 40
 
      allocate(neighbours(max_NN, Num_atoms))
      allocate(distance(nrpts*Num_atoms, Num_atoms))
@@ -173,15 +173,16 @@
         do n=1, max_NN
            write(10, *) ' '
            write(10, '(a, i3, a)')"#the ", n, "'th order"
-           write(10, '(a, i3, 8(6a))')"#There are", neighbours(n, i)%numbers, &
+           write(10, '(a, i3, 80(6a))')"#There are", neighbours(n, i)%numbers, &
               " neighbours: ", &
            (neighbours(n, i)%neighbour_name(j), j=1, neighbours(n, i)%numbers)
            !> for each order, sweep its neighbours
            do j=1, neighbours(n, i)%numbers
               write(10, *)' '
               write(10, '(a, i2, a, i3)')'# ', j, ' in', neighbours(n, i)%numbers 
-              write(10, '(a, a, 2a)')'# hopping bewteen ', trim(Atom_name(i)),&
-                   '-', trim(neighbours(n, i)%neighbour_name(j))
+              write(10, '(5a, f18.7, a)')'# hopping bewteen ', trim(Atom_name(i)),&
+                   '-', trim(neighbours(n, i)%neighbour_name(j)), '   distance :', &
+                   neighbours(n, i)%distance, ' Ang'
               iR= neighbours(n, i)%iR(j)
               call parse2(iR, i, neighbours(n, i)%neighbour(j))
            enddo ! j
@@ -189,7 +190,6 @@
      enddo ! i
 
      close(10)
-
 
      !>--------------------------------------------------------------
      !>> onsite hopping atom1-atom2
@@ -246,9 +246,9 @@
 
      100 format('# hopping between ', a, '-', a, ' from', &
         ' (', 3i3, ') to (', 3i3, ')')
-     101 format(2x, 'Real', 2x, 100a8)
-     1010 format(2x, 'Imag', 2x, 100a8)
-     102 format(a8, 100f8.3 )
+     101 format(2x, 'Real', 2x, 100a12)
+     1010 format(2x, 'Imag', 2x, 100a12)
+     102 format(a8, 100f12.6 )
 
 
      !>--------------------------------------------------------------
@@ -381,7 +381,7 @@
         ' (', 3i3, ') to (', 3i3, ')')
      101 format(2x, 'Real', 2x, 100a8)
      1010 format(2x, 'Imag', 2x, 100a8)
-     102 format(a8, 100f8.3 )
+     102 format(a8, 100f18.7 )
 
 
      !>--------------------------------------------------------------

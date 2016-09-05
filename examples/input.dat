@@ -17,6 +17,7 @@ SlabSpintexture_calc  = T
 wanniercenter_calc    = F
 BerryPhase_calc       = F
 BerryCurvature_calc   = F
+EffectiveMass_calc    = F
 /
 
 &SYSTEM
@@ -92,8 +93,13 @@ KPLANE_BULK
  0.00  1.00  0.00   ! The second vector to define 3d k space plane
 
 
-KCUBE_BULK
+KCUBE_BULK          
 -0.50 -0.50 -0.50   ! Original point for 3D k plane 
  1.00  0.00  0.00   ! The first vector to define 3d k space plane
  0.00  1.00  0.00   ! The second vector to define 3d k space plane
  0.00  0.00  1.00   ! The third vector to define 3d k cube
+
+EFFECTIVE_MASS      ! optional
+2                   ! The i'th band to be calculated
+0.01                ! k step in unit of (1/Angstrom)
+0.0 0.0 0.0         ! k point where the effective mass calculated.

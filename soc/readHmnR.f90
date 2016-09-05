@@ -33,6 +33,9 @@
            do i=1, nwan
               do j=1, nwan
                  read(12,*)i1, i2, i3, i4, i5, r1, r2
+                !read(12 , '(5I5, 2f12.3)')i1, i2, i3, i4, i5, r1, r2
+                !r1=(anint(r1*100000))/100000
+                !r2=(anint(r2*100000))/100000
                  HmnR(i4,i5,ir)= dcmplx(r1, r2) ! in eV
                  !write(*,'(5i5,2f10.5)')i1, i2, i3, i4, i5, r1, r2
               enddo
@@ -80,7 +83,6 @@
            enddo
            close(105)
         endif
-
 
 
      endif ! HWR or not

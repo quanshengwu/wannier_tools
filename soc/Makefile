@@ -6,6 +6,7 @@ obj =  module.o aux.o symmetry.o readHmnR.o inverse.o\
        fermiarc.o spintexture.o berrycurvature.o \
 		 wanniercenter.o dos.o  \
 		 landau_level.o berry.o \
+		 effective_mass.o \
        main.o
 
 # compiler

@@ -60,8 +60,8 @@
                  ' exist, We are using HmnR from wannier90'
               open(unit=1001,file=Hrfile,status='old')
               read(1001,*)
-              read(1001,'(i)') Num_wann
-              read(1001,'(i)') Nrpts
+              read(1001,*) Num_wann
+              read(1001,*) Nrpts
               write(stdout,*)'>> Num_wann', Num_wann 
               write(stdout,*)'>> NRPTS', NRPTS
               close(1001)
@@ -171,6 +171,18 @@
            if(cpuid.eq.0)write(stdout, *)'<< End of calculating the JDOS for bulk system'
         endif
      endif
+
+     !> effective mass
+     if (EffectiveMass_calc) then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the effective mass'
+        call now(time_start)
+        call effective_mass_calc
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'EffectiveMass_calc')
+        if(cpuid.eq.0)write(stdout, *)'<< End of calculating the effective mass'
+     endif
+
 
 
 
@@ -294,6 +306,7 @@
         call print_time_cost(time_start, time_end, 'SlabSpintexture')
         if(cpuid.eq.0)write(stdout, *)'End of calculating the spin texture for surface'
      endif
+
 
      call now(time_end)
 

@@ -469,8 +469,8 @@
       
       
       knv3= nkx*nky
-      allocate( gap    (3, knv3))
-      allocate( gap_mpi(3, knv3))
+      allocate( gap    ( 9, knv3))
+      allocate( gap_mpi( 9, knv3))
       gap    = 0d0
       gap_mpi= 0d0
       
@@ -500,8 +500,7 @@
          !> diagonalization
          call eigensystem_c( 'N', 'U', Num_wann ,Hamk_bulk, W)
          gap(1, ik)= W(Numoccupied+1)- W(Numoccupied)
-         gap(2, ik)= W(Numoccupied)
-         gap(3, ik)= W(Numoccupied+1)
+         gap(2:9 , ik)= W(Numoccupied-3:Numoccupied+4)
       
       enddo
       
@@ -511,7 +510,7 @@
       if (cpuid==0)then
          open(unit=14, file='GapPlane.dat')
      
-         write(14, '(100a16)')'# kx', 'ky', 'kz', 'gap', 'Ev', 'Ec', 'k1', 'k2', 'k3'
+         write(14, '(100a16)')'% kx', 'ky', 'kz', 'gap', 'Ev2', 'Ev1', 'Ec1', 'Ec2', 'k1', 'k2', 'k3'
          do ik=1, knv3
             write(14, '(30f16.8)')kxy_shape(:, ik), (gap_mpi(:, ik)), kxy(:, ik)
             if (mod(ik, nky)==0) write(14, *)' '
@@ -519,13 +518,23 @@
          close(14)
 
          open(unit=15, file='gap2d.dat')
-         write(15, '(100a16)')'kx', 'ky', 'kz', 'gap', 'Ev', 'Ec', 'k1', 'k2', 'k3'
+         write(15, '(100a16)')'% kx', 'ky', 'kz', 'gap', 'Ev2', 'Ev1', 'Ec1', 'Ec2', 'k1', 'k2', 'k3'
          do ik=1, knv3
             if (abs(gap_mpi(1, ik))< 0.10d0) then
                write(15, '(8f16.8)')kxy_shape(:, ik), (gap_mpi(:, ik)), kxy(:, ik)
             endif
          enddo
          close(15)
+ 
+         open(unit=1116, file='GapPlane_matlab.dat')
+         write(1116, '(100a16)')'% kx', 'ky', 'kz', 'gap', 'Ev2', 'Ev1', 'Ec1', 'Ec2', 'k1', 'k2', 'k3'
+         do ik=1, knv3
+            write(1116, '(30f16.8)')kxy_shape(:, ik), (gap_mpi(:, ik)), kxy(:, ik)
+         enddo
+         close(1116)
+
+
+
       endif
       
       !> minimum and maximum value of energy bands

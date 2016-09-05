@@ -32,12 +32,13 @@
      logical :: WannierCenter_calc
      logical :: BerryPhase_calc
      logical :: BerryCurvature_calc
+     logical :: EffectiveMass_calc
      
      namelist / Control / BulkBand_calc, BulkFS_calc, BulkGap_plane_calc, &
                           BulkGap_cube_calc, SlabBand_calc, WireBand_calc, &
                           SlabSS_calc, SlabArc_calc, SlabSpintexture_calc, &
                           WannierCenter_calc,BerryPhase_calc,BerryCurvature_calc, &
-                          Dos_calc, JDos_calc
+                          Dos_calc, JDos_calc, EffectiveMass_calc
 
 
      ! double precision  
@@ -104,6 +105,7 @@
      ! threshold value for output the gap data for Gap3D
      real(Dp) :: Gap_threshold
 
+
      !> namelist parameters
      namelist /PARAMETERS/ Eta_Arc, OmegaNum, OmegaMin, OmegaMax, &
         E_arc, Nk1, Nk2, Nk3, NP, Gap_threshold
@@ -124,6 +126,10 @@
      !> e/2/h*a*a   a=1d-10m, h is the planck constant
      !> then the flux equals alpha*B*s
      real(dp),parameter :: alpha= 1.20736d0*1D-6
+
+     !> some parameters related to atomic units
+     real(dp),parameter :: bohr2atomic=0.529177211d0
+     real(dp),parameter :: eV2Hartree= 1d0/27.211385d0
 
      ! circumference ratio pi  
      real(dp),parameter :: Pi= 3.14159265359d0
@@ -171,6 +177,13 @@
      real(dp),allocatable :: K3points(:, :)
 
      namelist / KPATH_BULK / nk3lines, k3line_name, k3line_start
+
+     !>> effective mass
+
+     !> k step for effective mass calculation
+     real(dp), public, save :: dk_mass
+     integer , public, save :: iband_mass
+     real(dp), public, save :: k_mass(3)
 
      !>  klist for 2D case include all 2D system
      integer :: nk2lines
