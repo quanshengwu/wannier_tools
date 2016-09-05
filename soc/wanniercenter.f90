@@ -799,10 +799,13 @@
                ikp= ik1+ 1
             endif
             do m=1, Num_wann
-               ia= AtomIndex_orbital(m)
-               br= b(1)*Atom_position(1, ia)+ &
-                   b(2)*Atom_position(2, ia)+ &
-                   b(3)*Atom_position(3, ia)
+              !ia= AtomIndex_orbital(m)
+              !br= b(1)*Atom_position(1, ia)+ &
+              !    b(2)*Atom_position(2, ia)+ &
+              !    b(3)*Atom_position(3, ia)
+               br= b(1)*wannier_centers_cart(1, m )+ &
+                   b(2)*wannier_centers_cart(2, m )+ &
+                   b(3)*wannier_centers_cart(3, m )
                ratio= cos(br)- zi* sin(br)
               !ratio= 1d0
         
@@ -998,10 +1001,6 @@
       !> eigenvalue
       real(dp), allocatable :: eigenvalue(:)
 
-      !> for each orbital, it correspond to an atom
-      !> dim= Num_wann
-      integer, allocatable :: AtomIndex_orbital(:)
-
       real(dp) :: Umatrix_t(3, 3)
 
       !> b.R
@@ -1064,7 +1063,6 @@
       allocate(VT(nfill_half, nfill_half))
       allocate(WannierCenterKy(nfill_half, Nk2))
       allocate(WannierCenterKy_mpi(nfill_half, Nk2))
-      allocate(AtomIndex_orbital(Num_wann))
       allocate(xnm(nfill_half))
       allocate(largestgap(Nk2))
       allocate(largestgap_mpi(Nk2))
@@ -1098,32 +1096,6 @@
       enddo
       b= k1/dble(nk1)
       b= b(1)*kua+b(2)*kub+b(3)*kuc
-
-      !> set up atom index for each orbitals in the basis
-      if (soc>0) then  !> with spin orbital coupling
-         l= 0
-         do ia=1, Num_atoms  !> spin up
-            do j=1, nprojs(ia)
-               l= l+ 1
-               AtomIndex_orbital(l)= ia
-            enddo ! l
-         enddo ! ia
-         do ia=1, Num_atoms  !> spin down
-            do j=1, nprojs(ia)
-               l= l+ 1
-               AtomIndex_orbital(l)= ia
-            enddo ! l
-         enddo ! ia
-      else  !> without spin orbital coupling
-         l= 0
-         do ia=1, Num_atoms  !> spin down
-            do j=1, nprojs(ia)
-               l= l+ 1
-               AtomIndex_orbital(l)= ia
-            enddo ! l
-         enddo ! ia
-
-      endif
 
       Umatrix_t= transpose(Umatrix)
       call inv_r(3, Umatrix_t)
@@ -1186,12 +1158,10 @@
                ikp= ik1+ 1
             endif
             do m=1, Num_wann
-               ia= AtomIndex_orbital(m)
-               br= b(1)*Atom_position(1, ia)+ &
-                   b(2)*Atom_position(2, ia)+ &
-                   b(3)*Atom_position(3, ia)
+               br= b(1)*wannier_centers_cart(1, m )+ &
+                   b(2)*wannier_centers_cart(2, m )+ &
+                   b(3)*wannier_centers_cart(3, m )
                ratio= cos(br)- zi* sin(br)
-              !ratio= 1d0
         
                i1= 0
                do j=1, nfill
@@ -1377,10 +1347,6 @@
       !> eigenvalue
       real(dp), allocatable :: eigenvalue(:)
 
-      !> for each orbital, it correspond to an atom
-      !> dim= Num_wann
-      integer, allocatable :: AtomIndex_orbital(:)
-
       real(dp) :: Umatrix_t(3, 3)
 
       !> b.r
@@ -1432,7 +1398,6 @@
       allocate(VT(nfill, nfill))
       allocate(WannierCenterKy(nfill, Nk2))
       allocate(WannierCenterKy_mpi(nfill, Nk2))
-      allocate(AtomIndex_orbital(Num_wann))
       allocate(xnm(nfill))
       allocate(largestgap(Nk2))
       allocate(largestgap_mpi(Nk2))
@@ -1468,32 +1433,6 @@
       b= k1/dble(Nk1)
       b= b(1)*kua+b(2)*kub+b(3)*kuc
 
-      !> set up atom index for each orbitals in the basis
-      if (soc>0) then  !> with spin orbital coupling
-         l= 0
-         do ia=1, Num_atoms  !> spin up
-            do j=1, nprojs(ia)
-               l= l+ 1
-               AtomIndex_orbital(l)= ia
-            enddo ! l
-         enddo ! ia
-         do ia=1, Num_atoms  !> spin down
-            do j=1, nprojs(ia)
-               l= l+ 1
-               AtomIndex_orbital(l)= ia
-            enddo ! l
-         enddo ! ia
-      else  !> without spin orbital coupling
-         l= 0
-         do ia=1, Num_atoms  !> spin down
-            do j=1, nprojs(ia)
-               l= l+ 1
-               AtomIndex_orbital(l)= ia
-            enddo ! l
-         enddo ! ia
-
-      endif
-
       Umatrix_t= transpose(Umatrix)
       call inv_r(3, Umatrix_t)
 
@@ -1508,11 +1447,9 @@
 
          !> for each k1, we get the eigenvectors
          do ik1=1, Nk1
-            !if (cpuid==0) print *, ik1, ik2, Nk1, Nk2
             k= kpoints(:, ik1, ik2)
 
             call ham_bulk_old(k,hamk)
-           !call ham_bulk    (k,hamk)
 
             !> diagonal hamk
             call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
@@ -1531,12 +1468,10 @@
                hamk= Eigenvector(:, :, ik1+ 1)
             endif
             do m=1, Num_wann
-               ia= AtomIndex_orbital(m)
-               br= b(1)*Atom_position(1, ia)+ &
-                   b(2)*Atom_position(2, ia)+ &
-                   b(3)*Atom_position(3, ia)
+               br= b(1)*wannier_centers_cart(1, m)+ &
+                   b(2)*wannier_centers_cart(2, m)+ &
+                   b(3)*wannier_centers_cart(3, m)
                ratio= cos(br)- zi* sin(br)
-              !ratio= 1d0
          
                do j=1, nfill
                   do i=1, nfill
@@ -1613,8 +1548,6 @@
          close(110)
       endif
 
-
-
       !> Z2 calculation Alexey Soluyanov arXiv:1102.5600
 
       Delta= 0
@@ -1675,7 +1608,6 @@
 
       return
    end subroutine  wannier_center3D_plane
-
 
 
 ! this suboutine is used for wannier center calculation for 3D system
@@ -1739,10 +1671,6 @@
       !> eigenvalue
       real(dp), allocatable :: eigenvalue(:)
 
-      !> for each orbital, it correspond to an atom
-      !> dim= Num_wann
-      integer, allocatable :: AtomIndex_orbital(:)
-
       real(dp) :: Umatrix_t(3, 3)
 
       !> b.R
@@ -1794,7 +1722,6 @@
       allocate(VT(nfill, nfill))
       allocate(WannierCenterKy(nfill, Nk2))
       allocate(WannierCenterKy_mpi(nfill, Nk2))
-      allocate(AtomIndex_orbital(Num_wann))
       allocate(xnm(nfill))
       allocate(largestgap(Nk2))
       allocate(largestgap_mpi(Nk2))
@@ -1827,31 +1754,6 @@
          enddo
       enddo
 
-      !> set up atom index for each orbitals in the basis
-      if (soc>0) then  !> with spin orbital coupling
-         l= 0
-         do ia=1, Num_atoms  !> spin up
-            do j=1, nprojs(ia)
-               l= l+ 1
-               AtomIndex_orbital(l)= ia
-            enddo ! l
-         enddo ! ia
-         do ia=1, Num_atoms  !> spin down
-            do j=1, nprojs(ia)
-               l= l+ 1
-               AtomIndex_orbital(l)= ia
-            enddo ! l
-         enddo ! ia
-      else  !> without spin orbital coupling
-         l= 0
-         do ia=1, Num_atoms  !> spin down
-            do j=1, nprojs(ia)
-               l= l+ 1
-               AtomIndex_orbital(l)= ia
-            enddo ! l
-         enddo ! ia
-
-      endif
 
       Umatrix_t= transpose(Umatrix)
       call inv_r(3, Umatrix_t)
@@ -1872,7 +1774,7 @@
             k(2)= 0d0
             k(3)= kpoints(2, ik1, ik2)
 
-            call ham_bulk(k,hamk)
+            call ham_bulk_old(k,hamk)
 
             !> diagonal hamk
             call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
@@ -1891,12 +1793,10 @@
                hamk= Eigenvector(:, :, ik1+ 1)
             endif
             do m=1, Num_wann
-               ia= AtomIndex_orbital(m)
-               br= b(1)*Atom_position(1, ia)+ &
-                   b(2)*Atom_position(2, ia)+ &
-                   b(3)*Atom_position(3, ia)
-              !ratio= cos(br)- zi* sin(br)
-               ratio= 1d0
+               br= b(1)*wannier_centers_cart(1, m )+ &
+                   b(2)*wannier_centers_cart(2, m )+ &
+                   b(3)*wannier_centers_cart(3, m )
+               ratio= cos(br)- zi* sin(br)
          
                do j=1, nfill
                   do i=1, nfill
@@ -2024,7 +1924,7 @@
             k(2)= 0.5d0
             k(3)= kpoints(2, ik1, ik2)
 
-            call ham_bulk(k,hamk)
+            call ham_bulk_old(k,hamk)
 
             !> diagonal hamk
             call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
@@ -2043,12 +1943,10 @@
                hamk= Eigenvector(:, :, ik1+ 1)
             endif
             do m=1, Num_wann
-               ia= AtomIndex_orbital(m)
-               br= b(1)*Atom_position(1, ia)+ &
-                   b(2)*Atom_position(2, ia)+ &
-                   b(3)*Atom_position(3, ia)
-              !ratio= cos(br)- zi* sin(br)
-               ratio= 1d0
+               br= b(1)*wannier_centers_cart(1, m )+ &
+                   b(2)*wannier_centers_cart(2, m )+ &
+                   b(3)*wannier_centers_cart(3, m )
+               ratio= cos(br)- zi* sin(br)
          
                do j=1, nfill
                   do i=1, nfill

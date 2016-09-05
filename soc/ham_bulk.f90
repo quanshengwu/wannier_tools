@@ -155,4 +155,5 @@
      enddo
 
   return
-  end
+  end subroutine ham_bulk_old
+

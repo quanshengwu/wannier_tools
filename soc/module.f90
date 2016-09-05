@@ -28,6 +28,7 @@
      logical :: Dos_calc
      logical :: JDos_calc
      logical :: SlabArc_calc
+     logical :: SlabQPI_calc
      logical :: SlabSpintexture_calc
      logical :: WannierCenter_calc
      logical :: BerryPhase_calc
@@ -38,7 +39,7 @@
                           BulkGap_cube_calc, SlabBand_calc, WireBand_calc, &
                           SlabSS_calc, SlabArc_calc, SlabSpintexture_calc, &
                           WannierCenter_calc,BerryPhase_calc,BerryCurvature_calc, &
-                          Dos_calc, JDos_calc, EffectiveMass_calc
+                          Dos_calc, JDos_calc, EffectiveMass_calc, SlabQPI_calc
 
 
      ! double precision  
@@ -136,6 +137,7 @@
      real(dp),parameter :: half= 0.5d0
      real(dp),parameter :: zero= 0.0d0
      real(dp),parameter :: one = 1.0d0
+     real(dp),parameter :: eps3= 1e-3
      real(dp),parameter :: eps6= 1e-6
      real(dp),parameter :: eps9= 1e-9
 
@@ -247,6 +249,8 @@
      real(dp) :: PrimitiveCellVolume
      real(dp), allocatable :: Atom_position(:, :)
      real(dp), allocatable :: Atom_position_direct(:, :)
+     real(dp), allocatable :: wannier_centers_cart(:, :)
+     real(dp), allocatable :: wannier_centers_direct(:, :)
 
      integer :: max_projs
      integer, allocatable :: nprojs(:)

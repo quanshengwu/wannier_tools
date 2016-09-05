@@ -284,7 +284,7 @@
         call print_time_cost(time_start, time_end, 'BerryCurvature')
         if(cpuid.eq.0)write(stdout, *)'End of calculating the surface state'
      endif
-   
+    
      !> fermi arc
      if (SlabArc_calc) then
         if(cpuid.eq.0)write(stdout, *)' '
@@ -294,6 +294,17 @@
         call now(time_end)
         call print_time_cost(time_start, time_end, 'SlabArc')
         if(cpuid.eq.0)write(stdout, *)'End of calculating the surface arc'
+     endif
+
+     !> fermi arc QPI
+     if (SlabQPI_calc) then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the surface QPI'
+        call now(time_start)
+        call fermiarc_jdos
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'SlabQPI')
+        if(cpuid.eq.0)write(stdout, *)'End of calculating the surface QPI'
      endif
      
      !> calculate spin-texture     

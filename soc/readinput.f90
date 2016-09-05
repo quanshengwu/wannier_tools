@@ -63,6 +63,7 @@
      WireBand_calc         = .FALSE.
      SlabSS_calc           = .FALSE.
      SlabArc_calc          = .FALSE.
+     SlabQPI_calc          = .FALSE.
      SlabSpintexture_calc  = .FALSE.
      wanniercenter_calc    = .FALSE.
      BerryPhase_calc       = .FALSE.
@@ -319,6 +320,86 @@
         enddo
      else
         stop "ERROR: please set projectors for Wannier functions information"
+     endif
+
+     !> read Wannier centres
+     nwann= sum(nprojs)
+     if (SOC>0) nwann= 2*nwann
+     allocate(wannier_centers_cart(3, Nwann))
+     allocate(wannier_centers_direct(3, Nwann))
+     wannier_centers_direct= 0d0
+     wannier_centers_cart= 0d0
+     !> default wannier centers 
+     i= 0   
+     do ia= 1, Num_atoms
+        do j= 1, nprojs(ia)
+           i= i+ 1
+           wannier_centers_cart(:, i)=  Atom_position(:, ia)
+           call cart_direct_real(wannier_centers_cart(:, i),  &
+              wannier_centers_direct(:, i))
+           if (SOC>0) then
+              wannier_centers_cart(:, i+Nwann/2)=  Atom_position(:, ia)
+              call cart_direct_real(wannier_centers_cart(:, i+Nwann/2),  &
+                 wannier_centers_direct(:, i+Nwann/2))
+           endif
+        enddo ! j
+     enddo ! ia
+
+     rewind(1001)
+     lfound = .false.
+     do while (.true.)
+        read(1001, *, end= 110)inline
+        if (trim(adjustl(inline))=='WANNIER_CENTERS' &
+           .or. trim(adjustl(inline))=='WANNIER_CENTRES') then
+           lfound= .true.
+           if (cpuid==0) write(stdout, *)' '
+           if (cpuid==0) write(stdout, *)'We found wannier_centers card'
+           exit
+        endif
+     enddo
+
+     if (lfound) then
+        read(1001, *)inline   ! The unit of lattice vector
+        DirectOrCart= trim(adjustl(inline))
+
+        if (index(DirectOrCart, "D")>0)then
+           do i=1, Nwann
+              read(1001, *) wannier_centers_direct(:, i)
+              call direct_cart_real(wannier_centers_direct(:, i), &
+                 wannier_centers_cart(:, i))
+           enddo
+
+        else
+           do i=1, Nwann
+              read(1001, *) wannier_centers_cart(:, i)
+              call cart_direct_real(wannier_centers_cart(:, i), &
+                 wannier_centers_direct(:, i))
+           enddo
+        endif
+     endif ! found wannier_centers card
+ 
+     110 continue
+
+     if (lfound) then
+        if (cpuid==0) then
+           write(stdout, *)" "
+           write(stdout, *)">> Wannier centers from input.dat, in unit of reciprocal lattice vector"
+           write(stdout, '(a6, 4a10)')'iwann', 'R1', 'R2', 'R3'
+           do i=1, Nwann
+              write(stdout, '(i6, 3f10.6)')i, wannier_centers_direct(:, i)
+             !write(stdout, '(i6, 3f10.6)')i, wannier_centers_cart(:, i)
+           enddo
+        endif
+     else
+        if (cpuid==0) then
+           write(stdout, *)" "
+           write(stdout, *)">> Wannier centers by default, in unit of reciprocal lattice vector"
+           write(stdout, '(a6, 4a10)')'iwann', 'R1', 'R2', 'R3'
+           do i=1, Nwann
+              write(stdout, '(i6, 3f10.6)')i, wannier_centers_direct(:, i)
+             !write(stdout, '(i6, 3f10.6)')i, wannier_centers_cart(:, i)
+           enddo
+        endif
      endif
 
 
