@@ -221,7 +221,8 @@
      integer :: i,j 
 
      ! kpoint loop index
-     integer :: ikp, ik1, ik2, iq
+     integer :: ikp, ik1, ik2, iq, Nk1_half, Nk2_half
+     integer :: imin1, imax1, imin2, imax2, iq1, iq2
 
      real(dp) :: k(2), dis
 
@@ -232,10 +233,10 @@
      real(dp), allocatable :: k12(:,:)
      real(dp), allocatable :: k12_shape(:,:)
      
-     real(dp), allocatable :: dos_l(:)
-     real(dp), allocatable :: dos_l_mpi(:)
-     real(dp), allocatable :: dos_r(:)
-     real(dp), allocatable :: dos_r_mpi(:)
+     real(dp), allocatable :: dos_l(:,:)
+     real(dp), allocatable :: dos_l_mpi(:,:)
+     real(dp), allocatable :: dos_r(:,:)
+     real(dp), allocatable :: dos_r_mpi(:,:)
      real(dp), allocatable :: jdos_l(:)
      real(dp), allocatable :: jdos_l_mpi(:)
      real(dp), allocatable :: jdos_r(:)
@@ -245,14 +246,16 @@
      complex(dp), allocatable :: GLL(:,:), GRR(:,:)
      complex(dp), allocatable :: H00(:,:), H01(:,:)
 
+     Nk1_half= (Nk1-1)/2
+     Nk2_half= (Nk2-1)/2
 
      allocate( ik12(2, nk1*nk2))
      allocate( k12(2, nk1*nk2))
      allocate( k12_shape(2, nk1*nk2))
-     allocate( dos_l(nk1*nk2))
-     allocate( dos_l_mpi(nk1*nk2))
-     allocate( dos_r(nk1*nk2))
-     allocate( dos_r_mpi(nk1*nk2))
+     allocate( dos_l(nk1,nk2))
+     allocate( dos_l_mpi(nk1,nk2))
+     allocate( dos_r(nk1,nk2))
+     allocate( dos_r_mpi(nk1,nk2))
      allocate( jdos_l(nk1*nk2))
      allocate( jdos_l_mpi(nk1*nk2))
      allocate( jdos_r(nk1*nk2))
@@ -318,11 +321,13 @@
         call surfgreen_1985(omega,GLL,GRR,H00,H01,ones)
         ! call surfgreen_1984(omega,GLL,GRR,H00,H01,ones)
 
+        ik1= ik12(1, ikp)
+        ik2= ik12(2, ikp)
 
         ! calculate spectral function
         do i= 1, ndim
-           dos_l(ikp)=dos_l(ikp)- aimag(GLL(i,i))
-           dos_r(ikp)=dos_r(ikp)- aimag(GRR(i,i))
+           dos_l(ik1, ik2)=dos_l(ik1, ik2)- aimag(GLL(i,i))
+           dos_r(ik1, ik2)=dos_r(ik1, ik2)- aimag(GRR(i,i))
         enddo
 
      enddo
@@ -336,15 +341,17 @@
 
      !> calculate jdos
      do iq= 1+ cpuid, Nk1*Nk2, num_cpu
+        iq1= ik12(1, iq)- Nk1_half
+        iq2= ik12(2, iq)- Nk2_half
         if (cpuid==0) write(stdout, *) 'Jdos, iq, knv2', iq, nk1*nk2
-        do ik1= 1, Nk1*Nk2
-           do ik2= 1, Nk1*Nk2
-              dis= (k12_shape(1, iq)+ k12_shape(1, ik1)- k12_shape(1, ik2))**2 &
-                  +(k12_shape(2, iq)+ k12_shape(2, ik1)- k12_shape(2, ik2))**2
-              dis= sqrt(dis)
-              if (dis>eps3) cycle
-              jdos_l(iq)= jdos_l(iq)+ dos_l_mpi(ik1)* dos_l_mpi(ik2)
-              jdos_r(iq)= jdos_r(iq)+ dos_r_mpi(ik1)* dos_r_mpi(ik2)
+        imin1= max(-Nk1_half-iq1, -Nk1_half)+ Nk1_half+ 1
+        imax1= min(Nk1_half-iq1, Nk1_half)+ Nk1_half+ 1
+        imin2= max(-Nk2_half-iq2, -Nk2_half)+ Nk2_half+ 1
+        imax2= min(Nk2_half-iq2, Nk2_half)+ Nk2_half+ 1
+        do ik1= imin1, imax1
+           do ik2= imin2, imax2
+              jdos_l(iq)= jdos_l(iq)+ dos_l_mpi(ik1, ik2)* dos_l_mpi(ik1+iq1, ik2+iq2)
+              jdos_r(iq)= jdos_r(iq)+ dos_r_mpi(ik1, ik2)* dos_r_mpi(ik1+iq1, ik2+iq2)
            enddo !ik
         enddo !ik
      enddo !ik
@@ -361,9 +368,9 @@
         open (unit=12, file='arc.dat_l')
         open (unit=13, file='arc.dat_r')
         do ikp=1, nk1*nk2
-           write(12, '(3f16.8)')k12_shape(:, ikp), log(dos_l_mpi(ikp))
+           write(12, '(3f16.8)')k12_shape(:, ikp), log(dos_l_mpi(ik12(1, ikp), ik12(2, ikp)))
            if (mod(ikp, nk2)==0) write(12, *)' '
-           write(13, '(3f16.8)')k12_shape(:, ikp), log(dos_r_mpi(ikp))
+           write(13, '(3f16.8)')k12_shape(:, ikp), log(dos_r_mpi(ik12(1, ikp), ik12(2, ikp)))
            if (mod(ikp, nk2)==0) write(13, *)' '
         enddo
         close(12)
