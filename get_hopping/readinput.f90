@@ -50,9 +50,9 @@
      allocate(Atom_position(3, Num_atoms))
      do i=1, Num_atoms
         read(1001, *) atom_name(i), Atom_position(:, i)
-        write(*, '(a4,3f6.3)')atom_name(i), Atom_position(:, i)
         pos= Atom_position(:, i)
         Atom_position(:, i)= pos(1)*Rua+ pos(2)*Rub+ pos(3)*Ruc
+        write(*, '(a4,3f6.3)')atom_name(i), Atom_position(:, i)
      enddo
 
 

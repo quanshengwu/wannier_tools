@@ -204,6 +204,7 @@
      implicit none
 
      integer :: i
+     integer :: j
      integer :: ir
 
      integer :: natoms
@@ -233,8 +234,12 @@
      Hmn= 0d0
 
      natoms= Num_atoms
-     Hmn= HmnR(:, :, iR1)/ndegen(iR1)
+     Hmn= HmnR(:, :, iR1) !/ndegen(iR1)
      R1= irvec(:, iR1)
+     write(10, '(a, 8i5)')'Hmn ', R1
+     do i=1, Num_wann/2
+        write(10, '(10f8.4)')(real(Hmn(i, j)), j=1, Num_wann/2)
+     enddo
 
      allocate(Hsub(max_projs*soc, max_projs*soc))
      Hsub= 0d0
@@ -293,6 +298,8 @@
         endif ! R= (0, 0, 0)
      enddo ! ir
 
+     !> Get Slater-Koster parameters
+     call get_SK(Hmn, iR1, iatom1, iatom2)
      !> export onsite hopping for atom2
      write(10, 100)trim(atom_name(iatom1)), trim(atom_name(iatom2)), R0, R1
      !> no soc
@@ -703,6 +710,189 @@
      return
 
   end subroutine parse_H
+
+
+  !> get Slater-Koster hopping parameters
+  !> ref : doi:10.1103/PhysRevB.92.205108
+  !> This version only works for InAs, GaSb, InSb, AlSb
+  !> the orbital order is Cation s, px, py, pz, Anion px, py, pz
+  subroutine get_SK(Hmn, iR, ia1, ia2)
+     use para
+     implicit none
+
+     complex(dp), intent(in) :: Hmn(Num_wann, Num_wann)
+     integer, intent(in) :: iR, ia1, ia2
+
+     integer :: ia, ib, ic, i, j, it
+     real(dp) :: pos1(3), pos2(3), vec(3)
+
+     !> direction cosines
+     !> l=x/r; m=y/r; n=z/r
+     real(dp) :: l, m, n
+     real(dp) :: cosines(3)
+     !> norm of pos2-pos1
+     real(dp) :: r
+
+     logical :: ifs(Num_atoms)
+     logical :: ifp(Num_atoms)
+
+     !> the orbital index 
+     integer :: sorbital(Num_atoms)
+     integer :: porbital(Num_atoms)
+
+     !> slater-koster parameters, only for s and p orbitals
+     real(dp) :: Vsssigma
+     real(dp) :: Vspsigma
+     real(dp) :: Vppsigma, Vpppi
+
+     real(dp) :: dis
+     real(dp) :: delta(3,3)
+
+     real(dp) :: diag_sum_pp
+     real(dp) :: offdiag_sum_pp
+
+     Vsssigma= 0d0
+     Vspsigma= 0d0
+     Vppsigma= 0d0
+     Vpppi   = 0d0
+
+     sorbital(1)=1   ! cation has  s orbital
+     sorbital(2)=0   ! Anion has no s orbital
+
+     porbital(1)=2
+     porbital(2)=5
+
+     ia= irvec(1, iR)
+     ib= irvec(2, iR)
+     ic= irvec(3, iR)
+     pos1= Atom_position(:, ia1) 
+     pos2= ia*Rua+ ib*Rub+ ic*Ruc+ Atom_position(:, ia2)
+     vec= pos2- pos1
+     dis= (pos2(1)-pos1(1))**2+(pos2(2)-pos1(2))**2 + (pos2(3)-pos1(3))**2
+     dis= sqrt(dis)
+
+     !> direction cosines
+     r= sqrt(vec(1)*vec(1)+ vec(2)*vec(2)+ vec(3)*vec(3))
+     if (r>0.001) then
+        l= vec(1)/r
+        m= vec(2)/r
+        n= vec(3)/r
+     else
+        l=1d0
+        m=1d0
+        n=1d0
+     endif
+     cosines(1)=l
+     cosines(2)=m
+     cosines(3)=n
+
+     !> check if there are s, p orbital in projector
+     ifs=.FALSE.
+     ifp=.FALSE.
+     do ia=1, Num_atoms
+        do j=1, nprojs(ia)
+           if (index(proj_name(j, ia), 's')/=0) ifs(ia)=.TRUE.
+           if (index(proj_name(j, ia), 'p')/=0) ifp(ia)=.TRUE.
+        enddo !j
+     enddo !ia
+
+     !> ss sigma
+     if (ifs(ia1).and. ifs(ia2)) Vsssigma= Hmn(sorbital(ia1), sorbital(ia2))
+
+     !> sp sigma
+     if (ifs(ia1).and. ifp(ia2)) then
+        Vspsigma= 0d0
+        j=0
+        do i=0, 2
+           if (abs(cosines(i+1))>0.001d0) then
+              Vspsigma= Vspsigma+ Hmn(sorbital(ia1), porbital(ia2)+i )/cosines(i+1)  
+              j= j+ 1
+           endif
+        enddo
+        Vspsigma= Vspsigma/dble(j)
+     endif
+
+     !> sp sigma
+     if (ifs(ia2).and. ifp(ia1)) then
+        Vspsigma= 0d0
+        j=0
+        do i=0, 2
+           if (abs(cosines(i+1))>0.001d0) then
+              Vspsigma= Vspsigma+ Hmn(sorbital(ia2)+i, porbital(ia1) )/cosines(i+1)
+              j= j+ 1
+           endif
+        enddo
+        Vspsigma= Vspsigma/dble(j)
+     endif
+
+     !> pp hopping
+     diag_sum_pp= 0d0
+     if (ifp(ia1).and. ifp(ia2)) then
+        do i=0, 2
+           diag_sum_pp= diag_sum_pp+ Hmn(porbital(ia1)+i, porbital(ia2)+i)
+        enddo
+     endif
+
+     offdiag_sum_pp= 0d0
+     if (ifp(ia1).and. ifp(ia2)) then
+        it= 0 
+        do i=0, 2
+           do j=0, 2
+              if (i==j) cycle
+              if (abs(cosines(i+1))<0.001 .or. abs(cosines(j+1))<0.001) cycle
+              offdiag_sum_pp= offdiag_sum_pp+ &
+                 Hmn(porbital(ia1)+i, porbital(ia2)+j)/cosines(i+1)/cosines(j+1)
+              it= it+ 1
+           enddo
+        enddo
+        if (it>0) offdiag_sum_pp= offdiag_sum_pp/dble(it)
+     endif
+
+
+     !> pp sigma
+     Vppsigma= 0d0
+     if (ifp(ia1).and. ifp(ia2)) then
+       !do i=0, 2
+       !   do j=0, 2
+       !      Vppsigma= Vppsigma+ Hmn(porbital(ia1)+i, porbital(ia2)+j)*cosines(i+1)*cosines(j+1)
+       !   enddo
+       !enddo
+        Vppsigma= (diag_sum_pp+ 2d0*offdiag_sum_pp)/3d0
+     endif
+
+     !> pp pi
+     Vpppi= 0d0
+     if (ifp(ia1).and. ifp(ia2)) then
+       !do i=0, 2
+       !   do j=0, 2
+       !      Vpppi= Vpppi-Hmn(porbital(ia1)+i, porbital(ia2)+j)*cosines(i+1)*cosines(j+1)*0.5d0
+       !   enddo
+       !   Vpppi= Vpppi+ Hmn(porbital(ia1)+i, porbital(ia2)+i)*0.5d0
+       !enddo
+
+        Vpppi= (diag_sum_pp- offdiag_sum_pp)/3d0
+     endif
+
+     delta=0d0
+     do i=1, 3
+        delta(i, i)= 1d0
+     enddo
+
+     if (ifp(ia1).and. ifp(ia2)) then
+        write(10, '(a)') '# P-P hoppings from slater-koster'
+        do i=1, 3
+           write(10, '(10f10.6)') ((Vppsigma-Vpppi)*cosines(i)*cosines(j)+ Vpppi*delta(i, j), j=1, 3)
+        enddo
+     endif
+
+     !> write out the Slater-Koster parameters
+     write(10, '(a, 3f10.6)')'# direction cosines: ', cosines
+     write(10, '(a)')'# Slater koster parameters Vsssigma, Vspsigma, Vppsigma, Vpppi'
+     write(10, '(5a, 10f10.6)')'#', trim(Atom_name(ia1)), '-', trim(Atom_name(ia2)), &
+        '-SK : ', dis, Vsssigma, Vspsigma, Vppsigma, Vpppi
+
+     return
+  end subroutine get_SK
 
    !* heap sort algorithm see Numerical Reciples
    subroutine sortheap(n, arr)
