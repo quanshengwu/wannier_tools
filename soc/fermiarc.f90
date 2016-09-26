@@ -19,7 +19,7 @@
      integer :: ierr
 
      ! general loop index
-     integer :: i,j 
+     integer :: i,j,io
 
      ! kpoint loop index
      integer :: ikp
@@ -103,12 +103,16 @@
         call surfgreen_1985(omega,GLL,GRR,H00,H01,ones)
         ! call surfgreen_1984(omega,GLL,GRR,H00,H01,ones)
 
-
         ! calculate spectral function
-        do i= 1, ndim
-           dos_l(ikp)=dos_l(ikp)- aimag(GLL(i,i))
-           dos_r(ikp)=dos_r(ikp)- aimag(GRR(i,i))
-        enddo
+        do i= 1, NtopOrbitals
+           io= TopOrbitals(i)
+           dos_l(ikp)=dos_l(ikp)- aimag(GLL(io,io))
+        enddo ! i
+        do i= 1, NBottomOrbitals
+           io= Ndim- Num_wann+ BottomOrbitals(i)
+           dos_r(ikp)=dos_r(ikp)- aimag(GRR(io,io))
+        enddo ! i
+
      enddo
 
      !> we don't have to do allreduce operation
@@ -129,7 +133,7 @@
         close(12)
         close(13)
         write(stdout,*)'ndim',ndim
-        write(stdout,*) 'Nk1,Nk2,eta',Nk1, Nk2, eta
+        write(stdout,*)'Nk1,Nk2,eta', Nk1, Nk2, eta
         write(stdout,*)'calculate density of state successfully'    
      endif
 
@@ -220,7 +224,7 @@
      integer :: ierr
 
      ! general loop index
-     integer :: i,j 
+     integer :: i,j,io
 
      integer :: Nwann
      ! kpoint loop index
@@ -382,8 +386,6 @@
         enddo
      enddo
 
-
-
      omega = E_arc
      eta= eta_arc
 
@@ -405,10 +407,15 @@
         ik2= ik12(2, ikp)
 
         ! calculate spectral function
-        do i= 1, ndim
-           dos_l(ik1, ik2)=dos_l(ik1, ik2)- aimag(GLL(i,i))
-           dos_r(ik1, ik2)=dos_r(ik1, ik2)- aimag(GRR(i,i))
-        enddo
+        do i= 1, NtopOrbitals
+           io= TopOrbitals(i)
+           dos_l(ik1, ik2)=dos_l(ik1, ik2)- aimag(GLL(io,io))
+        enddo ! i
+        do i= 1, NBottomOrbitals
+           io= Ndim- Num_wann+ BottomOrbitals(i)
+           dos_r(ik1, ik2)=dos_r(ik1, ik2)- aimag(GRR(io,io))
+        enddo ! i
+
         !! calculate spectral function
         !do i= 1, Nwann
         !   dos_l(ik1, ik2)=dos_l(ik1, ik2)- aimag(GLL(i,i)) &
@@ -422,39 +429,68 @@
         !ctemp=matmul(surfgreen,sigma_x)       
         call mat_mul(ndim,GLL,sigma_x,ctemp)       
         do j=1,ndim 
-           sx_l(ik1, ik2)=sx_l(ik1, ik2)-Aimag(ctemp(j,j))
+        !  sx_l(ik1, ik2)=sx_l(ik1, ik2)-Aimag(ctemp(j,j))
         enddo
+        do i= 1, NtopOrbitals
+           io= TopOrbitals(i)
+           sx_l(ik1, ik2)=sx_l(ik1, ik2)- aimag(ctemp(io,io))
+        enddo ! i
   
         !ctemp=matmul(surfgreen,sigma_y)       
         call mat_mul(ndim,GLL,sigma_y,ctemp)       
         do j=1,ndim 
-           sy_l(ik1, ik2)=sy_l(ik1, ik2)-Aimag(ctemp(j,j))
+        !  sy_l(ik1, ik2)=sy_l(ik1, ik2)-Aimag(ctemp(j,j))
         enddo
+        do i= 1, NtopOrbitals
+           io= TopOrbitals(i)
+           sy_l(ik1, ik2)=sy_l(ik1, ik2)- aimag(ctemp(io,io))
+        enddo ! i
+  
   
         !ctemp=matmul(surfgreen,sigma_z)       
         call mat_mul(ndim,GLL,sigma_z,ctemp)       
         do j=1,ndim 
-           sz_l(ik1, ik2)=sz_l(ik1, ik2)-Aimag(ctemp(j,j))
+        !  sz_l(ik1, ik2)=sz_l(ik1, ik2)-Aimag(ctemp(j,j))
         enddo
+        do i= 1, NtopOrbitals
+           io= TopOrbitals(i)
+           sz_l(ik1, ik2)=sz_l(ik1, ik2)- aimag(ctemp(io,io))
+        enddo ! i
+  
 
 
         !ctemp=matmul(surfgreen,sigma_x)       
         call mat_mul(ndim,GRR,sigma_x,ctemp)       
         do j=1,ndim 
-           sx_r(ik1, ik2)=sx_r(ik1, ik2)-Aimag(ctemp(j,j))
+        !  sx_r(ik1, ik2)=sx_r(ik1, ik2)-Aimag(ctemp(j,j))
         enddo
+        do i= 1, NBottomOrbitals
+           io= Ndim- Num_wann+ BottomOrbitals(i)
+           sx_r(ik1, ik2)=sx_r(ik1, ik2)- aimag(ctemp(io,io))
+        enddo ! i
+  
   
         !ctemp=matmul(surfgreen,sigma_y)       
         call mat_mul(ndim,GRR,sigma_y,ctemp)       
         do j=1,ndim 
-           sy_r(ik1, ik2)=sy_r(ik1, ik2)-Aimag(ctemp(j,j))
+        !  sy_r(ik1, ik2)=sy_r(ik1, ik2)-Aimag(ctemp(j,j))
         enddo
+        do i= 1, NBottomOrbitals
+           io= Ndim- Num_wann+ BottomOrbitals(i)
+           sy_r(ik1, ik2)=sy_r(ik1, ik2)- aimag(ctemp(io,io))
+        enddo ! i
+  
   
         !ctemp=matmul(surfgreen,sigma_z)       
         call mat_mul(ndim,GRR,sigma_z,ctemp)       
         do j=1,ndim 
-           sz_r(ik1, ik2)=sz_r(ik1, ik2)-Aimag(ctemp(j,j))
+        !  sz_r(ik1, ik2)=sz_r(ik1, ik2)-Aimag(ctemp(j,j))
         enddo
+        do i= 1, NBottomOrbitals
+           io= Ndim- Num_wann+ BottomOrbitals(i)
+           sz_r(ik1, ik2)=sz_r(ik1, ik2)- aimag(ctemp(io,io))
+        enddo ! i
+  
      enddo
 
      !> we don't have to do allreduce operation

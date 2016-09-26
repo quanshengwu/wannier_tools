@@ -18,7 +18,7 @@
      integer :: ierr
 
      ! general loop index
-     integer :: i,j 
+     integer :: i, j, io
 
      ! kpoint loop index
      integer :: ikp
@@ -115,9 +115,13 @@
            !call surfgreen_1984(w,GLL,GRR,H00,H01,ones)
 
            ! calculate spectral function
-           do i= 1, ndim
-              dos_l(ikp, j)=dos_l(ikp,j)- aimag(GLL(i,i))
-              dos_r(ikp, j)=dos_r(ikp,j)- aimag(GRR(i,i))
+           do i= 1, NtopOrbitals
+              io= TopOrbitals(i)
+              dos_l(ikp, j)=dos_l(ikp,j)- aimag(GLL(io,io))
+           enddo ! i
+           do i= 1, NBottomOrbitals
+              io= Ndim- Num_wann+ BottomOrbitals(i)
+              dos_r(ikp, j)=dos_r(ikp,j)- aimag(GRR(io,io))
            enddo ! i
         enddo ! j
      enddo ! ikp

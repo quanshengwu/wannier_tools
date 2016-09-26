@@ -180,6 +180,17 @@
 
      namelist / KPATH_BULK / nk3lines, k3line_name, k3line_start
 
+
+     !>> top surface atoms
+     integer :: NtopAtoms, NtopOrbitals
+     integer, allocatable :: TopAtoms(:)
+     integer, allocatable :: TopOrbitals(:)
+
+     !>> bottom surface atoms
+     integer :: NBottomAtoms, NBottomOrbitals
+     integer, allocatable :: BottomAtoms(:)
+     integer, allocatable :: BottomOrbitals(:)
+
      !>> effective mass
 
      !> k step for effective mass calculation
@@ -255,6 +266,9 @@
      integer :: max_projs
      integer, allocatable :: nprojs(:)
      character(10), allocatable :: proj_name(:, :)
+
+     !> the start index for each atoms, only consider the spinless component
+     integer, allocatable :: orbitals_start(:)
 
      !> symmetry operator apply on function basis
      complex(dp), allocatable :: inversion(:, :)

@@ -20,7 +20,7 @@
 
      integer  :: stat
      integer  :: i, ia, n
-     integer  :: j
+     integer  :: j, io
      integer  :: NN
      integer :: nwann
      real(dp) :: t1, temp
@@ -40,10 +40,6 @@
         if(cpuid==0)write(stdout,*)'file' ,fname, 'dosnot exist'
         stop
      endif
-
-     !> inout file
-
-
 
     !read(1001,*)Hrfile
      read(1001, TB_FILE, iostat= stat)
@@ -321,6 +317,14 @@
      else
         stop "ERROR: please set projectors for Wannier functions information"
      endif
+
+     !> set up orbitals_start
+     allocate(orbitals_start(Num_atoms))
+     orbitals_start= 1
+     do i=1, Num_atoms-1
+        orbitals_start(i+1)= orbitals_start(i)+ nprojs(i)
+     enddo
+
 
      !> read Wannier centres
      nwann= sum(nprojs)
@@ -794,7 +798,84 @@
      k1=k_mass
      call direct_cart_rec(k1, k_mass)
      if (cpuid==0) write(stdout, '(a, 3f7.4, a)')'>> k points ', k_mass, " in unit of 1/Angstrom"
-     
+    
+     !> setup the atoms on top and bottom surface that used for output the 
+     !> surface-state spectrum
+     !> by default we output all the atoms' weight
+     NtopAtoms   = Num_atoms 
+     NbottomAtoms= Num_atoms 
+     allocate(TopAtoms(NtopAtoms))
+     allocate(BottomAtoms(NbottomAtoms))
+     do i=1, NTopAtoms
+        TopAtoms(i)= i
+     enddo
+     do i=1, NBottomAtoms
+        BottomAtoms(i)= i
+     enddo
+
+     rewind(1001)
+     lfound = .false.
+     do while (.true.)
+        read(1001, *, end= 112)inline
+        if (trim(adjustl(inline))=='TOPBOTTOMATOMS') then
+           lfound= .true.
+           if (cpuid==0) write(stdout, *)' '
+           if (cpuid==0) write(stdout, *)'We found TOPBOTTOMATOMS card'
+           exit
+        endif
+     enddo
+     read(1001, *)NtopAtoms
+     deallocate(TopAtoms)
+     allocate(TopAtoms(NtopAtoms))
+     read(1001, *)TopAtoms
+     read(1001, *)NbottomAtoms
+     deallocate(BottomAtoms)
+     allocate(BottomAtoms(NbottomAtoms))
+     read(1001, *)BottomAtoms
+
+     112 continue
+     if (.not.lfound.and.cpuid==0)write(stdout, *)'>> Output all atoms weight for surface state spectrum'
+     if (cpuid==0) write(stdout, *)'> NtopAtoms ', NtopAtoms
+     if (cpuid==0) write(stdout, '(a,100i3)')'> TopAtoms ', TopAtoms
+     if (cpuid==0) write(stdout, '(a,100i3)')'> NbottomAtoms ', NbottomAtoms
+     if (cpuid==0) write(stdout, '(a,100i3)')'> BottomAtoms ',BottomAtoms 
+
+     NtopOrbitals=0
+     do i=1, NTopAtoms
+        NtopOrbitals= NtopOrbitals+ nprojs(TopAtoms(i))
+     enddo
+     if (SOC>0) NtopOrbitals= NtopOrbitals*2
+     allocate(TopOrbitals(NtopOrbitals))
+     TopOrbitals= 1
+
+     !> set up top surface orbitals for output the surface spectrum
+     io=0
+     do i=1, NTopAtoms
+        do j=1, nprojs(TopAtoms(i))
+           io =io+ 1
+           TopOrbitals(io)= orbitals_start(i)+ j- 1
+           if (SOC>0)TopOrbitals(io+ NtopOrbitals/2 )= orbitals_start(i)+ j- 1+ Num_wann/2
+        enddo ! j
+     enddo ! i
+
+     NBottomOrbitals=0
+     do i=1, NBottomAtoms
+        NBottomOrbitals= NBottomOrbitals+ nprojs(BottomAtoms(i))
+     enddo
+     if (SOC>0) NBottomOrbitals= NBottomOrbitals*2
+     allocate(BottomOrbitals(NBottomOrbitals))
+     BottomOrbitals= 1
+
+     !> set up Bottom surface orbitals for output the surface spectrum
+     io=0
+     do i=1, NBottomAtoms
+        do j=1, nprojs(BottomAtoms(i))
+           io =io+ 1
+           BottomOrbitals(io)= orbitals_start(i)+ j- 1
+           if (SOC>0)BottomOrbitals(io+ NBottomOrbitals/2)= orbitals_start(i)+ j- 1+ Num_wann/2
+        enddo ! j
+     enddo ! i
+
 
      !> close input.dat
      close(1001)
