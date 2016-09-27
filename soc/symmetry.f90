@@ -192,7 +192,5 @@
      glide_y_op(3, 3) = 1d0
      glide_y_op(:, 4) = (/0.5d0, 0.0d0, 0.5d0/)
 
-
-
      return
   end subroutine symmetry

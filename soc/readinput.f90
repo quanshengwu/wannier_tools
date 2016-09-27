@@ -854,7 +854,7 @@
         do j=1, nprojs(TopAtoms(i))
            io =io+ 1
            TopOrbitals(io)= orbitals_start(i)+ j- 1
-           if (SOC>0)TopOrbitals(io+ NtopOrbitals/2 )= orbitals_start(i)+ j- 1+ Num_wann/2
+           if (SOC>0)TopOrbitals(io+ NtopOrbitals/2 )= orbitals_start(i)+ j- 1+ Nwann/2
         enddo ! j
      enddo ! i
 
@@ -872,9 +872,14 @@
         do j=1, nprojs(BottomAtoms(i))
            io =io+ 1
            BottomOrbitals(io)= orbitals_start(i)+ j- 1
-           if (SOC>0)BottomOrbitals(io+ NBottomOrbitals/2)= orbitals_start(i)+ j- 1+ Num_wann/2
+           if (SOC>0)BottomOrbitals(io+ NBottomOrbitals/2)= orbitals_start(i)+ j- 1+ Nwann/2
         enddo ! j
      enddo ! i
+
+     if (cpuid==0) write(stdout, *)'> NtopOrbitals ', NtopOrbitals
+     if (cpuid==0) write(stdout, '(a,999i4)')'> TopOrbitals ', TopOrbitals
+     if (cpuid==0) write(stdout, '(a,999i4)')'> NBottomOrbitals ', NBottomOrbitals
+     if (cpuid==0) write(stdout, '(a,999i4)')'> BottomOrbitals ',BottomOrbitals
 
 
      !> close input.dat
@@ -893,9 +898,11 @@
 
      implicit none
      real(dp), intent(in) :: R1(3)
+     real(dp) :: norm1
      real(dp) :: norm
 
-     norm= sqrt(R1(1)*R1(1)+ R1(2)*R1(2)+ R1(3)*R1(3))
+     norm1= R1(1)*R1(1)+ R1(2)*R1(2)+ R1(3)*R1(3)
+     norm= sqrt(norm1)
 
      return
   end function norm

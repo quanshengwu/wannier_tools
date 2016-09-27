@@ -183,9 +183,10 @@
                        mpi_dc,mpi_sum,mpi_cmw,ierr)
 
      !> output the Berry curvature to file
+     outfileindex= outfileindex+ 1
      if (cpuid==0) then
-        open(unit=191, file='Berrycurvature.dat')
-        write(191, '(20a18)')'# kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
+        open(unit=outfileindex, file='Berrycurvature.dat')
+        write(outfileindex, '(20a18)')'# kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
            'real(Omega_x)', 'imag(omega_x)', &
            'real(Omega_y)', 'imag(omega_y)', &
            'real(Omega_z)', 'imag(omega_z)'
@@ -193,71 +194,72 @@
         do i= 1, nk1
            do j= 1, nk2
               ik= ik+ 1
-              write(191, '(20f18.10)')kslice_shape(:, ik), Omega_mpi(:, ik)
+              write(outfileindex, '(20f18.10)')kslice_shape(:, ik), Omega_mpi(:, ik)
            enddo
-           write(191, *) ' '
+           write(outfileindex, *) ' '
         enddo
 
-        close(191)
+        close(outfileindex)
 
      endif
 
      !> generate gnuplot script to plot the Berry curvature
+     outfileindex= outfileindex+ 1
      if (cpuid==0) then
 
-        open(unit=190, file='Berrycurvature.gnu')
-        write(190, '(a)')"set encoding iso_8859_1"
-        write(190, '(a)')'#set terminal  pngcairo  truecolor enhanced size 1920, 1680 font ",40"'
-        write(190, '(a)')'set terminal  png       truecolor enhanced size 1920, 1680 font ",40"'
-        write(190, '(a)')"set output 'Berrycurvature.png'"
-        write(190, '(a)')'if (!exists("MP_LEFT"))   MP_LEFT = .12'
-        write(190, '(a)')'if (!exists("MP_RIGHT"))  MP_RIGHT = .92'
-        write(190, '(a)')'if (!exists("MP_BOTTOM")) MP_BOTTOM = .12'
-        write(190, '(a)')'if (!exists("MP_TOP"))    MP_TOP = .88'
-        write(190, '(a)')'if (!exists("MP_GAP"))    MP_GAP = 0.08'
-        write(190, '(a)')'set multiplot layout 2,3 rowsfirst title "\{ Berry Curvature\}" \'
-        write(190, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
-        write(190, '(a)')" "
-        write(190, '(a)')"set palette rgbformulae 33,13,10"
-        write(190, '(a)')"unset ztics"
-        write(190, '(a)')"unset key"
-        write(190, '(a)')"set pm3d"
-        write(190, '(a)')"set view map"
-        write(190, '(a)')"set border lw 3"
-        write(190, '(a)')"set xlabel 'k (1/{\305})'"
-        write(190, '(a)')"set ylabel 'k (1/{\305})'"
-        write(190, '(a)')"unset colorbox"
-        write(190, '(a)')"unset xtics"
-        write(190, '(a)')"unset xlabel"
-        write(190, '(a)')"set xrange [] noextend"
-        write(190, '(a)')"set yrange [] noextend"
-        write(190, '(a)')"set ytics 0.5 nomirror scale 0.5"
-        write(190, '(a)')"set pm3d interpolate 2,2"
-        write(190, '(a)')"set title 'Omega_x real'"
-        write(190, '(a)')"splot 'Berrycurvature.dat' u 1:2:4 w pm3d"
-        write(190, '(a)')"unset ylabel"
-        write(190, '(a)')"unset ytics"
-        write(190, '(a)')"set title 'Omega_y real'"
-        write(190, '(a)')"splot 'Berrycurvature.dat' u 1:2:6 w pm3d"
-        write(190, '(a)')"set title 'Omega_z real'"
-        write(190, '(a)')"set colorbox"
-        write(190, '(a)')"splot 'Berrycurvature.dat' u 1:2:8 w pm3d"
+        open(unit=outfileindex, file='Berrycurvature.gnu')
+        write(outfileindex, '(a)')"set encoding iso_8859_1"
+        write(outfileindex, '(a)')'#set terminal  pngcairo  truecolor enhanced size 1920, 1680 font ",40"'
+        write(outfileindex, '(a)')'set terminal  png       truecolor enhanced size 1920, 1680 font ",40"'
+        write(outfileindex, '(a)')"set output 'Berrycurvature.png'"
+        write(outfileindex, '(a)')'if (!exists("MP_LEFT"))   MP_LEFT = .12'
+        write(outfileindex, '(a)')'if (!exists("MP_RIGHT"))  MP_RIGHT = .92'
+        write(outfileindex, '(a)')'if (!exists("MP_BOTTOM")) MP_BOTTOM = .12'
+        write(outfileindex, '(a)')'if (!exists("MP_TOP"))    MP_TOP = .88'
+        write(outfileindex, '(a)')'if (!exists("MP_GAP"))    MP_GAP = 0.08'
+        write(outfileindex, '(a)')'set multiplot layout 2,3 rowsfirst title "\{ Berry Curvature\}" \'
+        write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
+        write(outfileindex, '(a)')" "
+        write(outfileindex, '(a)')"set palette rgbformulae 33,13,10"
+        write(outfileindex, '(a)')"unset ztics"
+        write(outfileindex, '(a)')"unset key"
+        write(outfileindex, '(a)')"set pm3d"
+        write(outfileindex, '(a)')"set view map"
+        write(outfileindex, '(a)')"set border lw 3"
+        write(outfileindex, '(a)')"set xlabel 'k (1/{\305})'"
+        write(outfileindex, '(a)')"set ylabel 'k (1/{\305})'"
+        write(outfileindex, '(a)')"unset colorbox"
+        write(outfileindex, '(a)')"unset xtics"
+        write(outfileindex, '(a)')"unset xlabel"
+        write(outfileindex, '(a)')"set xrange [] noextend"
+        write(outfileindex, '(a)')"set yrange [] noextend"
+        write(outfileindex, '(a)')"set ytics 0.5 nomirror scale 0.5"
+        write(outfileindex, '(a)')"set pm3d interpolate 2,2"
+        write(outfileindex, '(a)')"set title 'Omega_x real'"
+        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:4 w pm3d"
+        write(outfileindex, '(a)')"unset ylabel"
+        write(outfileindex, '(a)')"unset ytics"
+        write(outfileindex, '(a)')"set title 'Omega_y real'"
+        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:6 w pm3d"
+        write(outfileindex, '(a)')"set title 'Omega_z real'"
+        write(outfileindex, '(a)')"set colorbox"
+        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:8 w pm3d"
  
-        write(190, '(a)')"set xtics 0.5 nomirror scale 0.5"
-        write(190, '(a)')"set ytics nomirror scale 0.5"
-        write(190, '(a)')"set ylabel 'k (1/{\305})'"
-        write(190, '(a)')"set xlabel 'k (1/{\305})'"
-        write(190, '(a)')"unset colorbox"
-        write(190, '(a)')"set title 'Omega_x imag'"
-        write(190, '(a)')"splot 'Berrycurvature.dat' u 1:2:5 w pm3d"
-        write(190, '(a)')"unset ylabel"
-        write(190, '(a)')"unset ytics"
-        write(190, '(a)')"set title 'Omega_y imag'"
-        write(190, '(a)')"splot 'Berrycurvature.dat' u 1:2:7 w pm3d"
-        write(190, '(a)')"set title 'Omega_z imag'"
-        write(190, '(a)')"set colorbox"
-        write(190, '(a)')"splot 'Berrycurvature.dat' u 1:2:9 w pm3d"
-        close(190)
+        write(outfileindex, '(a)')"set xtics 0.5 nomirror scale 0.5"
+        write(outfileindex, '(a)')"set ytics nomirror scale 0.5"
+        write(outfileindex, '(a)')"set ylabel 'k (1/{\305})'"
+        write(outfileindex, '(a)')"set xlabel 'k (1/{\305})'"
+        write(outfileindex, '(a)')"unset colorbox"
+        write(outfileindex, '(a)')"set title 'Omega_x imag'"
+        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:5 w pm3d"
+        write(outfileindex, '(a)')"unset ylabel"
+        write(outfileindex, '(a)')"unset ytics"
+        write(outfileindex, '(a)')"set title 'Omega_y imag'"
+        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:7 w pm3d"
+        write(outfileindex, '(a)')"set title 'Omega_z imag'"
+        write(outfileindex, '(a)')"set colorbox"
+        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:9 w pm3d"
+        close(outfileindex)
      endif
 
      return

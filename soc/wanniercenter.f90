@@ -189,15 +189,16 @@
       call mpi_allreduce(WannierCenterKy, WannierCenterKy_mpi, &
            size(WannierCenterKy), mpi_dp, mpi_sum, mpi_cmw, ierr)
 
+      outfileindex= outfileindex+ 1
       if (cpuid==0) then
-         open(unit=106, file='wanniercenter.dat')
+         open(unit=outfileindex, file='wanniercenter.dat')
 
          do iky=1, Nky
-            write(106, '(10000f16.8)') kpoints(2, 1, iky), &
+            write(outfileindex, '(10000f16.8)') kpoints(2, 1, iky), &
                dmod(sum(WannierCenterKy_mpi(:, iky)), 1d0), & 
                WannierCenterKy_mpi(:, iky)
          enddo
-         close(106)
+         close(outfileindex)
       endif
 
       return
@@ -520,21 +521,27 @@
 
 
 
+      outfileindex= outfileindex+ 1
       if (cpuid==0) then
-         open(unit=107, file='wanniercenter.dat')
-         open(unit=108, file='largestgap.dat')
+         open(unit=outfileindex, file='wanniercenter.dat')
 
          do iky=1, Nky
-            write(107, '(10000f16.8)') kpoints(2, 1, iky), &
+            write(outfileindex, '(10000f16.8)') kpoints(2, 1, iky), &
                dmod(sum(WannierCenterKy_mpi(:, iky)), 1d0), & 
                WannierCenterKy_mpi(:, iky)
-            write(108, '(10000f16.8)') kpoints(2, 1, iky), &
-               largestgap_mpi(iky)
          enddo
-         close(107)
-         close(108)
+         close(outfileindex)
       endif
 
+      outfileindex= outfileindex+ 1
+      if (cpuid==0) then
+         open(unit=outfileindex, file='largestgap.dat')
+         do iky=1, Nky
+            write(outfileindex, '(10000f16.8)') kpoints(2, 1, iky), &
+               largestgap_mpi(iky)
+         enddo
+         close(outfileindex)
+      endif
       return
    end subroutine  wannier_center2D_alt
 
@@ -879,15 +886,16 @@
       call mpi_allreduce(largestgap, largestgap_mpi, &
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
 
+      outfileindex= outfileindex+ 1
       if (cpuid==0) then
-         open(unit=111, file='wcc-mirrorminus.dat')
+         open(unit=outfileindex, file='wcc-mirrorminus.dat')
 
          do ik2=1, Nk2
-            write(111, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1)/2d0, &
+            write(outfileindex, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1)/2d0, &
                largestgap_mpi(ik2), dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
                WannierCenterKy_mpi(:, ik2)
          enddo
-         close(111)
+         close(outfileindex)
       endif
 
 
@@ -1233,15 +1241,16 @@
       call mpi_allreduce(largestgap, largestgap_mpi, &
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
 
+      outfileindex= outfileindex+ 1
       if (cpuid==0) then
-         open(unit=109, file='wcc-mirrorplus.dat')
+         open(unit=outfileindex, file='wcc-mirrorplus.dat')
 
          do ik2=1, Nk2
-            write(109, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1)/2, &
+            write(outfileindex, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1)/2, &
                largestgap_mpi(ik2), dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
                WannierCenterKy_mpi(:, ik2)
          enddo
-         close(109)
+         close(outfileindex)
       endif
 
 
@@ -1537,15 +1546,16 @@
       call mpi_allreduce(largestgap, largestgap_mpi, &
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
 
+      outfileindex= outfileindex+ 1
       if (cpuid==0) then
-         open(unit=110, file='wcc.dat')
+         open(unit=outfileindex, file='wcc.dat')
 
          do ik2=1, Nk2
-            write(110, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1)/2d0, &
+            write(outfileindex, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1)/2d0, &
                largestgap_mpi(ik2), dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
                WannierCenterKy_mpi(:, ik2)
          enddo
-         close(110)
+         close(outfileindex)
       endif
 
       !> Z2 calculation Alexey Soluyanov arXiv:1102.5600
@@ -1584,26 +1594,27 @@
 
 
       !> generate gnu script for wannier charge center plots
+      outfileindex= outfileindex+ 1
       if (cpuid==0) then
-         open(unit=301, file='wcc.gnu')
-         write(301, '(a)')"set encoding iso_8859_1"
-         write(301, '(a)')'set terminal  postscript enhanced color font ",30"'
-         write(301, '(a)')"set output 'wcc.eps'"
-         write(301, '(a)')'unset key '
-         write(301, '(a)')'set border lw 3 '
-         write(301, '(a)')'set xtics offset 0, 0.2'
-         write(301, '(a)')'set xtics format "%4.1f" nomirror out '
-         write(301, '(a)')'set xlabel "k" '
-         write(301, '(a)')'set xlabel offset 0, 0.7 '
-         write(301, '(a)')'set ytics 0.5 '
-         write(301, '(a)')'set ytics format "%4.1f" nomirror out'
-         write(301, '(a)')'set ylabel "WCC"'
-         write(301, '(a)')'set ylabel offset 2, 0.0 '
-         write(301, '(a)')'set xrange [0: 0.5]'
-         write(301, '(a)')'set yrange [0:1]'
-         write(301, '(a)')"plot 'wcc.dat' u 1:2 w l lw 2  lc 'blue', \"   
-         write(301, '(a, i5, a)')" for [i=4: ", nfill+3, "] 'wcc.dat' u 1:i w p  pt 7  ps 1.1 lc 'red'"
-         close(301)
+         open(unit=outfileindex, file='wcc.gnu')
+         write(outfileindex, '(a)')"set encoding iso_8859_1"
+         write(outfileindex, '(a)')'set terminal  postscript enhanced color font ",30"'
+         write(outfileindex, '(a)')"set output 'wcc.eps'"
+         write(outfileindex, '(a)')'unset key '
+         write(outfileindex, '(a)')'set border lw 3 '
+         write(outfileindex, '(a)')'set xtics offset 0, 0.2'
+         write(outfileindex, '(a)')'set xtics format "%4.1f" nomirror out '
+         write(outfileindex, '(a)')'set xlabel "k" '
+         write(outfileindex, '(a)')'set xlabel offset 0, 0.7 '
+         write(outfileindex, '(a)')'set ytics 0.5 '
+         write(outfileindex, '(a)')'set ytics format "%4.1f" nomirror out'
+         write(outfileindex, '(a)')'set ylabel "WCC"'
+         write(outfileindex, '(a)')'set ylabel offset 2, 0.0 '
+         write(outfileindex, '(a)')'set xrange [0: 0.5]'
+         write(outfileindex, '(a)')'set yrange [0:1]'
+         write(outfileindex, '(a)')"plot 'wcc.dat' u 1:2 w l lw 2  lc 'blue', \"   
+         write(outfileindex, '(a, i5, a)')" for [i=4: ", nfill+3, "] 'wcc.dat' u 1:i w p  pt 7  ps 1.1 lc 'red'"
+         close(outfileindex)
       endif
 
       return
@@ -1862,15 +1873,16 @@
       call mpi_allreduce(largestgap, largestgap_mpi, &
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
 
+      outfileindex= outfileindex+ 1
       if (cpuid==0) then
-         open(unit=104, file='wanniercenterky0.dat')
+         open(unit=outfileindex, file='wanniercenterky0.dat')
 
          do ik2=1, Nk2
-            write(104, '(10000f16.8)') kpoints(2, 1, ik2), &
+            write(outfileindex, '(10000f16.8)') kpoints(2, 1, ik2), &
                largestgap_mpi(ik2), dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
                WannierCenterKy_mpi(:, ik2)
          enddo
-         close(104)
+         close(outfileindex)
       endif
 
 
@@ -2011,16 +2023,17 @@
       call mpi_allreduce(largestgap, largestgap_mpi, &
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
 
+      outfileindex= outfileindex+ 1
       if (cpuid==0) then
-         open(unit=105, file='wanniercenterky05.dat')
+         open(unit=outfileindex, file='wanniercenterky05.dat')
 
          do ik2=1, Nk2
-            write(105, '(10000f16.8)') kpoints(2, 1, ik2), &
+            write(outfileindex, '(10000f16.8)') kpoints(2, 1, ik2), &
                largestgap_mpi(ik2), &
                dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
                WannierCenterKy_mpi(:, ik2)
          enddo
-         close(105)
+         close(outfileindex)
       endif
 
 

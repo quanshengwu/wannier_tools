@@ -42,6 +42,7 @@
 
     complex(Dp),allocatable :: surfgreen(:,:)
     complex(Dp),allocatable :: GRR(:,:)
+    complex(Dp),allocatable :: GB (:,:)
     complex(Dp),allocatable :: H00(:,:)
     complex(Dp),allocatable :: H01(:,:)
     complex(Dp),allocatable :: ones(:,:)
@@ -65,6 +66,7 @@
     allocate( dos(nk1*nk2))
     allocate( dos_mpi(nk1*nk2))
     allocate( GRR(ndim,ndim))
+    allocate( GB (ndim,ndim))
     allocate(sx(nk1*nk2), sy(nk1*nk2), sz(nk1*nk2))
     allocate(sx_mpi(nk1*nk2), sy_mpi(nk1*nk2), sz_mpi(nk1*nk2))
     allocate(H00(Ndim, Ndim))
@@ -144,7 +146,7 @@
        call ham_qlayer2qlayer(k,H00,H01) 
       
        ! calculate surface green function
-       call surfgreen_1985(omega,surfgreen,GRR,H00,H01,ones)
+       call surfgreen_1985(omega,surfgreen,GRR,GB,H00,H01,ones)
 
        !> surface state spectrum for GLL
        do j=1,ndim
@@ -219,44 +221,45 @@
     endif
 
     !> generate gnuplot scripts for plotting the spin texture
+    outfileindex= outfileindex+ 1
     if (cpuid.eq.0) then
-       open(302,file='spintext.gnu')
-       write(302, '(a)')"set encoding iso_8859_1"
-       write(302, '(a)')'#set terminal pngcairo truecolor enhanced font ",80" size 3680, 3360'
-       write(302, '(a)')'set terminal png truecolor enhanced font ",80" size 3680, 3360'
-       write(302, '(a)')"set output 'spintext.png'"
-       write(302, '(a)')'set palette defined ( -6 "white", 0 "gray", 10 "blue" )'
-       write(302, '(a)')"set multiplot layout 1,1 "
+       open(outfileindex,file='spintext.gnu')
+       write(outfileindex, '(a)')"set encoding iso_8859_1"
+       write(outfileindex, '(a)')'#set terminal pngcairo truecolor enhanced font ",80" size 3680, 3360'
+       write(outfileindex, '(a)')'set terminal png truecolor enhanced font ",80" size 3680, 3360'
+       write(outfileindex, '(a)')"set output 'spintext.png'"
+       write(outfileindex, '(a)')'set palette defined ( -6 "white", 0 "gray", 10 "blue" )'
+       write(outfileindex, '(a)')"set multiplot layout 1,1 "
 
-       write(302, '(a)')"set origin 0.06, 0.0"
-       write(302, '(a)')"set size 0.9, 0.9"
-       write(302, '(a)')"set xlabel 'K_1'"
-       write(302, '(a)')"set ylabel 'K_2'"
-       write(302, '(a)')"unset key"
-       write(302, '(a)')"set pm3d"
-       write(302, '(a)')"set xtics nomirror scale 0.5"
-       write(302, '(a)')"set ytics nomirror scale 0.5"
-       write(302, '(a)')"set border lw 6"
-       write(302, '(a)')"set size ratio -1"
-       write(302, '(a)')"set view map"
-       write(302, '(a)')"unset colorbox"
-       write(302, '(a, f10.5, a, f10.5, a)')"set xrange [", minval(k12_shape(1, :)), ":", &
+       write(outfileindex, '(a)')"set origin 0.06, 0.0"
+       write(outfileindex, '(a)')"set size 0.9, 0.9"
+       write(outfileindex, '(a)')"set xlabel 'K_1'"
+       write(outfileindex, '(a)')"set ylabel 'K_2'"
+       write(outfileindex, '(a)')"unset key"
+       write(outfileindex, '(a)')"set pm3d"
+       write(outfileindex, '(a)')"set xtics nomirror scale 0.5"
+       write(outfileindex, '(a)')"set ytics nomirror scale 0.5"
+       write(outfileindex, '(a)')"set border lw 6"
+       write(outfileindex, '(a)')"set size ratio -1"
+       write(outfileindex, '(a)')"set view map"
+       write(outfileindex, '(a)')"unset colorbox"
+       write(outfileindex, '(a, f10.5, a, f10.5, a)')"set xrange [", minval(k12_shape(1, :)), ":", &
           maxval(k12_shape(1, :)), "]"
-       write(302, '(a, f10.5, a, f10.5, a)')"set yrange [", minval(k12_shape(2, :)), ":", &
+       write(outfileindex, '(a, f10.5, a, f10.5, a)')"set yrange [", minval(k12_shape(2, :)), ":", &
           maxval(k12_shape(2, :)), "]"
-       write(302, '(a)')"set pm3d interpolate 2,2"
-       write(302, '(a)')"splot 'spindos.dat' u 1:2:3 w pm3d"
-       write(302, '(a)')"unset xtics"
-       write(302, '(a)')"unset ytics"
-       write(302, '(a)')"unset xlabel"
-       write(302, '(a)')"unset ylabel"
-       write(302, '(a)')"set label 1 'Spin texture' at graph 0.25, 1.10 front"
-       write(302, '(a)')"# the sencond plot"
-       write(302, '(a)')"set origin 0.14, 0.115"
-       write(302, '(a)')"set size 0.75, 0.70"
-       write(302, '(a)')"plot 'spintext.dat' u 1:2:($4/5.00):($5/5.00)  w vec  head lw 4 lc rgb 'red' front"
+       write(outfileindex, '(a)')"set pm3d interpolate 2,2"
+       write(outfileindex, '(a)')"splot 'spindos.dat' u 1:2:3 w pm3d"
+       write(outfileindex, '(a)')"unset xtics"
+       write(outfileindex, '(a)')"unset ytics"
+       write(outfileindex, '(a)')"unset xlabel"
+       write(outfileindex, '(a)')"unset ylabel"
+       write(outfileindex, '(a)')"set label 1 'Spin texture' at graph 0.25, 1.10 front"
+       write(outfileindex, '(a)')"# the sencond plot"
+       write(outfileindex, '(a)')"set origin 0.14, 0.115"
+       write(outfileindex, '(a)')"set size 0.75, 0.70"
+       write(outfileindex, '(a)')"plot 'spintext.dat' u 1:2:($4/5.00):($5/5.00)  w vec  head lw 4 lc rgb 'red' front"
 
-       close(302)
+       close(outfileindex)
     endif
   
     if (cpuid.eq.0)write(stdout,*)'calculate spintexture successfully' 

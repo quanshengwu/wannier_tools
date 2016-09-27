@@ -76,33 +76,34 @@
      call mpi_allreduce(eigval_mpi, eigval,size(eigval),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
 
+     outfileindex= outfileindex+ 1
      if (cpuid==0)then
-        open(unit=701,FILE='FS3D.bxsf',STATUS='UNKNOWN',FORM='FORMATTED')
-        write(701,*) ' BEGIN_INFO'
-        write(701,*) '      #'
-        write(701,*) '      # this is a Band-XCRYSDEN-Structure-File'
-        write(701,*) '      # for Fermi Surface Visualisation'
-        write(701,*) '      #'
-        write(701,*) ' END_INFO'
-        write(701,*) 
-        write(701,*) ' BEGIN_BLOCK_BANDGRID_3D'
-        write(701,*) 'from_wannier_code'
-        write(701,*) ' BEGIN_BANDGRID_3D_fermi'
-        write(701,*) num_wann
-        write(701,*) nkx, nky, nkz
-        write(701,*) '0.0 0.0 0.0'
-        write(701,*) (Kua(i), i=1,3)
-        write(701,*) (Kub(i), i=1,3)
-        write(701,*) (Kuc(i), i=1,3)
+        open(unit=outfileindex,FILE='FS3D.bxsf',STATUS='UNKNOWN',FORM='FORMATTED')
+        write(outfileindex,*) ' BEGIN_INFO'
+        write(outfileindex,*) '      #'
+        write(outfileindex,*) '      # this is a Band-XCRYSDEN-Structure-File'
+        write(outfileindex,*) '      # for Fermi Surface Visualisation'
+        write(outfileindex,*) '      #'
+        write(outfileindex,*) ' END_INFO'
+        write(outfileindex,*) 
+        write(outfileindex,*) ' BEGIN_BLOCK_BANDGRID_3D'
+        write(outfileindex,*) 'from_wannier_code'
+        write(outfileindex,*) ' BEGIN_BANDGRID_3D_fermi'
+        write(outfileindex,*) num_wann
+        write(outfileindex,*) nkx, nky, nkz
+        write(outfileindex,*) '0.0 0.0 0.0'
+        write(outfileindex,*) (Kua(i), i=1,3)
+        write(outfileindex,*) (Kub(i), i=1,3)
+        write(outfileindex,*) (Kuc(i), i=1,3)
         do i=1,num_wann
-           write(701,*) 'BAND: ',i
+           write(outfileindex,*) 'BAND: ',i
            do ik=1, knv3
-              write(701,'(2E16.8)') eigval(i, ik)
+              write(outfileindex,'(2E16.8)') eigval(i, ik)
            enddo
         enddo
-        write(701,*) 'END_BANDGRID_3D'
-        write(701,*) ' END_BLOCK_BANDGRID_3D'
-        close(701)
+        write(outfileindex,*) 'END_BANDGRID_3D'
+        write(outfileindex,*) ' END_BLOCK_BANDGRID_3D'
+        close(outfileindex)
     
      endif
 
@@ -201,14 +202,15 @@
      call mpi_allreduce(dos,dos_mpi,size(dos),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
 
+     outfileindex= outfileindex+ 1
      if (cpuid==0)then
-        open(unit=14, file='fs.dat')
+        open(unit=outfileindex, file='fs.dat')
    
         do ik=1, knv3
-           write(14, '(3f16.8)')kxy_shape(:, ik), log(dos_mpi(ik))
-           if (mod(ik, nky)==0) write(14, *)' '
+           write(outfileindex, '(3f16.8)')kxy_shape(:, ik), log(dos_mpi(ik))
+           if (mod(ik, nky)==0) write(outfileindex, *)' '
         enddo
-        close(14)
+        close(outfileindex)
      endif
      zmax= maxval(log(dos_mpi))
      zmin= minval(log(dos_mpi))
@@ -376,34 +378,35 @@
      !zmin= minval((gap_mpi))
       
       !> write script for gnuplot
+      outfileindex= outfileindex+ 1
       if (cpuid==0) then
-         open(unit=102, file='GapCube.gnu')
-        write(102, '(a)')"set encoding iso_8859_1"
-         write(102, '(a)')'#set terminal  postscript enhanced color'
-         write(102, '(a)')"#set output 'gap.eps'"
-         write(102, '(3a)')'set terminal  png      truecolor enhanced', &
+         open(unit=outfileindex, file='GapCube.gnu')
+         write(outfileindex, '(a)')"set encoding iso_8859_1"
+         write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
+         write(outfileindex, '(a)')"#set output 'gap.eps'"
+         write(outfileindex, '(3a)')'set terminal  png      truecolor enhanced', &
             ' size 1920, 1680 font ",36"'
-         write(102, '(a)')"set output 'GapCube.png'"
-         write(102, '(a)')'unset ztics'
-         write(102, '(a)')'unset key'
-         write(102, '(a)')'set ticslevel 0'
-         write(102, '(a)')'#set view equal xyz'
-         write(102, '(a)')'set border lw 3'
-         write(102, '(a)')'set xlabel "k_x"'
-         write(102, '(a)')'set ylabel "k_y"'
-         write(102, '(a)')'set zlabel "k_z"'
-         write(102, '(a)')'set xtics nomirror scale 0.5'
-         write(102, '(a)')'set ytics nomirror scale 0.5'
-         write(102, '(a)')'set ztics nomirror scale 0.5'
-         write(102, '(a)')'set xtics offset  0.0,-1.0 , 0'
-         write(102, '(a)')'set ytics offset -2.5,   0 , 0'
-         write(102, '(a)')'set size ratio -1'
-         write(102, '(a)')'set view 60, 140, 1, 1'
-         write(102, '(a, f10.5, a, f10.5, a)')'set xrange [', kxmin_shape, ':', kxmax_shape, ']'
-         write(102, '(a, f10.5, a, f10.5, a)')'set yrange [', kymin_shape, ':', kymax_shape, ']'
-         write(102, '(a, f10.5, a, f10.5, a)')'set zrange [', kzmin_shape, ':', kzmax_shape, ']'
-         write(102, '(2a)')"splot 'GapCube.dat' u 1:2:3 w p pt 7 ps 2"
-         close(102)
+         write(outfileindex, '(a)')"set output 'GapCube.png'"
+         write(outfileindex, '(a)')'unset ztics'
+         write(outfileindex, '(a)')'unset key'
+         write(outfileindex, '(a)')'set ticslevel 0'
+         write(outfileindex, '(a)')'#set view equal xyz'
+         write(outfileindex, '(a)')'set border lw 3'
+         write(outfileindex, '(a)')'set xlabel "k_x"'
+         write(outfileindex, '(a)')'set ylabel "k_y"'
+         write(outfileindex, '(a)')'set zlabel "k_z"'
+         write(outfileindex, '(a)')'set xtics nomirror scale 0.5'
+         write(outfileindex, '(a)')'set ytics nomirror scale 0.5'
+         write(outfileindex, '(a)')'set ztics nomirror scale 0.5'
+         write(outfileindex, '(a)')'set xtics offset  0.0,-1.0 , 0'
+         write(outfileindex, '(a)')'set ytics offset -2.5,   0 , 0'
+         write(outfileindex, '(a)')'set size ratio -1'
+         write(outfileindex, '(a)')'set view 60, 140, 1, 1'
+         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set xrange [', kxmin_shape, ':', kxmax_shape, ']'
+         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', kymin_shape, ':', kymax_shape, ']'
+         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set zrange [', kzmin_shape, ':', kzmax_shape, ']'
+         write(outfileindex, '(2a)')"splot 'GapCube.dat' u 1:2:3 w p pt 7 ps 2"
+         close(outfileindex)
      
       endif
       
@@ -507,34 +510,38 @@
       call mpi_allreduce(gap,gap_mpi,size(gap),&
                         mpi_dp,mpi_sum,mpi_cmw,ierr)
       
+      outfileindex= outfileindex+ 1 
       if (cpuid==0)then
-         open(unit=14, file='GapPlane.dat')
+         open(unit=outfileindex, file='GapPlane.dat')
      
-         write(14, '(100a16)')'% kx', 'ky', 'kz', 'gap', 'Ev2', 'Ev1', 'Ec1', 'Ec2', 'k1', 'k2', 'k3'
+         write(outfileindex, '(100a16)')'% kx', 'ky', 'kz', 'gap', 'Ev2', 'Ev1', 'Ec1', 'Ec2', 'k1', 'k2', 'k3'
          do ik=1, knv3
-            write(14, '(30f16.8)')kxy_shape(:, ik), (gap_mpi(:, ik)), kxy(:, ik)
-            if (mod(ik, nky)==0) write(14, *)' '
+            write(outfileindex, '(30f16.8)')kxy_shape(:, ik), (gap_mpi(:, ik)), kxy(:, ik)
+            if (mod(ik, nky)==0) write(outfileindex, *)' '
          enddo
-         close(14)
+         close(outfileindex)
+      endif
 
-         open(unit=15, file='gap2d.dat')
-         write(15, '(100a16)')'% kx', 'ky', 'kz', 'gap', 'Ev2', 'Ev1', 'Ec1', 'Ec2', 'k1', 'k2', 'k3'
+      outfileindex= outfileindex+ 1 
+      if (cpuid==0)then
+         open(unit=outfileindex, file='gap2d.dat')
+         write(outfileindex, '(100a16)')'% kx', 'ky', 'kz', 'gap', 'Ev2', 'Ev1', 'Ec1', 'Ec2', 'k1', 'k2', 'k3'
          do ik=1, knv3
             if (abs(gap_mpi(1, ik))< 0.10d0) then
-               write(15, '(8f16.8)')kxy_shape(:, ik), (gap_mpi(:, ik)), kxy(:, ik)
+               write(outfileindex, '(8f16.8)')kxy_shape(:, ik), (gap_mpi(:, ik)), kxy(:, ik)
             endif
          enddo
-         close(15)
+         close(outfileindex)
+      endif
  
-         open(unit=1116, file='GapPlane_matlab.dat')
-         write(1116, '(100a16)')'% kx', 'ky', 'kz', 'gap', 'Ev2', 'Ev1', 'Ec1', 'Ec2', 'k1', 'k2', 'k3'
+      outfileindex= outfileindex+ 1 
+      if (cpuid==0)then
+         open(unit=outfileindex, file='GapPlane_matlab.dat')
+         write(outfileindex, '(100a16)')'% kx', 'ky', 'kz', 'gap', 'Ev2', 'Ev1', 'Ec1', 'Ec2', 'k1', 'k2', 'k3'
          do ik=1, knv3
-            write(1116, '(30f16.8)')kxy_shape(:, ik), (gap_mpi(:, ik)), kxy(:, ik)
+            write(outfileindex, '(30f16.8)')kxy_shape(:, ik), (gap_mpi(:, ik)), kxy(:, ik)
          enddo
-         close(1116)
-
-
-
+         close(outfileindex)
       endif
       
       !> minimum and maximum value of energy bands
@@ -543,39 +550,40 @@
       zmin= minval(gap_mpi(1, :))
       
       !> write script for gnuplot
+      outfileindex= outfileindex+ 1 
       if (cpuid==0) then
-         open(unit=103, file='GapPlane.gnu')
-         write(103, '(a)')"set encoding iso_8859_1"
-         write(103, '(a)')'#set terminal  postscript enhanced color'
-         write(103, '(a)')"#set output 'GapPlane.eps'"
-         write(103, '(3a)')'#set terminal  pngcairo   truecolor enhanced', &
+         open(unit=outfileindex, file='GapPlane.gnu')
+         write(outfileindex, '(a)')"set encoding iso_8859_1"
+         write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
+         write(outfileindex, '(a)')"#set output 'GapPlane.eps'"
+         write(outfileindex, '(3a)')'#set terminal  pngcairo   truecolor enhanced', &
             '  size 1920, 1680 font ",60"'
-         write(103, '(3a)')'set terminal  png   truecolor enhanced', &
+         write(outfileindex, '(3a)')'set terminal  png   truecolor enhanced', &
             ' size 1920, 1680 font ",60"'
-         write(103, '(a)')"set output 'GapPlane.png'"
-         write(103,'(a, f10.4, a, f10.4, a, f10.4, a)') &
+         write(outfileindex, '(a)')"set output 'GapPlane.png'"
+         write(outfileindex,'(a, f10.4, a, f10.4, a, f10.4, a)') &
             'set palette defined ( ', zmin, ' "black", ', &
             (zmin+zmax)/20d0,' "orange", ',zmax,'  "white" )'
-         write(103, '(a)')"set origin 0.10, 0.0"
-         write(103, '(a)')"set size 0.85, 1.0"
-         write(103, '(a)')'unset ztics'
-         write(103, '(a)')'unset key'
-         write(103, '(a)')'set pm3d'
-         write(103, '(a)')'set view map'
-         write(103, '(a)')'set border lw 3'
-         write(103, '(a)')'#set size ratio -1'
-         write(103, '(a)')'set title "Gap in k plane"'
-         write(103, '(a)')'set xtics nomirror scale 0.5'
-         write(103, '(a)')'set ytics nomirror scale 0.5'
-         write(103, '(a)')"set xlabel 'k (1/{\305})'"
-         write(103, '(a)')"set ylabel 'k (1/{\305})'"
-         write(103, '(a)')'set colorbox'
-         write(103, '(a)')'set xrange [ ] noextend'
-         write(103, '(a)')'set yrange [ ] noextend'
-         write(103, '(a)')'set pm3d interpolate 2,2'
-         write(103, '(2a)')"splot 'GapPlane.dat' u 1:2:4 w pm3d"
+         write(outfileindex, '(a)')"set origin 0.10, 0.0"
+         write(outfileindex, '(a)')"set size 0.85, 1.0"
+         write(outfileindex, '(a)')'unset ztics'
+         write(outfileindex, '(a)')'unset key'
+         write(outfileindex, '(a)')'set pm3d'
+         write(outfileindex, '(a)')'set view map'
+         write(outfileindex, '(a)')'set border lw 3'
+         write(outfileindex, '(a)')'#set size ratio -1'
+         write(outfileindex, '(a)')'set title "Gap in k plane"'
+         write(outfileindex, '(a)')'set xtics nomirror scale 0.5'
+         write(outfileindex, '(a)')'set ytics nomirror scale 0.5'
+         write(outfileindex, '(a)')"set xlabel 'k (1/{\305})'"
+         write(outfileindex, '(a)')"set ylabel 'k (1/{\305})'"
+         write(outfileindex, '(a)')'set colorbox'
+         write(outfileindex, '(a)')'set xrange [ ] noextend'
+         write(outfileindex, '(a)')'set yrange [ ] noextend'
+         write(outfileindex, '(a)')'set pm3d interpolate 2,2'
+         write(outfileindex, '(2a)')"splot 'GapPlane.dat' u 1:2:4 w pm3d"
      
-         close(103)
+         close(outfileindex)
       endif
       
       

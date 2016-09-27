@@ -17,6 +17,8 @@
      
      integer :: ierr
 
+     integer :: doslfile, dosrfile, dosbulkfile
+
      ! general loop index
      integer :: i, j, io
 
@@ -31,11 +33,16 @@
      
      real(dp), allocatable :: dos_l(:,:)
      real(dp), allocatable :: dos_r(:,:)
+     real(dp), allocatable :: dos_l_only(:,:)
+     real(dp), allocatable :: dos_r_only(:,:)
      real(dp), allocatable :: dos_l_mpi(:,:)
      real(dp), allocatable :: dos_r_mpi(:,:)
+     real(dp), allocatable :: dos_bulk(:,:)
+     real(dp), allocatable :: dos_bulk_mpi(:,:)
 
      complex(dp), allocatable :: GLL(:,:)
      complex(dp), allocatable :: GRR(:,:)
+     complex(dp), allocatable :: GB (:,:)
      complex(dp), allocatable :: H00(:,:)
      complex(dp), allocatable :: H01(:,:)
      complex(dp), allocatable :: ones(:,:)
@@ -68,13 +75,21 @@
      allocate( omega(omeganum))
      allocate( dos_l(knv2, omeganum))
      allocate( dos_r(knv2, omeganum))
+     allocate( dos_l_only(knv2, omeganum))
+     allocate( dos_r_only(knv2, omeganum))
      allocate( dos_l_mpi(knv2, omeganum))
      allocate( dos_r_mpi(knv2, omeganum))
+     allocate( dos_bulk(knv2, omeganum))
+     allocate( dos_bulk_mpi(knv2, omeganum))
      omega=0d0
      dos_l=0d0
      dos_r=0d0
+     dos_l_only=0d0
+     dos_r_only=0d0
      dos_l_mpi=0d0
      dos_r_mpi=0d0
+     dos_bulk=0d0
+     dos_bulk_mpi=0d0
 
      eta=(omegamax- omegamin)/dble(omeganum)*1.5d0
 
@@ -84,11 +99,13 @@
 
      allocate(GLL(Ndim, Ndim))
      allocate(GRR(Ndim, Ndim))
+     allocate(GB (Ndim, Ndim))
      allocate(H00(Ndim, Ndim))
      allocate(H01(Ndim, Ndim))
      allocate(ones(Ndim, Ndim))
      GLL= 0d0
      GRR= 0d0
+     GB = 0d0
      H00= 0d0
      H01= 0d0
      ones= 0d0
@@ -111,7 +128,7 @@
            ! there are two method to calculate surface green's function 
            ! the method in 1985 is better, you can find the ref in the
            ! subroutine
-           call surfgreen_1985(w,GLL,GRR,H00,H01,ones)
+           call surfgreen_1985(w,GLL,GRR,GB,H00,H01,ones)
            !call surfgreen_1984(w,GLL,GRR,H00,H01,ones)
 
            ! calculate spectral function
@@ -123,6 +140,9 @@
               io= Ndim- Num_wann+ BottomOrbitals(i)
               dos_r(ikp, j)=dos_r(ikp,j)- aimag(GRR(io,io))
            enddo ! i
+           do i= 1, Ndim
+              dos_bulk(ikp, j)=dos_bulk(ikp,j)- aimag(GB(i,i))
+           enddo ! i
         enddo ! j
      enddo ! ikp
 
@@ -131,22 +151,45 @@
                      mpi_sum, 0, mpi_comm_world, ierr)
      call mpi_reduce(dos_r, dos_r_mpi, size(dos_r), mpi_double_precision,&
                      mpi_sum, 0, mpi_comm_world, ierr)
+     call mpi_reduce(dos_bulk, dos_bulk_mpi, size(dos_bulk), mpi_double_precision,&
+                     mpi_sum, 0, mpi_comm_world, ierr)
      dos_l=log(dos_l_mpi)
      dos_r=log(dos_r_mpi)
+     dos_bulk=log(dos_bulk_mpi)
+     do ikp=1, knv2
+        do j=1, omeganum
+           dos_l_only(ikp, j)= dos_l_mpi(ikp, j)- dos_bulk_mpi(ikp, j)
+           if (dos_l_only(ikp, j)<0) dos_l_only(ikp, j)=eps9
+           dos_r_only(ikp, j)= dos_r_mpi(ikp, j)- dos_bulk_mpi(ikp, j)
+           if (dos_r_only(ikp, j)<0) dos_r_only(ikp, j)=eps9
+        enddo
+     enddo
+
+     outfileindex= outfileindex+ 1
+     doslfile= outfileindex
+     outfileindex= outfileindex+ 1
+     dosrfile= outfileindex
+     outfileindex= outfileindex+ 1
+     dosbulkfile= outfileindex
 
      if (cpuid.eq.0)then
-        open (unit=12, file='dos.dat_l')
-        open (unit=13, file='dos.dat_r')
+        open (unit=doslfile, file='dos.dat_l')
+        open (unit=dosrfile, file='dos.dat_r')
+        open (unit=dosbulkfile, file='dos.dat_bulk')
         do ikp=1, knv2
            do j=1, omeganum 
-              write(12, '(3f16.8)')k2len(ikp), omega(j), dos_l(ikp, j)
-              write(13, '(3f16.8)')k2len(ikp), omega(j), dos_r(ikp, j)
+              write(doslfile, '(30f16.8)')k2len(ikp), omega(j), dos_l(ikp, j), log(dos_l_only(ikp, j))
+              write(dosrfile, '(30f16.8)')k2len(ikp), omega(j), dos_r(ikp, j), log(dos_r_only(ikp, j))
+              write(dosbulkfile, '(30f16.8)')k2len(ikp), omega(j), log(dos_bulk(ikp, j))
            enddo
-           write(12, *) ' '
-           write(13, *) ' '
+           write(doslfile, *) ' '
+           write(dosrfile, *) ' '
+           write(dosbulkfile, *) ' '
         enddo
-        close(12)
-        close(13)
+        close(doslfile)
+        close(dosrfile)
+        close(dosbulkfile)
+
         write(stdout,*)'ndim',ndim
         write(stdout,*) 'knv2,omeganum,eta',knv2, omeganum, eta
         write(stdout,*)'calculate density of state successfully'    
@@ -155,95 +198,243 @@
      emin= minval(omega)
      emax= maxval(omega)
      !> write script for gnuplot
+     outfileindex= outfileindex+ 1
      if (cpuid==0) then
-        open(unit=116, file='surfdos_l.gnu')
-        write(116, '(a)')"set encoding iso_8859_1"
-        write(116, '(a)')'#set terminal  postscript enhanced color'
-        write(116, '(a)')"#set output 'surfdos_l.eps'"
-        write(116, '(3a)')'#set terminal  pngcairo truecolor enhanced', &
+        open(unit=outfileindex, file='surfdos_l.gnu')
+        write(outfileindex, '(a)')"set encoding iso_8859_1"
+        write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
+        write(outfileindex, '(a)')"#set output 'surfdos_l.eps'"
+        write(outfileindex, '(3a)')'#set terminal  pngcairo truecolor enhanced', &
            '  font ", 60" size 1920, 1680'
-        write(116, '(3a)')'set terminal  png truecolor enhanced', &
+        write(outfileindex, '(3a)')'set terminal  png truecolor enhanced', &
            ' font ", 60" size 1920, 1680'
-        write(116, '(a)')"set output 'surfdos_l.png'"
-        write(116,'(2a)') 'set palette defined (-10 "#194eff", ', &
+        write(outfileindex, '(a)')"set output 'surfdos_l.png'"
+        write(outfileindex,'(2a)') 'set palette defined (-10 "#194eff", ', &
            '0 "white", 10 "red" )'
-        write(116, '(a)')'#set palette rgbformulae 33,13,10'
-        write(116, '(a)')'set style data linespoints'
-        write(116, '(a)')'set size 0.8, 1'
-        write(116, '(a)')'set origin 0.1, 0'
-        write(116, '(a)')'unset ztics'
-        write(116, '(a)')'unset key'
-        write(116, '(a)')'set pointsize 0.8'
-        write(116, '(a)')'set pm3d'
-        write(116, '(a)')'#set view equal xyz'
-        write(116, '(a)')'set view map'
-        write(116, '(a)')'set border lw 3'
-        write(116, '(a)')'#set cbtics font ",48"'
-        write(116, '(a)')'#set xtics font ",48"'
-        write(116, '(a)')'#set ytics font ",48"'
-        write(116, '(a)')'#set ylabel font ",48"'
-        write(116, '(a)')'set ylabel "Energy (eV)"'
-        write(116, '(a)')'#set xtics offset 0, -1'
-        write(116, '(a)')'#set ylabel offset -6, 0 '
-        write(116, '(a, f8.5, a)')'set xrange [0: ', maxval(k2len), ']'
-        write(116, '(a, f8.5, a, f8.5, a)')'set yrange [', emin, ':', emax, ']'
-        write(116, 202, advance="no") (k2line_name(i), k2line_stop(i), i=1, nk2lines)
-        write(116, 203)k2line_name(nk2lines+1), k2line_stop(nk2lines+1)
+        write(outfileindex, '(a)')'#set palette rgbformulae 33,13,10'
+        write(outfileindex, '(a)')'set style data linespoints'
+        write(outfileindex, '(a)')'set size 0.8, 1'
+        write(outfileindex, '(a)')'set origin 0.1, 0'
+        write(outfileindex, '(a)')'unset ztics'
+        write(outfileindex, '(a)')'unset key'
+        write(outfileindex, '(a)')'set pointsize 0.8'
+        write(outfileindex, '(a)')'set pm3d'
+        write(outfileindex, '(a)')'#set view equal xyz'
+        write(outfileindex, '(a)')'set view map'
+        write(outfileindex, '(a)')'set border lw 3'
+        write(outfileindex, '(a)')'#set cbtics font ",48"'
+        write(outfileindex, '(a)')'#set xtics font ",48"'
+        write(outfileindex, '(a)')'#set ytics font ",48"'
+        write(outfileindex, '(a)')'#set ylabel font ",48"'
+        write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+        write(outfileindex, '(a)')'#set xtics offset 0, -1'
+        write(outfileindex, '(a)')'#set ylabel offset -6, 0 '
+        write(outfileindex, '(a, f8.5, a)')'set xrange [0: ', maxval(k2len), ']'
+        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set yrange [', emin, ':', emax, ']'
+        write(outfileindex, 202, advance="no") (k2line_name(i), k2line_stop(i), i=1, nk2lines)
+        write(outfileindex, 203)k2line_name(nk2lines+1), k2line_stop(nk2lines+1)
 
         do i=1, nk2lines-1
-           write(116, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
+           write(outfileindex, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
         enddo
-        write(116, '(a)')'set pm3d interpolate 2,2'
-        write(116, '(2a)')"splot 'dos.dat_l' u 1:2:3 w pm3d"
-        close(116)
+        write(outfileindex, '(a)')'set pm3d interpolate 2,2'
+        write(outfileindex, '(2a)')"splot 'dos.dat_l' u 1:2:3 w pm3d"
+        close(outfileindex)
+
+     endif
+
+
+
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+        open(unit=outfileindex, file='surfdos_l_only.gnu')
+        write(outfileindex, '(a)')"set encoding iso_8859_1"
+        write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
+        write(outfileindex, '(a)')"#set output 'surfdos_l.eps'"
+        write(outfileindex, '(3a)')'#set terminal  pngcairo truecolor enhanced', &
+           '  font ", 60" size 1920, 1680'
+        write(outfileindex, '(3a)')'set terminal  png truecolor enhanced', &
+           ' font ", 60" size 1920, 1680'
+        write(outfileindex, '(a)')"set output 'surfdos_l_only.png'"
+        write(outfileindex,'(2a)') 'set palette defined (0  "white", ', &
+           '6 "red", 20 "black" )'
+        write(outfileindex, '(a)')'#set palette rgbformulae 33,13,10'
+        write(outfileindex, '(a)')'set style data linespoints'
+        write(outfileindex, '(a)')'set size 0.8, 1'
+        write(outfileindex, '(a)')'set origin 0.1, 0'
+        write(outfileindex, '(a)')'unset ztics'
+        write(outfileindex, '(a)')'unset key'
+        write(outfileindex, '(a)')'set pointsize 0.8'
+        write(outfileindex, '(a)')'set pm3d'
+        write(outfileindex, '(a)')'#set view equal xyz'
+        write(outfileindex, '(a)')'set view map'
+        write(outfileindex, '(a)')'set border lw 3'
+        write(outfileindex, '(a)')'#set cbtics font ",48"'
+        write(outfileindex, '(a)')'#set xtics font ",48"'
+        write(outfileindex, '(a)')'#set ytics font ",48"'
+        write(outfileindex, '(a)')'unset cbtics'
+        write(outfileindex, '(a)')'#set ylabel font ",48"'
+        write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+        write(outfileindex, '(a)')'#set xtics offset 0, -1'
+        write(outfileindex, '(a)')'#set ylabel offset -6, 0 '
+        write(outfileindex, '(a, f8.5, a)')'set xrange [0: ', maxval(k2len), ']'
+        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set yrange [', emin, ':', emax, ']'
+        write(outfileindex, 202, advance="no") (k2line_name(i), k2line_stop(i), i=1, nk2lines)
+        write(outfileindex, 203)k2line_name(nk2lines+1), k2line_stop(nk2lines+1)
+
+        do i=1, nk2lines-1
+           write(outfileindex, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
+        enddo
+        write(outfileindex, '(a)')'set pm3d interpolate 2,2'
+        write(outfileindex, '(2a)')"splot 'dos.dat_l' u 1:2:(exp($4)) w pm3d"
+        close(outfileindex)
 
      endif
 
      !> write script for gnuplot
+     outfileindex= outfileindex+ 1
      if (cpuid==0) then
-        open(unit=117, file='surfdos_r.gnu')
-        write(117, '(a)')"set encoding iso_8859_1"
-        write(117, '(a)')'#set terminal  postscript enhanced color'
-        write(117, '(a)')"#set output 'surfdos_r.eps'"
-        write(117, '(3a)')'#set terminal pngcairo truecolor enhanced', &
+        open(unit=outfileindex, file='surfdos_r_only.gnu')
+        write(outfileindex, '(a)')"set encoding iso_8859_1"
+        write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
+        write(outfileindex, '(a)')"#set output 'surfdos_r.eps'"
+        write(outfileindex, '(3a)')'#set terminal pngcairo truecolor enhanced', &
            '  font ", 60" size 1920, 1680'
-        write(117, '(3a)')'set terminal png truecolor enhanced', &
+        write(outfileindex, '(3a)')'set terminal png truecolor enhanced', &
            ' font ", 60" size 1920, 1680'
-        write(117, '(a)')"set output 'surfdos_r.png'"
-        write(117,'(2a)') 'set palette defined (-10 "#194eff", ', &
-           '0 "white", 10 "red" )'
-        write(117, '(a)')'#set palette rgbformulae 33,13,10'
-        write(117, '(a)')'set style data linespoints'
-        write(117, '(a)')'unset ztics'
-        write(117, '(a)')'unset key'
-        write(117, '(a)')'set pointsize 0.8'
-        write(117, '(a)')'set pm3d'
-        write(117, '(a)')'set border lw 3'
-        write(117, '(a)')'set size 0.8, 1'
-        write(117, '(a)')'set origin 0.1, 0'
-        write(117, '(a)')'#set size ratio -1'
-        write(117, '(a)')'#set view equal xyz'
-        write(117, '(a)')'set view map'
-        write(117, '(a)')'#set cbtics font ",48"'
-        write(117, '(a)')'#set xtics font ",48"'
-        write(117, '(a)')'#set ytics font ",48"'
-        write(117, '(a)')'#set ylabel font ",48"'
-        write(117, '(a)')'set ylabel "Energy (eV)"'
-        write(117, '(a)')'#set xtics offset 0, -1'
-        write(117, '(a)')'#set ylabel offset -6, 0 '
-        write(117, '(a, f8.5, a)')'set xrange [0: ', maxval(k2len), ']'
-        write(117, '(a, f8.5, a, f8.5, a)')'set yrange [', emin, ':', emax, ']'
-        write(117, 202, advance="no") (k2line_name(i), k2line_stop(i), i=1, nk2lines)
-        write(117, 203)k2line_name(nk2lines+1), k2line_stop(nk2lines+1)
+        write(outfileindex, '(a)')"set output 'surfdos_r_only.png'"
+        write(outfileindex,'(2a)') 'set palette defined (0  "white", ', &
+           '6 "red", 20 "black" )'
+        write(outfileindex, '(a)')'#set palette rgbformulae 33,13,10'
+        write(outfileindex, '(a)')'set style data linespoints'
+        write(outfileindex, '(a)')'unset ztics'
+        write(outfileindex, '(a)')'unset key'
+        write(outfileindex, '(a)')'set pointsize 0.8'
+        write(outfileindex, '(a)')'set pm3d'
+        write(outfileindex, '(a)')'set border lw 3'
+        write(outfileindex, '(a)')'set size 0.8, 1'
+        write(outfileindex, '(a)')'set origin 0.1, 0'
+        write(outfileindex, '(a)')'#set size ratio -1'
+        write(outfileindex, '(a)')'#set view equal xyz'
+        write(outfileindex, '(a)')'set view map'
+        write(outfileindex, '(a)')'#set cbtics font ",48"'
+        write(outfileindex, '(a)')'#set xtics font ",48"'
+        write(outfileindex, '(a)')'#set ytics font ",48"'
+        write(outfileindex, '(a)')'#set ylabel font ",48"'
+        write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+        write(outfileindex, '(a)')'unset cbtics'
+        write(outfileindex, '(a)')'#set xtics offset 0, -1'
+        write(outfileindex, '(a)')'#set ylabel offset -6, 0 '
+        write(outfileindex, '(a, f8.5, a)')'set xrange [0: ', maxval(k2len), ']'
+        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set yrange [', emin, ':', emax, ']'
+        write(outfileindex, 202, advance="no") (k2line_name(i), k2line_stop(i), i=1, nk2lines)
+        write(outfileindex, 203)k2line_name(nk2lines+1), k2line_stop(nk2lines+1)
 
         do i=1, nk2lines-1
-           write(117, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
+           write(outfileindex, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
         enddo
-        write(117, '(a)')'set pm3d interpolate 2,2'
-        write(117, '(2a)')"splot 'dos.dat_r' u 1:2:3 w pm3d"
-        close(117)
+        write(outfileindex, '(a)')'set pm3d interpolate 2,2'
+        write(outfileindex, '(2a)')"splot 'dos.dat_r' u 1:2:(exp($4)) w pm3d"
+        close(outfileindex)
 
      endif
+
+
+     !> write script for gnuplot
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+        open(unit=outfileindex, file='surfdos_r.gnu')
+        write(outfileindex, '(a)')"set encoding iso_8859_1"
+        write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
+        write(outfileindex, '(a)')"#set output 'surfdos_r.eps'"
+        write(outfileindex, '(3a)')'#set terminal pngcairo truecolor enhanced', &
+           '  font ", 60" size 1920, 1680'
+        write(outfileindex, '(3a)')'set terminal png truecolor enhanced', &
+           ' font ", 60" size 1920, 1680'
+        write(outfileindex, '(a)')"set output 'surfdos_r.png'"
+        write(outfileindex,'(2a)') 'set palette defined (-10 "#194eff", ', &
+           '0 "white", 10 "red" )'
+        write(outfileindex, '(a)')'#set palette rgbformulae 33,13,10'
+        write(outfileindex, '(a)')'set style data linespoints'
+        write(outfileindex, '(a)')'unset ztics'
+        write(outfileindex, '(a)')'unset key'
+        write(outfileindex, '(a)')'set pointsize 0.8'
+        write(outfileindex, '(a)')'set pm3d'
+        write(outfileindex, '(a)')'set border lw 3'
+        write(outfileindex, '(a)')'set size 0.8, 1'
+        write(outfileindex, '(a)')'set origin 0.1, 0'
+        write(outfileindex, '(a)')'#set size ratio -1'
+        write(outfileindex, '(a)')'#set view equal xyz'
+        write(outfileindex, '(a)')'set view map'
+        write(outfileindex, '(a)')'#set cbtics font ",48"'
+        write(outfileindex, '(a)')'#set xtics font ",48"'
+        write(outfileindex, '(a)')'#set ytics font ",48"'
+        write(outfileindex, '(a)')'#set ylabel font ",48"'
+        write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+        write(outfileindex, '(a)')'#set xtics offset 0, -1'
+        write(outfileindex, '(a)')'#set ylabel offset -6, 0 '
+        write(outfileindex, '(a, f8.5, a)')'set xrange [0: ', maxval(k2len), ']'
+        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set yrange [', emin, ':', emax, ']'
+        write(outfileindex, 202, advance="no") (k2line_name(i), k2line_stop(i), i=1, nk2lines)
+        write(outfileindex, 203)k2line_name(nk2lines+1), k2line_stop(nk2lines+1)
+
+        do i=1, nk2lines-1
+           write(outfileindex, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
+        enddo
+        write(outfileindex, '(a)')'set pm3d interpolate 2,2'
+        write(outfileindex, '(2a)')"splot 'dos.dat_r' u 1:2:3 w pm3d"
+        close(outfileindex)
+
+     endif
+
+     !> write script for gnuplot
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+        open(unit=outfileindex, file='surfdos_bulk.gnu')
+        write(outfileindex, '(a)')"set encoding iso_8859_1"
+        write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
+        write(outfileindex, '(a)')"#set output 'surfdos_bulk.eps'"
+        write(outfileindex, '(3a)')'#set terminal  pngcairo truecolor enhanced', &
+           '  font ", 60" size 1920, 1680'
+        write(outfileindex, '(3a)')'set terminal  png truecolor enhanced', &
+           ' font ", 60" size 1920, 1680'
+        write(outfileindex, '(a)')"set output 'surfdos_bulk.png'"
+        write(outfileindex,'(2a)') 'set palette defined (-10 "#194eff", ', &
+           '0 "white", 10 "red" )'
+        write(outfileindex, '(a)')'#set palette rgbformulae 33,13,10'
+        write(outfileindex, '(a)')'set style data linespoints'
+        write(outfileindex, '(a)')'set size 0.8, 1'
+        write(outfileindex, '(a)')'set origin 0.1, 0'
+        write(outfileindex, '(a)')'unset ztics'
+        write(outfileindex, '(a)')'unset key'
+        write(outfileindex, '(a)')'set pointsize 0.8'
+        write(outfileindex, '(a)')'set pm3d'
+        write(outfileindex, '(a)')'#set view equal xyz'
+        write(outfileindex, '(a)')'set view map'
+        write(outfileindex, '(a)')'set border lw 3'
+        write(outfileindex, '(a)')'#set cbtics font ",48"'
+        write(outfileindex, '(a)')'#set xtics font ",48"'
+        write(outfileindex, '(a)')'#set ytics font ",48"'
+        write(outfileindex, '(a)')'#set ylabel font ",48"'
+        write(outfileindex, '(a)')'unset cbtics'
+        write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+        write(outfileindex, '(a)')'#set xtics offset 0, -1'
+        write(outfileindex, '(a)')'#set ylabel offset -6, 0 '
+        write(outfileindex, '(a, f8.5, a)')'set xrange [0: ', maxval(k2len), ']'
+        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set yrange [', emin, ':', emax, ']'
+        write(outfileindex, 202, advance="no") (k2line_name(i), k2line_stop(i), i=1, nk2lines)
+        write(outfileindex, 203)k2line_name(nk2lines+1), k2line_stop(nk2lines+1)
+
+        do i=1, nk2lines-1
+           write(outfileindex, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
+        enddo
+        write(outfileindex, '(a)')'set pm3d interpolate 2,2'
+        write(outfileindex, '(2a)')"splot 'dos.dat_bulk' u 1:2:(exp($3)) w pm3d"
+        close(outfileindex)
+
+     endif
+
+
 
 
      202 format('set xtics (',:20('"',A1,'" ',F8.5,','))

@@ -107,63 +107,65 @@
      surf_weight= surf_weight_mpi/ maxval(surf_weight_mpi)
      
 
+     outfileindex= outfileindex+ 1
      if(cpuid==0)then
-        open(unit=100, file='slabek.dat')
+        open(unit=outfileindex, file='slabek.dat')
         do j=1, Num_wann*Nslab
            do i=1, knv2
-             !write(100,'(3f15.7, i8)')k2len(i), ekslab(j,i), &
+             !write(outfileindex,'(3f15.7, i8)')k2len(i), ekslab(j,i), &
              !   (surf_weight(j, i))
-              write(100,'(2f15.7, i8)')k2len(i), ekslab(j,i), &
+              write(outfileindex,'(2f15.7, i8)')k2len(i), ekslab(j,i), &
                  int(255-surf_weight(j, i)*255d0)
            enddo
-           write(100 , *)''
+           write(outfileindex , *)''
         enddo
-        close(100)
+        close(outfileindex)
         write(stdout,*) 'calculate energy band  done'
      endif
 
      emin= minval(ekslab)-0.5d0
      emax= maxval(ekslab)+0.5d0
      !> write script for gnuplot
+     outfileindex= outfileindex+ 1
      if (cpuid==0) then
-        open(unit=113, file='slabek.gnu')
-        write(113, '(a)')"set encoding iso_8859_1"
-        write(113, '(a)')'#set terminal  postscript enhanced color'
-        write(113, '(a)')"#set output 'slabek.eps'"
-        write(113, '(3a)')'#set terminal  pngcairo truecolor enhanced', &
+        open(unit=outfileindex, file='slabek.gnu')
+        write(outfileindex, '(a)')"set encoding iso_8859_1"
+        write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
+        write(outfileindex, '(a)')"#set output 'slabek.eps'"
+        write(outfileindex, '(3a)')'#set terminal  pngcairo truecolor enhanced', &
            '  font ",60" size 1920, 1680'
-        write(113, '(3a)')'set terminal  png truecolor enhanced', &
+        write(outfileindex, '(3a)')'set terminal  png truecolor enhanced', &
            '  font ",60" size 1920, 1680'
-        write(113, '(a)')"set output 'slabek.png'"
-        write(113,'(2a)') 'set palette defined ( 0  "green", ', &
+        write(outfileindex, '(a)')"set output 'slabek.png'"
+        write(outfileindex,'(2a)') 'set palette defined ( 0  "green", ', &
            '5 "yellow", 10 "red" )'
-        write(113, '(a)')'set style data linespoints'
-        write(113, '(a)')'unset ztics'
-        write(113, '(a)')'unset key'
-        write(113, '(a)')'set pointsize 0.8'
-        write(113, '(a)')'set border lw 3 '
-        write(113, '(a)')'set view 0,0'
-        write(113, '(a)')'#set xtics font ",36"'
-        write(113, '(a)')'#set ytics font ",36"'
-        write(113, '(a)')'#set ylabel font ",36"'
-        write(113, '(a)')'#set xtics offset 0, -1'
-        write(113, '(a)')'set ylabel offset -1, 0 '
-        write(113, '(a)')'set ylabel "Energy (eV)"'
-        write(113, '(a, f10.5, a)')'set xrange [0: ', maxval(k2len), ']'
-        write(113, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
-        write(113, 202, advance="no") (trim(k2line_name(i)), k2line_stop(i), i=1, nk2lines)
-        write(113, 203)trim(k2line_name(nk2lines+1)), k2line_stop(nk2lines+1)
+        write(outfileindex, '(a)')'set style data linespoints'
+        write(outfileindex, '(a)')'unset ztics'
+        write(outfileindex, '(a)')'unset key'
+        write(outfileindex, '(a)')'set pointsize 0.8'
+        write(outfileindex, '(a)')'set border lw 3 '
+        write(outfileindex, '(a)')'set view 0,0'
+        write(outfileindex, '(a)')'#set xtics font ",36"'
+        write(outfileindex, '(a)')'#set ytics font ",36"'
+        write(outfileindex, '(a)')'#set ylabel font ",36"'
+        write(outfileindex, '(a)')'#set xtics offset 0, -1'
+        write(outfileindex, '(a)')'set ylabel offset -1, 0 '
+        write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+        write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k2len), ']'
+        write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
+        write(outfileindex, 202, advance="no") (trim(k2line_name(i)), k2line_stop(i), i=1, nk2lines)
+        write(outfileindex, 203)trim(k2line_name(nk2lines+1)), k2line_stop(nk2lines+1)
 
         do i=1, nk2lines-1
-           write(113, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
+           write(outfileindex, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
         enddo
-        write(113, '(a)')'rgb(r,g,b) = int(r)*65536 + int(g)*256 + int(b)'
-        write(113, '(2a)')"plot 'slabek.dat' u 1:2:(rgb(255,$3, 3)) ",  &
+        write(outfileindex, '(a)')'rgb(r,g,b) = int(r)*65536 + int(g)*256 + int(b)'
+        write(outfileindex, '(2a)')"plot 'slabek.dat' u 1:2:(rgb(255,$3, 3)) ",  &
             "w lp lw 2 pt 7  ps 1 lc rgb variable"
 
-        !write(113, '(2a)')"splot 'slabek.dat' u 1:2:3 ",  &
+        !write(outfileindex, '(2a)')"splot 'slabek.dat' u 1:2:3 ",  &
         !   "w lp lw 2 pt 13 palette"
-        close(113)
+        close(outfileindex)
      endif
 
      202 format('set xtics (',:20('"',A3,'" ',F10.5,','))
@@ -261,64 +263,66 @@
 
      ekslab=ekslab_mpi
      surf_weight= surf_weight_mpi/ maxval(surf_weight_mpi)
-        
+     
+     outfileindex= outfileindex+ 1
      if(cpuid==0)then
-        open(unit=100, file='slabek.dat')
+        open(unit=outfileindex, file='slabek.dat')
         do j=1, Num_wann*Nslab
            do i=1, knv2
-             !write(100,'(3f15.7, i8)')k2len(i), ekslab(j,i), &
+             !write(outfileindex,'(3f15.7, i8)')k2len(i), ekslab(j,i), &
              !   (surf_weight(j, i))
-              write(100,'(2f15.7, i8)')k2len(i), ekslab(j,i), &
+              write(outfileindex,'(2f15.7, i8)')k2len(i), ekslab(j,i), &
                  int(255-surf_weight(j, i)*255d0)
            enddo
-           write(100 , *)''
+           write(outfileindex , *)''
         enddo
-        close(100)
+        close(outfileindex)
         write(stdout,*) 'calculate energy band  done'
      endif
 
      emin= minval(ekslab)-0.5d0
      emax= maxval(ekslab)+0.5d0
      !> write script for gnuplot
+     outfileindex= outfileindex+ 1
      if (cpuid==0) then
-        open(unit=112, file='slabek.gnu')
-        write(112, '(a)')"set encoding iso_8859_1"
-        write(112, '(a)')'#set terminal  postscript enhanced color'
-        write(112, '(a)')"#set output 'slabek.eps'"
-        write(112, '(3a)')'#set terminal  pngcairo truecolor enhanced', &
+        open(unit=outfileindex, file='slabek.gnu')
+        write(outfileindex, '(a)')"set encoding iso_8859_1"
+        write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
+        write(outfileindex, '(a)')"#set output 'slabek.eps'"
+        write(outfileindex, '(3a)')'#set terminal  pngcairo truecolor enhanced', &
            '  font ",60" size 1920, 1680'
-        write(112, '(3a)')'set terminal  png truecolor enhanced', &
+        write(outfileindex, '(3a)')'set terminal  png truecolor enhanced', &
            '  font ",60" size 1920, 1680'
-        write(112, '(a)')"set output 'slabek.png'"
-        write(112,'(2a)') 'set palette defined ( 0  "green", ', &
+        write(outfileindex, '(a)')"set output 'slabek.png'"
+        write(outfileindex,'(2a)') 'set palette defined ( 0  "green", ', &
            '5 "yellow", 10 "red" )'
-        write(112, '(a)')'set style data linespoints'
-        write(112, '(a)')'unset ztics'
-        write(112, '(a)')'unset key'
-        write(112, '(a)')'set pointsize 0.8'
-        write(112, '(a)')'set border lw 3 '
-        write(112, '(a)')'set view 0,0'
-        write(112, '(a)')'#set xtics font ",36"'
-        write(112, '(a)')'#set ytics font ",36"'
-        write(112, '(a)')'#set ylabel font ",36"'
-        write(112, '(a)')'#set xtics offset 0, -1'
-        write(112, '(a)')'set ylabel offset -1, 0 '
-        write(112, '(a)')'set ylabel "Energy (eV)"'
-        write(112, '(a, f10.5, a)')'set xrange [0: ', maxval(k2len), ']'
-        write(112, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
-        write(112, 202, advance="no") (trim(k2line_name(i)), k2line_stop(i), i=1, nk2lines)
-        write(112, 203)trim(k2line_name(nk2lines+1)), k2line_stop(nk2lines+1)
+        write(outfileindex, '(a)')'set style data linespoints'
+        write(outfileindex, '(a)')'unset ztics'
+        write(outfileindex, '(a)')'unset key'
+        write(outfileindex, '(a)')'set pointsize 0.8'
+        write(outfileindex, '(a)')'set border lw 3 '
+        write(outfileindex, '(a)')'set view 0,0'
+        write(outfileindex, '(a)')'#set xtics font ",36"'
+        write(outfileindex, '(a)')'#set ytics font ",36"'
+        write(outfileindex, '(a)')'#set ylabel font ",36"'
+        write(outfileindex, '(a)')'#set xtics offset 0, -1'
+        write(outfileindex, '(a)')'set ylabel offset -1, 0 '
+        write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+        write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k2len), ']'
+        write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
+        write(outfileindex, 202, advance="no") (trim(k2line_name(i)), k2line_stop(i), i=1, nk2lines)
+        write(outfileindex, 203)trim(k2line_name(nk2lines+1)), k2line_stop(nk2lines+1)
 
         do i=1, nk2lines-1
-           write(112, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
+           write(outfileindex, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
         enddo
-        write(112, '(a)')'rgb(r,g,b) = int(r)*65536 + int(g)*256 + int(b)'
-        write(112, '(2a)')"plot 'slabek.dat' u 1:2:(rgb(255,$3, 3)) ",  &
+        write(outfileindex, '(a)')'rgb(r,g,b) = int(r)*65536 + int(g)*256 + int(b)'
+        write(outfileindex, '(2a)')"plot 'slabek.dat' u 1:2:(rgb(255,$3, 3)) ",  &
             "w lp lw 2 pt 7  ps 1 lc rgb variable"
 
-        !write(112, '(2a)')"splot 'slabek.dat' u 1:2:3 ",  &
+        !write(outfileindex, '(2a)')"splot 'slabek.dat' u 1:2:3 ",  &
         !   "w lp lw 2 pt 13 palette"
-        close(112)
+        close(outfileindex)
      endif
 
      202 format('set xtics (',:20('"',A3,'" ',F10.5,','))
