@@ -19,4 +19,4 @@ script:
    - sh run_test_Bi2Se3.sh
 
 after_success:
-   - bash <(curl -s https://codecov.io/bash) -t 636c3998-7b1d-4fc2-89ed-e8ad778342fe
+   - bash <(curl -s https://codecov.io/bash)
