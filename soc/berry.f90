@@ -10,7 +10,7 @@
 
    subroutine  berryphase
       use para
-      use mpi
+      use wmpi
       implicit none
 
       integer :: i

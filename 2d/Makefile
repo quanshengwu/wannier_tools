@@ -26,4 +26,4 @@ main :  $(obj)
 	$(f90) -c $(flag) $(includes) $*.f90
 
 clean :
-	rm -f *.o *.mod *~ wann_tools
+	rm -f *.o *.mod *~ wann_tools_2d

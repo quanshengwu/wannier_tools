@@ -1,14 +1,18 @@
 language: c
 sudo: true
 
-before_install:
-   - sudo apt-get update -qq
-   - sudo apt-get install -qq liblapack.so
+addons:
+   apt:
+      packages:
+         - gfortran
+         - libblas-dev 
+         - liblapack-dev 
 
 install:
    - cd soc
+   - cp Makefile.gfortran Makefile
    - make 
 
 script:
    - cd examples
-   - ./run
+   - sh run_test_Bi2Se3.sh

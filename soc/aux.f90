@@ -40,6 +40,7 @@
      use para, only : stdout, cpuid
      implicit none
      if (cpuid==0) then
+        write(stdout, '(a)') " -----------------------------------------------------------------------"
         write(stdout, '(a)') "  W            W            W              TTTTTTTTTTTTTTTTTTTT         "
         write(stdout, '(a)') "   W          W W          W                        TT                  "
         write(stdout, '(a)') "    W        W   W        W                         TT                  "
@@ -52,6 +53,10 @@
         write(stdout, '(a)') "                        Welcome to Wannier_tools.                       "
         write(stdout, '(a)') "                   Tools for topological novel materials.               "
         write(stdout, '(a)') "                          Enjoy it and good luck.                       "
+        write(stdout, '(a)') "                           Author : QuanSheng Wu                        "
+        write(stdout, '(a)') "                        Email : wuquansheng@gmail.com                   "
+        write(stdout, '(a)') " ======================================================================="
+        write(stdout, '(a)') "                                                                        "
      endif
   end subroutine header
 

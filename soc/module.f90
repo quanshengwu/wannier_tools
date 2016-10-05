@@ -19,7 +19,7 @@
      !> define the file index to void the same index in different subroutines
      integer, public, save :: outfileindex= 10
 
-     character*80 :: Hrfile
+     character(80) :: Hrfile
      namelist / TB_FILE / Hrfile
 
      !> control parameters

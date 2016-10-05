@@ -257,7 +257,7 @@
 
      if (lfound) then
         read(1001, *)Num_atoms   ! The unit of lattice vector
-        if(cpuid==0)write(stdout, '(a, i)')'Num_atoms', Num_atoms
+        if(cpuid==0)write(stdout, '(a, i5)')'Num_atoms', Num_atoms
         allocate(atom_name(Num_atoms))
         allocate(Atom_position(3, Num_atoms))
         allocate(Atom_position_direct(3, Num_atoms))
@@ -366,21 +366,37 @@
         read(1001, *)inline   ! The unit of lattice vector
         DirectOrCart= trim(adjustl(inline))
 
+        it= 0
         if (index(DirectOrCart, "D")>0)then
            do i=1, Nwann
-              read(1001, *) wannier_centers_direct(:, i)
+              read(1001, *, end=207, err=207) wannier_centers_direct(:, i)
+              it= it+ 1
               call direct_cart_real(wannier_centers_direct(:, i), &
                  wannier_centers_cart(:, i))
            enddo
 
         else
            do i=1, Nwann
-              read(1001, *) wannier_centers_cart(:, i)
+              read(1001, *, end=207, err=207) wannier_centers_cart(:, i)
+              it= it+ 1
               call cart_direct_real(wannier_centers_cart(:, i), &
                  wannier_centers_direct(:, i))
            enddo
         endif
      endif ! found wannier_centers card
+     207 continue
+     if (it< Nwann.and.cpuid==0) then
+        write(stdout, *)' '
+        write(stdout, *)' >>>> Error happens in Wannier_centres card'
+        write(stdout, *)' Error: the number of wannier_centers lines should ' 
+        write(stdout, *)' equal to the number wannier functions (include spin)'
+        write(stdout, *)' Num_wann', Nwann, ' the centres lines you given ', it
+        write(stdout, *)' Otherwise, if you do not know the meaning of this,' 
+        write(stdout, *)' please delete this card'
+        stop
+     endif
+
+
  
      110 continue
 
@@ -600,7 +616,7 @@
      enddo
 
      104 continue
-     if (.not.lfound .and. BulkBand_calc == .TRUE.) then
+     if (.not.lfound .and. BulkBand_calc) then
         stop 'ERROR: please set KPATH_BULK for bulk band structure calculation'
      endif
 
@@ -677,7 +693,7 @@
 
 
      105 continue
-     if (.not.lfound .and.(SlabBand_calc == .TRUE. .or. SlabSS_calc==.TRUE.)) then
+     if (.not.lfound .and.(SlabBand_calc .or. SlabSS_calc)) then
         stop 'ERROR: please set KPATH_SLAB for slab band structure calculation'
      endif
 
@@ -725,7 +741,7 @@
      if (cpuid==0) write(stdout, '((a, 2f8.4))')'K2D_start:', K2D_start
      if (cpuid==0) write(stdout, '((a, 2f8.4))')'The first vector: ', K2D_vec1
      if (cpuid==0) write(stdout, '((a, 2f8.4))')'The second vector: ', K2D_vec2
-     if (.not.lfound .and.(SlabArc_calc == .TRUE. .or. SlabSpintexture_calc==.TRUE.)) then
+     if (.not.lfound .and.(SlabArc_calc  .or. SlabSpintexture_calc)) then
         stop 'ERROR: please set KPLANE_SLAB for arc or spintexture calculations'
      endif
 
@@ -774,7 +790,7 @@
      if (cpuid==0) write(stdout, '((a, 3f8.4))')'k3D_start : ', K3D_start
      if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 1st vector: ', K3D_vec1
      if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 2nd vector: ', K3D_vec2
-     if (.not.lfound .and.(BulkGap_plane_calc == .TRUE. .or. wanniercenter_calc==.TRUE.)) then
+     if (.not.lfound .and.(BulkGap_plane_calc  .or. wanniercenter_calc)) then
         stop 'ERROR: please set KPLANE_bulk for gap or WCC calculations'
      endif
 
@@ -835,7 +851,7 @@
      if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 1st vector: ', K3D_vec1_cube
      if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 2nd vector: ', K3D_vec2_cube
      if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 3rd vector: ', K3D_vec3_cube
-     if (.not.lfound .and.(BulkGap_cube_calc == .TRUE.)) then
+     if (.not.lfound .and.(BulkGap_cube_calc)) then
         stop 'ERROR: please set KCUBE_BULK for gap3D calculations'
      endif
 
@@ -856,20 +872,22 @@
      enddo
 
      it= 0
-     read(1001, *, err=205)iband_mass
+     read(1001, *, end=205, err=205)iband_mass
      it= it+ 1
-     read(1001, *, err=205)dk_mass
+     read(1001, *, end=205, err=205)dk_mass
      it= it+ 1
-     read(1001, *, err=205)k_mass
+     read(1001, *, end=205, err=205)k_mass
      it= it+ 1
      205 continue
      if (it< 3.and.cpuid==0) then
         write(stdout, *)' '
         write(stdout, *)' >>>> Error happens in EFFECTIVE_MASS card'
         write(stdout, *)' Error: There are three lines in this card to specify the iband_mass'
-        write(stdout, *)" , dk_mass and k_mass"
-        write(stdout, *)" "
-        write(stdout, *)" , dk_mass and k_mass"
+        write(stdout, *)" , dk_mass and k_mass, like this: "
+        write(stdout, *)"EFFECTIVE_MASS"
+        write(stdout, *)" 6       ! the 6'th band"
+        write(stdout, *)" 0.01    ! in unit of 1/Bohr"
+        write(stdout, *)" 0 0 0   ! k point"
         stop
      endif
 

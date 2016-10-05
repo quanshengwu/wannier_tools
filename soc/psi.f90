@@ -135,7 +135,7 @@
    
         if (cpuid==0)write(100, '(a,3f8.4)')'K point ', k
         do i=1, Num_wann
-           if (cpuid==0)write(100,'(i, 30f16.9)')i, eigenvector(i, ib-1), eigenvector(i, ib)
+           if (cpuid==0)write(100,'(i5, 30f16.9)')i, eigenvector(i, ib-1), eigenvector(i, ib)
         enddo
         if (cpuid==0)write(100,*)' '
     
