@@ -12,6 +12,7 @@ install:
    - cd soc
    - cp Makefile.gfortran Makefile
    - make 
+   - cd ..
 
 script:
    - cd examples
