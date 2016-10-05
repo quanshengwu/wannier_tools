@@ -10,10 +10,13 @@ addons:
 
 install:
    - cd soc
-   - cp Makefile.gfortran Makefile
+   - cp Makefile.gfortran_travis Makefile
    - make 
    - cd ..
 
 script:
    - cd examples
    - sh run_test_Bi2Se3.sh
+
+after_success:
+   - bash <(curl -s https://codecov.io/bash) -t 636c3998-7b1d-4fc2-89ed-e8ad778342fe
