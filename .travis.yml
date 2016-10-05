@@ -17,6 +17,7 @@ install:
 script:
    - cd examples
    - sh run_test_Bi2Se3.sh
+   - cd ../../soc/
 
 after_success:
    - bash <(curl -s https://codecov.io/bash)
