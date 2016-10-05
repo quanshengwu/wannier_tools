@@ -1,4 +1,4 @@
-# Wannier_tools
+# Wannier_tools ![](https://travis-ci.org/quanshengwu/wannier_tools.svg?branch=master)  [![codecov](https://codecov.io/gh/quanshengwu/wannier_tools/branch/master/graph/badge.svg)](https://codecov.io/gh/quanshengwu/wannier_tools)
 
 [**More examples in Wiki for Wannier_tools**](https://github.com/quanshengwu/wannier_tools/wiki)
 
