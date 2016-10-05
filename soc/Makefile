@@ -10,15 +10,12 @@ obj =  module.o aux.o symmetry.o readHmnR.o inverse.o\
        main.o
 
 # compiler
-f90  = mpif90 # -check all -pg -traceback
+f90  = gfortran -E -cpp # -fpp # gfortran # -check all -pg -traceback
 
-#FLAGS =  -O3 -nogen-interface  -warn all 
-flag = -O3 -nogen-interface #-warn all 
+flag = -O3 #-nogen-interface #-warn all 
 
 # blas and lapack libraries
-libs = -L/opt/intel/mkl/lib/ \
-		-lmkl_intel_lp64 -lmkl_sequential \
-		-lmkl_core -liomp5
+libs = -llapack -lblas
  
 main :  $(obj)
 	$(f90) $(obj) -o wann_tools $(libs) 

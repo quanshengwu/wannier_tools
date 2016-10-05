@@ -60,10 +60,15 @@
         enddo ! i
      enddo ! ik
 
+#if defined (MPI)
      call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
      call mpi_allreduce(weight, weight_mpi,size(weight),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     eigv_mpi= eigv
+     weight_mpi= weight
+#endif
 
      weight= weight_mpi/maxval(weight_mpi)*255d0
 
@@ -222,10 +227,16 @@
 
      enddo ! ik
 
+#if defined (MPI)
      call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
      call mpi_allreduce(spin,spin_mpi,size(spin),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     eigv_mpi= eigv
+     spin_mpi= spin
+#endif
+
 
      outfileindex= outfileindex+ 1
      if (cpuid==0)then
@@ -432,8 +443,13 @@
 
      enddo  ! ik
 
+#if defined (MPI)
      call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     eigv_mpi= eigv
+#endif
+
 
      if (cpuid==0)then
         open(unit=14, file='bulkek.dat')
@@ -600,8 +616,12 @@
 
      enddo  ! ik
 
+#if defined (MPI)
      call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     eigv_mpi= eigv
+#endif
 
      if (cpuid==0)then
         open(unit=14, file='bulkek.dat')

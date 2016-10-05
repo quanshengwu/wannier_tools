@@ -179,8 +179,12 @@
      enddo ! ik
 
      Omega_mpi= 0d0
+#if defined (MPI)
      call mpi_allreduce(Omega,Omega_mpi,size(Omega_mpi),&
                        mpi_dc,mpi_sum,mpi_cmw,ierr)
+#else
+     Omega_mpi= Omega
+#endif
 
      !> output the Berry curvature to file
      outfileindex= outfileindex+ 1

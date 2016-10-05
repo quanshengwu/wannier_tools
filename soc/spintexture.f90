@@ -177,6 +177,7 @@
 
     enddo  ! ikp  kpoint
     
+#if defined (MPI)
     call mpi_allreduce(sx,sx_mpi,size(sx),mpi_double_precision, &
                   mpi_sum , mpi_comm_world, ierr)
     call mpi_allreduce(sy,sy_mpi,size(sy),mpi_double_precision, &
@@ -185,6 +186,12 @@
                   mpi_sum , mpi_comm_world, ierr)
     call mpi_allreduce(dos,dos_mpi,size(dos),mpi_double_precision, &
                   mpi_sum , mpi_comm_world, ierr)
+#else
+     sx_mpi= sx
+     sy_mpi= sy
+     sz_mpi= sz
+     dos_mpi= dos
+#endif
 
     sx = sx_mpi/pi
     sy = sy_mpi/pi

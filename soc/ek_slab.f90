@@ -96,10 +96,16 @@
         enddo ! j 
      enddo ! i
 
+#if defined (MPI)
      call mpi_allreduce(ekslab,ekslab_mpi,size(ekslab),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
      call mpi_allreduce(surf_weight, surf_weight_mpi,size(surf_weight),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     ekslab_mpi= ekslab
+     surf_weight_mpi= surf_weight
+#endif
+
  
 
      ekslab=ekslab_mpi
@@ -255,10 +261,17 @@
         enddo ! j 
         if (cpuid==0) write(stdout, *)'SlabEk,k', i, knv2
      enddo ! i
+
+#if defined (MPI)
      call mpi_allreduce(ekslab,ekslab_mpi,size(ekslab),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
      call mpi_allreduce(surf_weight, surf_weight_mpi,size(surf_weight),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     ekslab_mpi= ekslab
+     surf_weight_mpi= surf_weight
+#endif
+
  
 
      ekslab=ekslab_mpi

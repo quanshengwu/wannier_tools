@@ -93,8 +93,13 @@ subroutine dos_sub
       call eigensystem_c( 'N', 'U', Num_wann ,Hk, W)
       eigval_mpi(:, ik)= W(iband_low:iband_high)
    enddo
+
+#if defined (MPI)
    call mpi_allreduce(eigval_mpi,eigval,size(eigval),&
                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     eigval= eigval_mpi
+#endif
 
    emin= OmegaMin
    emax= OmegaMax
@@ -241,8 +246,13 @@ subroutine joint_dos
       eigval_mpi(:, ik)= W(iband_low:iband_high)
    enddo
 
+#if defined (MPI)
    call mpi_allreduce(eigval_mpi,eigval,size(eigval),&
                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     eigval= eigval_mpi
+#endif
+
 
    !> calculate fermi-dirac distribution
    do ik=1, knv3
@@ -282,8 +292,12 @@ subroutine joint_dos
    enddo ! ie
 
    jdos = 0d0
+#if defined (MPI)
    call mpi_allreduce(jdos_mpi,jdos,size(jdos),&
                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     jdos= jdos_mpi
+#endif
 
    if (cpuid.eq.0) then
       open(unit=100, file='jdos.dat')
@@ -453,10 +467,16 @@ subroutine dos_joint_dos
 
    enddo ! ik
 
+#if defined (MPI)
    call mpi_allreduce(dos_mpi,dos,size(dos),&
                       mpi_dp,mpi_sum,mpi_cmw,ierr)
    call mpi_allreduce(jdos_mpi,jdos,size(jdos),&
                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     dos= dos_mpi
+     jdos= jdos_mpi
+#endif
+
 
    if (cpuid.eq.0) then
       open(unit=100, file='jdos.dat')

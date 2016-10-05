@@ -100,8 +100,13 @@
         eigv(:, ik)= W
      enddo !ik
 
+#if defined (MPI)
      call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     eigv_mpi= eigv
+#endif
+
 
      if (cpuid.eq.0) then
         open(unit=100, file='landaulevel_k.dat')
@@ -217,8 +222,12 @@
         eigv(:, ib)= W
      enddo !ik
 
+#if defined (MPI)
      call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     eigv_mpi= eigv
+#endif
 
      if (cpuid.eq.0) then
         open(unit=101, file='landaulevel_B.dat')

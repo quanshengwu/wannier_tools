@@ -751,13 +751,13 @@
 
      !> kpoints plane for 3D system--> gapshape
      it= 0
-     read(1001, *, err=204)K3D_start
+     read(1001, *, err=206)K3D_start
      it= it+ 1
-     read(1001, *, err=204)K3D_vec1
+     read(1001, *, err=206)K3D_vec1
      it= it+ 1
-     read(1001, *, err=204)K3D_vec2
+     read(1001, *, err=206)K3D_vec2
      it= it+ 1
-     204 continue
+     206 continue
      if (it< 3.and.cpuid==0) then
         write(stdout, *)' '
         write(stdout, *)' >>>> Error happens in KPLANE_BULK card'

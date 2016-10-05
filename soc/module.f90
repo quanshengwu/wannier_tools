@@ -3,7 +3,9 @@
 !> add namelist for convenience  June 5th 2016 by QuanSheng Wu
 
   module wmpi
+#if defined (MPI)
      include 'mpif.h'
+#endif
   end module wmpi
 
 
@@ -243,10 +245,13 @@
 
      integer :: cpuid
      integer :: num_cpu
+
+# if defined (MPI)
      integer, parameter :: mpi_in= mpi_integer
      integer, parameter :: mpi_dp= mpi_double_precision
      integer, parameter :: mpi_dc= mpi_double_complex
      integer, parameter :: mpi_cmw= mpi_comm_world
+# endif 
 
      !> a matrix change old primitive cell to new primitive cell
      !> which can define new surface

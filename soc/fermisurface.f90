@@ -73,8 +73,12 @@
         eigval_mpi(:, ik)= W
      enddo
 
+#if defined (MPI)
      call mpi_allreduce(eigval_mpi, eigval,size(eigval),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     eigval= eigval_mpi 
+#endif
 
      outfileindex= outfileindex+ 1
      if (cpuid==0)then
@@ -199,8 +203,12 @@
 
      enddo
 
+#if defined (MPI)
      call mpi_allreduce(dos,dos_mpi,size(dos),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     dos_mpi= dos
+#endif
 
      outfileindex= outfileindex+ 1
      if (cpuid==0)then
@@ -356,8 +364,12 @@
       enddo
      
       gap_mpi = 0d0
+#if defined (MPI)
       call mpi_allreduce(gap,gap_mpi,size(gap),&
                         mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     gap_mpi= gap
+#endif
       
       if (cpuid==0)then
          open(unit=15, file='GapCube.dat')
@@ -507,8 +519,12 @@
       
       enddo
       
+#if defined (MPI)
       call mpi_allreduce(gap,gap_mpi,size(gap),&
                         mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     gap_mpi= gap
+#endif
       
       outfileindex= outfileindex+ 1 
       if (cpuid==0)then
@@ -669,8 +685,12 @@
          eigvals_mpi(:, ik)= W
       enddo ! ik
 
+#if defined (MPI)
       call mpi_allreduce(eigvals_mpi, eigvals, size(eigvals), &
                          mpi_dp, mpi_sum, mpi_cmw, ierr)
+#else
+     eigvals= eigvals_mpi
+#endif
 
       ! using bisection algorithm to search the fermi level
       iter= 0 

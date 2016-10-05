@@ -25,10 +25,15 @@
      !> time measure
      real(dp) :: time_start, time_end, time_init
 
+     ierr = 0
+     cpuid= 0
+     num_cpu= 1
      !> initial the environment of mpi 
+#if defined (MPI)
      call mpi_init(ierr)
      call mpi_comm_rank(mpi_cmw,cpuid,ierr)
      call mpi_comm_size(mpi_cmw,num_cpu,ierr)
+#endif
 
      if (cpuid==0) open(unit=stdout, file='WT.out')
 
@@ -89,9 +94,10 @@
 
 
      !> broadcast and Nrpts to every cpu
+#if defined (MPI)
      call MPI_bcast(Num_wann,1,mpi_in,0,mpi_cmw,ierr)
      call MPI_bcast(Nrpts,1,mpi_in,0,mpi_cmw,ierr)
-     
+#endif 
      !> dimension for surface green's function
      Ndim= Num_wann* Np
 
@@ -111,9 +117,11 @@
 
 
      !> broadcast data to every cpu
+#if defined (MPI)
      call MPI_bcast(irvec,size(irvec),mpi_in,0,mpi_cmw,ierr)
      call MPI_bcast(HmnR,size(HmnR),mpi_dc,0,mpi_cmw,ierr)
      call MPI_bcast(ndegen,size(ndegen),mpi_in,0,mpi_cmw,ierr)
+#endif 
 
      !> import symmetry 
     !call symmetry
@@ -327,6 +335,8 @@
      if (cpuid.eq.0)write(stdout,*)'See you next time :)'
 
      
+#if defined (MPI)
      call mpi_finalize(ierr)
+#endif
 
   end  !<< end of main program

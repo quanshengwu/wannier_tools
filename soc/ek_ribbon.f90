@@ -133,10 +133,15 @@
  
         if (cpuid.eq.0) write(stdout,'(a2,i4,f12.5,f10.2,a2)')'k',i,ekribbon(1,i)
      enddo
+#if defined (MPI)
      call mpi_allreduce(ekribbon,ekribbon_mpi,size(ekribbon),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
      call mpi_allreduce(surf_weight, surf_weight_mpi,size(surf_weight),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     ekribbon_mpi= ekribbon
+     surf_weight_mpi= surf_weight
+#endif
      surf_weight= surf_weight_mpi/ maxval(surf_weight_mpi)
   
      if (cpuid.eq.0) then

@@ -186,8 +186,13 @@
 
       enddo !< iky
 
+#if defined (MPI)
       call mpi_allreduce(WannierCenterKy, WannierCenterKy_mpi, &
            size(WannierCenterKy), mpi_dp, mpi_sum, mpi_cmw, ierr)
+#else
+     WannierCenterKy_mpi= WannierCenterKy
+#endif
+
 
       outfileindex= outfileindex+ 1
       if (cpuid==0) then
@@ -514,10 +519,16 @@
          endif
       enddo !< iky
 
+#if defined (MPI)
       call mpi_allreduce(WannierCenterKy, WannierCenterKy_mpi, &
            size(WannierCenterKy), mpi_dp, mpi_sum, mpi_cmw, ierr)
       call mpi_allreduce(largestgap, largestgap_mpi, &
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
+#else
+     WannierCenterKy_mpi= WannierCenterKy
+     largestgap_mpi= largestgap
+#endif
+
 
 
 
@@ -881,10 +892,16 @@
 
       WannierCenterKy_mpi= 0d0
       largestgap_mpi= 0d0
+#if defined (MPI)
       call mpi_allreduce(WannierCenterKy, WannierCenterKy_mpi, &
            size(WannierCenterKy), mpi_dp, mpi_sum, mpi_cmw, ierr)
       call mpi_allreduce(largestgap, largestgap_mpi, &
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
+#else
+      WannierCenterKy_mpi= WannierCenterKy
+      largestgap_mpi= largestgap
+#endif
+
 
       outfileindex= outfileindex+ 1
       if (cpuid==0) then
@@ -1236,10 +1253,16 @@
 
       WannierCenterKy_mpi= 0d0
       largestgap_mpi= 0d0
+#if defined (MPI)
       call mpi_allreduce(WannierCenterKy, WannierCenterKy_mpi, &
            size(WannierCenterKy), mpi_dp, mpi_sum, mpi_cmw, ierr)
       call mpi_allreduce(largestgap, largestgap_mpi, &
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
+#else
+      WannierCenterKy_mpi= WannierCenterKy
+      largestgap_mpi= largestgap
+#endif
+
 
       outfileindex= outfileindex+ 1
       if (cpuid==0) then
@@ -1541,10 +1564,16 @@
 
       WannierCenterKy_mpi= 0d0
       largestgap_mpi= 0d0
+#if defined (MPI)
       call mpi_allreduce(WannierCenterKy, WannierCenterKy_mpi, &
            size(WannierCenterKy), mpi_dp, mpi_sum, mpi_cmw, ierr)
       call mpi_allreduce(largestgap, largestgap_mpi, &
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
+#else
+      WannierCenterKy_mpi= WannierCenterKy
+      largestgap_mpi= largestgap
+#endif
+
 
       outfileindex= outfileindex+ 1
       if (cpuid==0) then
@@ -1868,10 +1897,16 @@
 
       WannierCenterKy_mpi= 0d0
       largestgap_mpi= 0d0
+#if defined (MPI)
       call mpi_allreduce(WannierCenterKy, WannierCenterKy_mpi, &
            size(WannierCenterKy), mpi_dp, mpi_sum, mpi_cmw, ierr)
       call mpi_allreduce(largestgap, largestgap_mpi, &
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
+#else
+      WannierCenterKy_mpi= WannierCenterKy
+      largestgap_mpi= largestgap
+#endif
+
 
       outfileindex= outfileindex+ 1
       if (cpuid==0) then
@@ -2018,10 +2053,16 @@
 
       WannierCenterKy_mpi= 0d0
       largestgap_mpi= 0d0
+#if defined (MPI)
       call mpi_allreduce(WannierCenterKy, WannierCenterKy_mpi, &
            size(WannierCenterKy), mpi_dp, mpi_sum, mpi_cmw, ierr)
       call mpi_allreduce(largestgap, largestgap_mpi, &
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
+#else
+      WannierCenterKy_mpi= WannierCenterKy
+      largestgap_mpi= largestgap
+#endif
+
 
       outfileindex= outfileindex+ 1
       if (cpuid==0) then

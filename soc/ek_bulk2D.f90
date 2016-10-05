@@ -126,12 +126,19 @@
         gap (   ik)= W(Numoccupied+1)- W(Numoccupied)
      enddo
 
+#if defined (MPI)
      call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
      call mpi_allreduce(gap ,gap_mpi,size(gap ),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
      call mpi_allreduce(spin ,spin_mpi,size(spin ),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     eigv_mpi= eigv
+     gap_mpi= gap
+     spin_mpi= spin
+#endif
+
 
      if (cpuid==0)then
         open(unit=14, file='bulkek2D.dat')
@@ -289,6 +296,7 @@
         gap (   ik)= W(Numoccupied+1)- W(Numoccupied)
      enddo !ik
 
+#if defined (MPI)
      call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
      call mpi_allreduce(gap ,gap_mpi,size(gap ),&
@@ -297,6 +305,13 @@
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
      call mpi_allreduce(dos ,dos_mpi,size(dos ),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     gap_mpi= gap
+     dos_mpi= dos
+     eigv_mpi= eigv
+     spin_mpi= spin
+#endif
+
 
 
      if (cpuid==0)then

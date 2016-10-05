@@ -147,12 +147,19 @@
      enddo ! ikp
 
      !> we don't have to do allreduce operation
+#if defined (MPI)
      call mpi_reduce(dos_l, dos_l_mpi, size(dos_l), mpi_double_precision,&
                      mpi_sum, 0, mpi_comm_world, ierr)
      call mpi_reduce(dos_r, dos_r_mpi, size(dos_r), mpi_double_precision,&
                      mpi_sum, 0, mpi_comm_world, ierr)
      call mpi_reduce(dos_bulk, dos_bulk_mpi, size(dos_bulk), mpi_double_precision,&
                      mpi_sum, 0, mpi_comm_world, ierr)
+#else
+     dos_l_mpi= dos_l
+     dos_r_mpi= dos_r
+     dos_bulk_mpi= dos_bulk
+#endif
+
      dos_l=log(dos_l_mpi)
      dos_r=log(dos_r_mpi)
      dos_bulk=log(dos_bulk_mpi)

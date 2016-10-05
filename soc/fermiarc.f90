@@ -131,12 +131,18 @@
      enddo
 
      !> we don't have to do allreduce operation
+#if defined (MPI)
      call mpi_reduce(dos_l, dos_l_mpi, size(dos_l),mpi_double_precision,&
                      mpi_sum, 0, mpi_comm_world, ierr)
      call mpi_reduce(dos_r, dos_r_mpi, size(dos_r),mpi_double_precision,&
                      mpi_sum, 0, mpi_comm_world, ierr)
      call mpi_reduce(dos_bulk, dos_bulk_mpi, size(dos_bulk), mpi_double_precision,&
                      mpi_sum, 0, mpi_comm_world, ierr)
+#else
+     dos_l_mpi= dos_l
+     dos_r_mpi= dos_r
+     dos_bulk_mpi= dos_bulk
+#endif
 
      do ikp=1, Nk1*Nk2
         dos_l_only(ikp)= dos_l_mpi(ikp)- dos_bulk_mpi(ikp)
@@ -672,6 +678,7 @@
   
      enddo
 
+#if defined (MPI)
      !> we don't have to do allreduce operation
      call mpi_allreduce(dos_l, dos_l_mpi, size(dos_l),mpi_double_precision,&
                      mpi_sum, mpi_comm_world, ierr)
@@ -691,6 +698,18 @@
                      mpi_sum, mpi_comm_world, ierr)
      call mpi_allreduce(sz_r, sz_r_mpi, size(sz_r),mpi_double_precision,&
                      mpi_sum, mpi_comm_world, ierr)
+
+#else
+     dos_l_mpi= dos_l
+     dos_r_mpi= dos_r
+     dos_bulk_mpi= dos_bulk
+     sx_l_mpi= sx_l
+     sy_l_mpi= sy_l
+     sz_l_mpi= sz_l
+     sx_r_mpi= sx_r
+     sy_r_mpi= sy_r
+     sz_r_mpi= sz_r
+#endif
 
      do ikp=1, Nk1*Nk2
         ik1= ik12(1, ikp)
@@ -775,6 +794,7 @@
      jdos_r_mpi=1d-12
      jsdos_l_mpi=1d-12
      jsdos_r_mpi=1d-12
+#if defined (MPI)
      call mpi_reduce(jdos_l, jdos_l_mpi, size(jdos_l),mpi_double_precision,&
                      mpi_sum, 0, mpi_comm_world, ierr)
      call mpi_reduce(jdos_r, jdos_r_mpi, size(jdos_r),mpi_double_precision,&
@@ -783,6 +803,13 @@
                      mpi_sum, 0, mpi_comm_world, ierr)
      call mpi_reduce(jsdos_r, jsdos_r_mpi, size(jsdos_r),mpi_double_precision,&
                      mpi_sum, 0, mpi_comm_world, ierr)
+
+#else
+     jdos_l_mpi= jdos_l
+     jdos_r_mpi= jdos_r
+     jsdos_l_mpi= jsdos_l
+     jsdos_r_mpi= jsdos_r
+#endif
 
      outfileindex= outfileindex+ 1
      arcljfile= outfileindex

@@ -291,8 +291,12 @@
         enddo
      enddo ! ik
 
+#if defined (MPI)
      call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     eigv_mpi= eigv
+#endif
 
      eigv= eigv_mpi
      ik= 0
