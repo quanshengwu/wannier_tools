@@ -12,7 +12,7 @@ obj =  module.o aux.o symmetry.o readHmnR.o inverse.o\
 # compiler
 f90  = gfortran -cpp -fprofile-arcs -ftest-coverage
 
-flag = -O3                              
+flag = -O0                              
 
 # blas and lapack libraries
 libs = -llapack -lblas
