@@ -20,7 +20,7 @@
 
      integer  :: stat
      integer  :: i, ia, n
-     integer  :: j, io
+     integer  :: j, io, it
      integer  :: NN
      integer :: nwann
      real(dp) :: t1, temp
@@ -547,14 +547,26 @@
      k3line_start= 0d0
      k3line_end= 0d0
      k3line_name= ' '
+     it=0
      do i=1, nk3lines
-        read(1001, *) k3line_name(i), k3line_start(:, i), &
+        read(1001, *, err=201) k3line_name(i), k3line_start(:, i), &
                       char_temp, k3line_end(:, i)
+        it= it+ 1
         if(cpuid==0)write(stdout, '(a5, 3f9.4, 2x, a5, 3f9.4)')&
           k3line_name(i), k3line_start(:, i), &
           char_temp, k3line_end(:, i)
 
      enddo
+     201 continue
+     if (it< nk3lines.and.cpuid==0) then
+        write(stdout, *)' '
+        write(stdout, *)' >>>> Error happens in KPATH_BULK card'
+        write(stdout, *)' Error: the number of kpath lines should consistent'
+        write(stdout, *)' Nk3lines ', nk3lines, ' the k lines you given ', it
+        write(stdout, *)' Please set nk3lines to be  ', it
+        stop
+     endif
+
      k3line_name(nk3lines+1)= char_temp
 
      NN= Nk
@@ -610,13 +622,27 @@
      if (cpuid==0) write(stdout, *)'k lines for 2D system'
      read(1001, *)nk2lines
      if (cpuid==0) write(stdout, *)'No. of k lines for 2D system : ', nk2lines
+     it = 0
      do i=1, nk2lines
-        read(1001, *) k2line_name(i), kp(:, i), &
+        read(1001, *, err=202) k2line_name(i), kp(:, i), &
                       char_temp, ke(:, i)
-        if(cpuid==0) write(stdout, '(a6, 2f9.5, 4x, a6, 2f9.5)')&
+        it= it+ 1
+        if (cpuid==0) write(stdout, '(a6, 2f9.5, 4x, a6, 2f9.5)')&
                       k2line_name(i), kp(:, i), &
                       char_temp, ke(:, i)
      enddo
+     202 continue
+
+     if (it< nk2lines.and.cpuid==0) then
+        write(stdout, *)' '
+        write(stdout, *)' >>>> Error happens in KPATH_SLAB card'
+        write(stdout, *)' Error: the number of kpath lines should consistent'
+        write(stdout, *)' Nk2lines ', nk2lines, ' the k lines you given ', it
+        write(stdout, *)' Please set nk2lines to be  ', it
+        stop
+     endif
+
+
      k2line_name(nk2lines+1) = char_temp
  
      NN= Nk
@@ -675,9 +701,24 @@
      enddo
 
      !> kpoints plane for 2D system--> arcs  
-     read(1001, *)K2D_start
-     read(1001, *)K2D_vec1
-     read(1001, *)K2D_vec2
+     it = 0
+     read(1001, *, err=203)K2D_start
+     it= it+ 1
+     read(1001, *, err=203)K2D_vec1
+     it= it+ 1
+     read(1001, *, err=203)K2D_vec2
+     it= it+ 1
+     203 continue
+     if (it< 3.and.cpuid==0) then
+        write(stdout, *)' '
+        write(stdout, *)' >>>> Error happens in KPLANE_SLAB card'
+        write(stdout, *)' Error: There are three lines in this card to specify the start point'
+        write(stdout, *)' of vectors, and two lines to assign two vectors.'
+        write(stdout, *)" If you don't know the meaning of this card, please delete this card"
+        stop
+     endif
+
+
      106 continue
 
      if (cpuid==0) write(stdout, *)'>> Kpoints plane for 2D system--> arcs  '
@@ -709,9 +750,24 @@
      enddo
 
      !> kpoints plane for 3D system--> gapshape
-     read(1001, *)K3D_start
-     read(1001, *)K3D_vec1
-     read(1001, *)K3D_vec2
+     it= 0
+     read(1001, *, err=204)K3D_start
+     it= it+ 1
+     read(1001, *, err=204)K3D_vec1
+     it= it+ 1
+     read(1001, *, err=204)K3D_vec2
+     it= it+ 1
+     204 continue
+     if (it< 3.and.cpuid==0) then
+        write(stdout, *)' '
+        write(stdout, *)' >>>> Error happens in KPLANE_BULK card'
+        write(stdout, *)' Error: There are three lines in this card to specify the start point'
+        write(stdout, *)' of vectors, and two lines to assign two vectors.'
+        write(stdout, *)" If you don't know the meaning of this card, please delete this card"
+        stop
+     endif
+
+
      107 continue
 
      if (cpuid==0) write(stdout, *)'>> Kpoints plane for 3D system--> gapshape  '
@@ -744,10 +800,25 @@
      enddo
 
      !> kpoints plane for 3D system--> gapshape
-     read(1001, *)K3D_start_cube
-     read(1001, *)K3D_vec1_cube
-     read(1001, *)K3D_vec2_cube
-     read(1001, *)K3D_vec3_cube
+     it= 0
+     read(1001, *, err=204)K3D_start_cube
+     it= it+ 1
+     read(1001, *, err=204)K3D_vec1_cube
+     it= it+ 1
+     read(1001, *, err=204)K3D_vec2_cube
+     it= it+ 1
+     read(1001, *, err=204)K3D_vec3_cube
+     it= it+ 1
+     204 continue
+     if (it< 3.and.cpuid==0) then
+        write(stdout, *)' '
+        write(stdout, *)' >>>> Error happens in KCUBE_BULK card'
+        write(stdout, *)' Error: There are four lines in this card to specify the start point'
+        write(stdout, *)' of vectors, and three lines to assign two vectors.'
+        write(stdout, *)" If you don't know the meaning of this card, please delete this card"
+        stop
+     endif
+
 
      kCubeVolume= K3D_vec1_cube(1)*(K3D_vec2_cube(2)*K3D_vec3_cube(3) &
                   - K3D_vec2_cube(3)*K3D_vec3_cube(2)) &
@@ -784,9 +855,24 @@
         endif
      enddo
 
-     read(1001, *)iband_mass
-     read(1001, *)dk_mass
-     read(1001, *)k_mass
+     it= 0
+     read(1001, *, err=205)iband_mass
+     it= it+ 1
+     read(1001, *, err=205)dk_mass
+     it= it+ 1
+     read(1001, *, err=205)k_mass
+     it= it+ 1
+     205 continue
+     if (it< 3.and.cpuid==0) then
+        write(stdout, *)' '
+        write(stdout, *)' >>>> Error happens in EFFECTIVE_MASS card'
+        write(stdout, *)' Error: There are three lines in this card to specify the iband_mass'
+        write(stdout, *)" , dk_mass and k_mass"
+        write(stdout, *)" "
+        write(stdout, *)" , dk_mass and k_mass"
+        stop
+     endif
+
 
      109 continue
      if (cpuid==0) write(stdout, *)' '

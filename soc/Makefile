@@ -4,7 +4,7 @@ obj =  module.o aux.o symmetry.o readHmnR.o inverse.o\
        readinput.o fermisurface.o surfgreen.o surfstat.o \
 		 mat_mul.o ham_ribbon.o ek_ribbon.o ham_bulk.o ek_bulk.o \
        fermiarc.o spintexture.o berrycurvature.o \
-		 wanniercenter.o dos.o  \
+		 wanniercenter.o dos.o  orbital_momenta.o \
 		 landau_level.o berry.o \
 		 effective_mass.o \
        main.o

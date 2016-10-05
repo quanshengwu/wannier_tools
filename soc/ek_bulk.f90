@@ -49,6 +49,8 @@
         W= 0d0
         call eigensystem_c( 'V', 'U', Num_wann ,Hamk_bulk, W)
 
+        if (sum(abs(k))<1e-5) call  orbital_momenta(k, Hamk_bulk)
+
         eigv(:, ik)= W
         do i=1, Num_wann  !> band 
            do j=1, Num_wann/2  !> projector
