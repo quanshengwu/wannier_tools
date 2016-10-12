@@ -3,6 +3,7 @@
 
 ! History  
 !        4/15/2010 by Quansheng Wu
+! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
   subroutine ham_ribbon(k,Hamk_ribbon)
   
      use para
@@ -19,8 +20,9 @@
         Num_wann*nslab1*nslab2) 
 
 ! the factor 2 is induced by spin
-     complex(Dp) :: Hij(-ijmax:ijmax,-ijmax:ijmax,Num_wann,Num_wann)
+     complex(Dp), allocatable :: Hij(:, :, :, :)
 
+     allocate(Hij(-ijmax:ijmax,-ijmax:ijmax,Num_wann,Num_wann))
      call ham_qlayer2qlayerribbon(k,Hij)
 
      Hamk_ribbon=0.0d0 

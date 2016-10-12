@@ -3,6 +3,7 @@
 
 ! History  
 !        May/29/2011 by Quansheng Wu
+! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
   subroutine ham_bulk(k,Hamk_bulk)
   
      use para
@@ -19,7 +20,7 @@
      real(Dp) :: k(3)      
 
      ! coordinates of R vector 
-     real(Dp) :: R(3), R1(3), R2(3)
+     real(Dp) :: R(3), R1(3), R2(3), R3(3)
 
 ! Hamiltonian of bulk system
      complex(Dp),intent(out) ::Hamk_bulk(Num_wann, Num_wann) 
@@ -43,32 +44,30 @@
         do ia1= 1, Num_atoms
            istart1= sum(nprojs(1:ia1-1))+1
            iend1= sum(nprojs(1:ia1))
-          !print *, ia1, istart1, iend1
-          !pause
            do ia2= 1, Num_atoms
               istart2= sum(nprojs(1:ia2-1))+1
               iend2= sum(nprojs(1:ia2))
-              R1= Atom_position(:, ia1)
-              R2= Atom_position(:, ia2)
-              R2= R-R1+R2
-              kdotr=k(1)*R2(1) + k(2)*R2(2) + k(3)*R2(3)
+              R1= Atom_position_direct(:, ia1)
+              R2= Atom_position_direct(:, ia2)
+              R3= R+ R1- R2
+              kdotr=k(1)*R3(1) + k(2)*R3(2) + k(3)*R3(3)
              !kdotr=k(1)*R (1) + k(2)*R (2) + k(3)*R (3)
 
               Hamk_bulk(istart1:iend1,istart2:iend2)=&
-              Hamk_bulk(istart1:iend1,istart2:iend2)+ &
+              Hamk_bulk(istart1:iend1,istart2:iend2) &
               +HmnR(istart1:iend1,istart2:iend2,iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
 
               if (soc>0) then
                   Hamk_bulk(istart1+nwann:iend1+nwann,istart2:iend2)=&
-                  Hamk_bulk(istart1+nwann:iend1+nwann,istart2:iend2)+ &
+                  Hamk_bulk(istart1+nwann:iend1+nwann,istart2:iend2) &
                   +HmnR(istart1+nwann:iend1+nwann,istart2:iend2,iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
 
                   Hamk_bulk(istart1+nwann:iend1+nwann,istart2+nwann:iend2+nwann)=&
-                  Hamk_bulk(istart1+nwann:iend1+nwann,istart2+nwann:iend2+nwann)+ &
+                  Hamk_bulk(istart1+nwann:iend1+nwann,istart2+nwann:iend2+nwann) &
                   +HmnR(istart1+nwann:iend1+nwann,istart2+nwann:iend2+nwann,iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
 
                   Hamk_bulk(istart1:iend1,istart2+nwann:iend2+nwann)=&
-                  Hamk_bulk(istart1:iend1,istart2+nwann:iend2+nwann)+ &
+                  Hamk_bulk(istart1:iend1,istart2+nwann:iend2+nwann) &
                   +HmnR(istart1:iend1,istart2+nwann:iend2+nwann,iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
 
               endif
@@ -92,7 +91,7 @@
      enddo
 
   return
-  end
+  end  subroutine ham_bulk
 
 
 
@@ -107,8 +106,7 @@
      implicit none
 
 ! loop index  
-     integer :: i1,i2,ia,ib,ic,iR, ia1, ia2
-     integer :: istart1, istart2, iend1, iend2
+     integer :: i1,i2,ia,ib,ic,iR
      integer :: nwann
 
      real(dp) :: kdotr
@@ -138,8 +136,8 @@
         kdotr=k(1)*R (1) + k(2)*R (2) + k(3)*R (3)
 
         Hamk_bulk(:, :)=&
-        Hamk_bulk(:, :)+ &
-        +HmnR(:, :, iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
+        Hamk_bulk(:, :) &
+        + HmnR(:, :, iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
      enddo ! iR
 
     !call mat_mul(Num_wann, mirror_z, Hamk_bulk, mat1)
@@ -157,4 +155,5 @@
      enddo
 
   return
-  end
+  end subroutine ham_bulk_old
+

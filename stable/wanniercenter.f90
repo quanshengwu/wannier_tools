@@ -1,17 +1,15 @@
 ! this suboutine is used for wannier center calculation for slab system
+! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 
    subroutine  wannier_center2D
       use para
-      use mpi
+      use wmpi
       implicit none
 
       integer :: Nkx
       integer :: Nky
-      integer :: knv2
 
       integer :: i
-      integer :: j
-      integer :: l 
       integer :: nfill
 
       integer :: ikx
@@ -61,7 +59,6 @@
 
       Nkx= Nk
       Nky= 40
-      knv2= Nkx*Nky
 
       nfill= Numoccupied*Nslab
 
@@ -189,18 +186,24 @@
 
       enddo !< iky
 
+#if defined (MPI)
       call mpi_allreduce(WannierCenterKy, WannierCenterKy_mpi, &
            size(WannierCenterKy), mpi_dp, mpi_sum, mpi_cmw, ierr)
+#else
+     WannierCenterKy_mpi= WannierCenterKy
+#endif
 
+
+      outfileindex= outfileindex+ 1
       if (cpuid==0) then
-         open(unit=101, file='wanniercenter.dat')
+         open(unit=outfileindex, file='wanniercenter.dat')
 
          do iky=1, Nky
-            write(101, '(10000f16.8)') kpoints(2, 1, iky), &
+            write(outfileindex, '(10000f16.8)') kpoints(2, 1, iky), &
                dmod(sum(WannierCenterKy_mpi(:, iky)), 1d0), & 
                WannierCenterKy_mpi(:, iky)
          enddo
-         close(101)
+         close(outfileindex)
       endif
 
       return
@@ -212,12 +215,11 @@
 
    subroutine  wannier_center2D_alt
       use para
-      use mpi
+      use wmpi
       implicit none
 
       integer :: Nkx
       integer :: Nky
-      integer :: knv2
 
       integer :: i
       integer :: j
@@ -306,7 +308,6 @@
 
       Nkx= Nk
       Nky= 40
-      knv2= Nkx*Nky
 
       nfill= Numoccupied*Nslab
 
@@ -518,28 +519,40 @@
          endif
       enddo !< iky
 
+#if defined (MPI)
       call mpi_allreduce(WannierCenterKy, WannierCenterKy_mpi, &
            size(WannierCenterKy), mpi_dp, mpi_sum, mpi_cmw, ierr)
       call mpi_allreduce(largestgap, largestgap_mpi, &
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
+#else
+     WannierCenterKy_mpi= WannierCenterKy
+     largestgap_mpi= largestgap
+#endif
 
 
 
+
+      outfileindex= outfileindex+ 1
       if (cpuid==0) then
-         open(unit=101, file='wanniercenter.dat')
-         open(unit=102, file='largestgap.dat')
+         open(unit=outfileindex, file='wanniercenter.dat')
 
          do iky=1, Nky
-            write(101, '(10000f16.8)') kpoints(2, 1, iky), &
+            write(outfileindex, '(10000f16.8)') kpoints(2, 1, iky), &
                dmod(sum(WannierCenterKy_mpi(:, iky)), 1d0), & 
                WannierCenterKy_mpi(:, iky)
-            write(102, '(10000f16.8)') kpoints(2, 1, iky), &
-               largestgap_mpi(iky)
          enddo
-         close(101)
-         close(102)
+         close(outfileindex)
       endif
 
+      outfileindex= outfileindex+ 1
+      if (cpuid==0) then
+         open(unit=outfileindex, file='largestgap.dat')
+         do iky=1, Nky
+            write(outfileindex, '(10000f16.8)') kpoints(2, 1, iky), &
+               largestgap_mpi(iky)
+         enddo
+         close(outfileindex)
+      endif
       return
    end subroutine  wannier_center2D_alt
 
@@ -551,18 +564,14 @@
    !> which have the same mirror eigenvalue
    subroutine  wannier_center3D_plane_mirror_minus
       use para
-      use mpi
+      use wmpi
       implicit none
 
-      integer :: Nk1
-      integer :: Nk2
-      integer :: knv2
 
       integer :: i
       integer :: j
       integer :: l 
       integer :: m 
-      integer :: n
       integer :: ia
       integer :: nfill
       integer :: nfill_half
@@ -651,8 +660,7 @@
       real(dp) :: xnm1
       real(dp) :: Deltam
       real(dp), allocatable :: xnm(:)
-      real(dp) :: k11(3), k12(3)
-      real(dp) :: k21(3), k22(3)
+      real(dp) :: k0(3), k1(3), k2(3)
 
       !> mirror eigenvalue
       complex(dp), allocatable :: mirror_z_eig(:, :)
@@ -660,12 +668,8 @@
       logical, allocatable :: mirror_plus(:, :)
       logical, allocatable :: mirror_minus(:, :)
 
-      Nk1= Nk
-      Nk2= Nk
-      knv2= Nk1*Nk2
 
       nfill= Numoccupied
-     !nfill_half= Numoccupied
       nfill_half= Numoccupied/2
 
       allocate(kpoints(3, Nk1, Nk2))
@@ -712,18 +716,18 @@
       VT= 0d0
 
       !> set k plane
-      !> the first dimension should be in one primitive plane
-      k11=(/ 0.0d0,  0.0d0,  0.0d0/) ! 
-      k12=(/ 1.0d0,  0.0d0,  0.0d0/) ! X
-      k21=(/ 0.0d0,  0.0d0,  0.0d0/) ! 
-      k22=(/ 0.0d0,  1.0d0,  0.0d0/) ! Y
+      !> the first dimension should be in one primitive cell, [0, 2*pi]
+      k0= K3D_start ! 
+      k1= K3D_vec1   !  
+      k2= K3D_vec2   ! 
 
       do ik2=1, Nk2
          do ik1=1, Nk1
-            kpoints(:, ik1, ik2)= k11+(k12-k11)*(ik1-1)/dble(nk1)+  k21+ (k22-k21)*(ik2-1)/dble(nk2)
-            b= (k12-k11)/dble(nk1)
+            kpoints(:, ik1, ik2)= k0+k1*(ik1-1)/dble(nk1)+ k2*(ik2-1)/dble(nk2-1)
          enddo
       enddo
+      b= k1/dble(nk1)
+      b= b(1)*kua+b(2)*kub+b(3)*kuc
 
 
       !> set up atom index for each orbitals in the basis
@@ -813,11 +817,14 @@
                ikp= ik1+ 1
             endif
             do m=1, Num_wann
-               ia= AtomIndex_orbital(m)
-               br= b(1)*Atom_position(1, ia)+ &
-                   b(2)*Atom_position(2, ia)+ &
-                   b(3)*Atom_position(3, ia)
-               ratio= cos(br*2d0*pi)- zi* sin(br*2d0*pi)
+              !ia= AtomIndex_orbital(m)
+              !br= b(1)*Atom_position(1, ia)+ &
+              !    b(2)*Atom_position(2, ia)+ &
+              !    b(3)*Atom_position(3, ia)
+               br= b(1)*wannier_centers_cart(1, m )+ &
+                   b(2)*wannier_centers_cart(2, m )+ &
+                   b(3)*wannier_centers_cart(3, m )
+               ratio= cos(br)- zi* sin(br)
               !ratio= 1d0
         
                i1= 0
@@ -885,20 +892,27 @@
 
       WannierCenterKy_mpi= 0d0
       largestgap_mpi= 0d0
+#if defined (MPI)
       call mpi_allreduce(WannierCenterKy, WannierCenterKy_mpi, &
            size(WannierCenterKy), mpi_dp, mpi_sum, mpi_cmw, ierr)
       call mpi_allreduce(largestgap, largestgap_mpi, &
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
+#else
+      WannierCenterKy_mpi= WannierCenterKy
+      largestgap_mpi= largestgap
+#endif
 
+
+      outfileindex= outfileindex+ 1
       if (cpuid==0) then
-         open(unit=101, file='wanniercenterky0-mirrorminus.dat')
+         open(unit=outfileindex, file='wcc-mirrorminus.dat')
 
          do ik2=1, Nk2
-            write(101, '(10000f16.8)') dble(ik2-1)/dble(Nk2), &
+            write(outfileindex, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1)/2d0, &
                largestgap_mpi(ik2), dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
                WannierCenterKy_mpi(:, ik2)
          enddo
-         close(101)
+         close(outfileindex)
       endif
 
 
@@ -934,7 +948,7 @@
 
       Z2= mod(Delta, 2)
 
-      if (cpuid==0) print*,'Z2 for ky=0 mirror -i : ', Z2
+      if (cpuid==0) write(stdout, *)'Z2 for ky=0 mirror -i : ', Z2
 
       return
    end subroutine  wannier_center3D_plane_mirror_minus
@@ -947,18 +961,14 @@
    !> which have the same mirror eigenvalue
    subroutine  wannier_center3D_plane_mirror_plus
       use para
-      use mpi
+      use wmpi
       implicit none
 
-      integer :: Nk1
-      integer :: Nk2
-      integer :: knv2
 
       integer :: i
       integer :: j
       integer :: l 
       integer :: m 
-      integer :: n
       integer :: ia
       integer :: nfill
       integer :: nfill_half
@@ -1016,10 +1026,6 @@
       !> eigenvalue
       real(dp), allocatable :: eigenvalue(:)
 
-      !> for each orbital, it correspond to an atom
-      !> dim= Num_wann
-      integer, allocatable :: AtomIndex_orbital(:)
-
       real(dp) :: Umatrix_t(3, 3)
 
       !> b.R
@@ -1047,8 +1053,7 @@
       real(dp) :: xnm1
       real(dp) :: Deltam
       real(dp), allocatable :: xnm(:)
-      real(dp) :: k11(3), k12(3)
-      real(dp) :: k21(3), k22(3)
+      real(dp) :: k0(3), k1(3), k2(3)
 
       !> mirror eigenvalue
       complex(dp), allocatable :: mirror_z_eig(:, :)
@@ -1056,9 +1061,6 @@
       logical, allocatable :: mirror_plus(:, :)
       logical, allocatable :: mirror_minus(:, :)
 
-      Nk1= Nk
-      Nk2= Nk
-      knv2= Nk1*Nk2
 
       nfill= Numoccupied
      !nfill_half= Numoccupied
@@ -1086,7 +1088,6 @@
       allocate(VT(nfill_half, nfill_half))
       allocate(WannierCenterKy(nfill_half, Nk2))
       allocate(WannierCenterKy_mpi(nfill_half, Nk2))
-      allocate(AtomIndex_orbital(Num_wann))
       allocate(xnm(nfill_half))
       allocate(largestgap(Nk2))
       allocate(largestgap_mpi(Nk2))
@@ -1108,45 +1109,18 @@
       VT= 0d0
 
       !> set k plane
-      !> the first dimension should be in one primitive plane
-      k11=(/ 0.0d0,  0.0d0,  0.0d0/) ! 
-      k12=(/ 1.0d0,  0.0d0,  0.0d0/) ! X
-      k21=(/ 0.0d0,  0.0d0,  0.0d0/) ! 
-      k22=(/ 0.0d0,  1.0d0,  0.0d0/) ! Y
+      !> the first dimension should be in one primitive cell, [0, 2*pi]
+      k0= K3D_start ! 
+      k1= K3D_vec1   !  
+      k2= K3D_vec2   ! 
 
       do ik2=1, Nk2
          do ik1=1, Nk1
-            kpoints(:, ik1, ik2)= k11+(k12-k11)*(ik1-1)/dble(nk1)+  k21+ (k22-k21)*(ik2-1)/dble(nk2)
-            b= (k12-k11)/dble(nk1)
+            kpoints(:, ik1, ik2)= k0+k1*(ik1-1)/dble(nk1)+ k2*(ik2-1)/dble(nk2-1)
          enddo
       enddo
-
-
-      !> set up atom index for each orbitals in the basis
-      if (soc>0) then  !> with spin orbital coupling
-         l= 0
-         do ia=1, Num_atoms  !> spin up
-            do j=1, nprojs(ia)
-               l= l+ 1
-               AtomIndex_orbital(l)= ia
-            enddo ! l
-         enddo ! ia
-         do ia=1, Num_atoms  !> spin down
-            do j=1, nprojs(ia)
-               l= l+ 1
-               AtomIndex_orbital(l)= ia
-            enddo ! l
-         enddo ! ia
-      else  !> without spin orbital coupling
-         l= 0
-         do ia=1, Num_atoms  !> spin down
-            do j=1, nprojs(ia)
-               l= l+ 1
-               AtomIndex_orbital(l)= ia
-            enddo ! l
-         enddo ! ia
-
-      endif
+      b= k1/dble(nk1)
+      b= b(1)*kua+b(2)*kub+b(3)*kuc
 
       Umatrix_t= transpose(Umatrix)
       call inv_r(3, Umatrix_t)
@@ -1209,12 +1183,10 @@
                ikp= ik1+ 1
             endif
             do m=1, Num_wann
-               ia= AtomIndex_orbital(m)
-               br= b(1)*Atom_position(1, ia)+ &
-                   b(2)*Atom_position(2, ia)+ &
-                   b(3)*Atom_position(3, ia)
-               ratio= cos(br*2d0*pi)- zi* sin(br*2d0*pi)
-              !ratio= 1d0
+               br= b(1)*wannier_centers_cart(1, m )+ &
+                   b(2)*wannier_centers_cart(2, m )+ &
+                   b(3)*wannier_centers_cart(3, m )
+               ratio= cos(br)- zi* sin(br)
         
                i1= 0
                do j=1, nfill
@@ -1281,20 +1253,27 @@
 
       WannierCenterKy_mpi= 0d0
       largestgap_mpi= 0d0
+#if defined (MPI)
       call mpi_allreduce(WannierCenterKy, WannierCenterKy_mpi, &
            size(WannierCenterKy), mpi_dp, mpi_sum, mpi_cmw, ierr)
       call mpi_allreduce(largestgap, largestgap_mpi, &
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
+#else
+      WannierCenterKy_mpi= WannierCenterKy
+      largestgap_mpi= largestgap
+#endif
 
+
+      outfileindex= outfileindex+ 1
       if (cpuid==0) then
-         open(unit=101, file='wanniercenterky0-mirrorplus.dat')
+         open(unit=outfileindex, file='wcc-mirrorplus.dat')
 
          do ik2=1, Nk2
-            write(101, '(10000f16.8)') dble(ik2-1)/dble(Nk2), &
+            write(outfileindex, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1)/2, &
                largestgap_mpi(ik2), dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
                WannierCenterKy_mpi(:, ik2)
          enddo
-         close(101)
+         close(outfileindex)
       endif
 
 
@@ -1330,7 +1309,7 @@
 
       Z2= mod(Delta, 2)
 
-      if (cpuid==0) print*,'Z2 for ky=0: ', Z2
+      if (cpuid==0) write(stdout, *)'Z2 for ky=0: ', Z2
 
       return
    end subroutine  wannier_center3D_plane_mirror_plus
@@ -1343,12 +1322,8 @@
 
    subroutine  wannier_center3D_plane
       use para
-      use mpi
+      use wmpi
       implicit none
-
-      integer :: Nk1
-      integer :: Nk2
-      integer :: knv2
 
       integer :: i
       integer :: j
@@ -1404,13 +1379,9 @@
       !> eigenvalue
       real(dp), allocatable :: eigenvalue(:)
 
-      !> for each orbital, it correspond to an atom
-      !> dim= Num_wann
-      integer, allocatable :: AtomIndex_orbital(:)
-
       real(dp) :: Umatrix_t(3, 3)
 
-      !> b.R
+      !> b.r
       real(dp) :: br
 
       !> exp(-i*b.R)
@@ -1435,14 +1406,9 @@
       real(dp) :: xnm1
       real(dp) :: Deltam
       real(dp), allocatable :: xnm(:)
-      real(dp) :: k11(3), k12(3)
-      real(dp) :: k21(3), k22(3)
+      real(dp) :: k0(3), k1(3), k2(3)
 
 
-
-      Nk1= Nk
-      Nk2= Nk
-      knv2= Nk1*Nk2
 
       nfill= Numoccupied
 
@@ -1464,7 +1430,6 @@
       allocate(VT(nfill, nfill))
       allocate(WannierCenterKy(nfill, Nk2))
       allocate(WannierCenterKy_mpi(nfill, Nk2))
-      allocate(AtomIndex_orbital(Num_wann))
       allocate(xnm(nfill))
       allocate(largestgap(Nk2))
       allocate(largestgap_mpi(Nk2))
@@ -1485,45 +1450,20 @@
       VT= 0d0
 
       !> set k plane
-      !> the first dimension should be in one primitive plane
-      k11=(/ 0.0d0,  0.0d0,  0.0d0/) ! 
-      k12=(/ 1.0d0,  0.0d0,  0.0d0/) ! X
-      k21=(/ 0.0d0,  0.0d0,  0.0d0/) ! 
-      k22=(/ 0.0d0,  1.0d0,  0.0d0/) ! Y
+      !> the first dimension should be in one primitive cell, [0, 2*pi]
+      !> the first dimension is the integration direction
+      !> the WCCs are calculated along the second k line
+      k0= K3D_start ! 
+      k1= K3D_vec1   !  
+      k2= K3D_vec2   ! 
 
       do ik2=1, Nk2
          do ik1=1, Nk1
-            kpoints(:, ik1, ik2)= k11+(k12-k11)*(ik1-1)/dble(nk1)+  k21+ (k22-k21)*(ik2-1)/dble(nk2)
-            b= (k12-k11)/dble(nk1)
+            kpoints(:, ik1, ik2)= k0+ k1*(ik1-1d0)/dble(Nk1)+ k2*(ik2-1d0)/dble(Nk2-1)
          enddo
       enddo
-
-
-      !> set up atom index for each orbitals in the basis
-      if (soc>0) then  !> with spin orbital coupling
-         l= 0
-         do ia=1, Num_atoms  !> spin up
-            do j=1, nprojs(ia)
-               l= l+ 1
-               AtomIndex_orbital(l)= ia
-            enddo ! l
-         enddo ! ia
-         do ia=1, Num_atoms  !> spin down
-            do j=1, nprojs(ia)
-               l= l+ 1
-               AtomIndex_orbital(l)= ia
-            enddo ! l
-         enddo ! ia
-      else  !> without spin orbital coupling
-         l= 0
-         do ia=1, Num_atoms  !> spin down
-            do j=1, nprojs(ia)
-               l= l+ 1
-               AtomIndex_orbital(l)= ia
-            enddo ! l
-         enddo ! ia
-
-      endif
+      b= k1/dble(Nk1)
+      b= b(1)*kua+b(2)*kub+b(3)*kuc
 
       Umatrix_t= transpose(Umatrix)
       call inv_r(3, Umatrix_t)
@@ -1531,7 +1471,7 @@
       !>> Get wannier center for ky=0 plane
       !> for each ky, we can get wanniercenter
       do ik2=1+ cpuid, Nk2, num_cpu
-         if (cpuid.eq.0) print *,  'ik', ik2
+         if (cpuid.eq.0) write(stdout, *)' Wilson loop ',  'ik, Nk', ik2, nk2
          Lambda0=0d0
          do i=1, nfill
             Lambda0(i, i)= 1d0
@@ -1539,10 +1479,9 @@
 
          !> for each k1, we get the eigenvectors
          do ik1=1, Nk1
-            !if (cpuid==0) print *, ik1, ik2, Nk1, Nk2
             k= kpoints(:, ik1, ik2)
 
-            call ham_bulk(k,hamk)
+            call ham_bulk_old(k,hamk)
 
             !> diagonal hamk
             call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
@@ -1561,12 +1500,10 @@
                hamk= Eigenvector(:, :, ik1+ 1)
             endif
             do m=1, Num_wann
-               ia= AtomIndex_orbital(m)
-               br= b(1)*Atom_position(1, ia)+ &
-                   b(2)*Atom_position(2, ia)+ &
-                   b(3)*Atom_position(3, ia)
-               ratio= cos(br*2d0*pi)- zi* sin(br*2d0*pi)
-              !ratio= 1d0
+               br= b(1)*wannier_centers_cart(1, m)+ &
+                   b(2)*wannier_centers_cart(2, m)+ &
+                   b(3)*wannier_centers_cart(3, m)
+               ratio= cos(br)- zi* sin(br)
          
                do j=1, nfill
                   do i=1, nfill
@@ -1627,22 +1564,28 @@
 
       WannierCenterKy_mpi= 0d0
       largestgap_mpi= 0d0
+#if defined (MPI)
       call mpi_allreduce(WannierCenterKy, WannierCenterKy_mpi, &
            size(WannierCenterKy), mpi_dp, mpi_sum, mpi_cmw, ierr)
       call mpi_allreduce(largestgap, largestgap_mpi, &
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
+#else
+      WannierCenterKy_mpi= WannierCenterKy
+      largestgap_mpi= largestgap
+#endif
 
+
+      outfileindex= outfileindex+ 1
       if (cpuid==0) then
-         open(unit=101, file='wanniercenterky0.dat')
+         open(unit=outfileindex, file='wcc.dat')
 
          do ik2=1, Nk2
-            write(101, '(10000f16.8)') dble(ik2-1)/dble(Nk2), &
+            write(outfileindex, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1)/2d0, &
                largestgap_mpi(ik2), dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
                WannierCenterKy_mpi(:, ik2)
          enddo
-         close(101)
+         close(outfileindex)
       endif
-
 
       !> Z2 calculation Alexey Soluyanov arXiv:1102.5600
 
@@ -1676,23 +1619,43 @@
 
       Z2= mod(Delta, 2)
 
-      if (cpuid==0) print*,'Z2 for ky=0: ', Z2
+      if (cpuid==0) write(stdout, *)'Z2 for the plane you choose: ', Z2
+
+
+      !> generate gnu script for wannier charge center plots
+      outfileindex= outfileindex+ 1
+      if (cpuid==0) then
+         open(unit=outfileindex, file='wcc.gnu')
+         write(outfileindex, '(a)')"set encoding iso_8859_1"
+         write(outfileindex, '(a)')'set terminal  postscript enhanced color font ",30"'
+         write(outfileindex, '(a)')"set output 'wcc.eps'"
+         write(outfileindex, '(a)')'unset key '
+         write(outfileindex, '(a)')'set border lw 3 '
+         write(outfileindex, '(a)')'set xtics offset 0, 0.2'
+         write(outfileindex, '(a)')'set xtics format "%4.1f" nomirror out '
+         write(outfileindex, '(a)')'set xlabel "k" '
+         write(outfileindex, '(a)')'set xlabel offset 0, 0.7 '
+         write(outfileindex, '(a)')'set ytics 0.5 '
+         write(outfileindex, '(a)')'set ytics format "%4.1f" nomirror out'
+         write(outfileindex, '(a)')'set ylabel "WCC"'
+         write(outfileindex, '(a)')'set ylabel offset 2, 0.0 '
+         write(outfileindex, '(a)')'set xrange [0: 0.5]'
+         write(outfileindex, '(a)')'set yrange [0:1]'
+         write(outfileindex, '(a)')"plot 'wcc.dat' u 1:2 w l lw 2  lc 'blue', \"   
+         write(outfileindex, '(a, i5, a)')" for [i=4: ", nfill+3, "] 'wcc.dat' u 1:i w p  pt 7  ps 1.1 lc 'red'"
+         close(outfileindex)
+      endif
 
       return
    end subroutine  wannier_center3D_plane
-
 
 
 ! this suboutine is used for wannier center calculation for 3D system
 
    subroutine  wannier_center3D
       use para
-      use mpi
+      use wmpi
       implicit none
-
-      integer :: Nk1
-      integer :: Nk2
-      integer :: knv2
 
       integer :: i
       integer :: j
@@ -1748,10 +1711,6 @@
       !> eigenvalue
       real(dp), allocatable :: eigenvalue(:)
 
-      !> for each orbital, it correspond to an atom
-      !> dim= Num_wann
-      integer, allocatable :: AtomIndex_orbital(:)
-
       real(dp) :: Umatrix_t(3, 3)
 
       !> b.R
@@ -1783,10 +1742,6 @@
       real(dp), allocatable :: xnm(:)
 
 
-      Nk1= Nk
-      Nk2= Nk
-      knv2= Nk1*Nk2
-
       nfill= Numoccupied
 
       allocate(kpoints(2, Nk1, Nk2))
@@ -1807,7 +1762,6 @@
       allocate(VT(nfill, nfill))
       allocate(WannierCenterKy(nfill, Nk2))
       allocate(WannierCenterKy_mpi(nfill, Nk2))
-      allocate(AtomIndex_orbital(Num_wann))
       allocate(xnm(nfill))
       allocate(largestgap(Nk2))
       allocate(largestgap_mpi(Nk2))
@@ -1840,31 +1794,6 @@
          enddo
       enddo
 
-      !> set up atom index for each orbitals in the basis
-      if (soc>0) then  !> with spin orbital coupling
-         l= 0
-         do ia=1, Num_atoms  !> spin up
-            do j=1, nprojs(ia)
-               l= l+ 1
-               AtomIndex_orbital(l)= ia
-            enddo ! l
-         enddo ! ia
-         do ia=1, Num_atoms  !> spin down
-            do j=1, nprojs(ia)
-               l= l+ 1
-               AtomIndex_orbital(l)= ia
-            enddo ! l
-         enddo ! ia
-      else  !> without spin orbital coupling
-         l= 0
-         do ia=1, Num_atoms  !> spin down
-            do j=1, nprojs(ia)
-               l= l+ 1
-               AtomIndex_orbital(l)= ia
-            enddo ! l
-         enddo ! ia
-
-      endif
 
       Umatrix_t= transpose(Umatrix)
       call inv_r(3, Umatrix_t)
@@ -1872,6 +1801,7 @@
       !>> Get wannier center for ky=0 plane
       !> for each ky, we can get wanniercenter
       do ik2=1+ cpuid, Nk2, num_cpu
+         if (cpuid.eq.0) write(stdout, *)' Wilson loop',  'ik, Nk', ik2, nk2
          Lambda0=0d0
          do i=1, nfill
             Lambda0(i, i)= 1d0
@@ -1884,7 +1814,7 @@
             k(2)= 0d0
             k(3)= kpoints(2, ik1, ik2)
 
-            call ham_bulk(k,hamk)
+            call ham_bulk_old(k,hamk)
 
             !> diagonal hamk
             call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
@@ -1903,12 +1833,10 @@
                hamk= Eigenvector(:, :, ik1+ 1)
             endif
             do m=1, Num_wann
-               ia= AtomIndex_orbital(m)
-               br= b(1)*Atom_position(1, ia)+ &
-                   b(2)*Atom_position(2, ia)+ &
-                   b(3)*Atom_position(3, ia)
-              !ratio= cos(br)- zi* sin(br)
-               ratio= 1d0
+               br= b(1)*wannier_centers_cart(1, m )+ &
+                   b(2)*wannier_centers_cart(2, m )+ &
+                   b(3)*wannier_centers_cart(3, m )
+               ratio= cos(br)- zi* sin(br)
          
                do j=1, nfill
                   do i=1, nfill
@@ -1969,20 +1897,27 @@
 
       WannierCenterKy_mpi= 0d0
       largestgap_mpi= 0d0
+#if defined (MPI)
       call mpi_allreduce(WannierCenterKy, WannierCenterKy_mpi, &
            size(WannierCenterKy), mpi_dp, mpi_sum, mpi_cmw, ierr)
       call mpi_allreduce(largestgap, largestgap_mpi, &
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
+#else
+      WannierCenterKy_mpi= WannierCenterKy
+      largestgap_mpi= largestgap
+#endif
 
+
+      outfileindex= outfileindex+ 1
       if (cpuid==0) then
-         open(unit=101, file='wanniercenterky0.dat')
+         open(unit=outfileindex, file='wanniercenterky0.dat')
 
          do ik2=1, Nk2
-            write(101, '(10000f16.8)') kpoints(2, 1, ik2), &
+            write(outfileindex, '(10000f16.8)') kpoints(2, 1, ik2), &
                largestgap_mpi(ik2), dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
                WannierCenterKy_mpi(:, ik2)
          enddo
-         close(101)
+         close(outfileindex)
       endif
 
 
@@ -2036,7 +1971,7 @@
             k(2)= 0.5d0
             k(3)= kpoints(2, ik1, ik2)
 
-            call ham_bulk(k,hamk)
+            call ham_bulk_old(k,hamk)
 
             !> diagonal hamk
             call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
@@ -2055,12 +1990,10 @@
                hamk= Eigenvector(:, :, ik1+ 1)
             endif
             do m=1, Num_wann
-               ia= AtomIndex_orbital(m)
-               br= b(1)*Atom_position(1, ia)+ &
-                   b(2)*Atom_position(2, ia)+ &
-                   b(3)*Atom_position(3, ia)
-              !ratio= cos(br)- zi* sin(br)
-               ratio= 1d0
+               br= b(1)*wannier_centers_cart(1, m )+ &
+                   b(2)*wannier_centers_cart(2, m )+ &
+                   b(3)*wannier_centers_cart(3, m )
+               ratio= cos(br)- zi* sin(br)
          
                do j=1, nfill
                   do i=1, nfill
@@ -2120,21 +2053,28 @@
 
       WannierCenterKy_mpi= 0d0
       largestgap_mpi= 0d0
+#if defined (MPI)
       call mpi_allreduce(WannierCenterKy, WannierCenterKy_mpi, &
            size(WannierCenterKy), mpi_dp, mpi_sum, mpi_cmw, ierr)
       call mpi_allreduce(largestgap, largestgap_mpi, &
            size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
+#else
+      WannierCenterKy_mpi= WannierCenterKy
+      largestgap_mpi= largestgap
+#endif
 
+
+      outfileindex= outfileindex+ 1
       if (cpuid==0) then
-         open(unit=101, file='wanniercenterky05.dat')
+         open(unit=outfileindex, file='wanniercenterky05.dat')
 
          do ik2=1, Nk2
-            write(101, '(10000f16.8)') kpoints(2, 1, ik2), &
+            write(outfileindex, '(10000f16.8)') kpoints(2, 1, ik2), &
                largestgap_mpi(ik2), &
                dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
                WannierCenterKy_mpi(:, ik2)
          enddo
-         close(101)
+         close(outfileindex)
       endif
 
 

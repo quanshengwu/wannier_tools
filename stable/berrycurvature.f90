@@ -2,24 +2,23 @@
 !> ref : Physical Review B 74, 195118(2006)
 !> eqn (34)
 !> Sep. 22 2015 by Quansheng Wu @ ETHZ
+! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
   subroutine berry_curvarture
 
+     use wmpi
      use para
      implicit none
     
      integer :: iR
      integer :: ik
-     integer :: nk1, nk2
 
      integer :: m, n, i, j
 
-     integer :: knv2
      integer :: ierr
 
 
      real(dp) :: kdotr
      real(dp) :: k(3)
-     real(dp) :: k11(3), k12(3), k21(3), k22(3)
 
      !> R points coordinates (3, nrpts)
      real(dp), allocatable :: crvec(:, :)
@@ -46,16 +45,12 @@
      complex(dp), allocatable :: Omega(:, :)
      complex(dp), allocatable :: Omega_mpi(:, :)
 
-
-     nk1= Nk
-     nk2= Nk
-     knv2= nk1*nk2
-     allocate( kslice(3, knv2))
-     allocate( kslice_shape(3, knv2))
+     allocate( kslice(3, Nk1*Nk2))
+     allocate( kslice_shape(3, Nk1*Nk2))
      allocate( W       (Num_wann))
      allocate( crvec    (3, nrpts))
-     allocate( Omega    (3, knv2))
-     allocate( Omega_mpi(3, knv2))
+     allocate( Omega    (3, Nk1*Nk2))
+     allocate( Omega_mpi(3, Nk1*Nk2))
      allocate( vx      (Num_wann, Num_wann))
      allocate( vy      (Num_wann, Num_wann))
      allocate( vz      (Num_wann, Num_wann))
@@ -67,30 +62,27 @@
      allocate( DHDkdag (Num_wann, Num_wann, 3))
      kslice=0d0
      kslice_shape=0d0
-
-     !TB
-    !k11=(/-0.5d0,  0.0d0, -0.5d0/) ! 
-    !k12=(/ 0.5d0,  0.0d0,  0.5d0/) ! X
-    !k21=(/ 0.0d0,  0.5d0,  0.5d0/) ! 
-    !k22=(/ 0.0d0, -0.5d0, -0.5d0/) ! Y
-     !DFT
-    !k11=(/ 0.0d0, -1.0d0, -1.0d0/) ! -X
-    !k12=(/ 0.0d0,  1.0d0,  1.0d0/) ! X
-    !k21=(/-1.0d0,  0.0d0, -1.0d0/) ! -Y
-    !k22=(/ 1.0d0,  0.0d0,  1.0d0/) ! Y
-     k11=(/ 0.0d0, -0.5d0, -0.5d0/) ! -X
-     k12=(/ 0.0d0,  0.5d0,  0.5d0/) ! X
-     k21=(/-0.5d0,  0.0d0, -0.5d0/) ! -Y
-     k22=(/ 0.5d0,  0.0d0,  0.5d0/) ! Y
-
+     crvec= 0d0
+     omega= 0d0
+     omega_mpi= 0d0
+     vx=0d0
+     vy=0d0
+     vz=0d0
+     Hamk_bulk=0d0
+     Amat= 0d0
+     UU_dag=0d0
+     UU= 0d0
+     DHDk= 0d0
+     DHDkdag= 0d0
+     
 
 
      ik =0
      do i= 1, nk1
         do j= 1, nk2
            ik =ik +1
-           kslice(:, ik)= k11+ (k12-k11)*(i-1)/dble(nk1-1)  &
-                     + k21+ (k22-k21)*(j-1)/dble(nk2-1)  
+           kslice(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(nk1-1)  &
+                     + K3D_vec2*(j-1)/dble(nk2-1)  
            kslice_shape(:, ik)= kslice(1, ik)* Kua+ kslice(2, ik)* Kub+ kslice(3, ik)* Kuc 
         enddo
      enddo
@@ -100,21 +92,22 @@
         crvec(:, iR)= Rua*irvec(1,iR) + Rub*irvec(2,iR) + Ruc*irvec(3,iR)
      enddo
 
-     do ik= 1+ cpuid, knv2, num_cpu
-        if (cpuid==0) print *, ik, knv2
+     do ik= 1+ cpuid, Nk1*Nk2, num_cpu
+        if (cpuid==0) write(stdout, *)'Berry curvature ik, nk1*nk2 ', ik, Nk1*Nk2
 
         !> diagonalize hamiltonian
         k= kslice(:, ik)
 
         ! calculation bulk hamiltonian
         UU= 0d0
-        call ham_bulk(k, Hamk_bulk)
+        call ham_bulk_old(k, Hamk_bulk)
         
 
         !> diagonalization by call zheev in lapack
         W= 0d0
-       !call eigensystem_c( 'V', 'U', Num_wann, UU, W)
-        call utility_diagonalize(hamk_bulk,Num_wann, W, UU)
+        UU=Hamk_bulk
+        call eigensystem_c( 'V', 'U', Num_wann, UU, W)
+       !call zhpevx_pack(hamk_bulk,Num_wann, W, UU)
 
         UU_dag= conjg(transpose(UU))
 
@@ -127,6 +120,7 @@
            vy= vy+ zi*crvec(2, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
            vz= vz+ zi*crvec(3, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
         enddo ! iR
+
 
         !> unitility rotate velocity
         call mat_mul(Num_wann, vx, UU, Amat) 
@@ -185,42 +179,110 @@
      enddo ! ik
 
      Omega_mpi= 0d0
+#if defined (MPI)
      call mpi_allreduce(Omega,Omega_mpi,size(Omega_mpi),&
                        mpi_dc,mpi_sum,mpi_cmw,ierr)
+#else
+     Omega_mpi= Omega
+#endif
 
+     !> output the Berry curvature to file
+     outfileindex= outfileindex+ 1
      if (cpuid==0) then
-        open(unit=18, file='berry.dat')
+        open(unit=outfileindex, file='Berrycurvature.dat')
+        write(outfileindex, '(20a18)')'# kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
+           'real(Omega_x)', 'imag(omega_x)', &
+           'real(Omega_y)', 'imag(omega_y)', &
+           'real(Omega_z)', 'imag(omega_z)'
         ik= 0
         do i= 1, nk1
            do j= 1, nk2
               ik= ik+ 1
-              write(18, '(20f18.10)')kslice_shape(:, ik), Omega_mpi(:, ik)
+              write(outfileindex, '(20f18.10)')kslice_shape(:, ik), Omega_mpi(:, ik)
            enddo
-           write(18, *) ' '
+           write(outfileindex, *) ' '
         enddo
 
-        close(18)
+        close(outfileindex)
 
      endif
 
+     !> generate gnuplot script to plot the Berry curvature
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+
+        open(unit=outfileindex, file='Berrycurvature.gnu')
+        write(outfileindex, '(a)')"set encoding iso_8859_1"
+        write(outfileindex, '(a)')'#set terminal  pngcairo  truecolor enhanced size 1920, 1680 font ",40"'
+        write(outfileindex, '(a)')'set terminal  png       truecolor enhanced size 1920, 1680 font ",40"'
+        write(outfileindex, '(a)')"set output 'Berrycurvature.png'"
+        write(outfileindex, '(a)')'if (!exists("MP_LEFT"))   MP_LEFT = .12'
+        write(outfileindex, '(a)')'if (!exists("MP_RIGHT"))  MP_RIGHT = .92'
+        write(outfileindex, '(a)')'if (!exists("MP_BOTTOM")) MP_BOTTOM = .12'
+        write(outfileindex, '(a)')'if (!exists("MP_TOP"))    MP_TOP = .88'
+        write(outfileindex, '(a)')'if (!exists("MP_GAP"))    MP_GAP = 0.08'
+        write(outfileindex, '(a)')'set multiplot layout 2,3 rowsfirst title "\{ Berry Curvature\}" \'
+        write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
+        write(outfileindex, '(a)')" "
+        write(outfileindex, '(a)')"set palette rgbformulae 33,13,10"
+        write(outfileindex, '(a)')"unset ztics"
+        write(outfileindex, '(a)')"unset key"
+        write(outfileindex, '(a)')"set pm3d"
+        write(outfileindex, '(a)')"set view map"
+        write(outfileindex, '(a)')"set border lw 3"
+        write(outfileindex, '(a)')"set xlabel 'k (1/{\305})'"
+        write(outfileindex, '(a)')"set ylabel 'k (1/{\305})'"
+        write(outfileindex, '(a)')"unset colorbox"
+        write(outfileindex, '(a)')"unset xtics"
+        write(outfileindex, '(a)')"unset xlabel"
+        write(outfileindex, '(a)')"set xrange [] noextend"
+        write(outfileindex, '(a)')"set yrange [] noextend"
+        write(outfileindex, '(a)')"set ytics 0.5 nomirror scale 0.5"
+        write(outfileindex, '(a)')"set pm3d interpolate 2,2"
+        write(outfileindex, '(a)')"set title 'Omega_x real'"
+        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:4 w pm3d"
+        write(outfileindex, '(a)')"unset ylabel"
+        write(outfileindex, '(a)')"unset ytics"
+        write(outfileindex, '(a)')"set title 'Omega_y real'"
+        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:6 w pm3d"
+        write(outfileindex, '(a)')"set title 'Omega_z real'"
+        write(outfileindex, '(a)')"set colorbox"
+        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:8 w pm3d"
+ 
+        write(outfileindex, '(a)')"set xtics 0.5 nomirror scale 0.5"
+        write(outfileindex, '(a)')"set ytics nomirror scale 0.5"
+        write(outfileindex, '(a)')"set ylabel 'k (1/{\305})'"
+        write(outfileindex, '(a)')"set xlabel 'k (1/{\305})'"
+        write(outfileindex, '(a)')"unset colorbox"
+        write(outfileindex, '(a)')"set title 'Omega_x imag'"
+        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:5 w pm3d"
+        write(outfileindex, '(a)')"unset ylabel"
+        write(outfileindex, '(a)')"unset ytics"
+        write(outfileindex, '(a)')"set title 'Omega_y imag'"
+        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:7 w pm3d"
+        write(outfileindex, '(a)')"set title 'Omega_z imag'"
+        write(outfileindex, '(a)')"set colorbox"
+        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:9 w pm3d"
+        close(outfileindex)
+     endif
 
      return
 
   end subroutine berry_curvarture
 
   subroutine Fourier_R_to_k(k, ham)
-     use para
+     use para, only: irvec, HmnR, Nrpts, ndegen, pi, zi, Num_wann, dp
      implicit none
 
      real(dp), intent(in) :: k(3)
      complex(dp), intent(out) :: ham(Num_wann, Num_wann)
      integer :: iR
-     real(dp) :: R(3)
+    !real(dp) :: R(3)
      real(dp) :: kdotr
 
      ham= 0d0
      do iR= 1, Nrpts
-        R= Rua*irvec(1,iR) + Rub*irvec(2,iR) + Ruc*irvec(3,iR)
+       !R= Rua*irvec(1,iR) + Rub*irvec(2,iR) + Ruc*irvec(3,iR)
         kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
         Ham= Ham+ HmnR(:,:,iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
      enddo

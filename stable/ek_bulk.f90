@@ -1,14 +1,15 @@
 ! calculate bulk's energy band using wannier TB method
+! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 
   subroutine ek_bulk
 
-     use mpi
+     use wmpi
      use para
 
      implicit none
 
      integer :: ik, i, j
-	  integer :: knv3
+     integer :: knv3
      integer :: Nwann
      integer :: ierr
      real(dp) :: emin
@@ -24,31 +25,31 @@
 	  real(dp), allocatable :: eigv_mpi(:,:)
 	  real(dp), allocatable :: weight(:,:,:)
 	  real(dp), allocatable :: weight_mpi(:,:,:)
-     weight = 0d0
-     weight_mpi = 0d0
 
      knv3= nk3_band
      allocate( eigv    (Num_wann, knv3))
      allocate( eigv_mpi(Num_wann, knv3))
      allocate( weight    (Num_wann,Num_wann, knv3))
      allocate( weight_mpi(Num_wann,Num_wann, knv3))
-	  eigv    = 0d0
-	  eigv_mpi= 0d0
+     eigv    = 0d0
+     eigv_mpi= 0d0
+     weight = 0d0
+     weight_mpi = 0d0
 
      do ik= 1+cpuid, knv3, num_cpu
-	     if (cpuid==0) write(*, *)'ik, knv3 ', ik, knv3
-	     if (cpuid==0) write(stdout, *)'ik, knv3 ', ik, knv3
+        if (cpuid==0) write(stdout, *)'BulkBand, ik, knv3 ', ik, knv3
 
         k = k3points(:, ik)
 
         ! calculation bulk hamiltonian
         Hamk_bulk= 0d0
-       !call ham_bulk_old(k, Hamk_bulk)
-        call ham_bulk    (k, Hamk_bulk)
+        call ham_bulk_old(k, Hamk_bulk)
 
         !> diagonalization by call zheev in lapack
         W= 0d0
         call eigensystem_c( 'V', 'U', Num_wann ,Hamk_bulk, W)
+
+        if (sum(abs(k))<1e-5) call  orbital_momenta(k, Hamk_bulk)
 
         eigv(:, ik)= W
         do i=1, Num_wann  !> band 
@@ -59,25 +60,30 @@
         enddo ! i
      enddo ! ik
 
+#if defined (MPI)
      call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
      call mpi_allreduce(weight, weight_mpi,size(weight),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     eigv_mpi= eigv
+     weight_mpi= weight
+#endif
 
      weight= weight_mpi/maxval(weight_mpi)*255d0
-     print *,' max weight', maxval(weight_mpi)
 
+     outfileindex= outfileindex+ 1
      if (cpuid==0)then
-        open(unit=14, file='bulkek.dat')
+        open(unit=outfileindex, file='bulkek.dat')
    
         do i=1, Num_wann
            do ik=1, knv3
-              write(14, '(2f19.9, 1000i5)')k3len(ik),eigv_mpi(i, ik), &
+              write(outfileindex, '(2f19.9, 1000i5)')k3len(ik),eigv_mpi(i, ik), &
                  int(weight(:, i, ik))
            enddo
-           write(14, *)' '
+           write(outfileindex, *)' '
         enddo
-        close(14)
+        close(outfileindex)
      endif
 
      !> minimum and maximum value of energy bands
@@ -85,33 +91,34 @@
      emax=  maxval(eigv_mpi)+0.5d0
 
      !> write script for gnuplot
+     outfileindex= outfileindex+ 1
      if (cpuid==0) then
-        open(unit=101, file='bulkek.gnu')
-        write(101, '(a)') 'set terminal  postscript enhanced color font ",30"'
-        write(101,'(2a)') '#set palette defined ( 0  "green", ', &
+        open(unit=outfileindex, file='bulkek.gnu')
+        write(outfileindex, '(a)') 'set terminal  postscript enhanced color font ",30"'
+        write(outfileindex,'(2a)') '#set palette defined ( 0  "green", ', &
            '5 "yellow", 10 "red" )'
-        write(101, '(a)')"set output 'bulkek.eps'"
-        write(101, '(a)')'set style data linespoints'
-        write(101, '(a)')'unset ztics'
-        write(101, '(a)')'unset key'
-        write(101, '(a)')'set pointsize 0.8'
-        write(101, '(a)')'set view 0,0'
-        write(101, '(a)')'set xtics font ",24"'
-        write(101, '(a)')'set ytics font ",24"'
-        write(101, '(a)')'set ylabel font ",24"'
-        write(101, '(a)')'set ylabel "Energy (eV)"'
-        write(101, '(a)')'set ylabel offset 1.5,0'
-        write(101, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
-        write(101, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
-        write(101, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
-        write(101, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
+        write(outfileindex, '(a)')"set output 'bulkek.eps'"
+        write(outfileindex, '(a)')'set style data linespoints'
+        write(outfileindex, '(a)')'unset ztics'
+        write(outfileindex, '(a)')'unset key'
+        write(outfileindex, '(a)')'set pointsize 0.8'
+        write(outfileindex, '(a)')'set view 0,0'
+        write(outfileindex, '(a)')'set xtics font ",24"'
+        write(outfileindex, '(a)')'set ytics font ",24"'
+        write(outfileindex, '(a)')'set ylabel font ",24"'
+        write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+        write(outfileindex, '(a)')'set ylabel offset 1.5,0'
+        write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
+        write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
+        write(outfileindex, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
+        write(outfileindex, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
 
         do i=1, nk3lines-1
-           write(101, 204)k3line_stop(i+1), emin, k3line_stop(i+1), emax
+           write(outfileindex, 204)k3line_stop(i+1), emin, k3line_stop(i+1), emax
         enddo
-        write(101, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
-            "w lp lw 2 pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2 dashtype 2"
-        close(101)
+        write(outfileindex, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
+            "w lp lw 2 pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2"
+        close(outfileindex)
      endif
 
      202 format('set xtics (',:20('"',A3,'" ',F10.5,','))
@@ -126,7 +133,7 @@
   !> calculate spin direction for each band and each kpoint
   subroutine ek_bulk_spin
 
-     use mpi
+     use wmpi
      use para
 
      implicit none
@@ -187,14 +194,13 @@
      enddo
 
      do ik= 1+cpuid, knv3, num_cpu
-	     if (cpuid==0) write(*, *)'ik, knv3 ', ik, knv3
-	     if (cpuid==0) write(stdout, *)'ik, knv3 ', ik, knv3
+        if (cpuid==0) write(stdout, *)'BulkBandSpin, ik, knv3 ', ik, knv3
 
         k = k3points(:, ik)
 
         ! calculation bulk hamiltonian
         Hamk_bulk= 0d0
-        call ham_bulk(k, Hamk_bulk)
+        call ham_bulk_old(k, Hamk_bulk)
 
         !> diagonalization by call zheev in lapack
         W= 0d0
@@ -221,21 +227,28 @@
 
      enddo ! ik
 
+#if defined (MPI)
      call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
      call mpi_allreduce(spin,spin_mpi,size(spin),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     eigv_mpi= eigv
+     spin_mpi= spin
+#endif
 
+
+     outfileindex= outfileindex+ 1
      if (cpuid==0)then
-        open(unit=14, file='bulkek.dat')
+        open(unit=outfileindex, file='bulkek.dat')
    
         do i=1, Num_wann
            do ik=1, knv3
-              write(14, '(1000f19.9)')k3len(ik),eigv_mpi(i, ik), spin(:, i, ik)
+              write(outfileindex, '(1000f19.9)')k3len(ik),eigv_mpi(i, ik), spin(:, i, ik)
            enddo
-           write(14, *)' '
+           write(outfileindex, *)' '
         enddo
-        close(14)
+        close(outfileindex)
      endif
 
      !> minimum and maximum value of energy bands
@@ -243,31 +256,32 @@
      emax= maxval(eigv_mpi)+0.5d0
 
      !> write script for gnuplot
+     outfileindex= outfileindex+ 1
      if (cpuid==0) then
-        open(unit=101, file='bulkek.gnu')
-        write(101, '(a)') 'set terminal  postscript enhanced color font 24'
-        write(101,'(2a)') '#set palette defined ( 0  "green", ', &
+        open(unit=outfileindex, file='bulkek.gnu')
+        write(outfileindex, '(a)') 'set terminal  postscript enhanced color font 24'
+        write(outfileindex,'(2a)') '#set palette defined ( 0  "green", ', &
            '5 "yellow", 10 "red" )'
-        write(101, '(a)')"set output 'bulkek.eps'"
-        write(101, '(a)')'set style data linespoints'
-        write(101, '(a)')'unset ztics'
-        write(101, '(a)')'unset key'
-        write(101, '(a)')'set pointsize 0.8'
-        write(101, '(a)')'set view 0,0'
-        write(101, '(a)')'set ylabel "Energy (eV)"'
-        write(101, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
-        write(101, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
-        write(101, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
-        write(101, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
+        write(outfileindex, '(a)')"set output 'bulkek.eps'"
+        write(outfileindex, '(a)')'set style data linespoints'
+        write(outfileindex, '(a)')'unset ztics'
+        write(outfileindex, '(a)')'unset key'
+        write(outfileindex, '(a)')'set pointsize 0.8'
+        write(outfileindex, '(a)')'set view 0,0'
+        write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+        write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
+        write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
+        write(outfileindex, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
+        write(outfileindex, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
 
         do i=1, nk3lines-1
-           write(101, 204)k3line_stop(i+1), emin, k3line_stop(i+1), emax
+           write(outfileindex, 204)k3line_stop(i+1), emin, k3line_stop(i+1), emax
         enddo
-        write(101, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
+        write(outfileindex, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
             "w lp lw 2 pt 7  ps 0.2, \"
-        write(101, '(2a)')"     'bulkek.dat' u 1:2:($3/6):($4/6) ",  &
+        write(outfileindex, '(2a)')"     'bulkek.dat' u 1:2:($3/6):($4/6) ",  &
             "w vec"
-        close(101)
+        close(outfileindex)
      endif
 
      202 format('set xtics (',:20('"',A3,'" ',F10.5,','))
@@ -279,13 +293,13 @@
 
    subroutine ek_bulk_fortomas
 
-     use mpi
+     use wmpi
      use para
 
      implicit none
 
      integer :: ik1, ik2, ik3
-	  integer :: Nk_t
+     integer :: Nk_t
      integer :: ierr
      real(Dp) :: k(3), k1, k2, k3
      real(Dp) :: W(Num_wann)
@@ -315,7 +329,7 @@
 
         ! calculation bulk hamiltonian
         Hamk_bulk= 0d0
-        call ham_bulk(k, Hamk_bulk)
+        call ham_bulk_old(k, Hamk_bulk)
 
         !> diagonalization by call zheev in lapack
         W= 0d0
@@ -351,7 +365,7 @@
 
   subroutine ek_bulk_mirror_z
 
-     use mpi
+     use wmpi
      use para
 
      implicit none
@@ -383,23 +397,22 @@
      allocate( mirror_minus(Num_wann, knv3))
      mirror_plus= .False.
      mirror_minus= .False.
-	  eigv    = 0d0
-	  eigv_mpi= 0d0
+     eigv    = 0d0
+     eigv_mpi= 0d0
 
      do ik= 1+cpuid, knv3, num_cpu
-	     if (cpuid==0) write(*, *)'ik, knv3 ', ik, knv3
-	     if (cpuid==0) write(stdout, *)'ik, knv3 ', ik, knv3
+        if (cpuid==0) write(stdout, *)'BulkBandmirrorz, ik, knv3 ', ik, knv3
 
         k = k3points(:, ik)
 
         ! calculation bulk hamiltonian
         Hamk_bulk= 0d0
-        call ham_bulk    (k, Hamk_bulk)
+        call ham_bulk_old    (k, Hamk_bulk)
 
         k = k3points(:, ik)
         k(3)= -k(3)
         Hamk= 0d0
-        call ham_bulk    (k, Hamk)
+        call ham_bulk_old    (k, Hamk)
 
         !> symmetrization
         call mat_mul(Num_wann, mirror_z, hamk, mat1)
@@ -430,8 +443,13 @@
 
      enddo  ! ik
 
+#if defined (MPI)
      call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     eigv_mpi= eigv
+#endif
+
 
      if (cpuid==0)then
         open(unit=14, file='bulkek.dat')
@@ -467,32 +485,33 @@
      emax= maxval(eigv_mpi)+0.5d0
 
      !> write script for gnuplot
+     outfileindex= outfileindex+ 1
      if (cpuid==0) then
-        open(unit=101, file='bulkek.gnu')
-        write(101, '(a)') 'set terminal  postscript enhanced color'
-        write(101,'(2a)') '#set palette defined ( 0  "green", ', &
+        open(unit=outfileindex, file='bulkek.gnu')
+        write(outfileindex, '(a)') 'set terminal  postscript enhanced color'
+        write(outfileindex,'(2a)') '#set palette defined ( 0  "green", ', &
            '5 "yellow", 10 "red" )'
-        write(101, '(a)')"set output 'bulkek.eps'"
-        write(101, '(a)')'set style data linespoints'
-        write(101, '(a)')'unset ztics'
-        write(101, '(a)')'unset key'
-        write(101, '(a)')'set pointsize 0.8'
-        write(101, '(a)')'set view 0,0'
-        write(101, '(a)')'set xtics font ",24"'
-        write(101, '(a)')'set ytics font ",24"'
-        write(101, '(a)')'set ylabel font ",24"'
-        write(101, '(a)')'set ylabel "Energy (eV)"'
-        write(101, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
-        write(101, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
-        write(101, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
-        write(101, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
+        write(outfileindex, '(a)')"set output 'bulkek.eps'"
+        write(outfileindex, '(a)')'set style data linespoints'
+        write(outfileindex, '(a)')'unset ztics'
+        write(outfileindex, '(a)')'unset key'
+        write(outfileindex, '(a)')'set pointsize 0.8'
+        write(outfileindex, '(a)')'set view 0,0'
+        write(outfileindex, '(a)')'set xtics font ",24"'
+        write(outfileindex, '(a)')'set ytics font ",24"'
+        write(outfileindex, '(a)')'set ylabel font ",24"'
+        write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+        write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
+        write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
+        write(outfileindex, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
+        write(outfileindex, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
 
         do i=1, nk3lines-1
-           write(101, 204)k3line_stop(i+1), emin, k3line_stop(i+1), emax
+           write(outfileindex, 204)k3line_stop(i+1), emin, k3line_stop(i+1), emax
         enddo
-        write(101, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
+        write(outfileindex, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
             "w lp lw 2 pt 7  ps 0.2, 0 w l"
-        close(101)
+        close(outfileindex)
      endif
 
      202 format('set xtics (',:20('"',A3,'" ',F10.5,','))
@@ -505,15 +524,16 @@
 
 
 
+  !> calculate bulk band for a given mirror symmetry
   subroutine ek_bulk_mirror_x
 
-     use mpi
+     use wmpi
      use para
 
      implicit none
 
      integer :: ik, i, j
-	  integer :: knv3
+     integer :: knv3
      integer :: ierr
      real(dp) :: emin
      real(dp) :: emax
@@ -540,23 +560,22 @@
      allocate( mirror_minus(Num_wann, knv3))
      mirror_plus= .False.
      mirror_minus= .False.
-	  eigv    = 0d0
-	  eigv_mpi= 0d0
+     eigv    = 0d0
+     eigv_mpi= 0d0
 
      do ik= 1+cpuid, knv3, num_cpu
-	     if (cpuid==0) write(*, *)'ik, knv3 ', ik, knv3
-	     if (cpuid==0) write(stdout, *)'ik, knv3 ', ik, knv3
+        if (cpuid==0) write(stdout, *)'EkBulk_mirror, ik, knv3 ', ik, knv3
 
         k = k3points(:, ik)
 
         ! calculation bulk hamiltonian
         Hamk_bulk= 0d0
-        call ham_bulk    (k, Hamk_bulk)
+        call ham_bulk_old    (k, Hamk_bulk)
 
        !k = k3points(:, ik)
        !k(1)= -k(1)
        !Hamk= 0d0
-       !call ham_bulk    (k, Hamk)
+       !call ham_bulk_old    (k, Hamk)
 
 
         hamk=  Hamk_bulk
@@ -581,9 +600,6 @@
         !> calculate mirror eigenvalue
         call mat_mul(Num_wann, mat2, mirror_x, mat1)
         call mat_mul(Num_wann, mat1, hamk, mat2)
-        write(*, '(i5,1000f6.2)')ik, (real(mat2(i, i)), i=1, num_wann)
-        write(*, '(i5,1000f6.2)')ik, (aimag(mat2(i, i)), i=1, num_wann)
-       !pause
             
         !> get mirror_plus and mirror_minus
         do i=1, Num_wann
@@ -600,8 +616,12 @@
 
      enddo  ! ik
 
+#if defined (MPI)
      call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     eigv_mpi= eigv
+#endif
 
      if (cpuid==0)then
         open(unit=14, file='bulkek.dat')
@@ -637,32 +657,33 @@
      emax= maxval(eigv_mpi)+0.5d0
 
      !> write script for gnuplot
+     outfileindex= outfileindex+ 1
      if (cpuid==0) then
-        open(unit=101, file='bulkek.gnu')
-        write(101, '(a)') 'set terminal  postscript enhanced color'
-        write(101,'(2a)') '#set palette defined ( 0  "green", ', &
+        open(unit=outfileindex, file='bulkek.gnu')
+        write(outfileindex, '(a)') 'set terminal  postscript enhanced color'
+        write(outfileindex,'(2a)') '#set palette defined ( 0  "green", ', &
            '5 "yellow", 10 "red" )'
-        write(101, '(a)')"set output 'bulkek.eps'"
-        write(101, '(a)')'set style data linespoints'
-        write(101, '(a)')'unset ztics'
-        write(101, '(a)')'unset key'
-        write(101, '(a)')'set pointsize 0.8'
-        write(101, '(a)')'set view 0,0'
-        write(101, '(a)')'set xtics font ",24"'
-        write(101, '(a)')'set ytics font ",24"'
-        write(101, '(a)')'set ylabel font ",24"'
-        write(101, '(a)')'set ylabel "Energy (eV)"'
-        write(101, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
-        write(101, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
-        write(101, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
-        write(101, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
+        write(outfileindex, '(a)')"set output 'bulkek.eps'"
+        write(outfileindex, '(a)')'set style data linespoints'
+        write(outfileindex, '(a)')'unset ztics'
+        write(outfileindex, '(a)')'unset key'
+        write(outfileindex, '(a)')'set pointsize 0.8'
+        write(outfileindex, '(a)')'set view 0,0'
+        write(outfileindex, '(a)')'set xtics font ",24"'
+        write(outfileindex, '(a)')'set ytics font ",24"'
+        write(outfileindex, '(a)')'set ylabel font ",24"'
+        write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+        write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
+        write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
+        write(outfileindex, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
+        write(outfileindex, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
 
         do i=1, nk3lines-1
-           write(101, 204)k3line_stop(i+1), emin, k3line_stop(i+1), emax
+           write(outfileindex, 204)k3line_stop(i+1), emin, k3line_stop(i+1), emax
         enddo
-        write(101, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
+        write(outfileindex, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
             "w lp lw 2 pt 7  ps 0.2, 0 w l"
-        close(101)
+        close(outfileindex)
      endif
 
      202 format('set xtics (',:20('"',A3,'" ',F10.5,','))

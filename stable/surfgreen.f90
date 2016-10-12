@@ -4,7 +4,7 @@
 ! History:
 !         by Quan Sheng Wu on Oct/17/2012                                !
 !+---------+---------+---------+---------+---------+---------+--------+!
-  subroutine surfgreen_1985(omega,GLL,GRR,H00,H01,ones)
+  subroutine surfgreen_1985(omega,GLL,GRR,GB,H00,H01,ones)
      use para
      implicit none
 
@@ -27,6 +27,9 @@
      complex(Dp),intent(inout)  :: GLL(Ndim,Ndim)
      complex(Dp),intent(inout)  :: GRR(Ndim,Ndim)
 
+     !> bulk green's function
+     complex(Dp),intent(inout)  :: GB(Ndim,Ndim)
+
      ! >> local variables
      ! iteration number
      integer :: iter
@@ -39,9 +42,6 @@
 
      ! a real type temp variable
      real(Dp) :: real_temp
-
-     ! time measure
-     real(Dp) :: time1,time2
 
      ! omegac=omega(i)+I * eta
      complex(Dp) :: omegac 
@@ -129,6 +129,9 @@
      GRR= omegac*ones- epsilons_t
      call inv(Ndim, GRR, ones)
 
+     GB = omegac*ones- epsiloni
+     call inv(Ndim, GB, ones)
+
      return
   end subroutine surfgreen_1985
 
@@ -145,7 +148,7 @@
 !+---------+---------+---------+---------+---------+---------+--------+!
   subroutine surfgreen_1984(omega,GLL,GRR,H00,H01,ones)
 
-     use mpi
+     use wmpi
      use para
      implicit none
      

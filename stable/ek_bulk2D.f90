@@ -1,7 +1,8 @@
 ! calculate bulk's energy band using wannier TB method
+! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
   subroutine ek_bulk2D
 
-     use mpi
+     use wmpi
      use para
 
      implicit none
@@ -12,8 +13,6 @@
      integer :: ierr
      integer :: nwann
      real(Dp) :: k(3)
-     real(Dp) :: k11(3), k12(3)
-     real(Dp) :: k21(3), k22(3)
      real(dp) :: sx
      real(dp) :: sy
      real(dp) :: sz
@@ -66,7 +65,8 @@
 	  eigv    = 0d0
 	  eigv_mpi= 0d0
 
-     nwann= Num_wann/2
+     nwann= Num_wann
+     if (soc>0) nwann= Num_wann/2
      print *, 'nwann', nwann
 
      if (SOC==0) stop 'you should set soc=0 in the input file'
@@ -80,28 +80,17 @@
         sigmaz(i+ nwann, i+ nwann)= -1d0
      enddo
 
-    !k11=(/-0.5d0,  0.0d0, -0.5d0/) ! 
-    !k12=(/ 0.5d0,  0.0d0,  0.5d0/) ! X ! TB
-     k11=(/-0.0d0,  0.0d0, -0.0d0/) ! 
-     k12=(/ 1.0d0,  0.0d0,  1.0d0/) ! X ! TB
-    !k12=(/ 0.0d0, -1.0d0, -1.0d0/) ! X ! DFT
-     k21=(/-0.5d0, -0.5d0,  0.0d0/) ! 
-     k22=(/ 0.5d0,  0.5d0,  0.0d0/) ! Z
-    !k21=(/-0.0d0,  0.5d0,  0.5d0/) ! 
-    !k22=(/ 0.0d0, -0.5d0, -0.5d0/) ! Y
-
-
      ik =0
      do i= 1, nkx
      do j= 1, nky
         ik =ik +1
-        kxy(:, ik)= k11+(k12-k11)*(i-1)/dble(nkx-1)+  k21+ (k22-k21)*(j-1)/dble(nky-1)
+        kxy(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(nkx-1)+ K3D_vec2*(j-1)/dble(nky-1)
         kxy_shape(:, ik)= kxy(1, ik)* Kua+ kxy(2, ik)* Kub+ kxy(3, ik)* Kuc 
      enddo
      enddo
 
      do ik= 1+cpuid, knv3, num_cpu
-	    !if (cpuid==0) print * , ik
+        if (cpuid==0) print * , ik, knv3
 
         k = kxy(:, ik)
 
@@ -137,12 +126,19 @@
         gap (   ik)= W(Numoccupied+1)- W(Numoccupied)
      enddo
 
+#if defined (MPI)
      call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
      call mpi_allreduce(gap ,gap_mpi,size(gap ),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
      call mpi_allreduce(spin ,spin_mpi,size(spin ),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     eigv_mpi= eigv
+     gap_mpi= gap
+     spin_mpi= spin
+#endif
+
 
      if (cpuid==0)then
         open(unit=14, file='bulkek2D.dat')
@@ -164,7 +160,7 @@
    !> using green's function
   subroutine ek_bulk2D_spin
 
-     use mpi
+     use wmpi
      use para
 
      implicit none
@@ -175,9 +171,6 @@
 	  integer :: knv3
      integer :: ierr
      real(Dp) :: k(3)
-     real(dp) :: kx
-     real(dp) :: ky
-     real(dp) :: kz
      real(Dp) :: k11(3), k12(3)
      real(Dp) :: k21(3), k22(3)
      real(Dp) :: W(Num_wann)
@@ -303,6 +296,7 @@
         gap (   ik)= W(Numoccupied+1)- W(Numoccupied)
      enddo !ik
 
+#if defined (MPI)
      call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
      call mpi_allreduce(gap ,gap_mpi,size(gap ),&
@@ -311,6 +305,13 @@
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
      call mpi_allreduce(dos ,dos_mpi,size(dos ),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     gap_mpi= gap
+     dos_mpi= dos
+     eigv_mpi= eigv
+     spin_mpi= spin
+#endif
+
 
 
      if (cpuid==0)then

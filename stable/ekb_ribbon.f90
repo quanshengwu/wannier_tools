@@ -1,5 +1,6 @@
 ! This subroutine is used to caculate energy dispersion for 
 ! slab Bi2Se3
+! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 
   subroutine ekb_ribbon
     
@@ -19,15 +20,11 @@
      integer :: il,iu
 
 
-     integer,parameter :: Nk1=50
-
      ! wave vector 
      real(Dp) :: k
 
      real(Dp) :: kmax=0.5d0
  
-     real(Dp) :: time1,time2,time3
-
      !the lower and upper bounds of the interval
      !to be searched for eigenvalues
      real(Dp) :: vl,vu
@@ -110,7 +107,7 @@
 
         ekbribbon(:,i)=eigenvalue
 
-        write(stdout,'(a2,i4,f12.5,f10.2,a2)')'B', i,ekbribbon(1,i),time2-time1,' s'
+        write(stdout,'(a2,i4,f12.5,f10.2,a2)')'B, Nb', i, Nb, ekbribbon(1,i)     
      enddo
      
     !open(unit=100, file='ribbonek.dat',status='unknown')

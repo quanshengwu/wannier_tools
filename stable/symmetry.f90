@@ -59,8 +59,7 @@
               inversion(n, n)= 1
               inversion(n+ nwan, n+ nwan)= 1
            case default
-              write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 &
-                 orbitals"
+              write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 orbitals"
               stop
            end select
         enddo ! i
@@ -106,8 +105,7 @@
               mirror_x(n, n+ nwan)= 1d0
               mirror_x(n+ nwan, n)= 1d0
            case default
-              write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 &
-                 orbitals"
+              write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 orbitals"
               stop
            end select
         enddo ! i
@@ -156,8 +154,7 @@
               mirror_z(n, n)= 1
               mirror_z(n+ nwan, n+ nwan)=-1
            case default
-              write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 &
-                 orbitals"
+              write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 orbitals"
               stop
            end select
         enddo ! i
@@ -194,8 +191,6 @@
      glide_y_op(2, 2) =-1d0
      glide_y_op(3, 3) = 1d0
      glide_y_op(:, 4) = (/0.5d0, 0.0d0, 0.5d0/)
-
-
 
      return
   end subroutine symmetry

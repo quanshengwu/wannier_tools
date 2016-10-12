@@ -4,6 +4,7 @@
   !> B= (B cos\theta, B sin\theta, 0)
   !> construct on Dec 8 2015
   !> By QuanSheng Wu at ETH Zurich Honggerberg
+! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
   subroutine landau_level_k
      use para
      implicit none
@@ -19,8 +20,6 @@
      !> Ndimq= Nq* Num_wann
      integer :: Ndimq
 
-     integer :: knv3
-     integer :: NN
      integer :: nlines
 
      integer :: ierr
@@ -32,13 +31,6 @@
      real(dp) :: t1, temp, dis, dis1
      ! wave vector 
      real(dp) :: k3(3)
-     real(dp) :: k1(2)
-     real(dp) :: k2(2)
-     real(Dp) :: k(2), kstart(2), kend(2)
-     real(dp) :: kp(16,2), ke(16,2), kpath_stop(16)
-     character(4) :: kpath_name(17)
-     real(dp), allocatable :: k_len(:)
-     real(dp), allocatable :: kpoint(:, :)
 
      !> dim= Ndimq, knv3
      real(dp), allocatable :: W(:)
@@ -50,58 +42,15 @@
 
 
      Nq= nslab
-     NN=Nk
-     nlines= 4
-     knv3=NN*nlines
      Ndimq= Num_wann* Nq
-     allocate( k_len (knv3))
-     allocate( kpoint(knv3, 3))
      allocate( ham_landau(Ndimq, Ndimq))
      allocate( W( Ndimq))
-     allocate( eigv( Ndimq, knv3))
-     allocate( eigv_mpi( Ndimq, knv3))
+     allocate( eigv( Ndimq, knv2))
+     allocate( eigv_mpi( Ndimq, knv2))
      eigv_mpi= 0d0
      eigv    = 0d0
-     kpoint  = 0d0
      ham_landau= 0d0
 
-     kp = 0d0
-     ke = 0d0
-     kp(1,:)=(/0.5d0, 0.0d0/)  ; kpath_name(1)= 'X'
-     ke(1,:)=(/0.0d0, 0.0d0/)  
-     kp(2,:)=(/0.0d0, 0.0d0/)  ; kpath_name(2)= 'G'
-     ke(2,:)=(/0.0d0, 0.50d0/)  ! K
-     kp(3,:)=(/0.0d0, 0.50d0/) ; kpath_name(3)= 'Y'     
-     ke(3,:)=(/0.5d0, 0.5d0/)  ! K
-     kp(4,:)=(/0.5d0, 0.5d0/)  ; kpath_name(4)= 'M'     
-     ke(4,:)=(/0.0d0, 0.0d0/)  ; kpath_name(5)= 'G'  
-
-
-     t1=0d0
-     k_len=0d0
-     kpath_stop= 0d0
-     do j=1, nlines 
-        do i=1, NN
-           k = kp(j,:)
-           kstart=k
-           k1= kstart(1)*Ka2+ kstart(2)*Kb2
-
-           k = ke(j,:)
-           kend=k
-           k2= kend(1)*Ka2+ kend(2)*Kb2
-
-           kpoint(i+(j-1)*NN,1:2)= kstart+ (kend-kstart)*dble(i-1)/dble(NN-1)
-           
-           temp= dsqrt((k2(1)- k1(1))**2 &
-                 +(k2(2)- k1(2))**2)/dble(NN-1) 
-
-           if (i.gt.1) then
-              t1=t1+temp
-           endif
-           k_len(i+(j-1)*NN)= t1
-        enddo
-        kpath_stop(j+1)= t1
-     enddo
 
      !> deal with the magnetic field
      !> first transform the Bx By into B*Cos\theta, B*Sin\theta
@@ -137,10 +86,11 @@
      endif
 
      !> calculate the landau levels along special k line
-     do ik=1+ cpuid, knv3, num_cpu
+     k3= 0
+     do ik=1+ cpuid, knv2, num_cpu
 
-        if (cpuid==0) print *, ik, knv3
-        k3 = kpoint(ik, :)
+        if (cpuid==0) print *, ik, knv2
+        k3(1:2) = k2_path(ik, :)
         call ham_3Dlandau2(Ndimq, Nq, k3, ham_landau)
         
         !> diagonalization by call zheev in lapack
@@ -150,14 +100,19 @@
         eigv(:, ik)= W
      enddo !ik
 
+#if defined (MPI)
      call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     eigv_mpi= eigv
+#endif
+
 
      if (cpuid.eq.0) then
         open(unit=100, file='landaulevel_k.dat')
         do j=1, Ndimq
-           do i=1, knv3
-              write(100,'(2f15.7, i8)')k_len(i), eigv_mpi(j, i)
+           do i=1, knv2
+              write(100,'(2f15.7, i8)')k2len(i), eigv_mpi(j, i)
            enddo
            write(100 , *)''
         enddo
@@ -267,8 +222,12 @@
         eigv(:, ib)= W
      enddo !ik
 
+#if defined (MPI)
      call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     eigv_mpi= eigv
+#endif
 
      if (cpuid.eq.0) then
         open(unit=101, file='landaulevel_B.dat')

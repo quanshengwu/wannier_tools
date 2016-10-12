@@ -1,6 +1,7 @@
 ! this subroutine is used to caculate Hamiltonian between
 ! slabs  
 ! 4/23/2010 by QS Wu
+! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 
   subroutine ham_qlayer2qlayer(k,H00new,H01new)
 
@@ -18,7 +19,7 @@
 
 ! new index used to sign irvec     
      real(dp) :: new_ia,new_ib,new_ic
-     integer :: inew_ia,inew_ib,inew_ic
+     integer :: inew_ic
 
 ! wave vector k times lattice vector R  
      real(Dp) :: kdotr  
@@ -31,7 +32,7 @@
 
      complex(dp) :: ratio
 
-     complex(Dp) :: Hij(-ijmax:ijmax,Num_wann,Num_wann)
+     complex(Dp), allocatable :: Hij(:, :, :)
 
 
 ! H00 Hamiltonian between nearest neighbour-quintuple-layers
@@ -45,6 +46,7 @@
 !     complex(Dp),allocatable,intent(out) :: H01new(:,:)
      complex(Dp),intent(out) :: H01new(Ndim,Ndim)
 
+     allocate(Hij(-ijmax:ijmax,Num_wann,Num_wann))
 
      Hij=0.0d0
      do iR=1,Nrpts
@@ -58,7 +60,6 @@
         if (abs(new_ic).le.ijmax)then
            kdotr=k(1)*new_ia+ k(2)*new_ib
            ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
-
 
            Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
            =Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
@@ -121,7 +122,7 @@
 
 ! new index used to sign irvec     
      real(dp) :: new_ia,new_ib,new_ic
-     integer :: inew_ia,inew_ib,inew_ic
+     integer :: inew_ic
 
 ! wave vector k times lattice vector R  
      real(Dp) :: kdotr  
@@ -174,7 +175,7 @@
 
 ! new index used to sign irvec     
      real(dp) :: new_ia,new_ib,new_ic
-     integer :: inew_ia,inew_ib,inew_ic
+     integer :: inew_ia,inew_ib
 
 ! wave vector k times lattice vector R  
      real(Dp) :: kdotr

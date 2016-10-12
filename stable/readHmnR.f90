@@ -1,4 +1,5 @@
 ! read data from HmnR.data   constructed by quansheng wu 4/2/2010
+! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 
   subroutine readHmnR()
 
@@ -22,8 +23,8 @@
      real(dp) :: rh,ih
      
      if(cpuid.eq.0)write(stdout,*)''
-     open(12, file=infilename)
-     if (.not.index(infilename, 'HWR')) then
+     open(12, file=Hrfile)
+     if (index(Hrfile, 'HWR')==0) then
         read(12, *)
         read(12, *)nwan
         read(12, *)nrpts
@@ -32,6 +33,9 @@
            do i=1, nwan
               do j=1, nwan
                  read(12,*)i1, i2, i3, i4, i5, r1, r2
+                !read(12 , '(5I5, 2f12.3)')i1, i2, i3, i4, i5, r1, r2
+                !r1=(anint(r1*100000))/100000
+                !r2=(anint(r2*100000))/100000
                  HmnR(i4,i5,ir)= dcmplx(r1, r2) ! in eV
                  !write(*,'(5i5,2f10.5)')i1, i2, i3, i4, i5, r1, r2
               enddo
@@ -79,7 +83,6 @@
            enddo
            close(105)
         endif
-
 
 
      endif ! HWR or not

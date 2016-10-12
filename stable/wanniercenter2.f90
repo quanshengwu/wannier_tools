@@ -1,8 +1,9 @@
 ! this suboutine is used for wannier center calculation for slab system
+! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 
    subroutine  wannier_center2D
       use para
-      use mpi
+      use wmpi
       implicit none
 
       integer :: Nkx
@@ -219,7 +220,7 @@
 
    subroutine  wannier_center2D_alt
       use para
-      use mpi
+      use wmpi
       implicit none
 
       integer :: Nkx
@@ -556,7 +557,7 @@
 
    subroutine  wannier_center3D
       use para
-      use mpi
+      use wmpi
       implicit none
 
       integer :: Nk1
