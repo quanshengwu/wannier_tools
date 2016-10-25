@@ -187,7 +187,7 @@
      enddo
 
      do ik= 1+cpuid, knv3, num_cpu
-        if (cpuid==0) write(stdout, *),'FS, ik, knv3' , ik, knv3
+        if (cpuid==0) write(stdout, *)'FS, ik, knv3' , ik, knv3
 
         k = kxy(:, ik)
 

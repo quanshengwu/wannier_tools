@@ -134,7 +134,8 @@
         DHDkdag= 0d0
         do m= 1, Num_wann
            do n= 1, Num_wann
-              if (W(n) > 0d0 .and. W(m)<0d0) then
+             !if (W(n) > 0d0 .and. W(m)<0d0) then
+              if (n> Numoccupied .and. m< Numoccupied) then
                  DHDk(n, m, 1)= zi*vx(n, m)/(W(m)-W(n))
                  DHDk(n, m, 2)= zi*vy(n, m)/(W(m)-W(n))
                  DHDk(n, m, 3)= zi*vz(n, m)/(W(m)-W(n))
@@ -148,7 +149,8 @@
 
         do m= 1, Num_wann
            do n= 1, Num_wann
-              if (W(m) > 0d0 .and. W(n)< 0d0) then
+             !if (W(m) > 0d0 .and. W(n)< 0d0) then
+              if (m>Numoccupied .and. n<Numoccupied) then
                  DHDkdag(n, m, 1)= zi*vx(n, m)/(W(m)-W(n))
                  DHDkdag(n, m, 2)= zi*vy(n, m)/(W(m)-W(n))
                  DHDkdag(n, m, 3)= zi*vz(n, m)/(W(m)-W(n))

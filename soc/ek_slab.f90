@@ -59,7 +59,7 @@
      ekslab=0.0d0
      ekslab_mpi=0.0d0
      do i=1+cpuid,knv2,num_cpu
-        if (cpuid==0) write(stdout, *), 'SlabEk, ik ',  i, knv2
+        if (cpuid==0) write(stdout, *)'SlabEk, ik ',  i, knv2
         k= k2_path(i, :)
         chamk=0.0d0 
 
