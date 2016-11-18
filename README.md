@@ -1,6 +1,8 @@
-# Wannier_tools [![Build Status](https://travis-ci.org/quanshengwu/wannier_tools.svg?branch=master)](https://travis-ci.org/quanshengwu/wannier_tools)  [![codecov](https://codecov.io/gh/quanshengwu/wannier_tools/branch/master/graph/badge.svg)](https://codecov.io/gh/quanshengwu/wannier_tools)
+# WannierTools [![Build Status](https://travis-ci.org/quanshengwu/wannier_tools.svg?branch=master)](https://travis-ci.org/quanshengwu/wannier_tools)  [![codecov](https://codecov.io/gh/quanshengwu/wannier_tools/branch/master/graph/badge.svg)](https://codecov.io/gh/quanshengwu/wannier_tools)
 
-[**More examples in Wiki for Wannier_tools**](https://github.com/quanshengwu/wannier_tools/wiki)
+[**More examples in Wiki for WannierTools**](https://github.com/quanshengwu/wannier_tools/wiki)
+
+[**Full documentation for WannierTools**](http://quanshengwu.github.io/wannier_tools/)
 
 ![](https://lh3.googleusercontent.com/-NGkPcF7iUDY/Vy-34BbICBI/AAAAAAAAASY/e2YiWSnQJD4jpHh-kDWceThf2jKKSGAxwCCo/s526/wannier_tools-logo-purple.jpg)
 
@@ -18,7 +20,7 @@ git clone https://github.com/quanshengwu/wannier_tools.git
 
 Use tight binding model to get the surface states of slab systems
 or edge states of nanowire systems or just bulk bands. Especially
-usefull for topological novel systems, including topological insulator, Dirac semimetal, Weyl semimetal, nodal line systems, nodal chain systems, triple point systems and unknown topological systems.
+usefull for novel topological systems, including topological insulator, Dirac semimetal, Weyl semimetal, nodal line systems, nodal chain systems, triple point systems and unknown topological systems.
 
 With given tight binding model well written in the format of wannier90_hr.dat in [Wannier90](http://wannier.org), 
 
@@ -26,7 +28,7 @@ With given tight binding model well written in the format of wannier90_hr.dat in
 
 1. Identify topological class by calculating the Wilson loop (Wannier charge center)
 
-2. Get surface state spectrum.
+2. Get surface state spectrum (ARPES spectrum and STM QPI spectrum).
 
 3. Identify Weyl points and nodal-line structure. 
 
@@ -34,16 +36,16 @@ With given tight binding model well written in the format of wannier90_hr.dat in
 
 If you use our code, please cite this website  “ The surface spectrums are calculated by the software package Wannier_tools~\cite{wannier_tools}, which is based on the iterative Green’s function~\cite{Sancho1985}.” 
 
-
 Reference 
 
-wannier_tools:  Q.S.Wu, S.N.Zhang, https://github.com/quanshengwu/wannier_tools
+wannier_tools:  QuanSheng Wu, ShengNan Zhang, WannierTools: An open-source software package for novel topological materials, https://github.com/quanshengwu/wannier_tools
 
 Sancho1985: [Highly convergent schemes for the calculation of bulk and surface Green functions, M P Lopez Sancho, J M Lopez Sancho, J M L Sancho and J Rubio, J.Phys.F.Met.Phys.15(1985)851-858](http://iopscience.iop.org/article/10.1088/0305-4608/15/4/009/meta;jsessionid=A349A81FE38B2B55DB42032F6792B275.c1)
  
-If you have good ideas to improve this code, do not hesitate to contact me. Your contribution will be recorded.
+If you have good ideas to improve this code, please do not hesitate to contact me. Your contribution will be recorded.
 
 **Publications**
+* Topological semimetal to insulator quantum phase transition in the Zintl compounds Ba2X(X=Si,Ge), Ziming Zhu, Mingda Li, and Ju Li, [Phys. Rev. B 94, 155121](http://journals.aps.org/prb/abstract/10.1103/PhysRevB.94.155121), (2016)
 * Heavy Weyl fermion state in CeRu4Sn6, Yuanfeng Xu, Changming Yue, Hongming Weng, Xi Dai, [arXiv:1608.04602](http://arxiv.org/abs/1608.04602) 
 * Triple Point Topological Metals Ziming Zhu, Georg W. Winkler, **QuanSheng Wu**, Ju Li, Alexey A. Soluyanov  [arXiv:1605.04653](http://arxiv.org/abs/1605.04653) Phys. Rev. X 6, 031003 – Published 7 July 2016.
 * Fermi arcs and their topological character in the candidate type-II Weyl semimetal MoTe2, A. Tamai, **Q. S. Wu**, I. Cucchi, F. Y. Bruno, S. Ricco, T.K. Kim, M. Hoesch, C. Barreteau, E. Giannini, C. Bernard, A. A. Soluyanov, F. Baumberger  [arXiv:1604.08228](http://arxiv.org/abs/1604.08228)   [Phys. Rev. X 6, 031021 (2016)](http://journals.aps.org/prx/abstract/10.1103/PhysRevX.6.031021)
