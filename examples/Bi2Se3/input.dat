@@ -3,8 +3,8 @@ Hrfile = 'wannier90_hr.dat'
 /
 
 
-&CONTROL
 !> bulk band structure calculation flag
+&CONTROL
 BulkBand_calc         = T
 BulkFS_calc           = T
 BulkGap_cube_calc     = T
@@ -14,6 +14,7 @@ WireBand_calc         = T
 SlabSS_calc           = T
 SlabArc_calc          = T
 SlabQPI_calc          = T
+Z2_3D_calc            = T
 SlabSpintexture_calc  = T
 Wanniercenter_calc    = T
 BerryPhase_calc       = T

@@ -261,16 +261,23 @@
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Wilson loop'
         call now(time_start)
-        call wannier_center3D_plane
-       !call wannier_center2D
-       !call wannier_center2D_alt
-       !call wannier_center3D
-       !call wannier_center3D_plane_mirror_plus
-       !call wannier_center3D_plane_mirror_minus
+        call wannier_center3D_plane_adaptive
         call now(time_end)
         call print_time_cost(time_start, time_end, 'WannierCenter')
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the Wilson loop'
      endif
+
+     !> wannier center calculattion for the whole BZ, 6 planes
+     if (Z2_3D_calc)then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating Z2 number for the bulk'
+        call now(time_start)
+        call Z2_3D_adaptive
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'Z2_calc')
+        if(cpuid.eq.0)write(stdout, *)'<< End of calculating Z2 number for the bulk'
+     endif
+
 
      if (BerryPhase_calc) then
         if(cpuid.eq.0)write(stdout, *)' '

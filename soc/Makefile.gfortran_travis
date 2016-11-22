@@ -5,7 +5,7 @@ obj =  module.o aux.o symmetry.o readHmnR.o inverse.o\
 		 mat_mul.o ham_ribbon.o ek_ribbon.o ham_bulk.o ek_bulk.o \
        fermiarc.o spintexture.o berrycurvature.o \
 		 wanniercenter.o dos.o  orbital_momenta.o \
-		 landau_level.o berry.o \
+		 landau_level.o berry.o wanniercenter_adaptive.o \
 		 effective_mass.o \
        main.o
 

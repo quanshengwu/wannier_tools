@@ -62,6 +62,7 @@
      SlabQPI_calc          = .FALSE.
      SlabSpintexture_calc  = .FALSE.
      wanniercenter_calc    = .FALSE.
+     Z2_3D_calc            = .FALSE.
      BerryPhase_calc       = .FALSE.
      BerryCurvature_calc   = .FALSE.
      Dos_calc              = .FALSE.
@@ -76,7 +77,7 @@
         write(*, *)"BulkBand_calc,BulkFS_calc,BulkGap_cube_calc,BulkGap_plane_calc"
         write(*, *)"SlabBand_calc,WireBand_calc,SlabSS_calc,SlabArc_calc "
         write(*, *)"SlabSpintexture,wanniercenter_calc"
-        write(*, *)"BerryPhase_calc,BerryCurvature_calc"
+        write(*, *)"BerryPhase_calc,BerryCurvature_calc, Z2_3D_calc"
         write(*, *)"The default Vaule is F"
         stop
      endif
@@ -94,6 +95,7 @@
         write(stdout, *) "SlabArc_calc        : ",  SlabArc_calc
         write(stdout, *) "SlabSpintexture_calc: ",  SlabSpintexture_calc
         write(stdout, *) "wanniercenter_calc  : ", wanniercenter_calc
+        write(stdout, *) "Z2_3D_calc          : ",  Z2_3D_calc
         write(stdout, *) "BerryPhase_calc     : ", BerryPhase_calc
         write(stdout, *) "BerryCurvature_calc : ", BerryCurvature_calc
      endif

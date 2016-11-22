@@ -36,6 +36,7 @@
      logical :: SlabQPI_calc
      logical :: SlabSpintexture_calc
      logical :: WannierCenter_calc
+     logical :: Z2_3D_calc  ! Flag for Z2 number calculations of 6 planes
      logical :: BerryPhase_calc
      logical :: BerryCurvature_calc
      logical :: EffectiveMass_calc
@@ -44,7 +45,8 @@
                           BulkGap_cube_calc, SlabBand_calc, WireBand_calc, &
                           SlabSS_calc, SlabArc_calc, SlabSpintexture_calc, &
                           WannierCenter_calc,BerryPhase_calc,BerryCurvature_calc, &
-                          Dos_calc, JDos_calc, EffectiveMass_calc, SlabQPI_calc
+                          Dos_calc, JDos_calc, EffectiveMass_calc, SlabQPI_calc, &
+                          Z2_3D_calc
 
 
      ! double precision  
@@ -80,6 +82,7 @@
      integer :: Nk1
      integer :: Nk2
      integer :: Nk3
+     integer, parameter :: Nk2_max=10000  ! maximum number of k points 
 
      integer, public, save :: Nr1=5
      integer, public, save :: Nr2=5
@@ -292,3 +295,36 @@
      real(dp), allocatable :: glide_y_op(:, :)
 
  end module para
+
+
+ module wcc_module
+    ! module for Wannier charge center (Wilson loop) calculations.
+    use para
+    implicit none
+
+    
+    type kline_wcc_type
+       ! define a type of all properties at the k point to get the wcc
+       real(dp) :: k(3)  ! coordinate
+       real(dp) :: delta ! apart from the start point
+       real(dp), allocatable :: wcc(:)  ! 1:Numoccupied, wannier charge center
+       real(dp), allocatable :: gap(:)  ! 1:Numoccupied, the distance between  wcc neighbours
+       real(dp) :: largestgap_pos_i     ! largest gap position
+       real(dp) :: largestgap_pos_val   ! largest gap position value
+       real(dp) :: largestgap_val       ! largest gap value
+       logical  :: converged            ! converged or not 
+       logical  :: calculated
+    end type kline_wcc_type
+
+    type kline_integrate_type
+       ! define a type of all properties at the k point for integration
+       real(dp) :: k(3)  ! coordinate
+       real(dp) :: delta ! apart from the start point
+       real(dp) :: b(3)  ! dis
+       logical  :: calculated
+       complex(dp), allocatable :: eig_vec(:, :)  !dim= (num_wann, num_wann)
+    end type kline_integrate_type
+
+ end module wcc_module
+
+
