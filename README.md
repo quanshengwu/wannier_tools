@@ -34,11 +34,11 @@ With given tight binding model well written in the format of wannier90_hr.dat in
 
 **License and agreement**
 
-If you use our code, please cite this website  “ The surface spectrums are calculated by the software package Wannier_tools~\cite{wannier_tools}, which is based on the iterative Green’s function~\cite{Sancho1985}.” 
+If you use our code for your research, please cite it properly, like  “ The surface spectrums (or Berry curvature, Wannier charge center, Chirality et al.) are calculated by the software package WannierTools~\cite{WannierTools}, which is based on the iterative Green’s function~\cite{Sancho1985}.” 
 
 Reference 
 
-wannier_tools:  QuanSheng Wu, ShengNan Zhang, WannierTools: An open-source software package for novel topological materials, https://github.com/quanshengwu/wannier_tools
+WannierTools:  QuanSheng Wu, ShengNan Zhang, WannierTools: An open-source software package for novel topological materials, https://github.com/quanshengwu/wannier_tools
 
 Sancho1985: [Highly convergent schemes for the calculation of bulk and surface Green functions, M P Lopez Sancho, J M Lopez Sancho, J M L Sancho and J Rubio, J.Phys.F.Met.Phys.15(1985)851-858](http://iopscience.iop.org/article/10.1088/0305-4608/15/4/009/meta;jsessionid=A349A81FE38B2B55DB42032F6792B275.c1)
  
