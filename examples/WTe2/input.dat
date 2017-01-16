@@ -1,44 +1,6 @@
 &TB_FILE
-Hrfile = wannier90_hr.dat
-/
-
-&CONTROL
-BulkBand_calc         = F
-BulkFS_calc           = F
-BulkGap_cube_calc     = F
-BulkGap_plane_calc    = F
-SlabBand_calc         = F
-WireBand_calc         = F
-SlabSS_calc           = F
-SlabArc_calc          = T
-SlabQPI_calc          = F
-SlabSpintexture_calc  = F
-Wanniercenter_calc    = F
-BerryPhase_calc       = F
-BerryCurvature_calc   = F
-/
-
-&SYSTEM
-NSLAB = 10 
-NSLAB1= 4  
-NSLAB2= 4  
-NumOccupied = 56        ! NumOccupied
-SOC = 1                 ! soc
-E_FERMI = 7.3147        ! e-fermi
-surf_onsite= 0.0        ! surf_onsite
-/
-
-&PARAMETERS
-Eta_Arc = 0.001     ! infinite small value, like brodening 
-E_arc = 0.0         ! energy for calculate Fermi Arc
-OmegaNum = 500      ! omega number       
-OmegaMin = -0.6     ! energy interval
-OmegaMax =  0.5     ! energy interval
-Nk1 =  81           ! number k points 
-Nk2 =  81           ! number k points 
-Nk3 =  81           ! number k points 
-NP = 1              ! number of principle layers
-Gap_threshold = 0.001 ! threshold for GapCube output
+Hrfile = "wannier90_hr.dat"
+Package = 'VASP'             ! obtained from VASP, it could be 'VASP', 'QE', 'Wien2k', 'OpenMx'
 /
 
 LATTICE
@@ -77,6 +39,42 @@ PROJECTORS
  Te   px  py  pz
  Te   px  py  pz
  Te   px  py  pz
+
+
+
+&CONTROL
+BulkBand_calc         = T
+BulkGap_plane_calc    = T
+SlabBand_calc         = T
+SlabSS_calc           = T
+SlabArc_calc          = T
+SlabSpintexture_calc  = T
+BerryCurvature_calc   = T
+WeylChirality_calc    = T
+/
+
+&SYSTEM
+NSLAB = 10 
+NSLAB1= 4  
+NSLAB2= 4  
+NumOccupied = 56        ! NumOccupied
+SOC = 1                 ! soc
+E_FERMI = 7.3147        ! e-fermi
+surf_onsite= 0.0        ! surf_onsite
+/
+
+&PARAMETERS
+Eta_Arc = 0.001     ! infinite small value, like brodening 
+E_arc = 0.0         ! energy for calculate Fermi Arc
+OmegaNum = 200      ! omega number       
+OmegaMin = -0.6     ! energy interval
+OmegaMax =  0.5     ! energy interval
+Nk1 =  41           ! number k points 
+Nk2 =  41           ! number k points 
+Nk3 =  41           ! number k points 
+NP = 1              ! number of principle layers
+Gap_threshold = 0.001 ! threshold for GapCube output
+/
 
 SURFACE            ! See doc for details
  1  0  0
@@ -215,3 +213,15 @@ Cartesian
   1.738500  4.918709  2.348572 
   1.738500  4.990666  2.150184 
 
+WEYL_CHIRALITY
+8
+Cartesian
+0.004
+    0.219436   -0.045611   -0.000001   
+   -0.219515   -0.045063   -0.000001   
+    0.220195   -0.038682   -0.000002   
+   -0.220183   -0.038936   -0.000001   
+    0.219514    0.045063    0.000001   
+   -0.219434    0.045620    0.000002   
+   -0.220194    0.038678    0.000000   
+    0.220181    0.038941    0.000000   

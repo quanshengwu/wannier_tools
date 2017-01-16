@@ -125,7 +125,8 @@
 
     !> spin operator matrix
     !> this part is package dependent. 
-    if (index( Package, 'VASP')) then
+    if (index( Package, 'VASP').or. index( Package, 'Wien2k') &
+       .or. index( Package, 'Abinit').or. index( Package, 'openmx')) then
        do i=1, Np
           do j=1, Nband
              sigma_x(Num_wann*(i-1)+j, Num_wann*(i-1)+Nband+j)=1.0d0
@@ -148,8 +149,11 @@
              sigma_z(Num_wann*(i-1)+2*j, Num_wann*(i-1)+2*j)=-1.0d0
           enddo
        enddo
+    else
+       if (cpuid.eq.0) write(stdout, *)'Error: please report your software and wannier90.wout to me'
+       if (cpuid.eq.0) write(stdout, *)'wuquansheng@gmail.com'
+       stop 'Error: please report your software and wannier90.wout to wuquansheng@gmail.com'
     endif
-
 
 
    !if (cpuid.eq.0)write(stdout,*)'sigma_x'

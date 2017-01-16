@@ -1,6 +1,30 @@
 &TB_FILE
-Hrfile = 'wannier90_hr.dat'
+Hrfile = 'wannier90_hr.dat'      
+Package = 'VASP'             ! obtained from VASP, it could be 'VASP', 'QE', 'Wien2k', 'OpenMx'
 /
+
+LATTICE
+Angstrom
+-2.069  -3.583614  0.000000     ! crystal lattice information
+ 2.069  -3.583614  0.000000
+ 0.000   2.389075  9.546667
+
+ATOM_POSITIONS
+5                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+ Bi 0.3990    0.3990    0.6970
+ Bi 0.6010    0.6010    0.3030
+ Se 0.0000    0.0000    0.5000
+ Se 0.2060    0.2060    0.1180
+ Se 0.7940    0.7940    0.8820
+
+PROJECTORS
+ 3 3 3 3 3          ! number of projectors
+Bi px py pz         ! projectors
+Bi px py pz
+Se px py pz
+Se px py pz
+Se px py pz
 
 
 !> bulk band structure calculation flag
@@ -39,36 +63,12 @@ E_arc = 0.0         ! energy for calculate Fermi Arc
 OmegaNum = 100      ! omega number       
 OmegaMin = -0.6     ! energy interval
 OmegaMax =  0.5     ! energy interval
-Nk1 = 21           ! number k points  odd number would be better
-Nk2 = 21           ! number k points  odd number would be better
-Nk3 = 21           ! number k points  odd number would be better
+Nk1 = 41           ! number k points  odd number would be better
+Nk2 = 41           ! number k points  odd number would be better
+Nk3 = 41           ! number k points  odd number would be better
 NP = 1              ! number of principle layers
 Gap_threshold = 1.0 ! threshold for GapCube output
 /
-
-LATTICE
-Angstrom
--2.069  -3.583614  0.000000     ! crystal lattice information
- 2.069  -3.583614  0.000000
- 0.000   2.389075  9.546667
-
-ATOM_POSITIONS
-5                               ! number of atoms for projectors
-Direct                          ! Direct or Cartisen coordinate
- Bi 0.3990    0.3990    0.6970
- Bi 0.6010    0.6010    0.3030
- Se 0     0     0.5
- Se 0.2060    0.2060    0.1180
- Se 0.7940    0.7940    0.8820
-
-PROJECTORS
- 3 3 3 3 3          ! number of projectors
-Bi px py pz         ! projectors
-Bi px py pz
-Se px py pz
-Se px py pz
-Se px py pz
-
 SURFACE            ! See doc for details
  1  0  0
  0  1  0
