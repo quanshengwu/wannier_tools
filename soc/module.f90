@@ -20,7 +20,8 @@
      integer, public, save :: outfileindex= 10
 
      character(80) :: Hrfile
-     namelist / TB_FILE / Hrfile
+     character(80) :: Package
+     namelist / TB_FILE / Hrfile, Package
 
      !> control parameters
      logical :: BulkBand_calc
@@ -37,6 +38,8 @@
      logical :: SlabSpintexture_calc
      logical :: WannierCenter_calc
      logical :: Z2_3D_calc  ! Flag for Z2 number calculations of 6 planes
+     logical :: WeylChirality_calc  ! Flag for Z2 number calculations of 6 planes
+     logical :: Chern_3D_calc  ! Flag for Chern number calculations of 6 planes
      logical :: BerryPhase_calc
      logical :: BerryCurvature_calc
      logical :: EffectiveMass_calc
@@ -46,7 +49,7 @@
                           SlabSS_calc, SlabArc_calc, SlabSpintexture_calc, &
                           WannierCenter_calc,BerryPhase_calc,BerryCurvature_calc, &
                           Dos_calc, JDos_calc, EffectiveMass_calc, SlabQPI_calc, &
-                          Z2_3D_calc
+                          Z2_3D_calc, WeylChirality_calc, Chern_3D_calc
 
 
      ! double precision  
@@ -293,6 +296,14 @@
      real(dp), allocatable :: mirror_x_op(:, :)
      real(dp), allocatable :: mirror_y_op(:, :)
      real(dp), allocatable :: glide_y_op(:, :)
+
+     !> weyl point information from the input.dat
+     integer :: Num_Weyls
+     character(10) :: DirectOrCart_Weyl ! Whether direct coordinates or Cartisen coordinates
+     real(dp) :: kr0
+     real(dp), allocatable :: weyl_position_cart(:, :)
+     real(dp), allocatable :: weyl_position_direct(:, :)
+
 
  end module para
 

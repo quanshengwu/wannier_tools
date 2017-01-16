@@ -402,7 +402,7 @@
 
       integer :: iter
 
-      logical :: converged
+      logical :: converged, exceed
 
       real(dp) :: g
       real(dp) :: phi1
@@ -544,6 +544,23 @@
          enddo !> ik2
 
          !> add more k points to get a converged k line
+
+         !> first check if the added k points will exceed the maximal No. k points
+         ik= Nk2_adaptive
+         exceed= .false.
+         do ik2=1, Nk2_adaptive-1
+            if (.not.kline_wcc(ik2)%converged)then ! < add one k point between ik2 and ik2+1
+               ik= ik+ 1 !> add to the bottom of kline_wcc
+               if (ik> Nk2_max) exceed= .true.
+            endif
+         enddo
+
+         if (exceed) then
+            write(stdout, *)'Wcc calculation is not converged, may be there are some nodal points'
+            exit
+         endif
+
+         !> if not, then add k points
          ik= Nk2_adaptive
          do ik2=1, Nk2_adaptive-1
             if (.not.kline_wcc(ik2)%converged)then ! < add one k point between ik2 and ik2+1
@@ -558,7 +575,7 @@
                kline_wcc(ik)%largestgap_pos_val= 0d0
                kline_wcc(ik)%largestgap_pos_i= 0
             endif
-         enddo
+         enddo ! ik2
 
          Nk2_adaptive= ik
 
@@ -760,7 +777,8 @@
             b= b(1)*kua+b(2)*kub+b(3)*kuc
             kline_integrate(ik1)%b= b
          endif
-         allocate(kline_integrate(ik1)%eig_vec(Num_wann, Num_wann))
+         if (.not.allocated(kline_integrate(ik1)%eig_vec)) &
+            allocate(kline_integrate(ik1)%eig_vec(Num_wann, Num_wann))
          kline_integrate(ik1)%eig_vec= (0d0, 0d0)
          kline_integrate(ik1)%calculated= .False. ! not calculated
       enddo

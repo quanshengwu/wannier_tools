@@ -278,6 +278,17 @@
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating Z2 number for the bulk'
      endif
 
+     !> wannier center calculattion for the whole BZ, 6 planes
+     if (Chern_3D_calc)then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating Chern number for the bulk'
+        call now(time_start)
+        call Chern_3D
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'Chern_3D_calc')
+        if(cpuid.eq.0)write(stdout, *)'<< End of calculating Chern number for the bulk'
+     endif
+
 
      if (BerryPhase_calc) then
         if(cpuid.eq.0)write(stdout, *)' '

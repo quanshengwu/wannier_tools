@@ -15,7 +15,7 @@ f90  = gfortran -cpp
 flag = -O3                              
 
 # blas and lapack libraries
-libs = -llapack -lblas
+libs = -L/usr/lib/ -llapack -lblas
  
 main :  $(obj)
 	$(f90) $(obj) -o wann_tools $(libs) 

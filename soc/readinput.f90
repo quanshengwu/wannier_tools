@@ -42,6 +42,7 @@
      endif
 
     !read(1001,*)Hrfile
+     Package= 'VASP'
      read(1001, TB_FILE, iostat= stat)
      if (stat/=0) then
         Hrfile='wannier90_hr.dat'
@@ -49,6 +50,7 @@
         if (.not.exists) stop "TB_FIlE namelist should be given or wannier90_hr.dat should exist"
      endif
      if(cpuid==0)write(stdout,'(1x, a, a25)')"Tight binding Hamiltonian file: ",Hrfile
+     if(cpuid==0)write(stdout,'(1x, a, a25)')"Tight binding Hamiltonian obtained from : ",Package
     
 
      BulkBand_calc         = .FALSE.
@@ -986,6 +988,74 @@
      if (cpuid==0) write(stdout, '(a,999i4)')'> TopOrbitals ', TopOrbitals
      if (cpuid==0) write(stdout, '(a,999i4)')'> NBottomOrbitals ', NBottomOrbitals
      if (cpuid==0) write(stdout, '(a,999i4)')'> BottomOrbitals ',BottomOrbitals
+
+
+     !> setup for Weyl points chirality calculation
+     !> default
+     Num_Weyls= 0 ! in unit of 1/Ang
+     kr0=0
+     rewind(1001)
+     lfound = .false.
+     do while (.true.)
+        read(1001, *, end= 111)inline
+        if (trim(adjustl(inline))=='WEYL_CHIRALITY') then
+           lfound= .true.
+           if (cpuid==0) write(stdout, *)' '
+           if (cpuid==0) write(stdout, *)'We found WEYL_CHIRALITY card'
+           exit
+        endif
+     enddo
+
+     read(1001, *, end=209, err=209)Num_Weyls
+     allocate(weyl_position_direct(3, Num_Weyls))
+     allocate(weyl_position_cart(3, Num_Weyls))
+     weyl_position_direct= 0d0
+     weyl_position_cart= 0d0
+     read(1001, *, end=209, err=209)inline   ! The unit of lattice vector
+     DirectOrCart_Weyl= trim(adjustl(inline))
+     read(1001, *, end=209, err=209)kr0
+     it= 0
+     do i=1, Num_Weyls
+        if (index(DirectOrCart_Weyl, "D")>0)then
+           read(1001, *, end=209, err=209)weyl_position_direct(:, i)
+           call direct_cart_rec(weyl_position_direct(:, i), weyl_position_cart(:, i))
+           it = it+ 1
+        else
+           read(1001, *, end=209, err=209)weyl_position_cart(:, i)
+           call cart_direct_rec(weyl_position_cart(:, i), weyl_position_direct(:, i))
+           it = it+ 1
+        endif
+     enddo
+     
+     209 continue
+
+     !> print out the Weyl positions
+     if (cpuid==0) then
+        write(stdout, '(a)')" "
+        write(stdout, '(a)')"Weyl point positions"
+        write(stdout, '(8a10)')"kx", 'ky', 'kz', 'k1', 'k2', 'k3'
+        do i=1, Num_Weyls
+           write(stdout, '(8f10.5)')weyl_position_cart(:, i), weyl_position_direct(:, i)
+        enddo
+
+        write(stdout, '(a)')" "
+     endif
+
+ 
+     if (it< Num_Weyls.and.cpuid==0) then
+        write(stdout, *)' Error: Num_Weyls should the same as ', &
+           ' the number of weyl position lines'
+        write(stdout, *)' Num_Weyls = ', Num_Weyls
+        write(stdout, *)' Num of pos lines = ', it
+        stop
+     endif
+
+     111 continue
+     if (cpuid==0) write(stdout, *)' '
+     if (.not.lfound.and.cpuid==0)write(stdout, *)'>> We do not calculate chirality for weyl points'
+     if (.not.lfound.and.WeylChirality_calc.and.cpuid==0) then
+        write(stdout, *) 'ERROR: you should specify the WEYL_CHIRALITY card, see documentation'
+     endif
 
 
      !> close input.dat
