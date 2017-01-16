@@ -1,5 +1,6 @@
 &TB_FILE
 Hrfile = 'IrF4_hr.dat'
+Package = 'VASP'             ! obtained from VASP, it could be 'VASP', 'QE', 'Wien2k', 'OpenMx'
 /
 
 LATTICE

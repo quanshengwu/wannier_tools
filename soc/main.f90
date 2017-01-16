@@ -255,7 +255,19 @@
         call print_time_cost(time_start, time_end, 'WireBand')
         if(cpuid.eq.0)write(stdout, *)'End of calculating the wire band'
      endif
- 
+  
+     !> Chirality of Weyl points calculation
+     if (WeylChirality_calc)then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of chirality of Weyl points calculating'
+        call now(time_start)
+        call wannier_center3D_weyl
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'WeylChirality_calc')
+        if(cpuid.eq.0)write(stdout, *)'<< End of chirality of Weyl points calculating'
+     endif
+
+
      !> wannier center calculate
      if (wanniercenter_calc)then
         if(cpuid.eq.0)write(stdout, *)' '

@@ -43,13 +43,13 @@ PROJECTORS
 
 
 &CONTROL
-BulkBand_calc         = T
-BulkGap_plane_calc    = T
-SlabBand_calc         = T
-SlabSS_calc           = T
-SlabArc_calc          = T
-SlabSpintexture_calc  = T
-BerryCurvature_calc   = T
+BulkBand_calc         = F
+BulkGap_plane_calc    = F
+SlabBand_calc         = F
+SlabSS_calc           = F
+SlabArc_calc          = F
+SlabSpintexture_calc  = F
+BerryCurvature_calc   = F
 WeylChirality_calc    = T
 /
 
@@ -66,12 +66,12 @@ surf_onsite= 0.0        ! surf_onsite
 &PARAMETERS
 Eta_Arc = 0.001     ! infinite small value, like brodening 
 E_arc = 0.0         ! energy for calculate Fermi Arc
-OmegaNum = 200      ! omega number       
+OmegaNum = 400      ! omega number       
 OmegaMin = -0.6     ! energy interval
 OmegaMax =  0.5     ! energy interval
-Nk1 =  41           ! number k points 
-Nk2 =  41           ! number k points 
-Nk3 =  41           ! number k points 
+Nk1 =  101           ! number k points 
+Nk2 =  101           ! number k points 
+Nk3 =  101           ! number k points 
 NP = 1              ! number of principle layers
 Gap_threshold = 0.001 ! threshold for GapCube output
 /
