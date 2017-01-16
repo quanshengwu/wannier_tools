@@ -125,8 +125,8 @@
 
     !> spin operator matrix
     !> this part is package dependent. 
-    if (index( Package, 'VASP').or. index( Package, 'Wien2k') &
-       .or. index( Package, 'Abinit').or. index( Package, 'openmx')) then
+    if (index( Package, 'VASP')/=0.or. index( Package, 'Wien2k')/=0 &
+       .or. index( Package, 'Abinit')/=0.or. index( Package, 'openmx')/=0) then
        do i=1, Np
           do j=1, Nband
              sigma_x(Num_wann*(i-1)+j, Num_wann*(i-1)+Nband+j)=1.0d0
@@ -137,8 +137,8 @@
              sigma_z(Num_wann*(i-1)+j+Nband, Num_wann*(i-1)+j+Nband)=-1d0
           enddo
        enddo
-    elseif (index( Package, 'QE').or.index( Package, 'quantumespresso') &
-         .or.index( Package, 'quantum-espresso').or.index( Package, 'pwscf')) then
+    elseif (index( Package, 'QE')/=0.or.index( Package, 'quantumespresso')/=0 &
+         .or.index( Package, 'quantum-espresso')/=0.or.index( Package, 'pwscf')/=0) then
        do i=1, Np
           do j=1, Nband
              sigma_x(Num_wann*(i-1)+(2*j-1), Num_wann*(i-1)+2*j)=1.0d0
