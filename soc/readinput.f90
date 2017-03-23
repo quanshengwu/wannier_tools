@@ -37,7 +37,7 @@
         if(cpuid==0)write(stdout,*) '>>>Read some paramters from wt.in'
         open(unit=1001,file=fname,status='old')
      else
-        if(cpuid==0)write(stdout,*)'file' ,fname, 'dosnot exist'
+        if(cpuid==0)write(stdout,*)'file  ' ,fname, 'dosnot exist'
         stop
      endif
 
@@ -57,6 +57,7 @@
      BulkFS_calc           = .FALSE.
      BulkGap_cube_calc     = .FALSE.
      BulkGap_plane_calc    = .FALSE.
+     BulkFS_Plane_calc     = .FALSE.
      SlabBand_calc         = .FALSE.
      WireBand_calc         = .FALSE.
      SlabSS_calc           = .FALSE.
@@ -99,6 +100,7 @@
         write(stdout, *) ">>>Control parameters: " 
         write(stdout, *) "BulkBand_calc       : ",  BulkBand_calc
         write(stdout, *) "BulkFS_calc         : ",  BulkFS_calc
+        write(stdout, *) "BulkFS_Plane_calc   : ",  BulkFS_Plane_calc
         write(stdout, *) "BulkGap_cube_calc   : ",  BulkGap_cube_calc
         write(stdout, *) "BulkGap_plane_calc  : ",  BulkGap_plane_calc
         write(stdout, *) "SlabBand_calc       : ",  SlabBand_calc

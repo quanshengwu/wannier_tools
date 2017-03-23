@@ -23,29 +23,32 @@
      character(80) :: Package
      namelist / TB_FILE / Hrfile, Package
 
+     
      !> control parameters
-     logical :: BulkBand_calc
-     logical :: BulkFS_calc
-     logical :: BulkGap_cube_calc
-     logical :: BulkGap_plane_calc
-     logical :: SlabBand_calc
-     logical :: WireBand_calc
-     logical :: SlabSS_calc
-     logical :: Dos_calc
-     logical :: JDos_calc
-     logical :: SlabArc_calc
-     logical :: SlabQPI_calc
-     logical :: SlabSpintexture_calc
-     logical :: WannierCenter_calc
+     logical :: BulkBand_calc    ! Flag for bulk energy band calculation
+     logical :: BulkFS_calc      ! Flag for bulk 3D fermi surface in 3D BZ calculation
+     logical :: BulkFS_plane_calc ! Flag for bulk fermi surface for a fix k plane calculation
+     logical :: BulkGap_cube_calc  ! Flag for Gap_cube calculation
+     logical :: BulkGap_plane_calc ! Flag for Gap_plane calculation
+     logical :: SlabBand_calc  ! Flag for 2D slab energy band calculation
+     logical :: WireBand_calc  ! Flag for 1D wire energy band calculation
+     logical :: SlabSS_calc    ! Flag for surface state ARPES spectrum calculation
+     logical :: Dos_calc       ! Flag for density of state calculation
+     logical :: JDos_calc      ! Flag for joint density of state calculation
+     logical :: SlabArc_calc   ! Flag for surface state fermi-arc calculation
+     logical :: SlabQPI_calc   ! Flag for surface state QPI spectrum calculation
+     logical :: SlabSpintexture_calc ! Flag for surface state spin-texture calculation
+     logical :: WannierCenter_calc  ! Flag for Wilson loop calculation
      logical :: Z2_3D_calc  ! Flag for Z2 number calculations of 6 planes
      logical :: WeylChirality_calc  ! Flag for Z2 number calculations of 6 planes
      logical :: Chern_3D_calc  ! Flag for Chern number calculations of 6 planes
-     logical :: BerryPhase_calc
-     logical :: BerryCurvature_calc
-     logical :: EffectiveMass_calc
+     logical :: BerryPhase_calc   ! Flag for Berry phase calculation
+     logical :: BerryCurvature_calc ! Flag for Berry curvature calculation
+     logical :: EffectiveMass_calc  ! Flag for effective mass calculation
      logical :: FindNodes_calc  ! Flag for effective mass calculation
      
-     namelist / Control / BulkBand_calc,BulkFS_calc, BulkGap_plane_calc, &
+
+     namelist / Control / BulkBand_calc,BulkFS_calc, BulkGap_plane_calc, BulkFS_plane_calc, &
                           BulkGap_cube_calc, SlabBand_calc, WireBand_calc, &
                           SlabSS_calc, SlabArc_calc, SlabSpintexture_calc, &
                           WannierCenter_calc,BerryPhase_calc,BerryCurvature_calc, &

@@ -46,9 +46,6 @@ SlabQPI_calc          = T
 Z2_3D_calc            = T
 SlabSpintexture_calc  = T
 Wanniercenter_calc    = T
-BerryPhase_calc       = T
-BerryCurvature_calc   = T
-EffectiveMass_calc    = T
 /
 
 &SYSTEM
@@ -68,9 +65,9 @@ E_arc = 0.0         ! energy for calculate Fermi Arc
 OmegaNum = 50       ! omega number       
 OmegaMin = -0.6     ! energy interval
 OmegaMax =  0.5     ! energy interval
-Nk1 = 31            ! number k points  odd number would be better
-Nk2 = 31            ! number k points  odd number would be better
-Nk3 = 31            ! number k points  odd number would be better
+Nk1 = 41            ! number k points  odd number would be better
+Nk2 = 41            ! number k points  odd number would be better
+Nk3 = 41            ! number k points  odd number would be better
 NP = 1              ! number of principle layers
 Gap_threshold = 1.0 ! threshold for GapCube output
 /

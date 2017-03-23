@@ -25,6 +25,7 @@
     real(Dp), allocatable   :: k12_shape(:,:) 
     
 	 real(dp) :: omega
+    real(dp) :: dos_l_max, dos_r_max
 
     real(Dp), allocatable   :: sx_l(:)
     real(Dp), allocatable   :: sy_l(:)
@@ -33,7 +34,10 @@
     real(Dp), allocatable   :: sy_l_mpi(:)
     real(Dp), allocatable   :: sz_l_mpi(:)
     real(Dp), allocatable   :: dos_l(:)
+    real(Dp), allocatable   :: dos_bulk(:)
     real(Dp), allocatable   :: dos_l_mpi(:)
+    real(dp), allocatable   :: dos_l_only(:)
+    real(dp), allocatable   :: dos_r_only(:)
     real(Dp), allocatable   :: sx_r(:)
     real(Dp), allocatable   :: sy_r(:)
     real(Dp), allocatable   :: sz_r(:)
@@ -42,13 +46,13 @@
     real(Dp), allocatable   :: sz_r_mpi(:)
     real(Dp), allocatable   :: dos_r(:)
     real(Dp), allocatable   :: dos_r_mpi(:)
-! spin operator matrix sigma_x,sigma_y in sigma_z representation
+
+    ! spin operator matrix sigma_x,sigma_y in sigma_z representation
     complex(Dp),allocatable :: sigma_x(:,:) 
     complex(Dp),allocatable :: sigma_y(:,:) 
     complex(Dp),allocatable :: sigma_z(:,:) 
 
-! surface green function
-
+    ! surface green function
     complex(Dp),allocatable :: GLL(:,:)
     complex(Dp),allocatable :: GRR(:,:)
     complex(Dp),allocatable :: GB (:,:)
@@ -75,7 +79,10 @@
     allocate( dos_l(nk1*nk2))
     allocate( dos_l_mpi(nk1*nk2))
     allocate( dos_r(nk1*nk2))
+    allocate( dos_bulk(nk1*nk2))
     allocate( dos_r_mpi(nk1*nk2))
+    allocate( dos_l_only(nk1*nk2))
+    allocate( dos_r_only(nk1*nk2))
     allocate( GRR(ndim,ndim))
     allocate( GB (ndim,ndim))
     allocate(sx_l(nk1*nk2), sy_l(nk1*nk2), sz_l(nk1*nk2))
@@ -89,6 +96,7 @@
     k12_shape=0d0
     dos_l=0d0
     dos_r=0d0
+    dos_bulk=0d0
     sx_l=0d0
     sy_l=0d0
     sz_l=0d0
@@ -189,8 +197,8 @@
        do j=1,ndim
           dos_l(ikp)=dos_l(ikp)-Aimag(GLL(j,j))
           dos_r(ikp)=dos_r(ikp)-Aimag(GRR(j,j))
+          dos_bulk(ikp)=dos_bulk(ikp)-Aimag(GB(j,j))
        enddo
-
 
        !ctemp=matmul(GLL,sigma_x)       
        call mat_mul(ndim,GLL,sigma_x,ctemp)       
@@ -275,6 +283,14 @@
     sz_r = sz_r_mpi/pi
     dos_r= dos_r_mpi
 
+    do ikp= 1, Nk1*Nk2
+       dos_l_only(ikp)= dos_l(ikp)- dos_bulk(ikp)
+       if (dos_l_only(ikp)<0) dos_l_only(ikp)=eps9
+       dos_r_only(ikp)= dos_r(ikp)- dos_bulk(ikp)
+       if (dos_r_only(ikp)<0) dos_r_only(ikp)=eps9
+    enddo
+
+
     outfileindex= outfileindex+ 1
     spindosfile= outfileindex
     outfileindex= outfileindex+ 1
@@ -287,6 +303,24 @@
        write(spintexturefile,'(60a16)')'#kx', 'ky', 'log(dos)', &
                            'sx', 'sy', 'sz'
 
+      !ikp= 0
+      !do i= 1, nk1
+      !   do j= 1, nk2
+      !      ikp=ikp+1
+      !      k=k12_shape(:, ikp)
+      !      write(spindosfile,'(60f16.8)')k, (log(dos_l(ikp))), &
+      !         real(sx_l(ikp)), real(sy_l(ikp)), real(sz_l(ikp))                 
+      !      if (ikp>1 .and. ikp< (NK1*Nk2-1)) then
+      !         if(dos_l(ikp)>dos_l(ikp+1).and.dos_l(ikp)>dos_l(ikp-1).and. &
+      !         real(log(dos_l(ikp)))>0.5d0) & 
+      !         write(spintexturefile,'(60f16.8)')k, (log(dos_l(ikp))), &
+      !            real(sx_l(ikp)),real(sy_l(ikp)),real(sz_l(ikp))                 
+      !      endif
+      !   enddo
+      !   write(spindosfile, *)' '
+      !enddo
+
+       dos_l_max= maxval(dos_l_only)/4d0
        ikp= 0
        do i= 1, nk1
           do j= 1, nk2
@@ -294,9 +328,7 @@
              k=k12_shape(:, ikp)
              write(spindosfile,'(60f16.8)')k, (log(dos_l(ikp))), &
                 real(sx_l(ikp)), real(sy_l(ikp)), real(sz_l(ikp))                 
-             if (ikp>1 .and. ikp< (NK1*Nk2-1)) then
-                if(dos_l(ikp)>dos_l(ikp+1).and.dos_l(ikp)>dos_l(ikp-1).and. &
-                real(log(dos_l(ikp)))>0.5d0) & 
+             if (dos_l_only(ikp)>dos_l_max)then
                 write(spintexturefile,'(60f16.8)')k, (log(dos_l(ikp))), &
                    real(sx_l(ikp)),real(sy_l(ikp)),real(sz_l(ikp))                 
              endif
@@ -320,6 +352,24 @@
        write(spintexturefile,'(60a16)')'#kx', 'ky', 'log(dos)', &
                            'sx', 'sy', 'sz'
 
+      !ikp= 0
+      !do i= 1, nk1
+      !   do j= 1, nk2
+      !      ikp=ikp+1
+      !      k=k12_shape(:, ikp)
+      !      write(spindosfile,'(60f16.8)')k, (log(dos_r(ikp))), &
+      !         real(sx_r(ikp)), real(sy_r(ikp)), real(sz_r(ikp))                 
+      !      if (ikp>1 .and. ikp< (NK1*Nk2-1)) then
+      !         if(dos_r(ikp)>dos_r(ikp+1).and.dos_r(ikp)>dos_r(ikp-1).and. &
+      !         real(log(dos_r(ikp)))>0.5d0) & 
+      !         write(spintexturefile,'(60f16.8)')k, (log(dos_r(ikp))), &
+      !            real(sx_r(ikp)),real(sy_r(ikp)),real(sz_r(ikp))                 
+      !      endif
+      !   enddo
+      !   write(spindosfile, *)' '
+      !enddo
+
+       dos_r_max= maxval(dos_r_only)/4d0
        ikp= 0
        do i= 1, nk1
           do j= 1, nk2
@@ -327,15 +377,14 @@
              k=k12_shape(:, ikp)
              write(spindosfile,'(60f16.8)')k, (log(dos_r(ikp))), &
                 real(sx_r(ikp)), real(sy_r(ikp)), real(sz_r(ikp))                 
-             if (ikp>1 .and. ikp< (NK1*Nk2-1)) then
-                if(dos_r(ikp)>dos_r(ikp+1).and.dos_r(ikp)>dos_r(ikp-1).and. &
-                real(log(dos_r(ikp)))>0.5d0) & 
+             if (dos_r_only(ikp)>dos_r_max)then
                 write(spintexturefile,'(60f16.8)')k, (log(dos_r(ikp))), &
                    real(sx_r(ikp)),real(sy_r(ikp)),real(sz_r(ikp))                 
              endif
           enddo
           write(spindosfile, *)' '
        enddo
+
 
        close(spindosfile)
        close(spintexturefile)

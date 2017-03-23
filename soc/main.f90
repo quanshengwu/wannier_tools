@@ -150,19 +150,29 @@
         if(cpuid.eq.0)write(stdout, *)'<< End of nodes searching'
      endif
 
+     !> calculate Fermi surface on a k plane
+     if (BulkFS_Plane_calc) then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the bulk FS in a k plane'
+        call now(time_start)
+        call fermisurface
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'BulkFS_Plane')
+        if(cpuid.eq.0)write(stdout, *)'<< End of calculating the bulk FS in a k plane'
+     endif
 
-
+     !> calculate 3D Fermi surface
      if (BulkFS_calc) then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the bulk FS'
         call now(time_start)
         call fermisurface3D
-       !call fermisurface
         call now(time_end)
         call print_time_cost(time_start, time_end, 'BulkFS')
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the bulk FS'
      endif
 
+     !> calculate density of state and joint density of state
      if (JDos_calc.and.Dos_calc) then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating DOS and Jdos for bulk system'
@@ -215,7 +225,6 @@
        !call ek_bulk_polar
        !call ek_bulk_fortomas
        !call ek_bulk_spin
-       !call dos_calc
        !call ek_bulk2D
        !call ek_bulk2D_spin
         call gapshape

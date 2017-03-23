@@ -18,8 +18,8 @@ flag = -O3
 libs = -L/usr/lib/ -llapack -lblas
  
 main :  $(obj)
-	$(f90) $(obj) -o wann_tools $(libs) 
-	cp -f wann_tools ../bin
+	$(f90) $(obj) -o wt.x $(libs) 
+	cp -f wt.x ../bin
 
 .SUFFIXES: .o .f90
 
@@ -27,4 +27,4 @@ main :  $(obj)
 	$(f90) -c $(flag) $(includes) $*.f90
 
 clean :
-	rm -f *.o *.mod *~ wann_tools
+	rm -f *.o *.mod *~ wt.x

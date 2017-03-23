@@ -1,6 +1,7 @@
-! calculate bulk's energy band using wannier TB method
-! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
   subroutine fermisurface3D
+     ! This subroutine calculates 3D fermi surface in the 1st BZ using wannier TB method
+     ! 
+     ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 
      use wmpi
      use para
@@ -16,6 +17,10 @@
      integer :: ierr
      real(dp) :: kz
      real(Dp) :: k(3)
+
+     integer :: nband_min
+     integer :: nband_max
+     integer :: nband_store
      
      ! Hamiltonian of bulk system
      complex(Dp) :: Hamk_bulk(Num_wann,Num_wann) 
@@ -26,6 +31,16 @@
      real(dp), allocatable :: W(:)
      real(dp), allocatable :: eigval(:,:)
      real(dp), allocatable :: eigval_mpi(:,:)
+
+     ! only for output the FS3D.bxsf, we don't have to output all the bands,
+     ! only consider the bands close to the Fermi level 
+     nband_min= Numoccupied- 7
+     nband_max= Numoccupied+ 8
+
+     if (nband_min< 1) nband_min= 1
+     if (nband_max> Num_wann) nband_max= Num_wann
+
+     nband_store= nband_max- nband_min+ 1
 
      nkx= Nk1
      nky= Nk2
@@ -55,8 +70,8 @@
 
      knv3= nkx*nky*nkz
      allocate(     W(Num_wann))
-     allocate(eigval(Num_wann, knv3))
-     allocate(eigval_mpi(Num_wann, knv3))
+     allocate(eigval(nband_store, knv3))
+     allocate(eigval_mpi(nband_store, knv3))
      eigval_mpi= 0d0
      eigval= 0d0
      do ik= 1+cpuid, knv3, num_cpu
@@ -68,9 +83,9 @@
 
         ! calculation bulk hamiltonian
         Hamk_bulk= 0d0
-        call ham_bulk(k, Hamk_bulk)
+        call ham_bulk_old(k, Hamk_bulk)
         call eigensystem_c( 'N', 'U', Num_wann ,Hamk_bulk, W)
-        eigval_mpi(:, ik)= W
+        eigval_mpi(:, ik)= W(nband_min:nband_max)
      enddo
 
 #if defined (MPI)
@@ -88,18 +103,20 @@
         write(outfileindex,*) '      # this is a Band-XCRYSDEN-Structure-File'
         write(outfileindex,*) '      # for Fermi Surface Visualisation'
         write(outfileindex,*) '      #'
+        write(outfileindex,*) '      #  Launch as: xcrysden --bxsf FS3D.bxsf'
+        write(outfileindex,*) '       Fermi Energy: 0'
         write(outfileindex,*) ' END_INFO'
         write(outfileindex,*) 
         write(outfileindex,*) ' BEGIN_BLOCK_BANDGRID_3D'
         write(outfileindex,*) 'from_wannier_code'
         write(outfileindex,*) ' BEGIN_BANDGRID_3D_fermi'
-        write(outfileindex,*) num_wann
+        write(outfileindex,*) nband_store
         write(outfileindex,*) nkx, nky, nkz
         write(outfileindex,*) '0.0 0.0 0.0'
         write(outfileindex,*) (Kua(i), i=1,3)
         write(outfileindex,*) (Kub(i), i=1,3)
         write(outfileindex,*) (Kuc(i), i=1,3)
-        do i=1,num_wann
+        do i=1,nband_store
            write(outfileindex,*) 'BAND: ',i
            do ik=1, knv3
               write(outfileindex,'(2E16.8)') eigval(i, ik)
@@ -116,8 +133,9 @@
 
 
 
-! calculate bulk's energy band using wannier TB method
   subroutine fermisurface
+     ! This subroutine calculates 3D fermi surface in the a fixed k plane
+     ! using wannier TB method
 
      use wmpi
      use para
@@ -148,13 +166,12 @@
 
      complex(dp), allocatable :: ones(:,:)
 
-     nkx= Nk
-     nky= Nk
+     nkx= Nk1
+     nky= Nk2
      allocate( kxy(3, nkx*nky))
      allocate( kxy_shape(3, nkx*nky))
      kxy=0d0
      kxy_shape=0d0
-     
      
      ik =0
      do i= 1, nkx
@@ -171,7 +188,6 @@
      kxmax_shape=maxval(kxy_shape(i1,:))
      kymin_shape=minval(kxy_shape(i2,:))
      kymax_shape=maxval(kxy_shape(i2,:))
-      
 
 
      knv3= nkx*nky
@@ -193,7 +209,7 @@
 
         ! calculation bulk hamiltonian
         Hamk_bulk= 0d0
-        call ham_bulk(k, Hamk_bulk)
+        call ham_bulk_old(k, Hamk_bulk)
 
         Hamk_bulk= (E_arc -zi* eta_arc)* ones - Hamk_bulk
         call inv(Num_wann, Hamk_bulk)
@@ -215,7 +231,7 @@
         open(unit=outfileindex, file='fs.dat')
    
         do ik=1, knv3
-           write(outfileindex, '(3f16.8)')kxy_shape(:, ik), log(dos_mpi(ik))
+           write(outfileindex, '(30f16.8)')kxy_shape(:, ik), log(dos_mpi(ik))
            if (mod(ik, nky)==0) write(outfileindex, *)' '
         enddo
         close(outfileindex)
@@ -234,9 +250,9 @@
         write(101, '(3a)')'set terminal  pngcairo truecolor enhanced', &
            ' size 1920, 1680 font ",36"'
         write(101, '(a)')"set output 'fs.png'"
-        write(101,'(a, f10.4, 2a, f10.4, a)') &
+        write(101,'(a, f10.4, a, f10.4, a, f10.4, a)') &
            'set palette defined ( ', zmin, ' "white", ', &
-          '0 "black", ', zmax,'  "red" )'
+         zmin+(zmin+zmax)/6d0, '"black", ', zmax,'  "red" )'
         write(101, '(a)')'#set palette rgbformulae 33,13,10'
         write(101, '(a)')'unset ztics'
         write(101, '(a)')'unset key'
@@ -252,10 +268,10 @@
         write(101, '(a)')'set colorbox'
        !write(101, '(a, f10.5, a, f10.5, a)')'set xrange [', kxmin, ':', kxmax, ']'
        !write(101, '(a, f10.5, a, f10.5, a)')'set yrange [', kymin, ':', kymax, ']'
-        write(101, '(a, f10.5, a, f10.5, a)')'set xrange [', kxmin_shape, ':', kxmax_shape, ']'
-        write(101, '(a, f10.5, a, f10.5, a)')'set yrange [', kymin_shape, ':', kymax_shape, ']'
+       !write(101, '(a, f10.5, a, f10.5, a)')'set xrange [', kxmin_shape, ':', kxmax_shape, ']'
+       !write(101, '(a, f10.5, a, f10.5, a)')'set yrange [', kymin_shape, ':', kymax_shape, ']'
         write(101, '(a)')'set pm3d interpolate 2,2'
-        write(101, '(2a)')"splot 'fs.dat' u 1:2:3 w pm3d"
+        write(101, '(2a)')"splot 'fs.dat' u 1:2:4 w pm3d"
 
         close(101)
      endif
@@ -264,8 +280,9 @@
    return
    end subroutine fermisurface
 
-!  calculate bulk's energy band using wannier TB method
    subroutine gapshape3D
+      ! This subroutine get the k points in the BZ at which the gap is smaller then
+      ! Gap_threshold
 
       use wmpi
       use para
@@ -354,7 +371,7 @@
       
          ! calculation bulk hamiltonian
          Hamk_bulk= 0d0
-         call ham_bulk(k, Hamk_bulk)
+         call ham_bulk_old(k, Hamk_bulk)
       
          call eigensystem_c( 'N', 'U', Num_wann ,Hamk_bulk, W)
          gap(1, ik)= W(Numoccupied+1)- W(Numoccupied)
@@ -427,8 +444,9 @@
    end subroutine gapshape3D
 
 
-!  calculate bulk's energy band using wannier TB method
    subroutine gapshape
+      ! This subroutine gets the gap at each k 
+      ! points on the k plane specified by user
 
       use wmpi
       use para
@@ -530,7 +548,8 @@
       if (cpuid==0)then
          open(unit=outfileindex, file='GapPlane.dat')
      
-         write(outfileindex, '(100a16)')'% kx', 'ky', 'kz', 'gap', 'Ev2', 'Ev1', 'Ec1', 'Ec2', 'k1', 'k2', 'k3'
+         write(outfileindex, '(100a16)')'% kx', 'ky', 'kz', 'gap', 'Ev4', 'Ev3', &
+            'Ev2', 'Ev1', 'Ec1', 'Ec2', 'Ec3', 'Ec4', 'k1', 'k2', 'k3'
          do ik=1, knv3
             write(outfileindex, '(30f16.8)')kxy_shape(:, ik), (gap_mpi(:, ik)), kxy(:, ik)
             if (mod(ik, nky)==0) write(outfileindex, *)' '
@@ -541,7 +560,8 @@
       outfileindex= outfileindex+ 1 
       if (cpuid==0)then
          open(unit=outfileindex, file='gap2d.dat')
-         write(outfileindex, '(100a16)')'% kx', 'ky', 'kz', 'gap', 'Ev2', 'Ev1', 'Ec1', 'Ec2', 'k1', 'k2', 'k3'
+         write(outfileindex, '(100a16)')'% kx', 'ky', 'kz', 'gap', 'Ev2', 'Ev1', 'Ec1', &
+            'Ec2', 'k1', 'k2', 'k3'
          do ik=1, knv3
             if (abs(gap_mpi(1, ik))< 0.10d0) then
                write(outfileindex, '(8f16.8)')kxy_shape(:, ik), (gap_mpi(:, ik)), kxy(:, ik)
@@ -553,7 +573,8 @@
       outfileindex= outfileindex+ 1 
       if (cpuid==0)then
          open(unit=outfileindex, file='GapPlane_matlab.dat')
-         write(outfileindex, '(100a16)')'% kx', 'ky', 'kz', 'gap', 'Ev2', 'Ev1', 'Ec1', 'Ec2', 'k1', 'k2', 'k3'
+         write(outfileindex, '(100a16)')'% kx', 'ky', 'kz', 'gap', 'Ev2', 'Ev1', 'Ec1', &
+            'Ec2', 'k1', 'k2', 'k3'
          do ik=1, knv3
             write(outfileindex, '(30f16.8)')kxy_shape(:, ik), (gap_mpi(:, ik)), kxy(:, ik)
          enddo
@@ -607,8 +628,8 @@
    end subroutine gapshape
 
 
-   !> get fermilevel for the given hamiltonian
    subroutine get_fermilevel
+      !> Calculate fermilevel for the given hamiltonian
       use wmpi
       use para
       implicit none
@@ -732,10 +753,8 @@
       return
    end subroutine get_fermilevel
 
-   !------------+------------+------------+------------+------------+--------+!
-   ! calculate the Fermi-Dirac distribution
-   !------------+------------+------------+------------+------------+--------+!
    function fermi(omega, Beta) result(value)
+      ! This function sets the Fermi-Dirac distribution
 
       use para
       implicit none

@@ -461,7 +461,7 @@
       Nk2_adaptive= Nk2
       
       iter= 0
-      neighbour_tol= 0.10d0
+      neighbour_tol= 0.06d0
       converged=.False.
       Do while (.true.)
          if (converged .or. Nk2_adaptive>=Nk2_max) exit
