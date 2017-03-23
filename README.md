@@ -7,16 +7,19 @@
 ![](https://lh3.googleusercontent.com/-NGkPcF7iUDY/Vy-34BbICBI/AAAAAAAAASY/e2YiWSnQJD4jpHh-kDWceThf2jKKSGAxwCCo/s526/wannier_tools-logo-purple.jpg)
 
 **Authorship**
+-------------
 
 Written by QuanSheng Wu in Fortran 90 (wuquansheng@gmail.com  wuq@phys.ethz.ch)
 
 Copyright (c) 2016 QuanSheng Wu and ShengNan Zhang. All rights reserved.
 
 **Pull down the package**
+-------------------------
 
 git clone https://github.com/quanshengwu/wannier_tools.git
 
 **Brief introductions**
+-------------------------
 
 Use tight binding model to get the surface states of slab systems
 or edge states of nanowire systems or just bulk bands. Especially
@@ -33,8 +36,14 @@ With given tight binding model well written in the format of wannier90_hr.dat in
 3. Identify Weyl points and nodal-line structure. 
 
 **License and agreement**
+-------------------------
+WannierTools was released under GPL V3. If you use our code for your research, please cite it properly, 
+like  “ The surface spectrums or Berry curvature, Wilson loop, Weyl/Dirac points, Nodal line,  Chirality et al.
+are calculated by the software package WannierTools~\cite{WannierTools}. "
 
-If you use our code for your research, please cite it properly, like  “ The surface spectrums (or Berry curvature, Wannier charge center, Chirality et al.) are calculated by the software package WannierTools~\cite{WannierTools}, which is based on the iterative Green’s function~\cite{Sancho1985}.” 
+For the surface state calculation, please also cite {Sancho1985}. 
+
+For the Wilson loop calculation, please also cite PhysRevB.84.075119 and PhysRevB.83.035108.
 
 Reference 
 
@@ -45,6 +54,7 @@ Sancho1985: [Highly convergent schemes for the calculation of bulk and surface G
 If you have good ideas to improve this code, please do not hesitate to contact me. Your contribution will be recorded.
 
 **Publications**
+----------------
 * Topological semimetal to insulator quantum phase transition in the Zintl compounds Ba2X(X=Si,Ge), Ziming Zhu, Mingda Li, and Ju Li, [Phys. Rev. B 94, 155121](http://journals.aps.org/prb/abstract/10.1103/PhysRevB.94.155121), (2016)
 * Heavy Weyl fermion state in CeRu4Sn6, Yuanfeng Xu, Changming Yue, Hongming Weng, Xi Dai, [arXiv:1608.04602](http://arxiv.org/abs/1608.04602) 
 * Triple Point Topological Metals Ziming Zhu, Georg W. Winkler, **QuanSheng Wu**, Ju Li, Alexey A. Soluyanov  [arXiv:1605.04653](http://arxiv.org/abs/1605.04653) Phys. Rev. X 6, 031003 – Published 7 July 2016.
