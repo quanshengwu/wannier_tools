@@ -1,0 +1,92 @@
+&TB_FILE
+Hrfile = 'IrF4_hr.dat'
+Package = 'VASP'             ! obtained from VASP, it could be 'VASP', 'QE', 'Wien2k', 'OpenMx'
+/
+
+LATTICE
+Angstrom
+0.000000   4.739600   2.889150
+4.882000   0.000000   2.889150
+4.882000   4.739600   0.000000
+
+ATOM_POSITIONS
+2  
+Direct
+ Ir     -0.040000  -0.040000   0.040000   
+ Ir      0.210000   0.210000   0.290000   
+
+PROJECTORS
+5 5 
+ Ir dxy dyz dzx dx2-y2 dz2
+ Ir dxy dyz dzx dx2-y2 dz2
+
+SURFACE            ! See doc for details
+1  1 -1   ! Umatrix for new lattice xy
+0  1 -1 
+0  1  0
+
+
+&CONTROL
+BulkBand_calc         = F
+BulkFS_calc           = F
+FindNodes_calc        = T
+SlabBand_calc         = F
+SlabSS_calc           = F
+SlabArc_calc          = F
+SlabSpintexture_calc  = F
+/
+
+&SYSTEM
+NSLAB = 40 
+NSLAB1= 4  
+NSLAB2= 4  
+NumOccupied = 10        ! NumOccupied
+SOC = 1                 ! soc
+E_FERMI = 0.000        ! e-fermi
+surf_onsite= 0.0        ! surf_onsite
+/
+
+&PARAMETERS
+Eta_Arc = 0.001     ! infinite small value, like brodening 
+E_arc = 0.0         ! energy for calculate Fermi Arc
+OmegaNum = 500      ! omega number       
+OmegaMin = -0.36    ! energy interval
+OmegaMax =  0.26    ! energy interval
+Nk1 = 10            ! number k points 
+Nk2 = 10            ! number k points 
+Nk3 = 10            ! number k points 
+NP = 1              ! number of principle layers
+Gap_threshold = 0.010 ! threshold for GapCube output
+/
+
+KPATH_BULK            ! k point path
+     5        ! number of k line
+X 0.50000  0.00000  0.50000    G 0.00000  0.00000  0.00000    
+G 0.00000  0.00000  0.00000    Y  0.00000 -0.50000 -0.50000    
+Y  0.00000 -0.50000 -0.50000    Z  0.50000 -0.50000  0.00000    
+Z  0.50000 -0.50000  0.00000    G 0.00000  0.00000  0.00000    
+G  0.00000  0.00000  0.00000    L 0.50000  0.00000  0.00000    
+
+KPATH_SLAB
+4        ! numker of k line for 2D case
+X 0.5 0.0 G 0.0 0.0
+G 0.0 0.0 M 0.5 0.5
+M 0.5 0.5 Y 0.0 0.5
+Y 0.0 0.5 G 0.0 0.0
+
+KPLANE_SLAB
+ 0.0  0.0      ! Original point for 2D k plane
+ 1.0  0.0      ! The first vector to define 2D k plane 
+ 0.0  1.0      ! The second vector to define 2D k plane  for arc plots
+
+!> kx-kz plane
+KPLANE_BULK
+ 0.00  0.00  0.00   ! Original point for 3D k plane 
+ 0.00  2.00  2.00   ! The first vector to define 3d k space plane
+ 2.00  2.00  0.00   ! The second vector to define 3d k space plane
+
+KCUBE_BULK
+-0.50 -0.50 -0.50   ! Original point for 3D k plane 
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  1.00  0.00   ! The second vector to define 3d k space plane
+ 0.00  0.00  1.00   ! The third vector to define 3d k cube
