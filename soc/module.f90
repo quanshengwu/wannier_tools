@@ -43,15 +43,15 @@
      logical :: BerryPhase_calc
      logical :: BerryCurvature_calc
      logical :: EffectiveMass_calc
+     logical :: FindNodes_calc  ! Flag for effective mass calculation
      
-     namelist / Control / BulkBand_calc, BulkFS_calc, BulkGap_plane_calc, &
+     namelist / Control / BulkBand_calc,BulkFS_calc, BulkGap_plane_calc, &
                           BulkGap_cube_calc, SlabBand_calc, WireBand_calc, &
                           SlabSS_calc, SlabArc_calc, SlabSpintexture_calc, &
                           WannierCenter_calc,BerryPhase_calc,BerryCurvature_calc, &
-                          Dos_calc, JDos_calc, EffectiveMass_calc, SlabQPI_calc, &
-                          Z2_3D_calc, WeylChirality_calc, Chern_3D_calc
-
-
+                          Z2_3D_calc, Chern_3D_calc, WeylChirality_calc, &
+                          Dos_calc, JDos_calc, EffectiveMass_calc, SlabQPI_calc, FindNodes_calc
+ 
      ! double precision  
      integer,parameter :: Dp=kind(1.0d0)
 
@@ -189,7 +189,12 @@
      real(dp),allocatable :: K3len(:)
      real(dp),allocatable :: K3points(:, :)
 
-     namelist / KPATH_BULK / nk3lines, k3line_name, k3line_start
+     ! k path for berry phase, read from the input.dat
+     ! in the KPATH_BERRY card
+     integer :: NK_Berry
+     character(10) :: DirectOrCart_Berry ! Whether direct coordinates or Cartisen coordinates
+     real(dp), allocatable :: k3points_Berry(:, :) ! only in direct coordinates
+
 
 
      !>> top surface atoms

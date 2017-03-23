@@ -1,4 +1,4 @@
-obj =  module.o aux.o symmetry.o readHmnR.o inverse.o\
+obj =  module.o aux.o symmetry.o readHmnR.o inverse.o proteus.o \
        eigen.o ham_qlayer2qlayer.o psi.o \
 		 ham_slab.o ek_slab.o ek_bulk_polar.o ek_bulk2D.o \
        readinput.o fermisurface.o surfgreen.o surfstat.o \
@@ -6,20 +6,23 @@ obj =  module.o aux.o symmetry.o readHmnR.o inverse.o\
        fermiarc.o spintexture.o berrycurvature.o \
 		 wanniercenter.o dos.o  orbital_momenta.o \
 		 landau_level.o berry.o wanniercenter_adaptive.o \
-		 effective_mass.o \
+		 effective_mass.o findnodes.o \
        main.o
 
 # compiler
-f90  = gfortran -cpp -fprofile-arcs -ftest-coverage
+f90  = mpif90 -fpp -DMPI # -check all -pg -traceback
 
-flag = -O0                              
+#FLAGS =  -O3 -nogen-interface  -warn all 
+flag = -O3 -nogen-interface #-warn all 
 
 # blas and lapack libraries
-libs = -llapack -lblas
+libs = -L/opt/intel/mkl/lib/ \
+		-lmkl_intel_lp64 -lmkl_sequential \
+		-lmkl_core -liomp5
  
 main :  $(obj)
-	$(f90) $(obj) -o wann_tools $(libs) 
-	cp -f wann_tools ../bin
+	$(f90) $(obj) -o wt.x $(libs) 
+	cp -f wt.x ../bin
 
 .SUFFIXES: .o .f90
 
@@ -27,4 +30,4 @@ main :  $(obj)
 	$(f90) -c $(flag) $(includes) $*.f90
 
 clean :
-	rm -f *.o *.mod *~ wann_tools
+	rm -f *.o *.mod *~ wt.x

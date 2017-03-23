@@ -10,7 +10,7 @@
      use para
      implicit none
 
-     character*12 :: fname='input.dat'
+     character*12 :: fname='wt.in'
      character*25 :: char_temp 
      character*80 :: inline
      logical ::  exists
@@ -19,13 +19,13 @@
      real(dp) :: cell_volume2
 
      integer  :: stat
-     integer  :: i, ia, n
+     integer  :: i, ia, n, ik
      integer  :: j, io, it
      integer  :: NN
      integer :: nwann
      real(dp) :: t1, temp
      real(dp) :: pos(3)
-     real(dp) :: k1(3), k2(3)
+     real(dp) :: k1(3), k2(3), k(3)
      real(dp) :: kstart(3), kend(3)
      real(dp) :: R1(3), R2(3), R3(3) 
      real(dp), external :: norm
@@ -34,7 +34,7 @@
      inquire(file=fname,exist=exists)
      if (exists)then
         if(cpuid==0)write(stdout,*) '  '
-        if(cpuid==0)write(stdout,*) '>>>Read some paramters from input.dat'
+        if(cpuid==0)write(stdout,*) '>>>Read some paramters from wt.in'
         open(unit=1001,file=fname,status='old')
      else
         if(cpuid==0)write(stdout,*)'file' ,fname, 'dosnot exist'
@@ -63,13 +63,16 @@
      SlabArc_calc          = .FALSE.
      SlabQPI_calc          = .FALSE.
      SlabSpintexture_calc  = .FALSE.
-     wanniercenter_calc    = .FALSE.
+     WannierCenter_calc    = .FALSE.
+     WeylChirality_calc    = .FALSE.
      Z2_3D_calc            = .FALSE.
+     Chern_3D_calc         = .FALSE.
      BerryPhase_calc       = .FALSE.
      BerryCurvature_calc   = .FALSE.
      Dos_calc              = .FALSE.
      JDos_calc             = .FALSE.
      EffectiveMass_calc    = .FALSE.
+     FindNodes_calc        = .FALSE.
      
      read(1001, CONTROL, iostat=stat)
 
@@ -80,7 +83,13 @@
         write(*, *)"SlabBand_calc,WireBand_calc,SlabSS_calc,SlabArc_calc "
         write(*, *)"SlabSpintexture,wanniercenter_calc"
         write(*, *)"BerryPhase_calc,BerryCurvature_calc, Z2_3D_calc"
+        write(*, *)"Dos_calc, JDos_calc, FindNodes_calc "
+        write(*, *)"BulkFS_plane_calc"
+        write(*, *)"Z2_3D_calc"
+        write(*, *)"Chern_3D_calc"
+        write(*, *)"WeylChirality_calc"
         write(*, *)"The default Vaule is F"
+        write(*, *)"Or there should be some unknonw tags set with = "
         stop
      endif
 
@@ -98,8 +107,14 @@
         write(stdout, *) "SlabSpintexture_calc: ",  SlabSpintexture_calc
         write(stdout, *) "wanniercenter_calc  : ", wanniercenter_calc
         write(stdout, *) "Z2_3D_calc          : ",  Z2_3D_calc
+        write(stdout, *) "Chern_3D_calc       : ",  Chern_3D_calc
+        write(stdout, *) "WeylChirality_calc  : ",  WeylChirality_calc
         write(stdout, *) "BerryPhase_calc     : ", BerryPhase_calc
+        write(stdout, *) "Dos_calc            : ",  DOS_calc
+        write(stdout, *) "JDos_calc           : ",  JDOS_calc
+        write(stdout, *) "FindNodes_calc      : ",  FindNodes_calc
         write(stdout, *) "BerryCurvature_calc : ", BerryCurvature_calc
+        write(stdout, *) "EffectiveMass_calc  : ", EffectiveMass_calc 
      endif
 
      !> set system parameters by default
@@ -407,7 +422,7 @@
      if (lfound) then
         if (cpuid==0) then
            write(stdout, *)" "
-           write(stdout, *)">> Wannier centers from input.dat, in unit of reciprocal lattice vector"
+           write(stdout, *)">> Wannier centers from wt.in, in unit of reciprocal lattice vector"
            write(stdout, '(a6, 4a10)')'iwann', 'R1', 'R2', 'R3'
            do i=1, Nwann
               write(stdout, '(i6, 3f10.6)')i, wannier_centers_direct(:, i)
@@ -859,6 +874,65 @@
         stop 'ERROR: please set KCUBE_BULK for gap3D calculations'
      endif
 
+     !> set default parameters for Berry phase calculation
+     NK_Berry= 2
+     allocate(k3points_Berry(3, NK_Berry))
+     DirectOrCart_Berry='Direct'
+     k3points_Berry= 0d0
+     rewind(1001)
+     lfound = .false.
+     do while (.true.)
+        read(1001, *, end= 113)inline
+        if (trim(adjustl(inline))=='KPATH_BERRY') then
+           lfound= .true.
+           if (cpuid==0) write(stdout, *)' '
+           if (cpuid==0) write(stdout, *)'We found KPATH_BERRY card'
+           exit
+        endif
+     enddo
+
+     read(1001, *, end=208, err=208)NK_Berry
+     if (cpuid==0) write(stdout, '(a, i10)')'NK_Berry', NK_Berry
+     read(1001, *, end=208, err=208)inline   ! The unit of lattice vector
+     DirectOrCart_Berry= trim(adjustl(inline))
+
+     deallocate(k3points_Berry)
+     allocate(k3points_Berry(3, NK_Berry))
+     k3points_Berry= 0d0
+
+     it= 0
+     if (index(DirectOrCart_Berry, "D")>0)then
+        do ik=1, NK_Berry
+           read(1001, *, end=208, err=208)k3points_Berry(:, ik)   ! The unit of lattice vector
+           it = it+ 1
+        enddo
+     else
+        do ik=1, NK_Berry
+           read(1001, *, end=208, err=208)k    ! The unit of lattice vector
+           call cart_direct_rec(k, k3points_Berry(:, ik))
+        enddo
+     endif  ! Direct or Cart coordinates
+     208 continue
+
+     if (it< NK_Berry.and. cpuid==0) then
+        write(stdout, *)"ERROR: something wrong in the KPATH_BERRY card"
+        write(stdout, *)"No. of kpoints for berry is not consistent with No. of lines"
+        write(stdout, *)"I found ", it, " lines"
+        write(stdout, *)"while you set NK_Berry to be ", NK_Berry
+        stop
+     endif
+      
+     113 continue
+
+     if (cpuid==0) write(stdout, *)' '
+     if (.not.lfound.and.cpuid==0.and.BerryPhase_calc)then
+        write(stdout, *)'Error : you have to set KPATH_BERRY card with a list of k points'
+        stop
+     endif
+
+     !< end of Berry phase setting
+
+
      !> default parameters for effective mass calculation
      dk_mass= 0.01  ! in unit of 1/Ang
      iband_mass= NumOccupied
@@ -1058,12 +1132,12 @@
      endif
 
 
-     !> close input.dat
+     !> close wt.in 
      close(1001)
 
      eta=(omegamax- omegamin)/omeganum*2d0
 
-     if(cpuid==0)write(stdout,*)'<<<Read input.dat file successfully'
+     if(cpuid==0)write(stdout,*)'<<<Read wt.in file successfully'
 
 
      return

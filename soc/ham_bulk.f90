@@ -29,7 +29,7 @@
      allocate(mat1(Num_wann, Num_wann))
      allocate(mat2(Num_wann, Num_wann))
 
-     nwann= Num_wann/2
+     if (SOC>0) nwann= Num_wann/2
      Hamk_bulk=0d0
      do iR=1, Nrpts
         ia=irvec(1,iR)  

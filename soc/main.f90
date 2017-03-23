@@ -139,6 +139,19 @@
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating bulk band'
      endif
 
+     !> Find nodes in BZ
+     if (FindNodes_calc) then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of nodes searching'
+        call now(time_start)
+        call FindNodes
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'FindNodes')
+        if(cpuid.eq.0)write(stdout, *)'<< End of nodes searching'
+     endif
+
+
+
      if (BulkFS_calc) then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the bulk FS'

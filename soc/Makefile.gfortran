@@ -1,4 +1,4 @@
-obj =  module.o aux.o symmetry.o readHmnR.o inverse.o\
+obj =  module.o aux.o symmetry.o readHmnR.o inverse.o proteus.o \
        eigen.o ham_qlayer2qlayer.o psi.o \
 		 ham_slab.o ek_slab.o ek_bulk_polar.o ek_bulk2D.o \
        readinput.o fermisurface.o surfgreen.o surfstat.o \
@@ -6,7 +6,7 @@ obj =  module.o aux.o symmetry.o readHmnR.o inverse.o\
        fermiarc.o spintexture.o berrycurvature.o \
 		 wanniercenter.o dos.o  orbital_momenta.o \
 		 landau_level.o berry.o wanniercenter_adaptive.o \
-		 effective_mass.o \
+		 effective_mass.o findnodes.o \
        main.o
 
 # compiler
