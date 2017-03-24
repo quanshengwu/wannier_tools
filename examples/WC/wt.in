@@ -1,0 +1,148 @@
+&TB_FILE
+Hrfile = 'wannier90_hr.dat'
+Package = 'VASP'
+/
+
+LATTICE
+Angstrom
+     2.9283209     0.0000000     0.0000000
+    -1.4641604     2.5360003     0.0000000
+     0.0000000     0.0000000     2.8529072
+
+ATOM_POSITIONS
+2                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+W        0.0000000     0.0000000     0.0000000
+C        0.3333333     0.6666667     0.5000000
+
+PROJECTORS
+ 9 3  ! number of projectors for each atom
+ W s pz px py dz2 dxz dyz dx2-y2 dxy
+ C pz px py 
+
+SURFACE            ! See doc for details (100) surface
+ 0  1  0
+ 0  0  1
+ 1  0  0
+
+
+
+&CONTROL
+!> bulk band structure calculation flag
+BulkBand_calc         = T
+FindNodes_calc        = F
+BulkFS_calc           = F
+BulkGap_cube_calc     = F
+BulkGap_plane_calc    = F
+SlabBand_calc         = F
+WireBand_calc         = F
+SlabSS_calc           = T
+SlabArc_calc          = F
+SlabSpintexture_calc  = F
+Wanniercenter_calc    = F
+BerryPhase_calc       = T
+BerryCurvature_calc   = F
+EffectiveMass_calc    = F
+/
+
+&SYSTEM
+NSLAB = 32 
+NSLAB1= 4  
+NSLAB2= 4  
+NumOccupied = 8        ! NumOccupied
+SOC = 1                 ! soc
+E_FERMI = 8.200        ! e-fermi
+Bx= 0, By= 0, Bz= 0     ! Bx By Bz
+surf_onsite= 0.0        ! surf_onsite
+/
+
+&PARAMETERS
+Eta_Arc = 0.001     ! infinite small value, like brodening 
+E_arc = 0.0         ! energy for calculate Fermi Arc
+OmegaNum = 200      ! omega number       
+OmegaMin = -0.6     ! energy interval
+OmegaMax =  0.5     ! energy interval
+Nk1 = 101            ! number k points 
+Nk2 = 21            ! number k points 
+Nk3 = 21            ! number k points 
+NP = 2              ! number of principle layers
+Gap_threshold = 0.01 ! threshold for GapCube output
+/
+
+KPATH_BULK            ! k point path
+     3        ! number of k line
+X  0.50000    0.00000   0.0  K  0.33333    0.33333   0.0               
+K  0.33333    0.33333   0.0  G  0.00000    0.00000   0.0               
+G  0.00000    0.00000   0.0  A  0.00000    0.00000   0.5               
+
+KPATH_SLAB
+2        ! numker of k line for 2D case
+Y 0.50 0.00 G 0.0 0.0  ! k path for 2D case
+G 0.00 0.00 Z 0.0 0.5
+
+KPLANE_SLAB
+-0.5 -0.5      ! Original point for 2D k plane
+ 1.0  0.0      ! The first vector to define 2D k plane 
+ 0.0  1.0      ! The second vector to define 2D k plane  for arc plots
+
+KPLANE_BULK
+-0.00 -0.00  0.00   ! Original point for 3D k plane 
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  0.50  0.00   ! The second vector to define 3d k space plane
+
+
+KCUBE_BULK
+-0.50 -0.50 -0.50   ! Original point for 3D k plane 
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  1.00  0.00   ! The second vector to define 3d k space plane
+ 0.00  0.00  1.00   ! The third vector to define 3d k cube
+
+
+EFFECTIVE_MASS      ! optional
+2                   ! The i'th band to be calculated
+0.01                ! k step in unit of (1/Angstrom)
+0.0 0.0 0.0         ! k point where the effective mass calculated.
+
+
+WANNIER_CENTRES     ! copy from wannier90.wout
+Cartesian
+   -0.001280 -0.043496  0.003715     2.57509657
+    0.000016 -0.005739 -0.004548     2.99593928
+    0.001713 -0.087446  0.000519     2.96652264
+   -0.000419  0.135500 -0.000703     3.03702310
+   -0.000003 -0.002034  0.000235     1.16342021
+    0.000002 -0.023918 -0.000006     1.32049283
+    0.000007  0.029662  0.000010     1.32044034
+   -0.000133 -0.010948  0.000008     1.16475002
+    0.000078  0.011163 -0.000006     1.16485827
+    1.464145  0.845099  1.426502     0.76842266
+    1.464189  0.874198  1.426450     0.82135343
+    1.464127  0.815951  1.426521     0.82078924
+   -0.002330 -0.053106 -0.003806     2.57515355
+    0.000037 -0.005775  0.004632     2.99601164
+    0.003094 -0.087550 -0.000200     3.05039661
+   -0.000869  0.146263  0.002114     2.94837720
+    0.000007 -0.002088 -0.000238     1.16343324
+   -0.000007 -0.023906 -0.000338     1.32061164
+    0.000007  0.029679 -0.001251     1.32041371
+   -0.000315 -0.011543  0.000003     1.16473865
+    0.000545  0.010979  0.000017     1.16491266
+    1.464090  0.844998  1.426409     0.76837779
+    1.464202  0.874179  1.426416     0.82135123
+    1.464124  0.815939  1.426283     0.82076302
+
+
+KPATH_BERRY
+11
+Direct
+ 0.3    0.333  -0.2
+ 0.3    0.333  -0.1
+ 0.3    0.333  -0.0
+ 0.3    0.333   0.1
+ 0.3    0.333   0.2
+ 0.33   0.333   0.2
+ 0.33   0.333   0.1
+ 0.33   0.333   0.0
+ 0.33   0.333  -0.1
+ 0.33   0.333  -0.2
+ 0.3    0.333  -0.2
