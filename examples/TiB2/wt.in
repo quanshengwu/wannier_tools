@@ -1,0 +1,139 @@
+&TB_FILE
+Hrfile = 'wann_symmed_nosoc.dat'
+Package = 'VASP'
+/
+
+LATTICE
+Angstrom
+     3.0334977     0.0000000     0.0000000
+    -1.5167488     2.6270861     0.0000000
+     0.0000000     0.0000000     3.2262767
+
+ATOM_POSITIONS
+3                               ! number of atoms for projectors
+Cart                          ! Direct or Cartisen coordinate
+Ti       0.0000000     0.0000000     0.0000000
+B       -0.0000000     1.7513908     1.6131383
+B        1.5167488     0.8756953     1.6131383
+
+PROJECTORS
+9 4 4           ! number of projectors
+Ti s px py pz dxy dxz dyz dx2-y2 dz2
+B s px py pz
+B s px py pz
+
+SURFACE            ! See doc for details
+ 1  0  0
+ 0  1  0
+ 0  0  1
+
+
+&CONTROL
+BulkBand_calc         = F
+BulkFS_calc           = F
+FindNodes_calc        = T
+SlabBand_calc         = F
+SlabSS_calc           = F
+SlabArc_calc          = F
+BerryPhase_calc       = F
+/
+
+&SYSTEM
+NSLAB = 30              ! for thin film system
+NSLAB1= 4               ! nanowire system 
+NSLAB2= 4               ! nanowire system 
+NumOccupied = 5         ! NumOccupied
+SOC = 0                 ! soc
+E_FERMI = 6.3906        ! e-fermi
+Bx= 0, By= 0, Bz= 0     ! Bx By Bz
+surf_onsite= 0.0        ! surf_onsite
+/
+
+&PARAMETERS
+Eta_Arc = 0.001     ! infinite small value, like brodening 
+E_arc = 0.0         ! energy for calculate Fermi Arc
+OmegaNum = 401      ! omega number       
+OmegaMin = -0.6     ! energy interval
+OmegaMax =  0.5     ! energy interval
+Nk1 = 11               ! number k points  odd number would be better
+Nk2 = 11            ! number k points  odd number would be better
+Nk3 = 11           ! number k points  odd number would be better
+NP = 1              ! number of principle layers
+Gap_threshold = 0.001 ! threshold for GapCube output
+/
+
+KPATH_BULK            ! k point path
+7              ! number of k line only for bulk band
+ G  0.00000  0.00000  0.00000   A  0.00000  0.00000  0.50000  
+ A  0.00000  0.00000  0.50000   H -0.33333  0.66667  0.50000  
+ H -0.33333  0.66667  0.50000   K -0.33333  0.66667  0.00000  
+ K -0.33333  0.66667  0.00000   G  0.00000  0.00000  0.00000  
+ G  0.00000  0.00000  0.00000   M  0.00000  0.50000  0.00000  
+ M  0.00000  0.50000  0.00000   L  0.00000 0.50000 0.50000    
+ L  0.00000 0.50000 0.50000     H -0.33333  0.66667  0.50000  
+
+KPATH_SLAB
+2        ! numker of k line for 2D case
+K 0.33 0.67 G 0.0 0.0  ! k path for 2D case
+G 0.0 0.0 M 0.5 0.5
+
+KPLANE_SLAB
+-0.1 -0.1      ! Original point for 2D k plane
+ 0.2  0.0      ! The first vector to define 2D k plane 
+ 0.0  0.2      ! The second vector to define 2D k plane  for arc plots
+
+KPLANE_BULK
+-0.1000000 -0.1000000 -0.50   ! Original point for 3D k plane  kz=0.5, bar{x}, along ky
+ 0.2000000  0.0000000  0.00   ! The first vector to define 3d k space plane
+ 0.00  0.20  0.00   ! The second vector to define 3d k space plane
+
+
+KCUBE_BULK
+-0.10 -0.10 -0.50   ! Original point for 3D k plane 
+ 0.20  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  0.20  0.00   ! The second vector to define 3d k space plane
+ 0.00  0.00  0.00   ! The third vector to define 3d k cube
+
+
+EFFECTIVE_MASS      ! optional
+2                   ! The i'th band to be calculated
+0.01                ! k step in unit of (1/Angstrom)
+0.0 0.0 0.0         ! k point where the effective mass calculated.
+
+
+WANNIER_CENTRES     ! copy from wannier90.wout
+Cartesian
+    0.000000  0.000000 -0.000000   2.88574386
+   -0.000000 -0.000000 -0.000000   1.93650379
+    0.000000  0.000000  0.000000   1.87163559
+    0.000000 -0.000000 -0.000000   1.85626828
+    0.000000 -0.000000 -0.000000   0.90511617
+   -0.000000  0.000000  0.000000   0.71424884
+   -0.000000  0.000000 -0.000000   0.71212815
+    0.000000  0.000000  0.000000   0.81421086
+   -0.000000 -0.000000 -0.000000   0.81290451
+    0.000000  1.753487  1.613138   1.41650411
+   -0.000000  1.751633  1.613138   0.97905030
+   -0.000000  1.804946  1.613138   1.06742162
+   -0.000000  1.695589  1.613138   1.04960264
+    1.516749  0.873599  1.613138   1.41650410
+    1.516749  0.875453  1.613139   0.97905032
+    1.516749  0.822140  1.613138   1.06742160
+    1.516749  0.931497  1.613139   1.04960264
+    0.000000 -0.000000 -0.000000   2.88575368
+   -0.000000 -0.000000  0.000000   1.93652341
+    0.000000 -0.000000 -0.000000   1.87165198
+   -0.000000 -0.000000 -0.000000   1.85628708
+   -0.000000 -0.000000  0.000000   0.90512555
+   -0.000000 -0.000000  0.000000   0.71425398
+   -0.000000 -0.000000  0.000000   0.71213329
+    0.000000 -0.000000 -0.000000   0.81421572
+   -0.000000 -0.000000 -0.000000   0.81290954
+    0.000000  1.753487  1.613138   1.41649487
+    0.000000  1.751633  1.613138   0.97904341
+   -0.000000  1.804944  1.613138   1.06741398
+   -0.000000  1.695591  1.613138   1.04959520
+    1.516749  0.873599  1.613138   1.41649486
+    1.516749  0.875453  1.613139   0.97904341
+    1.516749  0.822142  1.613138   1.06741398
+    1.516749  0.931495  1.613139   1.04959520
