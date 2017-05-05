@@ -83,6 +83,12 @@
 
          ! eliminate the duplicated k point
          call eliminate_duplicates(knv3, kabc_minimal_mpi, gap_minimal_mpi, Nleft)
+
+         ! move the k points into Wigner-Seitz cell
+         do ik=1, Nleft
+            call moveinto_wigner_seitzcell(kabc_minimal_mpi(:, ik))
+         enddo
+
          do ik=1, Nleft
             if (gap_minimal_mpi(ik)< Gap_threshold) then
                call direct_cart_rec(kabc_minimal_mpi(:, ik), k_cart)
@@ -362,4 +368,53 @@
 
       return
    end subroutine eliminate_duplicates
+
+   !> shift the k points into the Wigner-Seitz cell centered at Gamma point.
+   !> input : k(3) in fractional units
+   !> output : k(3) in fractional units
+   subroutine moveinto_wigner_seitzcell(k)
+      use para, only : dp, Kua, Kub, Kuc 
+      implicit none
+
+      integer :: ik, l, m, n, ik0
+      real(dp) :: k0(3)
+      real(dp) :: klen
+      real(dp), intent(inout) :: k(3)
+
+      real(dp) :: smallest_vec(3)
+      real(dp) :: smallest_vec_len
+      real(dp), allocatable :: shiftedk(:, :)
+
+      allocate(shiftedk(3, 125))
+      shiftedk= 0d0
+
+      ik0= 0
+      do l=-2, 2
+         do m=-2, 2
+            do n=-2, 2
+               ik0= ik0+ 1
+               shiftedk(1, ik0)= k(1)+ l
+               shiftedk(2, ik0)= k(2)+ m
+               shiftedk(3, ik0)= k(3)+ n
+            enddo ! n
+         enddo ! m
+      enddo ! l
+
+      smallest_vec_len= 999d0
+      ! find the smallest k vector in 125 ks
+      do ik0=1, 125
+         k0= shiftedk(1, ik0)* Kua+ shiftedk(2, ik0)*Kub+ shiftedk(3, ik0)*Kuc
+         klen= dsqrt(k0(1)*k0(1)+ k0(2)*k0(2)+ k0(3)*k0(3))
+         if (klen< smallest_vec_len) then
+            smallest_vec_len= klen
+            smallest_vec= shiftedk(:, ik0)
+         endif
+      enddo
+
+      k = smallest_vec
+
+      return
+   end subroutine moveinto_wigner_seitzcell
+
+
 
