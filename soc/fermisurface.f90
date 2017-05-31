@@ -600,7 +600,7 @@
          write(outfileindex, '(a)')"set output 'GapPlane.png'"
          write(outfileindex,'(a, f10.4, a, f10.4, a, f10.4, a)') &
             'set palette defined ( ', zmin, ' "black", ', &
-            (zmin+zmax)/20d0,' "orange", ',zmax,'  "white" )'
+            zmin+ (zmin+zmax)/20d0,' "orange", ',zmax,'  "white" )'
          write(outfileindex, '(a)')"set origin 0.10, 0.0"
          write(outfileindex, '(a)')"set size 0.85, 1.0"
          write(outfileindex, '(a)')'unset ztics'

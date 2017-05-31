@@ -26,7 +26,7 @@ We present an open-source software package WannierTools, a tool for investigatio
 -------------------------
 WannierTools was released under GPL V3. If you use our code for your research, please cite it properly, 
 like  “ The surface spectrums or Berry curvature, Wilson loop, Weyl/Dirac points, Nodal line,  Chirality et al.
-are calculated by the software package WannierTools~\cite{WannierTools}. "
+are calculated by the software package WannierTools~\cite{Wu2017}. "
 
 For the surface state calculation, please also cite {Sancho1985}. 
 
