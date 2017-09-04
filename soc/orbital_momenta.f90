@@ -1,5 +1,9 @@
-! > calculate the orbital momenta for each band at Gamma point
   subroutine orbital_momenta(k, eigvec)
+     ! Calculate the orbital momenta for each band at Gamma point
+     ! 
+     ! 2016 by QuanSheng Wu @ ETHZ
+     !
+     ! wuquansheng@gmail.com
      use para
      implicit none
 
@@ -60,40 +64,40 @@
      !> only for AlSb/InAs/GaSb/AlSb system
      !>> p orbital operators
      !> spin up
-     Lx(   3,   4)= -zi
-     Lx(   4,   3)=  zi
-     Lx(   6,   7)= -zi
-     Lx(   7,   6)=  zi
+     Lz(   3,   4)= -zi
+     Lz(   4,   3)=  zi
+     Lz(   6,   7)= -zi
+     Lz(   7,   6)=  zi
 
-     Ly(   2,   4)=  zi
-     Ly(   4,   2)= -zi
-     Ly(   5,   7)=  zi
-     Ly(   7,   5)= -zi
+     Lx(   2,   4)=  zi
+     Lx(   4,   2)= -zi
+     Lx(   5,   7)=  zi
+     Lx(   7,   5)= -zi
 
-     Lz(   2,   3)= -zi
-     Lz(   3,   2)=  zi
-     Lz(   5,   6)= -zi
-     Lz(   6,   5)=  zi
+     Ly(   2,   3)= -zi
+     Ly(   3,   2)=  zi
+     Ly(   5,   6)= -zi
+     Ly(   6,   5)=  zi
 
      !> spin down
-     Lx(   3+ nwann,   4+ nwann)= -zi
-     Lx(   4+ nwann,   3+ nwann)=  zi
-     Lx(   6+ nwann,   7+ nwann)= -zi
-     Lx(   7+ nwann,   6+ nwann)=  zi
+     Lz(   3+ nwann,   4+ nwann)= -zi
+     Lz(   4+ nwann,   3+ nwann)=  zi
+     Lz(   6+ nwann,   7+ nwann)= -zi
+     Lz(   7+ nwann,   6+ nwann)=  zi
 
-     Ly(   2+ nwann,   4+ nwann)=  zi
-     Ly(   4+ nwann,   2+ nwann)= -zi
-     Ly(   5+ nwann,   7+ nwann)=  zi
-     Ly(   7+ nwann,   5+ nwann)= -zi
+     Lx(   2+ nwann,   4+ nwann)=  zi
+     Lx(   4+ nwann,   2+ nwann)= -zi
+     Lx(   5+ nwann,   7+ nwann)=  zi
+     Lx(   7+ nwann,   5+ nwann)= -zi
 
-     Lz(   2+ nwann,   3+ nwann)= -zi
-     Lz(   3+ nwann,   2+ nwann)=  zi
-     Lz(   5+ nwann,   6+ nwann)= -zi
-     Lz(   6+ nwann,   5+ nwann)=  zi
+     Ly(   2+ nwann,   3+ nwann)= -zi
+     Ly(   3+ nwann,   2+ nwann)=  zi
+     Ly(   5+ nwann,   6+ nwann)= -zi
+     Ly(   6+ nwann,   5+ nwann)=  zi
 
-     Lx=  Lx
-     Ly=  Ly
-     Lz=  Lz
+    !Lx=  Lx
+    !Ly=  Ly
+    !Lz=  Lz
 
     !write(*, *)'Lx'
      do i=1, Num_wann

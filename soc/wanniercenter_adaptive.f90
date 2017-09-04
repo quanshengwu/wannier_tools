@@ -300,6 +300,8 @@
       outfileindex= outfileindex+ 1
       if (cpuid==0) then
          open(unit=outfileindex, file='wcc.dat')
+         write(outfileindex, '(10000A16)')'#      k', 'largestgap', 'sum(wcc(:,ik))', &
+                                          'wcc(:, ik)' 
          do ik2=1, Nk2_adaptive
             write(outfileindex, '(10000f16.8)')kpath_wcc(ik2), &
                largestgap(ik2), dmod(sum(wcc(:, ik2)), 1d0), & 

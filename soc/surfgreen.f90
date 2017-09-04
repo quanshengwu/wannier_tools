@@ -85,7 +85,7 @@
      do iter=1, itermax
 
         g0= omegac*ones- epsiloni
-        call inv(Ndim, g0, ones)
+        call inv(Ndim, g0)
 
         ! a_i-1*(w-e_i-1)^-1
         call mat_mul(Ndim, alphai, g0, mat1 )
@@ -124,13 +124,13 @@
 
      ! calculate surface green's function
      GLL= omegac*ones- epsilons
-     call inv(Ndim, GLL, ones)
+     call inv(Ndim, GLL)
 
      GRR= omegac*ones- epsilons_t
-     call inv(Ndim, GRR, ones)
+     call inv(Ndim, GRR)
 
      GB = omegac*ones- epsiloni
-     call inv(Ndim, GB, ones)
+     call inv(Ndim, GB)
 
      return
   end subroutine surfgreen_1985

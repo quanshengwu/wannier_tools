@@ -26,7 +26,10 @@ Se px py pz
 Se px py pz
 Se px py pz
 
-SURFACE            ! See doc for details
+MILLER_INDICES   ! now you can specify surface by Miller indices
+0 0 1
+
+!SURFACE            ! Specify surface with three vectors, see doc
  1  0  0
  0  1  0
  0  0  1
@@ -41,7 +44,7 @@ BulkGap_plane_calc    = T
 SlabBand_calc         = T
 WireBand_calc         = T
 SlabSS_calc           = T
-SlabArc_calc          = F
+SlabArc_calc          = T
 SlabQPI_calc          = T
 Z2_3D_calc            = T
 SlabSpintexture_calc  = T
@@ -62,11 +65,11 @@ surf_onsite= 0.0        ! surf_onsite
 &PARAMETERS
 Eta_Arc = 0.001     ! infinite small value, like brodening 
 E_arc = 0.0         ! energy for calculate Fermi Arc
-OmegaNum = 50       ! omega number       
+OmegaNum = 200      ! omega number       
 OmegaMin = -0.6     ! energy interval
 OmegaMax =  0.5     ! energy interval
-Nk1 = 21            ! number k points  odd number would be better
-Nk2 = 21            ! number k points  odd number would be better
+Nk1 = 41            ! number k points  odd number would be better
+Nk2 = 41            ! number k points  odd number would be better
 Nk3 = 21            ! number k points  odd number would be better
 NP = 1              ! number of principle layers
 Gap_threshold = 1.0 ! threshold for GapCube output

@@ -444,6 +444,33 @@
      endif
 
 
+     !> read surface information by Miller indices
+     rewind(1001)
+     lfound = .false.
+     do while (.true.)
+        read(1001, *, end= 224)inline
+        if (trim(adjustl(inline))=='MILLER_INDICES'  &
+           .or. trim(adjustl(inline))=='MILLER_INDEX') then
+           lfound= .true.
+           if (cpuid==0) write(stdout, *)' '
+           if (cpuid==0) write(stdout, *)'We found MILLER_INDEX card for slab calculations'
+           exit
+        endif
+     enddo
+     224 continue
+
+     MillerIndices= 0
+     if (lfound) then
+        read(1001, *, err=225, iostat=stat) MillerIndices(:)
+        225 continue
+        if (stat/=0) stop "Something wrong with setting of MillerIndices, they should be like this 1 0 0"
+        if (cpuid.eq.0) then
+           write(stdout, '(a, 3i6)')'  Miller indices are :', MillerIndices
+        endif
+        call MillerIndicestoumatrix()
+     endif
+
+
      !> read surface information
      rewind(1001)
      lfound = .false.
@@ -458,25 +485,37 @@
      enddo
      103 continue
 
-     if (.not.lfound) then
+     if (.not.lfound.and.sum(abs(MillerIndices))==0) then
         print *, inline
-        stop 'ERROR: please set surface information'
+        write(stdout, *) 'ERROR: please set surface information by setting SURFACE card or', &
+             'MILLER_INDEX card'
+        write(*, *) 'ERROR: please set surface information by setting SURFACE card or', &
+             'MILLER_INDEX card'
+        stop
      endif
 
-     !> read information for new lattice 
-     !> in order to get different surface state
-     !> R1'=U11*R1+U12*R2+U13*R3
-     !> R2'=U21*R1+U22*R2+U23*R3
-     !> R3'=U31*R1+U32*R2+U33*R3
-     read(1001, *)Umatrix(1, :)
-     read(1001, *)Umatrix(2, :)
-     read(1001, *)Umatrix(3, :)
+     if (lfound) then
+        !> read information for new lattice 
+        !> in order to get different surface state
+        !> R1'=U11*R1+U12*R2+U13*R3
+        !> R2'=U21*R1+U22*R2+U23*R3
+        !> R3'=U31*R1+U32*R2+U33*R3
+        read(1001, *)Umatrix(1, :)
+        read(1001, *)Umatrix(2, :)
+        read(1001, *)Umatrix(3, :)
+   
+        if (cpuid==0) then
+           write(stdout, '(a)')'>> new vectors to define the surface (in unit of lattice vector)' 
+           write(stdout, '(a, 3f12.6)')' The 1st vector on surface     :', Umatrix(1, :)
+           write(stdout, '(a, 3f12.6)')' The 2nd vector on surface     :', Umatrix(2, :)
+           write(stdout, '(a, 3f12.6)')' The 3rd vector out of surface :', Umatrix(3, :)
+        endif
 
-     if (cpuid==0) then
-        write(stdout, '(a)')'>> new vectors to define the surface (in unit of lattice vector)' 
-        write(stdout, '(a, 3f12.6)')' The 1st vector on surface  :', Umatrix(1, :)
-        write(stdout, '(a, 3f12.6)')' The 2nd vector on surface  :', Umatrix(2, :)
-        write(stdout, '(a, 3f12.6)')' The 3rd vector out surface :', Umatrix(3, :)
+        if (sum(abs(MillerIndices))>0 .and. cpuid==0) then
+           write(stdout, '(a, a, a)')' Attention: you specified surface information twice.' , &
+           ' However, we only take the information from SURFACE card, ', &
+           ' and omit the settings by MILLER_INDEX card'
+        endif
      endif
 
      !> check whether Umatrix is right
@@ -1234,3 +1273,226 @@
 
       return
    end subroutine direct_cart_rec
+
+
+
+   !> define a new unit cell with the given MillerIndices [hkl]
+   subroutine MillerIndicestoumatrix()
+      use para
+      implicit none
+      integer :: i1, i2, i3, j1, j2, j3, h, k, l, it
+      real(dp) :: R(3), R1(3), R2(3), R3(3), Rhkl(3), dot
+
+      integer, allocatable :: vector_on_hkl_surface(:, :)
+      integer :: Nvectors_on_hkl_surface
+      real(dp) :: smallest_area, area
+      real(dp) :: largestangle, angle
+      real(dp) :: smallest_volume, cell_volume
+      real(dp) :: smallest_length
+      real(dp) :: norm_1, norm_2, norm_3
+
+      integer :: iRmax
+      iRmax= 10
+
+      allocate(vector_on_hkl_surface(3, (2*iRmax+1)**3))
+      vector_on_hkl_surface= 0
+
+      h= MillerIndices(1)
+      k= MillerIndices(2)
+      l= MillerIndices(3)
+      Rhkl= h*Rua+ k*Rub+ l*Ruc
+
+      !> Firstly, find all vectors that are orthorgonal to hkl
+      it= 0
+      do i1=-iRmax, iRmax
+         do i2=-iRmax, iRmax
+            do i3=-iRmax, iRmax
+               if (i1==0 .and. i2==0 .and. i3==0) cycle
+              !R= i1*Rua+i2*Rub+i3*Ruc
+              !dot=abs(R(1)*Rhkl(1)+ R(2)*Rhkl(2)+ R(3)*Rhkl(3))
+               dot=abs(i1*h+i2*k+i3*l)
+               if (dot<eps9) then
+                  it= it+1
+                  vector_on_hkl_surface(1, it)= i1
+                  vector_on_hkl_surface(2, it)= i2
+                  vector_on_hkl_surface(3, it)= i3
+               endif
+            enddo
+         enddo
+      enddo
+      Nvectors_on_hkl_surface= it
+
+      !> secondly, find the smallest area and the largest
+      !> angle of two vectors
+      smallest_area= 99999999d0
+      largestangle= 0
+      do i1=1, Nvectors_on_hkl_surface
+         do i2=i1+1, Nvectors_on_hkl_surface
+            R1= vector_on_hkl_surface(1, i1)*Rua+ &
+                vector_on_hkl_surface(2, i1)*Rub+ &
+                vector_on_hkl_surface(3, i1)*Ruc  
+            R2= vector_on_hkl_surface(1, i2)*Rua+ &
+                vector_on_hkl_surface(2, i2)*Rub+ &
+                vector_on_hkl_surface(3, i2)*Ruc  
+            dot= R1(1)*R2(1)+ R1(2)*R2(2)+ R1(3)*R2(3)
+            norm_1= sqrt(R1(1)*R1(1)+ R1(2)*R1(2)+ R1(3)*R1(3))
+            norm_2= sqrt(R2(1)*R2(1)+ R2(2)*R2(2)+ R2(3)*R2(3))
+            if (norm_1*norm_2<eps9) stop 'norm of vector should larger than zero'
+            R3(1)= R1(2)*R2(3)- R1(3)*R2(2)
+            R3(2)= R1(3)*R2(1)- R1(1)*R2(3)
+            R3(3)= R1(1)*R2(2)- R1(2)*R2(1)
+            area= sqrt(R3(1)*R3(1)+ R3(2)*R3(2)+ R3(3)*R3(3))
+            if (area<eps6) cycle
+            if (area< smallest_area)smallest_area= area
+         enddo
+      enddo
+
+      !> thirdly, find the largest
+      !> angle in those two vectors which have smallest area 
+      largestangle= 0
+      do i1=1, Nvectors_on_hkl_surface
+         do i2=i1+1, Nvectors_on_hkl_surface
+            R1= vector_on_hkl_surface(1, i1)*Rua+ &
+                vector_on_hkl_surface(2, i1)*Rub+ &
+                vector_on_hkl_surface(3, i1)*Ruc  
+            R2= vector_on_hkl_surface(1, i2)*Rua+ &
+                vector_on_hkl_surface(2, i2)*Rub+ &
+                vector_on_hkl_surface(3, i2)*Ruc  
+
+            R3(1)= R1(2)*R2(3)- R1(3)*R2(2)
+            R3(2)= R1(3)*R2(1)- R1(1)*R2(3)
+            R3(3)= R1(1)*R2(2)- R1(2)*R2(1)
+            area= dsqrt(R3(1)*R3(1)+ R3(2)*R3(2)+ R3(3)*R3(3))
+
+            dot= R1(1)*R2(1)+ R1(2)*R2(2)+ R1(3)*R2(3)
+            norm_1= dsqrt(R1(1)*R1(1)+ R1(2)*R1(2)+ R1(3)*R1(3))
+            norm_2= dsqrt(R2(1)*R2(1)+ R2(2)*R2(2)+ R2(3)*R2(3))
+            angle= dacos(dot/norm_1/norm_2)
+            if (angle>pi/2d0) angle= abs(angle-pi)
+
+            if (dabs(area- smallest_area)<eps9)then 
+               if (angle> largestangle)largestangle= angle
+            endif
+         enddo
+      enddo 
+
+      !> thirdly, find the two vectors which have smallest area and largest
+      !> angle
+  l1: do i1=1, Nvectors_on_hkl_surface
+         do i2=i1+1, Nvectors_on_hkl_surface
+            R1= vector_on_hkl_surface(1, i1)*Rua+ &
+                vector_on_hkl_surface(2, i1)*Rub+ &
+                vector_on_hkl_surface(3, i1)*Ruc  
+            R2= vector_on_hkl_surface(1, i2)*Rua+ &
+                vector_on_hkl_surface(2, i2)*Rub+ &
+                vector_on_hkl_surface(3, i2)*Ruc  
+            dot= R1(1)*R2(1)+ R1(2)*R2(2)+ R1(3)*R2(3)
+            norm_1= dsqrt(R1(1)*R1(1)+ R1(2)*R1(2)+ R1(3)*R1(3))
+            norm_2= dsqrt(R2(1)*R2(1)+ R2(2)*R2(2)+ R2(3)*R2(3))
+            angle= dacos(dot/norm_1/norm_2)
+            R3(1)= R1(2)*R2(3)- R1(3)*R2(2)
+            R3(2)= R1(3)*R2(1)- R1(1)*R2(3)
+            R3(3)= R1(1)*R2(2)- R1(2)*R2(1)
+            area= dsqrt(R3(1)*R3(1)+ R3(2)*R3(2)+ R3(3)*R3(3))
+            if (angle>pi/2d0) angle= abs(angle-pi)
+            if (dabs(area- smallest_area)<eps9 .and. dabs(angle-largestangle)<eps9)then 
+               Umatrix(1, :)= vector_on_hkl_surface(:, i1)
+               Umatrix(2, :)= vector_on_hkl_surface(:, i2)
+               exit l1
+            endif
+         enddo 
+      enddo l1
+ 
+      !> The last step, find the third vector that makes the new unit cell has
+      !> the same volume as the old unit cell
+      smallest_volume= 9999999d0
+      R1= Umatrix(1, :)
+      R2= Umatrix(2, :)
+      do i1=-iRmax, iRmax
+         do i2=-iRmax, iRmax
+            do i3=-iRmax, iRmax
+               if (i1==0 .and. i2==0 .and. i3==0) cycle
+               R3= i1*Rua+i2*Rub+i3*Ruc
+               cell_volume= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
+                 +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
+                 +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1)) 
+               cell_volume= dabs(cell_volume)
+               if (cell_volume< eps9) cycle
+               if (cell_volume< smallest_volume) smallest_volume= cell_volume
+            enddo
+         enddo
+      enddo
+
+      smallest_length= 9999999d0
+      do i1=-iRmax, iRmax
+         do i2=-iRmax, iRmax
+            do i3=-iRmax, iRmax
+               if (i1==0 .and. i2==0 .and. i3==0) cycle
+               R3= i1*Rua+i2*Rub+i3*Ruc
+               cell_volume= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
+                 +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
+                 +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1)) 
+               cell_volume= dabs(cell_volume)
+               if (dabs(cell_volume- smallest_volume)<eps9) then
+                  norm_3= dsqrt(R3(1)*R3(1)+ R3(2)*R3(2)+ R3(3)*R3(3))
+                  if (norm_3< smallest_length) smallest_length= norm_3
+               endif
+            enddo
+         enddo
+      enddo 
+
+      l2: do i1=-iRmax, iRmax
+         do i2=-iRmax, iRmax
+            do i3=-iRmax, iRmax
+               if (i1==0 .and. i2==0 .and. i3==0) cycle
+               R3= i1*Rua+i2*Rub+i3*Ruc
+               cell_volume= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
+                 +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
+                 +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1)) 
+               cell_volume= dabs(cell_volume)
+               norm_3= dsqrt(R3(1)*R3(1)+ R3(2)*R3(2)+ R3(3)*R3(3))
+               if (dabs(cell_volume- smallest_volume)<eps9 .and. &
+                   dabs(norm_3- smallest_length)<eps9) then
+                  Umatrix(3, 1)= i1
+                  Umatrix(3, 2)= i2
+                  Umatrix(3, 3)= i3
+                  exit l2
+               endif
+            enddo
+         enddo
+      enddo l2
+
+
+      R1= Umatrix(1, 1)*Rua+  Umatrix(1, 2)*Rub+ Umatrix(1, 3)*Ruc  
+      R2= Umatrix(2, 1)*Rua+  Umatrix(2, 2)*Rub+ Umatrix(2, 3)*Ruc  
+      R3= Umatrix(3, 1)*Rua+  Umatrix(3, 2)*Rub+ Umatrix(3, 3)*Ruc  
+      cell_volume= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
+                 + R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
+                 + R1(3)*(R2(1)*R3(2)- R2(2)*R3(1)) 
+      if (cell_volume<0) Umatrix(3, :)= -Umatrix(3, :)
+
+      R1= Umatrix(1, 1)*Rua+  Umatrix(1, 2)*Rub+ Umatrix(1, 3)*Ruc  
+      R2= Umatrix(2, 1)*Rua+  Umatrix(2, 2)*Rub+ Umatrix(2, 3)*Ruc  
+      R3= Umatrix(3, 1)*Rua+  Umatrix(3, 2)*Rub+ Umatrix(3, 3)*Ruc  
+      cell_volume= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
+                 + R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
+                 + R1(3)*(R2(1)*R3(2)- R2(2)*R3(1)) 
+
+      if (abs(cell_volume- CellVolume)< eps9 .and. cpuid==0) then
+         write(stdout, *)'  Congratulations, you got a unit cell that has ', &
+         ' the same volume as the original unit cell '
+         write(stdout, *)' The unitary rotation matrix is : '
+         write(stdout, '(3f10.3)')Umatrix(1,:)
+         write(stdout, '(3f10.3)')Umatrix(2,:)
+         write(stdout, '(3f10.3)')Umatrix(3,:)
+
+         write(stdout, *)' '
+         write(stdout, *)'The lattice vectors for new cell are : '
+         write(stdout, '(a,3f10.3)')' R1=', R1
+         write(stdout, '(a,3f10.3)')' R2=', R2
+         write(stdout, '(a,3f10.3)')' R3=', R3
+         write(stdout, *)' Where R1 and R2 are in (hkl) plane'
+      endif
+
+      return
+   end subroutine MillerIndicestoumatrix

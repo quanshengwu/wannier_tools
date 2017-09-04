@@ -271,6 +271,7 @@
      !> which can define new surface
      !> a 3*3 matrix
      real(dp), public, save :: Umatrix(3, 3)
+     integer, public, save :: MillerIndices(3)    ! a matrix change old primitive cell to new primitive cell which can define new surface, it is a 3*3 matrix
 
      !> number of atoms in one primitive cell
      integer :: Num_atoms
