@@ -1406,8 +1406,8 @@
       !> The last step, find the third vector that makes the new unit cell has
       !> the same volume as the old unit cell
       smallest_volume= 9999999d0
-      R1= Umatrix(1, :)
-      R2= Umatrix(2, :)
+      R1= Umatrix(1, 1)*Rua+  Umatrix(1, 2)*Rub+ Umatrix(1, 3)*Ruc  
+      R2= Umatrix(2, 1)*Rua+  Umatrix(2, 2)*Rub+ Umatrix(2, 3)*Ruc  
       do i1=-iRmax, iRmax
          do i2=-iRmax, iRmax
             do i3=-iRmax, iRmax

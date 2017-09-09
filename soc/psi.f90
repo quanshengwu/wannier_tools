@@ -61,7 +61,7 @@
      j=0
      psi2=0.0d0
      do i=1,Nslab
-        do j=1,Num_wann/2
+        do j=1,Num_wann
            psi2(i)=psi2(i)+abs(psi((i-1)*Num_wann+j))**2
         enddo
      enddo
