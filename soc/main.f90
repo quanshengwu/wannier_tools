@@ -1,5 +1,5 @@
 !--------+--------+--------+--------+--------+--------+--------+------!
-! main program of a set of tools based on Wannier90 TB
+! Main program of WannierTools based on Wannier90 tight binding model
 ! constructed by Q.S.Wu on 4/9/2010
 ! change      by Q.S.Wu on 4/22/2010
 ! changed     by Q.S.wu on July/15/2010
@@ -7,8 +7,9 @@
 ! mpi-version is not test yet, take you own risk.
 ! mpi-version is  tested , please report bugs to QSWU
 ! Jan 25 2015 by Q.S.Wu at ETH Zurich 
+! version     2.2.1  At EPFL, Switzerland, Sep. 14. 2017
 ! wuquansheng@gmail.com
-! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
+! Copyright (c) 2017 QuanSheng Wu. All rights reserved.
 !--------+--------+--------+--------+--------+--------+--------+------!
 
   program main

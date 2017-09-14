@@ -51,10 +51,12 @@
         write(stdout, '(a)') "        W             W                             TT                  "
         write(stdout, '(a)') "                                                                        "
         write(stdout, '(a)') "                        Welcome to Wannier_tools.                       "
+        write(stdout, '(a)') "                             Version 2.2.1                              "
         write(stdout, '(a)') "                   Tools for topological novel materials.               "
         write(stdout, '(a)') "                          Enjoy it and good luck.                       "
         write(stdout, '(a)') "                           Author : QuanSheng Wu                        "
         write(stdout, '(a)') "                        Email : wuquansheng@gmail.com                   "
+        write(stdout, '(a)') "               Find more information on www.wanniertools.com            "
         write(stdout, '(a)') " ======================================================================="
         write(stdout, '(a)') "                                                                        "
      endif

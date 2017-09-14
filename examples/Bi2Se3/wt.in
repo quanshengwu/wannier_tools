@@ -38,6 +38,7 @@ MILLER_INDICES   ! now you can specify surface by Miller indices
 !> bulk band structure calculation flag
 &CONTROL
 BulkBand_calc         = T
+DOS_calc              = T
 BulkFS_calc           = T
 BulkGap_cube_calc     = T
 BulkGap_plane_calc    = T
