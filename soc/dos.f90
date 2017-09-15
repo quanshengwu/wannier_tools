@@ -38,7 +38,6 @@ subroutine dos_sub
    real(dp) :: k(3)
    real(dp) :: time_start, time_end, time_init
 
-   real(dp), allocatable :: kpoints(:, :)
    real(dp), allocatable :: eigval(:)
    real(dp), allocatable :: W(:)
    real(dp), allocatable :: omega(:)
@@ -67,7 +66,6 @@ subroutine dos_sub
    allocate(dos(NE))
    allocate(dos_mpi(NE))
    allocate(omega(NE))
-   kpoints= 0d0
    dos=0d0
    dos_mpi=0d0
    eigval= 0d0

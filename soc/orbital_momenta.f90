@@ -60,6 +60,7 @@
      sub= 0d0
      eig2= 0d0
 
+     if (Num_wann<7) return
 
      !> only for AlSb/InAs/GaSb/AlSb system
      !>> p orbital operators
