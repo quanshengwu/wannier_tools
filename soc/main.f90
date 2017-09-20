@@ -140,6 +140,19 @@
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating bulk band'
      endif
 
+
+     !> bulk band in a plane. For Dirac or Weyl cone
+     if (BulkBand_plane_calc) then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the bulk band in plane'
+        call now(time_start)
+        call ek_bulk_plane
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'BulkBand_plane')
+        if(cpuid.eq.0)write(stdout, *)'<< End of calculating the bulk band in plane'
+     endif
+
+
      !> Find nodes in BZ
      if (FindNodes_calc) then
         if(cpuid.eq.0)write(stdout, *)' '

@@ -54,6 +54,7 @@
     
 
      BulkBand_calc         = .FALSE.
+     BulkBand_plane_calc   = .FALSE.
      BulkFS_calc           = .FALSE.
      BulkGap_cube_calc     = .FALSE.
      BulkGap_plane_calc    = .FALSE.
@@ -85,7 +86,7 @@
         write(*, *)"SlabSpintexture,wanniercenter_calc"
         write(*, *)"BerryPhase_calc,BerryCurvature_calc, Z2_3D_calc"
         write(*, *)"Dos_calc, JDos_calc, FindNodes_calc "
-        write(*, *)"BulkFS_plane_calc"
+        write(*, *)"BulkFS_plane_calc, BulkBand_plane_calc"
         write(*, *)"Z2_3D_calc"
         write(*, *)"Chern_3D_calc"
         write(*, *)"WeylChirality_calc"
@@ -99,6 +100,7 @@
         write(stdout, *) "  "
         write(stdout, *) ">>>Control parameters: " 
         write(stdout, *) "BulkBand_calc       : ",  BulkBand_calc
+        write(stdout, *) "BulkBand_plane_calc       : ",  BulkBand_plane_calc
         write(stdout, *) "BulkFS_calc         : ",  BulkFS_calc
         write(stdout, *) "BulkFS_Plane_calc   : ",  BulkFS_Plane_calc
         write(stdout, *) "BulkGap_cube_calc   : ",  BulkGap_cube_calc

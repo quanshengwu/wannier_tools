@@ -1,6 +1,175 @@
-! calculate bulk's energy band using wannier TB method
-! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
-  subroutine ek_bulk2D
+ subroutine ek_bulk_plane
+     ! Calculate bulk's energy band using wannier TB method for a given k plane
+     ! Copyright (c) 2017 QuanSheng Wu. All rights reserved.
+     ! Revised by QS.Wu on Sep 19 2017 @EPFL, Switzerland
+     ! This subroutine is usefull for Dirac cone plot
+
+     use wmpi
+     use para
+
+     implicit none
+
+     integer :: ik, i, j, ib
+     integer :: knv3
+     integer :: ierr
+     integer :: nwann
+
+     integer :: nband_min
+     integer :: nband_max
+     integer :: nband_store
+
+     real(dp) :: time_start, time_end
+
+     real(Dp) :: k(3)
+     real(Dp) :: W(Num_wann)
+     real(dp) :: kxmin, kxmax, kymin, kymax
+     real(dp), allocatable :: kxy(:,:)
+     real(dp), allocatable :: kxy_shape(:,:)
+     real(dp), allocatable :: kxy_plane(:,:)
+     
+     ! Hamiltonian of bulk system
+     complex(Dp) :: Hamk_bulk(Num_wann,Num_wann) 
+
+     ! eigen value of H
+	  real(dp), allocatable :: gap(:)
+	  real(dp), allocatable :: gap_mpi(:)
+	  real(dp), allocatable :: eigv(:,:)
+	  real(dp), allocatable :: eigv_mpi(:,:)
+
+     nband_min= Numoccupied- 1
+     nband_max= Numoccupied+ 2
+     if (nband_min< 1) nband_min= 1
+     if (nband_max> Num_wann) nband_max= Num_wann
+     nband_store= nband_max- nband_min+ 1
+
+
+     knv3= nk1*Nk2
+     allocate( kxy(3, nk1*Nk2))
+     allocate( kxy_shape(3, nk1*Nk2))
+     allocate( kxy_plane(3, nk1*Nk2))
+ 
+     allocate( eigv    (nband_store, knv3))
+     allocate( eigv_mpi(nband_store, knv3))
+     eigv    = 0d0
+     eigv_mpi= 0d0
+
+     kxy=0d0
+     kxy_shape=0d0
+     kxy_plane=0d0
+    
+     if (Nk1<2 .or. Nk2<2) stop 'ERROR: I refuse to do this job because you give me so small Nk1 and Nk2'      
+     if (Numoccupied> Num_wann) stop 'ERROR: please set correct Numoccupied, it should be small than num_wann'
+     
+     ik =0
+     do i= 1, Nk1
+        do j= 1, Nk2
+           ik =ik +1
+           kxy(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(Nk1-1)+ K3D_vec2*(j-1)/dble(Nk2-1) &
+              -(K3D_vec1+K3D_vec2)/2d0
+           kxy_shape(:, ik)= kxy(1, ik)* Kua+ kxy(2, ik)* Kub+ kxy(3, ik)* Kuc 
+           call rotate_k3_to_kplane(kxy_shape(:, ik), kxy_plane(:, ik))
+        enddo
+     enddo
+
+     time_start= 0d0
+     time_end= 0d0
+     do ik= 1+cpuid, knv3, num_cpu
+        if (cpuid==0.and. mod(ik/num_cpu, 500)==0) &
+           write(stdout, '(a, i12, a, i12, a, f10.2, a)') &
+           'ek_bulk_plane, ik ', ik, ' knv3',knv3, ' time left', &
+           (knv3-ik)*(time_end- time_start)/num_cpu, ' s'
+        call now(time_start)
+
+        k = kxy(:, ik)
+
+        ! calculation bulk hamiltonian
+        Hamk_bulk= 0d0
+        call ham_bulk(k, Hamk_bulk)
+
+        !> diagonalization by call zheev in lapack
+        W= 0d0
+        call eigensystem_c( 'N', 'U', Num_wann ,Hamk_bulk, W)
+        eigv(:, ik)= W(nband_min:nband_max)
+
+        call now(time_end)
+     enddo ! ik
+
+#if defined (MPI)
+     call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
+                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     eigv_mpi= eigv
+#endif
+
+
+     !> write out the data in gnuplot format
+     outfileindex= outfileindex+ 1
+     if (cpuid==0)then
+        open(unit=outfileindex, file='bulkek_plane.dat')
+        write(outfileindex, '(1000a19)')'# kx', 'ky', 'kz', 'k1', 'k2', &
+           'E(Numoccupied-1)', 'E(Numoccupied)' , 'E(Numoccupied+1)', 'E(Numoccupied+2)'
+        do ik=1, knv3
+           write(outfileindex, '(1000f19.9)')kxy_shape(:, ik), &
+              kxy_plane(:, ik), eigv_mpi(:, ik)  
+           if (mod(ik, nk2)==0) write(outfileindex, *)' '
+        enddo
+        close(outfileindex)
+     endif
+
+     !> write out the data in gnuplot format
+     outfileindex= outfileindex+ 1
+     if (cpuid==0)then
+        open(unit=outfileindex, file='bulkek_plane-matlab.dat')
+        write(outfileindex, '(1000a19)')'% kx', 'ky', 'kz', 'k1', 'k2', &
+           'E(Numoccupied-1)', 'E(Numoccupied)' , 'E(Numoccupied+1)', 'E(Numoccupied+2)'
+        do ik=1, knv3
+           write(outfileindex, '(1000f19.9)')kxy_shape(:, ik), &
+              kxy_plane(:, ik), eigv_mpi(:, ik)  
+        enddo
+        close(outfileindex)
+     endif
+
+     !> write out a script that can be used for gnuplot
+     outfileindex= outfileindex+ 1
+     if (cpuid==0)then
+        open(unit=outfileindex, file='bulkek_plane.gnu')
+        write(outfileindex, '(a)')"set encoding iso_8859_1"
+        write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
+        write(outfileindex, '(a)')"#set output 'bulkek_plane.eps'"
+        write(outfileindex, '(3a)')'set terminal  png truecolor enhanced', &
+           ' size 1920, 1680 font ",36"'
+        write(outfileindex, '(a)')"set output 'bulkek_plane.png'"
+        write(outfileindex, '(a)')'set palette rgbformulae 33,13,10'
+        write(outfileindex, '(a)')'unset key'
+        write(outfileindex, '(a)')'set pm3d'
+        write(outfileindex, '(a)')'set origin 0.2, 0'
+        write(outfileindex, '(a)')'set size 0.8, 1'
+        write(outfileindex, '(a)')'set border lw 3'
+        write(outfileindex, '(a)')'#set xtics font ",24"'
+        write(outfileindex, '(a)')'#set ytics font ",24"'
+        write(outfileindex, '(a)')'set size ratio -1'
+        write(outfileindex, '(a)')'set xtics'
+        write(outfileindex, '(a)')'set ytics'
+        write(outfileindex, '(a)')'set view 80,60'
+        write(outfileindex, '(a)')'set xlabel "k_1"'
+        write(outfileindex, '(a)')'set ylabel "k_2"'
+        write(outfileindex, '(a)')'set zlabel "Energy (eV)" rotate by 90'
+        write(outfileindex, '(a)')'unset colorbox'
+        write(outfileindex, '(a)')'set autoscale fix'
+        write(outfileindex, '(a)')'set pm3d interpolate 4,4'
+        write(outfileindex, '(2a)')"splot 'bulkek_plane.dat' u 4:5:8 w pm3d, \"
+        write(outfileindex, '(2a)')"      'bulkek_plane.dat' u 4:5:9 w pm3d"
+
+        close(outfileindex)
+
+     endif ! cpuid
+
+   return
+   end subroutine ek_bulk_plane
+
+   subroutine ek_bulk2D_spin
+     ! Calculate bulk's energy band using wannier TB method for a given k plane
+     ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 
      use wmpi
      use para
@@ -154,11 +323,11 @@
      endif
 
    return
-   end subroutine ek_bulk2D
+   end subroutine ek_bulk2D_spin
 
 
-   !> using green's function
-  subroutine ek_bulk2D_spin
+  subroutine ek_bulk2D_spin_green
+     !> using green's function
 
      use wmpi
      use para
@@ -347,4 +516,4 @@
      endif
 
    return
-   end subroutine ek_bulk2D_spin
+   end subroutine ek_bulk2D_spin_green

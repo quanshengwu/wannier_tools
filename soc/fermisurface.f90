@@ -21,6 +21,8 @@
      integer :: nband_min
      integer :: nband_max
      integer :: nband_store
+
+     real(dp) :: time_start, time_end
      
      ! Hamiltonian of bulk system
      complex(Dp) :: Hamk_bulk(Num_wann,Num_wann) 
@@ -74,8 +76,13 @@
      allocate(eigval_mpi(nband_store, knv3))
      eigval_mpi= 0d0
      eigval= 0d0
+     time_start= 0d0
+     time_end= 0d0
      do ik= 1+cpuid, knv3, num_cpu
-        if (cpuid==0.and. mod(ik,100)<3)write(stdout, *)'3DFS, ik, knv3', ik, knv3
+        if (cpuid==0.and. mod(ik/num_cpu, 500)==0) &
+           write(stdout, *) '3DFS, ik ', ik, 'knv3',knv3, 'time left', &
+           (knv3-ik)*(time_end- time_start)/num_cpu, ' s'
+        call now(time_start)
 
         k(1) = kxyz(1, ik)
         k(2) = kxyz(2, ik)
@@ -86,6 +93,7 @@
         call ham_bulk_old(k, Hamk_bulk)
         call eigensystem_c( 'N', 'U', Num_wann ,Hamk_bulk, W)
         eigval_mpi(:, ik)= W(nband_min:nband_max)
+        call now(time_end)
      enddo
 
 #if defined (MPI)
@@ -154,24 +162,29 @@
      ! Hamiltonian of bulk system
      complex(Dp) :: Hamk_bulk(Num_wann,Num_wann) 
 
+     real(dp) :: time_start, time_end
      real(dp) :: kxmin, kxmax, kymin, kymax
      real(dp) :: zmin, zmax
      real(dp) :: kxmin_shape, kxmax_shape, kymin_shape, kymax_shape
 
      real(dp), allocatable :: kxy(:,:)
      real(dp), allocatable :: kxy_shape(:,:)
+     real(dp), allocatable :: kxy_plane(:,:)
      
      real(dp), allocatable :: dos(:)
      real(dp), allocatable :: dos_mpi(:)
 
      complex(dp), allocatable :: ones(:,:)
 
-     nkx= Nk1
-     nky= Nk2
+     nkx= Nk
+     nky= Nk
      allocate( kxy(3, nkx*nky))
      allocate( kxy_shape(3, nkx*nky))
+     allocate( kxy_plane(3, nkx*nky))
      kxy=0d0
      kxy_shape=0d0
+     kxy_plane=0d0
+     
      
      ik =0
      do i= 1, nkx
@@ -179,6 +192,7 @@
            ik =ik +1
            kxy(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(nkx-1)+ K3D_vec2*(j-1)/dble(nky-1)
            kxy_shape(:, ik)= kxy(1, ik)* Kua+ kxy(2, ik)* Kub+ kxy(3, ik)* Kuc 
+           call rotate_k3_to_kplane(kxy_shape(:, ik), kxy_plane(:, ik))
         enddo
      enddo
 
@@ -188,6 +202,7 @@
      kxmax_shape=maxval(kxy_shape(i1,:))
      kymin_shape=minval(kxy_shape(i2,:))
      kymax_shape=maxval(kxy_shape(i2,:))
+      
 
 
      knv3= nkx*nky
@@ -202,20 +217,26 @@
         ones(i, i)= 1d0
      enddo
 
+     time_start= 0d0
+     time_end= 0d0
      do ik= 1+cpuid, knv3, num_cpu
-        if (cpuid==0) write(stdout, *)'FS, ik, knv3' , ik, knv3
+        if (cpuid==0.and. mod(ik/num_cpu, 500)==0) &
+           write(stdout, *) 'FS_Plane, ik ', ik, 'knv3',knv3, 'time left', &
+           (knv3-ik)*(time_end- time_start)/num_cpu, ' s'
+        call now(time_start)
 
         k = kxy(:, ik)
 
         ! calculation bulk hamiltonian
         Hamk_bulk= 0d0
-        call ham_bulk_old(k, Hamk_bulk)
+        call ham_bulk(k, Hamk_bulk)
 
         Hamk_bulk= (E_arc -zi* eta_arc)* ones - Hamk_bulk
         call inv(Num_wann, Hamk_bulk)
         do i=1, Num_wann
            dos(ik)= dos(ik)+ aimag(Hamk_bulk(i, i))/pi
         enddo
+        call now(time_end)
 
      enddo
 
@@ -229,9 +250,10 @@
      outfileindex= outfileindex+ 1
      if (cpuid==0)then
         open(unit=outfileindex, file='fs.dat')
+        write(outfileindex, '(100a16)')'# kx', 'ky', 'kz', 'log(A(k,E))', 'kp1', 'kp2', 'kp3'
    
         do ik=1, knv3
-           write(outfileindex, '(30f16.8)')kxy_shape(:, ik), log(dos_mpi(ik))
+           write(outfileindex, '(30f16.8)')kxy_shape(:, ik), log(dos_mpi(ik)), kxy_plane(:, ik)
            if (mod(ik, nky)==0) write(outfileindex, *)' '
         enddo
         close(outfileindex)
@@ -241,39 +263,41 @@
 
      !> minimum and maximum value of energy bands
 
+     outfileindex= outfileindex+ 1
      !> write script for gnuplot
      if (cpuid==0) then
-        open(unit=101, file='fs.gnu')
-        write(101, '(a)')"set encoding iso_8859_1"
-        write(101, '(a)')'#set terminal  postscript enhanced color'
-        write(101, '(a)')"#set output 'fs.eps'"
-        write(101, '(3a)')'set terminal  pngcairo truecolor enhanced', &
+        open(unit=outfileindex, file='fs.gnu')
+        write(outfileindex, '(a)')"set encoding iso_8859_1"
+        write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
+        write(outfileindex, '(a)')"#set output 'fs.eps'"
+        write(outfileindex, '(3a)')'set terminal  pngcairo truecolor enhanced', &
            ' size 1920, 1680 font ",36"'
-        write(101, '(a)')"set output 'fs.png'"
-        write(101,'(a, f10.4, a, f10.4, a, f10.4, a)') &
+        write(outfileindex, '(a)')"set output 'fs.png'"
+        write(outfileindex,'(a, f10.4, 2a, f10.4, a)') &
            'set palette defined ( ', zmin, ' "white", ', &
-         zmin+(zmin+zmax)/6d0, '"black", ', zmax,'  "red" )'
-        write(101, '(a)')'#set palette rgbformulae 33,13,10'
-        write(101, '(a)')'unset ztics'
-        write(101, '(a)')'unset key'
-        write(101, '(a)')'set pm3d'
-        write(101, '(a)')'#set view equal xyz'
-        write(101, '(a)')'set view map'
-        write(101, '(a)')'set border lw 3'
-        write(101, '(a)')'#set xtics font ",24"'
-        write(101, '(a)')'#set ytics font ",24"'
-        write(101, '(a)')'set size ratio -1'
-        write(101, '(a)')'unset xtics'
-        write(101, '(a)')'unset ytics'
-        write(101, '(a)')'set colorbox'
-       !write(101, '(a, f10.5, a, f10.5, a)')'set xrange [', kxmin, ':', kxmax, ']'
-       !write(101, '(a, f10.5, a, f10.5, a)')'set yrange [', kymin, ':', kymax, ']'
-       !write(101, '(a, f10.5, a, f10.5, a)')'set xrange [', kxmin_shape, ':', kxmax_shape, ']'
-       !write(101, '(a, f10.5, a, f10.5, a)')'set yrange [', kymin_shape, ':', kymax_shape, ']'
-        write(101, '(a)')'set pm3d interpolate 2,2'
-        write(101, '(2a)')"splot 'fs.dat' u 1:2:4 w pm3d"
+          '0 "black", ', zmax,'  "red" )'
+        write(outfileindex, '(a)')'#set palette rgbformulae 33,13,10'
+        write(outfileindex, '(a)')'unset ztics'
+        write(outfileindex, '(a)')'unset key'
+        write(outfileindex, '(a)')'set pm3d'
+        write(outfileindex, '(a)')'#set view equal xyz'
+        write(outfileindex, '(a)')'set view map'
+        write(outfileindex, '(a)')'set border lw 3'
+        write(outfileindex, '(a)')'#set xtics font ",24"'
+        write(outfileindex, '(a)')'#set ytics font ",24"'
+        write(outfileindex, '(a)')'set size ratio -1'
+        write(outfileindex, '(a)')'unset xtics'
+        write(outfileindex, '(a)')'unset ytics'
+        write(outfileindex, '(a)')'set colorbox'
+       !write(outfileindex, '(a, f10.5, a, f10.5, a)')'set xrange [', kxmin, ':', kxmax, ']'
+       !write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', kymin, ':', kymax, ']'
+        write(outfileindex, '(a)')'set autoscale fix'
+       !write(outfileindex, '(a, f10.5, a, f10.5, a)')'set xrange [', kxmin_shape, ':', kxmax_shape, ']'
+       !write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', kymin_shape, ':', kymax_shape, ']'
+        write(outfileindex, '(a)')'set pm3d interpolate 2,2'
+        write(outfileindex, '(2a)')"splot 'fs.dat' u 1:2:4 w pm3d"
 
-        close(101)
+        close(outfileindex)
      endif
 
 
@@ -371,7 +395,7 @@
       
          ! calculation bulk hamiltonian
          Hamk_bulk= 0d0
-         call ham_bulk_old(k, Hamk_bulk)
+         call ham_bulk(k, Hamk_bulk)
       
          call eigensystem_c( 'N', 'U', Num_wann ,Hamk_bulk, W)
          gap(1, ik)= W(Numoccupied+1)- W(Numoccupied)
@@ -563,8 +587,8 @@
          write(outfileindex, '(100a16)')'% kx', 'ky', 'kz', 'gap', 'Ev2', 'Ev1', 'Ec1', &
             'Ec2', 'k1', 'k2', 'k3'
          do ik=1, knv3
-            if (abs(gap_mpi(1, ik))< 0.10d0) then
-               write(outfileindex, '(8f16.8)')kxy_shape(:, ik), (gap_mpi(:, ik)), kxy(:, ik)
+            if (abs(gap_mpi(1, ik))< Gap_threshold) then
+               write(outfileindex, '(80f16.8)')kxy_shape(:, ik), (gap_mpi(:, ik)), kxy(:, ik)
             endif
          enddo
          close(outfileindex)
@@ -600,7 +624,7 @@
          write(outfileindex, '(a)')"set output 'GapPlane.png'"
          write(outfileindex,'(a, f10.4, a, f10.4, a, f10.4, a)') &
             'set palette defined ( ', zmin, ' "black", ', &
-            zmin+ (zmin+zmax)/20d0,' "orange", ',zmax,'  "white" )'
+            (zmin+zmax)/20d0,' "orange", ',zmax,'  "white" )'
          write(outfileindex, '(a)')"set origin 0.10, 0.0"
          write(outfileindex, '(a)')"set size 0.85, 1.0"
          write(outfileindex, '(a)')'unset ztics'
@@ -778,5 +802,41 @@
       return
    end function fermi
 
+   subroutine rotate_k3_to_kplane(k3, kplane)
+      use para, only : dp, K3D_vec1, K3D_vec2, Kua, Kub, Kuc
+      implicit none
+
+      real(dp), intent(in) :: k3(3)
+      real(dp), intent(out) :: kplane(3)
+      !> three new unit vectors
+      real(dp) :: Urot_t(3, 3)
+
+      real(dp) :: kvec1(3), kvec2(3)
+
+      real(dp), external :: norm
+
+      kvec1= K3D_vec1(1)*Kua+ K3D_vec1(2)*Kub+ K3D_vec1(3)*Kuc
+      kvec2= K3D_vec2(1)*Kua+ K3D_vec2(2)*Kub+ K3D_vec2(3)*Kuc
+
+      Urot_t(1, :)= kvec1/norm(kvec1)
+
+      !> e_z'
+      Urot_t(3, 1)= (kvec1(2)*kvec2(3)- kvec1(3)*kvec2(2))
+      Urot_t(3, 2)= (kvec1(3)*kvec2(1)- kvec1(1)*kvec2(3))
+      Urot_t(3, 3)= (kvec1(1)*kvec2(2)- kvec1(2)*kvec2(1))
+      Urot_t(3, :)= Urot_t(3, :)/norm(Urot_t(3, :))
+ 
+      !> e_y'= e_z'\cross e_x'
+      Urot_t(2, 1)= (Urot_t(3, 2)*Urot_t(1, 3)- Urot_t(3, 3)*Urot_t(1, 2))
+      Urot_t(2, 2)= (Urot_t(3, 3)*Urot_t(1, 1)- Urot_t(3, 1)*Urot_t(1, 3))
+      Urot_t(2, 3)= (Urot_t(3, 1)*Urot_t(1, 2)- Urot_t(3, 2)*Urot_t(1, 1))
+      Urot_t(2, :)= Urot_t(2, :)/norm(Urot_t(2, :))
+
+      kplane(1)= Urot_t(1, 1)*k3(1)+ Urot_t(1, 2)*k3(2)+ Urot_t(1, 3)*k3(3)
+      kplane(2)= Urot_t(2, 1)*k3(1)+ Urot_t(2, 2)*k3(2)+ Urot_t(2, 3)*k3(3)
+      kplane(3)= Urot_t(3, 1)*k3(1)+ Urot_t(3, 2)*k3(2)+ Urot_t(3, 3)*k3(3)
+
+      return
+   end subroutine 
 
 

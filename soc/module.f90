@@ -26,6 +26,7 @@
      
      !> control parameters
      logical :: BulkBand_calc    ! Flag for bulk energy band calculation
+     logical :: BulkBand_plane_calc    ! Flag for bulk energy band calculation
      logical :: BulkFS_calc      ! Flag for bulk 3D fermi surface in 3D BZ calculation
      logical :: BulkFS_plane_calc ! Flag for bulk fermi surface for a fix k plane calculation
      logical :: BulkGap_cube_calc  ! Flag for Gap_cube calculation
@@ -53,7 +54,8 @@
                           SlabSS_calc, SlabArc_calc, SlabSpintexture_calc, &
                           WannierCenter_calc,BerryPhase_calc,BerryCurvature_calc, &
                           Z2_3D_calc, Chern_3D_calc, WeylChirality_calc, &
-                          Dos_calc, JDos_calc, EffectiveMass_calc, SlabQPI_calc, FindNodes_calc
+                          Dos_calc, JDos_calc, EffectiveMass_calc, SlabQPI_calc, FindNodes_calc, &
+                          BulkBand_plane_calc
  
      ! double precision  
      integer,parameter :: Dp=kind(1.0d0)
