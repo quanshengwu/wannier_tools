@@ -106,7 +106,7 @@
      outfileindex= outfileindex+ 1
      if (cpuid==0)then
         open(unit=outfileindex, file='bulkek_plane.dat')
-        write(outfileindex, '(1000a19)')'# kx', 'ky', 'kz', 'k1', 'k2', &
+        write(outfileindex, '(1000a19)')'# kx', 'ky', 'kz', 'k1', 'k2', 'k3', &
            'E(Numoccupied-1)', 'E(Numoccupied)' , 'E(Numoccupied+1)', 'E(Numoccupied+2)'
         do ik=1, knv3
            write(outfileindex, '(1000f19.9)')kxy_shape(:, ik), &
@@ -120,7 +120,7 @@
      outfileindex= outfileindex+ 1
      if (cpuid==0)then
         open(unit=outfileindex, file='bulkek_plane-matlab.dat')
-        write(outfileindex, '(1000a19)')'% kx', 'ky', 'kz', 'k1', 'k2', &
+        write(outfileindex, '(1000a19)')'% kx', 'ky', 'kz', 'k1', 'k2', 'k3', &
            'E(Numoccupied-1)', 'E(Numoccupied)' , 'E(Numoccupied+1)', 'E(Numoccupied+2)'
         do ik=1, knv3
            write(outfileindex, '(1000f19.9)')kxy_shape(:, ik), &
