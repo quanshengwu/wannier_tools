@@ -183,11 +183,17 @@
         open (unit=doslfile, file='dos.dat_l')
         open (unit=dosrfile, file='dos.dat_r')
         open (unit=dosbulkfile, file='dos.dat_bulk')
+        write(doslfile, '(a)')'# Spectral function of bottom surface'
+        write(doslfile, '(30a16)')'# k (1/A)', 'E-EF(eV)', 'A_bottom', 'log(A_bottom)'
+        write(dosrfile, '(a)')'# Spectral function of top surface'
+        write(dosrfile, '(30a16)')'# k (1/A)', 'E-EF(eV)', 'A_top', 'log(A_top)'
+        write(dosbulkfile, '(a)')'# Spectral function of bulk'
+        write(dosbulkfile, '(30a16)')'# k (1/A)', 'E-EF(eV)', 'A_bulk', 'log(A_bulk)'
         do ikp=1, knv2
            do j=1, omeganum 
               write(doslfile, '(30f16.8)')k2len(ikp), omega(j), dos_l(ikp, j), log(dos_l_only(ikp, j))
               write(dosrfile, '(30f16.8)')k2len(ikp), omega(j), dos_r(ikp, j), log(dos_r_only(ikp, j))
-              write(dosbulkfile, '(30f16.8)')k2len(ikp), omega(j), log(dos_bulk(ikp, j))
+              write(dosbulkfile, '(30f16.8)')k2len(ikp), omega(j), dos_bulk(ikp, j), log(dos_bulk(ikp, j))
            enddo
            write(doslfile, *) ' '
            write(dosrfile, *) ' '
