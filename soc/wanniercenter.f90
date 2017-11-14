@@ -2852,6 +2852,12 @@
       real(dp), allocatable :: largestgap(:)
       real(dp), allocatable :: largestgap_all(:,:)
 
+      !> sumation for chirality number
+      real(dp), allocatable :: wcc_sum(:)
+
+      real(dp) :: gap_sum, gap_step
+
+      allocate(wcc_sum(Nk2))
       allocate(wcc(Numoccupied, Nk2))
       allocate(wcc_all(Numoccupied, Nk2, 6))
       allocate(largestgap(Nk2))
@@ -2867,7 +2873,25 @@
 
       call  wannier_center3D_plane_func(kstart, kvec1, kvec2, &
          largestgap, wcc, Chern)
+
+      wcc_sum= dmod(sum(wcc, dim=1), 1d0)
+
+      !> determine the chirality
+      gap_sum= 0d0
+      do ik2=1, Nk2-1
+         gap_step= wcc_sum(ik2+1)- wcc_sum(ik2)
+         if (abs(gap_step+1)<abs(gap_step)) then
+            gap_step= gap_step+ 1
+         elseif (abs(gap_step-1)<abs(gap_step))then
+            gap_step= gap_step- 1
+         endif
+         gap_sum= gap_sum+ gap_step
+      enddo
+      
+      Chern= nint(gap_sum)
+      
       Chern_all(1)= Chern
+
       wcc_all(:, :, 1)= wcc
       largestgap_all(:, 1)= largestgap
 
@@ -2878,6 +2902,24 @@
 
       call  wannier_center3D_plane_func(kstart, kvec1, kvec2, &
          largestgap, wcc, Chern)
+
+      wcc_sum= dmod(sum(wcc, dim=1), 1d0)
+
+      !> determine the chirality
+      gap_sum= 0d0
+      do ik2=1, Nk2-1
+         gap_step= wcc_sum(ik2+1)- wcc_sum(ik2)
+         if (abs(gap_step+1)<abs(gap_step)) then
+            gap_step= gap_step+ 1
+         elseif (abs(gap_step-1)<abs(gap_step))then
+            gap_step= gap_step- 1
+         endif
+         gap_sum= gap_sum+ gap_step
+      enddo
+      
+      Chern= nint(gap_sum)
+      
+
       Chern_all(2)= Chern
       wcc_all(:, :, 2)= wcc
       largestgap_all(:, 2)= largestgap
@@ -2890,6 +2932,23 @@
 
       call  wannier_center3D_plane_func(kstart, kvec1, kvec2, &
          largestgap, wcc, Chern)
+
+      wcc_sum= dmod(sum(wcc, dim=1), 1d0)
+
+      !> determine the chirality
+      gap_sum= 0d0
+      do ik2=1, Nk2-1
+         gap_step= wcc_sum(ik2+1)- wcc_sum(ik2)
+         if (abs(gap_step+1)<abs(gap_step)) then
+            gap_step= gap_step+ 1
+         elseif (abs(gap_step-1)<abs(gap_step))then
+            gap_step= gap_step- 1
+         endif
+         gap_sum= gap_sum+ gap_step
+      enddo
+      
+      Chern= nint(gap_sum)
+      
       Chern_all(3)= Chern
       wcc_all(:, :, 3)= wcc
       largestgap_all(:, 3)= largestgap
@@ -2901,6 +2960,23 @@
 
       call  wannier_center3D_plane_func(kstart, kvec1, kvec2, &
          largestgap, wcc, Chern)
+
+      wcc_sum= dmod(sum(wcc, dim=1), 1d0)
+
+      !> determine the chirality
+      gap_sum= 0d0
+      do ik2=1, Nk2-1
+         gap_step= wcc_sum(ik2+1)- wcc_sum(ik2)
+         if (abs(gap_step+1)<abs(gap_step)) then
+            gap_step= gap_step+ 1
+         elseif (abs(gap_step-1)<abs(gap_step))then
+            gap_step= gap_step- 1
+         endif
+         gap_sum= gap_sum+ gap_step
+      enddo
+      
+      Chern= nint(gap_sum)
+      
       Chern_all(4)= Chern
       wcc_all(:, :, 4)= wcc
       largestgap_all(:, 4)= largestgap
@@ -2912,6 +2988,23 @@
 
       call  wannier_center3D_plane_func(kstart, kvec1, kvec2, &
          largestgap, wcc, Chern)
+
+      wcc_sum= dmod(sum(wcc, dim=1), 1d0)
+
+      !> determine the chirality
+      gap_sum= 0d0
+      do ik2=1, Nk2-1
+         gap_step= wcc_sum(ik2+1)- wcc_sum(ik2)
+         if (abs(gap_step+1)<abs(gap_step)) then
+            gap_step= gap_step+ 1
+         elseif (abs(gap_step-1)<abs(gap_step))then
+            gap_step= gap_step- 1
+         endif
+         gap_sum= gap_sum+ gap_step
+      enddo
+      
+      Chern= nint(gap_sum)
+      
       Chern_all(5)= Chern
       wcc_all(:, :, 5)= wcc
       largestgap_all(:, 5)= largestgap
@@ -2923,6 +3016,23 @@
 
       call  wannier_center3D_plane_func(kstart, kvec1, kvec2, &
          largestgap, wcc, Chern)
+
+      wcc_sum= dmod(sum(wcc, dim=1), 1d0)
+
+      !> determine the chirality
+      gap_sum= 0d0
+      do ik2=1, Nk2-1
+         gap_step= wcc_sum(ik2+1)- wcc_sum(ik2)
+         if (abs(gap_step+1)<abs(gap_step)) then
+            gap_step= gap_step+ 1
+         elseif (abs(gap_step-1)<abs(gap_step))then
+            gap_step= gap_step- 1
+         endif
+         gap_sum= gap_sum+ gap_step
+      enddo
+      
+      Chern= nint(gap_sum)
+      
       Chern_all(6)= Chern
       wcc_all(:, :, 6)= wcc
       largestgap_all(:, 6)= largestgap
