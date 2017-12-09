@@ -133,6 +133,7 @@
      By = 0
      Bz = 0
      surf_onsite = 0
+     bondlength_cutoff= 1000d0
      
      !> read system parameters from file
      read(1001, SYSTEM, iostat=stat)

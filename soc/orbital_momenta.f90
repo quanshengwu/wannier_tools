@@ -31,6 +31,7 @@
      if (SOC==0) return
 
      nwann=Num_wann/2
+     if (nwann>7) return
 
      allocate(Lx(Num_wann, Num_wann))
      allocate(Ly(Num_wann, Num_wann))

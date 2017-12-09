@@ -43,7 +43,8 @@
 
         ! calculation bulk hamiltonian
         Hamk_bulk= 0d0
-        call ham_bulk_old(k, Hamk_bulk)
+       !call ham_bulk_old(k, Hamk_bulk)
+        call ham_bulk    (k, Hamk_bulk)
 
         !> diagonalization by call zheev in lapack
         W= 0d0
@@ -53,11 +54,18 @@
 
         eigv(:, ik)= W
         do i=1, Num_wann  !> band 
-           do j=1, Num_wann/2  !> projector
-              weight(j, i, ik)= sqrt(abs(Hamk_bulk(j, i))**2+ &
-                 abs(Hamk_bulk(j+ Num_wann/2, i))**2)
-           enddo ! j
+           if (SOC==0) then
+              do j=1, Num_wann  !> projector
+                 weight(j, i, ik)= (abs(Hamk_bulk(j, i))**2)
+              enddo ! j
+           else
+              do j=1, Num_wann/2  !> projector
+                 weight(j, i, ik)= (abs(Hamk_bulk(j, i))**2+ &
+                    abs(Hamk_bulk(j+ Num_wann/2, i))**2)
+              enddo ! j
+           endif
         enddo ! i
+ 
      enddo ! ik
 
 #if defined (MPI)

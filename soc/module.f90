@@ -122,6 +122,9 @@
      ! threshold value for output the gap data for Gap3D
      real(Dp) :: Gap_threshold
 
+     !> The largest distance between two WFs for which the Hamiltonian matrix element is retained and used in the band interpolation
+     real(dp) :: bondlength_cutoff
+
 
      !> namelist parameters
      namelist /PARAMETERS/ Eta_Arc, OmegaNum, OmegaMin, OmegaMax, &
@@ -138,7 +141,7 @@
 
      !> system parameters namelist
      namelist / SYSTEM / Soc, E_fermi, Bx, By, Bz, surf_onsite, &
-        Nslab, Nslab1, Nslab2, Numoccupied, Ntotch
+        Nslab, Nslab1, Nslab2, Numoccupied, Ntotch, bondlength_cutoff
 
      !> e/2/h*a*a   a=1d-10m, h is the planck constant
      !> then the flux equals alpha*B*s

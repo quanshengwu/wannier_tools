@@ -17,10 +17,13 @@
      real(dp) :: kdotr
 
 ! wave vector in 2d
-     real(Dp) :: k(3)      
+     real(Dp) :: k(3) 
 
      ! coordinates of R vector 
-     real(Dp) :: R(3), R1(3), R2(3), R3(3)
+     real(Dp) :: R(3), R1(3), R2(3), R3(3), R3_cart(3)
+
+     real(dp) :: bondlength
+     real(dp), external :: norm
 
 ! Hamiltonian of bulk system
      complex(Dp),intent(out) ::Hamk_bulk(Num_wann, Num_wann) 
@@ -49,7 +52,12 @@
               iend2= sum(nprojs(1:ia2))
               R1= Atom_position_direct(:, ia1)
               R2= Atom_position_direct(:, ia2)
-              R3= R+ R1- R2
+              R3= R+ R2- R1
+
+              call direct_cart_real(R3, R3_cart)
+              bondlength= norm(R3_cart)
+              if (bondlength> bondlength_cutoff) cycle
+
               kdotr=k(1)*R3(1) + k(2)*R3(2) + k(3)*R3(3)
              !kdotr=k(1)*R (1) + k(2)*R (2) + k(3)*R (3)
 
