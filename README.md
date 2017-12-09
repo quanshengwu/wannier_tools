@@ -37,14 +37,15 @@ For the Wilson loop calculation, please also cite PhysRevB.84.075119 and PhysRev
 Reference 
 
 ```
-@article{Wu2017,
-archivePrefix = {arXiv},
-arxivId = {1703.07789},
-author = {Wu, QuanSheng and Zhang, ShengNan and Song, Hai-Feng and Troyer, Matthias and Soluyanov, Alexey A.},
-eprint = {1703.07789},
-title = {{WannierTools: An open-source software package for novel topological materials}},
-url = {http://arxiv.org/abs/1703.07789},
-year = {2017}
+@article{WU2017,
+title = "WannierTools : An open-source software package for novel topological materials",
+journal = "Computer Physics Communications",
+year = "2017",
+issn = "0010-4655",
+doi = "https://doi.org/10.1016/j.cpc.2017.09.033",
+url = "http://www.sciencedirect.com/science/article/pii/S0010465517303442",
+author = "QuanSheng Wu and ShengNan Zhang and Hai-Feng Song and Matthias Troyer and Alexey A. Soluyanov",
+keywords = "Novel topological materials, Topological number, Surface state, Tight-binding model"
 }
 ```
 
