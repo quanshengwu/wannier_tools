@@ -6,16 +6,16 @@ Package = 'VASP'
 
 !> bulk band structure calculation flag
 &CONTROL
-BulkBand_calc         = F
+BulkBand_calc         = T
 BulkFS_calc           = F
-Z2_3D_calc            = F
-DOS_calc              = F
+Z2_3D_calc            = T
+DOS_calc              = T
 BulkFS_plane_calc     = F
 BulkGap_cube_calc     = F
 BulkGap_plane_calc    = F
 SlabBand_calc         = F
 WireBand_calc         = F
-SlabSS_calc           = F
+SlabSS_calc           = T
 SlabArc_calc          = T
 SlabSpintexture_calc  = F
 wanniercenter_calc    = F
