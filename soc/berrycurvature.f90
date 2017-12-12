@@ -174,9 +174,9 @@
         call mat_mul(Num_wann, DHDk(:, :, 2), DHDkdag(:, :, 3), vx)
         call mat_mul(Num_wann, DHDk(:, :, 3), DHDkdag(:, :, 1), vy)
 
-        call Im_trace(Num_wann, vx, Omega(1, ik))
-        call Im_trace(Num_wann, vy, Omega(2, ik))
-        call Im_trace(Num_wann, vz, Omega(3, ik))
+        call trace(Num_wann, vx, Omega(1, ik))
+        call trace(Num_wann, vy, Omega(2, ik))
+        call trace(Num_wann, vz, Omega(3, ik))
 
      enddo ! ik
 
