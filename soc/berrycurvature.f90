@@ -178,6 +178,7 @@
         call trace(Num_wann, vy, Omega(2, ik))
         call trace(Num_wann, vz, Omega(3, ik))
 
+        Omega(:, ik)= zi*Omega(:, ik)
      enddo ! ik
 
      Omega_mpi= 0d0
