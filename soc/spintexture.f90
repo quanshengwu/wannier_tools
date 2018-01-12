@@ -4,6 +4,7 @@
 ! constructed by QS.Wu on July/20/2010  10:26:13
 ! constructed by QS.Wu on July/20/2010  10:26:13
 !> modified by QS.Wu on June/4/2016 in Jouvence Montreal Canada 
+!> modified by Changming Yue on 12/4/2017 in IOP Beijing
 
   subroutine spintext
      
@@ -20,6 +21,7 @@
     integer :: Nband
 
     real(Dp)   :: k(2)
+    real(Dp)   :: s0(3), s1(3)
    
     real(Dp), allocatable   :: k12(:,:) 
     real(Dp), allocatable   :: k12_shape(:,:) 
@@ -243,7 +245,6 @@
        sy_r(ikp)= sy_r(ikp)/dos_r(ikp)
        sz_r(ikp)= sz_r(ikp)/dos_r(ikp)
 
-
     enddo  ! ikp  kpoint
     
 #if defined (MPI)
@@ -299,9 +300,9 @@
        open(spindosfile,file='spindos_l.dat')
        open(spintexturefile,file='spintext_l.dat')
        write(spindosfile,'(60a16)')'#kx', 'ky', 'log(dos)', &
-                           'sx', 'sy', 'sz'
+                           'sx', 'sy', 'sz', "sx'", "sy'", "sz'"
        write(spintexturefile,'(60a16)')'#kx', 'ky', 'log(dos)', &
-                           'sx', 'sy', 'sz'
+                           'sx', 'sy', 'sz', "sx'", "sy'", "sz'"
 
       !ikp= 0
       !do i= 1, nk1
@@ -326,11 +327,15 @@
           do j= 1, nk2
              ikp=ikp+1
              k=k12_shape(:, ikp)
+             s0(1)= real(sx_l(ikp))
+             s0(2)= real(sy_l(ikp))
+             s0(3)= real(sz_l(ikp))
+             call rotate(s0, s1)
              write(spindosfile,'(60f16.8)')k, (log(dos_l(ikp))), &
-                real(sx_l(ikp)), real(sy_l(ikp)), real(sz_l(ikp))                 
+                real(sx_l(ikp)), real(sy_l(ikp)), real(sz_l(ikp)), s1
              if (dos_l_only(ikp)>dos_l_max)then
                 write(spintexturefile,'(60f16.8)')k, (log(dos_l(ikp))), &
-                   real(sx_l(ikp)),real(sy_l(ikp)),real(sz_l(ikp))                 
+                   real(sx_l(ikp)),real(sy_l(ikp)),real(sz_l(ikp)), s1                 
              endif
           enddo
           write(spindosfile, *)' '
@@ -375,11 +380,15 @@
           do j= 1, nk2
              ikp=ikp+1
              k=k12_shape(:, ikp)
+             s0(1)= real(sx_r(ikp))
+             s0(2)= real(sy_r(ikp))
+             s0(3)= real(sz_r(ikp))
+             call rotate(s0, s1)
              write(spindosfile,'(60f16.8)')k, (log(dos_r(ikp))), &
-                real(sx_r(ikp)), real(sy_r(ikp)), real(sz_r(ikp))                 
+                real(sx_r(ikp)), real(sy_r(ikp)), real(sz_r(ikp)), s1
              if (dos_r_only(ikp)>dos_r_max)then
                 write(spintexturefile,'(60f16.8)')k, (log(dos_r(ikp))), &
-                   real(sx_r(ikp)),real(sy_r(ikp)),real(sz_r(ikp))                 
+                   real(sx_r(ikp)),real(sy_r(ikp)),real(sz_r(ikp)), s1
              endif
           enddo
           write(spindosfile, *)' '
@@ -428,7 +437,7 @@
        write(outfileindex, '(a)')"# the sencond plot"
        write(outfileindex, '(a)')"set origin 0.14, 0.115"
        write(outfileindex, '(a)')"set size 0.75, 0.70"
-       write(outfileindex, '(a)')"plot 'spintext_r.dat' u 1:2:($4/5.00):($5/5.00)  w vec  head lw 4 lc rgb 'red' front"
+       write(outfileindex, '(a)')"plot 'spintext_r.dat' u 1:2:($7/5.00):($8/5.00)  w vec  head lw 4 lc rgb 'red' front"
 
        close(outfileindex)
     endif
@@ -470,7 +479,7 @@
        write(outfileindex, '(a)')"# the sencond plot"
        write(outfileindex, '(a)')"set origin 0.14, 0.115"
        write(outfileindex, '(a)')"set size 0.75, 0.70"
-       write(outfileindex, '(a)')"plot 'spintext_l.dat' u 1:2:($4/5.00):($5/5.00)  w vec  head lw 4 lc rgb 'red' front"
+       write(outfileindex, '(a)')"plot 'spintext_l.dat' u 1:2:($7/5.00):($8/5.00)  w vec  head lw 4 lc rgb 'red' front"
 
        close(outfileindex)
     endif
