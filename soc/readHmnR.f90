@@ -98,5 +98,13 @@
         endif
      enddo
    
+     !> get the Cartesian coordinates for R points
+     allocate( crvec(3, nrpts))
+    
+     !> get R coordinates 
+     do iR=1, Nrpts
+        crvec(:, iR)= Rua*irvec(1,iR) + Rub*irvec(2,iR) + Ruc*irvec(3,iR)
+     enddo
+
      return
   end subroutine readHmnR

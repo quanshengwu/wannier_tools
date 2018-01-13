@@ -251,6 +251,7 @@
 
      ! R coordinates  
      integer, allocatable     :: irvec(:,:)
+     real(dp), allocatable    :: crvec(:,:)   ! R coordinates in Cartesian coordinates in units of Angstrom
 
      ! Hamiltonian m,n are band indexes
      complex(dp), allocatable :: HmnR(:,:,:)
