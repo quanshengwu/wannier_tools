@@ -408,7 +408,7 @@
        write(outfileindex, '(a)')'#set terminal pngcairo truecolor enhanced font ",80" size 3680, 3360'
        write(outfileindex, '(a)')'set terminal png truecolor enhanced font ",80" size 3680, 3360'
        write(outfileindex, '(a)')"set output 'spintext_r.png'"
-       write(outfileindex, '(a)')'set palette defined ( -6 "white", 0 "gray", 10 "blue" )'
+       write(outfileindex, '(a)')'set palette defined ( -6 "white", 0 "white", 10 "black" )'
        write(outfileindex, '(a)')"set multiplot layout 1,1 "
 
        write(outfileindex, '(a)')"set origin 0.06, 0.0"
@@ -428,16 +428,9 @@
        write(outfileindex, '(a, f10.5, a, f10.5, a)')"set yrange [", minval(k12_shape(2, :)), ":", &
           maxval(k12_shape(2, :)), "]"
        write(outfileindex, '(a)')"set pm3d interpolate 2,2"
-       write(outfileindex, '(a)')"splot 'spindos_r.dat' u 1:2:3 w pm3d"
-       write(outfileindex, '(a)')"unset xtics"
-       write(outfileindex, '(a)')"unset ytics"
-       write(outfileindex, '(a)')"unset xlabel"
-       write(outfileindex, '(a)')"unset ylabel"
        write(outfileindex, '(a)')"set label 1 'Spin texture' at graph 0.25, 1.10 front"
-       write(outfileindex, '(a)')"# the sencond plot"
-       write(outfileindex, '(a)')"set origin 0.14, 0.115"
-       write(outfileindex, '(a)')"set size 0.75, 0.70"
-       write(outfileindex, '(a)')"plot 'spintext_r.dat' u 1:2:($7/5.00):($8/5.00)  w vec  head lw 4 lc rgb 'red' front"
+       write(outfileindex, '(a)')"splot 'spindos_r.dat' u 1:2:3 w pm3d, \"
+       write(outfileindex, '(a)')"     'spintext_r.dat' u 1:2:(0):($7/5.00):($8/5.00):(0)  w vec  head lw 5 lc rgb 'orange' front"
 
        close(outfileindex)
     endif
@@ -450,7 +443,7 @@
        write(outfileindex, '(a)')'#set terminal pngcairo truecolor enhanced font ",80" size 3680, 3360'
        write(outfileindex, '(a)')'set terminal png truecolor enhanced font ",80" size 3680, 3360'
        write(outfileindex, '(a)')"set output 'spintext_l.png'"
-       write(outfileindex, '(a)')'set palette defined ( -6 "white", 0 "gray", 10 "blue" )'
+       write(outfileindex, '(a)')'set palette defined ( -6 "white", 0 "white", 10 "black" )'
        write(outfileindex, '(a)')"set multiplot layout 1,1 "
 
        write(outfileindex, '(a)')"set origin 0.06, 0.0"
@@ -470,16 +463,9 @@
        write(outfileindex, '(a, f10.5, a, f10.5, a)')"set yrange [", minval(k12_shape(2, :)), ":", &
           maxval(k12_shape(2, :)), "]"
        write(outfileindex, '(a)')"set pm3d interpolate 2,2"
-       write(outfileindex, '(a)')"splot 'spindos_l.dat' u 1:2:3 w pm3d"
-       write(outfileindex, '(a)')"unset xtics"
-       write(outfileindex, '(a)')"unset ytics"
-       write(outfileindex, '(a)')"unset xlabel"
-       write(outfileindex, '(a)')"unset ylabel"
        write(outfileindex, '(a)')"set label 1 'Spin texture' at graph 0.25, 1.10 front"
-       write(outfileindex, '(a)')"# the sencond plot"
-       write(outfileindex, '(a)')"set origin 0.14, 0.115"
-       write(outfileindex, '(a)')"set size 0.75, 0.70"
-       write(outfileindex, '(a)')"plot 'spintext_l.dat' u 1:2:($7/5.00):($8/5.00)  w vec  head lw 4 lc rgb 'red' front"
+       write(outfileindex, '(a)')"splot 'spindos_l.dat' u 1:2:3 w pm3d, \"
+       write(outfileindex, '(a)')"     'spintext_l.dat' u 1:2:(0):($7/5.00):($8/5.00):(0)  w vec  head lw 5 lc rgb 'orange' front"
 
        close(outfileindex)
     endif
