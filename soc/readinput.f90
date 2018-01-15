@@ -27,7 +27,7 @@
      real(dp) :: pos(3)
      real(dp) :: k1(3), k2(3), k(3)
      real(dp) :: kstart(3), kend(3)
-     real(dp) :: R1(3), R2(3), R3(3) 
+     real(dp) :: R1(3), R2(3), R3(3), Rt(3)
      real(dp), external :: norm
 
     
@@ -545,6 +545,42 @@
         stop
      endif
 
+     !> print out the new basis
+     if (cpuid.eq.0) then
+        write(stdout, *)" "
+        write(stdout, *)"The rotated new unit cell : "
+        write(stdout, '(3f12.6)') R1
+        write(stdout, '(3f12.6)') R2
+        write(stdout, '(3f12.6)') R3
+        write(stdout, *)" "
+     endif
+
+     if (cpuid.eq.0) then
+        write(stdout, *)"Fractional coordinates of atoms in units of new lattice vectors : "
+        do ia=1, Num_atoms
+           call rotate_newlattice(Atom_position_direct(:, ia), Rt)
+           if(cpuid==0)write(stdout, '(a4,3f12.6)')atom_name(ia), Rt
+        enddo
+        write(stdout, *)" "
+     endif
+
+     !> print out the new basis
+     outfileindex= outfileindex+ 1
+     if (cpuid.eq.0) then
+        open(outfileindex, file="POSCAR-rotated")
+        write(outfileindex, '(a)')"Rotated POSCAR by SURFACE card in wt.in by WannierTools"
+        write(outfileindex, '(a)')"1.0"
+        write(outfileindex, '(3f12.6)') R1
+        write(outfileindex, '(3f12.6)') R2
+        write(outfileindex, '(3f12.6)') R3
+        write(outfileindex, '(1000i5)') Num_atoms
+        write(outfileindex, '(a)')"Direct"
+        do ia=1, Num_atoms
+           call rotate_newlattice(Atom_position_direct(:, ia), Rt)
+           if(cpuid==0)write(outfileindex, '(3f12.6, a9)')Rt, trim(adjustl(atom_name(ia)))  
+        enddo
+        close(outfileindex)
+     endif
      !> get the surface vector, we should set the new coordinate system
      !> set R1 to the new x direction ex'
      !> set R1\cross R2 to the new z direction ez'
@@ -1200,6 +1236,27 @@
 
      return
   end function norm
+
+  !> rotate a vector in unit of  the original lattice vector into the new lattice
+  !> vector defined by Umatrix
+  subroutine rotate_newlattice(R1, R2)
+     use para, only : dp, Umatrix
+     implicit none
+     real(dp), intent(in) :: R1(3)
+     real(dp), intent(inout) :: R2(3)
+     real(dp) :: Umatrix_inv(3, 3)
+     Umatrix_inv= Umatrix
+
+     call inv_r(3, Umatrix_inv)
+
+     R2(1)= Umatrix_inv(1, 1)*R1(1)+ Umatrix_inv(2, 1)*R1(2)+ Umatrix_inv(3, 1)*R1(3)
+     R2(2)= Umatrix_inv(1, 2)*R1(1)+ Umatrix_inv(2, 2)*R1(2)+ Umatrix_inv(3, 2)*R1(3)
+     R2(3)= Umatrix_inv(1, 3)*R1(1)+ Umatrix_inv(2, 3)*R1(2)+ Umatrix_inv(3, 3)*R1(3)
+
+     return
+  end subroutine rotate_newlattice
+
+
 
 
   !> rotate a vector to the new coordinate system
