@@ -463,7 +463,7 @@
       Nk2_adaptive= Nk2
       
       iter= 0
-      neighbour_tol= 0.06d0
+      neighbour_tol= 0.50d0
       converged=.False.
       Do while (.true.)
          if (converged .or. Nk2_adaptive>=Nk2_max) exit
@@ -673,7 +673,7 @@
 
       real(dp) :: dis
       real(dp) :: max_diff
-      real(dp), parameter :: wcc_tol=0.01d0
+      real(dp), parameter :: wcc_tol=0.1d0
 
       !> k points in kx-ky plane
       real(dp), allocatable :: kpoints(:, :)

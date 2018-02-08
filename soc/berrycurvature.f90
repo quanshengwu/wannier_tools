@@ -172,7 +172,7 @@
         call trace(Num_wann, vx, Omega(1, ik))
         call trace(Num_wann, vy, Omega(2, ik))
         call trace(Num_wann, vz, Omega(3, ik))
-        Omega(:, ik)= -zi*omega(:, ik)
+        Omega(:, ik)= -2d0*zi*omega(:, ik)
 
      enddo ! ik
 
