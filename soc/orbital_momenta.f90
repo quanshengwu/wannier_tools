@@ -28,10 +28,11 @@
      integer :: i, j
      integer :: nwann
 
+     return
      if (SOC==0) return
 
      nwann=Num_wann/2
-     if (nwann>7) return
+     if (nwann.ne.7) return
 
      allocate(Lx(Num_wann, Num_wann))
      allocate(Ly(Num_wann, Num_wann))
