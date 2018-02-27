@@ -125,10 +125,13 @@
      !> The largest distance between two WFs for which the Hamiltonian matrix element is retained and used in the band interpolation
      real(dp) :: bondlength_cutoff
 
+     !> tolerance for wilson loop calculation in the integration over k
+     real(dp) :: wcc_calc_tol
+
 
      !> namelist parameters
      namelist /PARAMETERS/ Eta_Arc, OmegaNum, OmegaMin, OmegaMax, &
-        E_arc, Nk1, Nk2, Nk3, NP, Gap_threshold
+        E_arc, Nk1, Nk2, Nk3, NP, Gap_threshold, wcc_calc_tol
 
      ! Fermi energy
      real(Dp) :: E_fermi
