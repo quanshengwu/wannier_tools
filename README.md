@@ -46,6 +46,7 @@ year = "2018",
 doi = "https://doi.org/10.1016/j.cpc.2017.09.033",
 url = "http://www.sciencedirect.com/science/article/pii/S0010465517303442",
 issn = "0010-4655",
+preprint = "arXiv:1703.07789",
 author = "QuanSheng Wu and ShengNan Zhang and Hai-Feng Song and Matthias Troyer and Alexey A. Soluyanov",
 keywords = "Novel topological materials, Topological number, Surface state, Tight-binding model"
 }
@@ -56,7 +57,7 @@ Sancho1985: [Highly convergent schemes for the calculation of bulk and surface G
 **Citations**
 ----------------
 
-[Full list of citations from the ADS Databases](http://adsabs.harvard.edu/cgi-bin/nph-ref_query?bibcode=2017arXiv170307789W&amp;refs=CITATIONS&amp;db_key=PRE)
+[Full list of citations from the ADS Databases](http://adsabs.harvard.edu/abs/2018CoPhC.224..405W)
 
 * Phonon-Induced Topological Transition to a Type-II Weyl Semimetal, Lin-Lin Wang, Na Hyun Jo, Yun Wu, QuanSheng Wu, Adam Kaminski, Paul C. Canfield, Duane D. Johnson, [arXiv:1703.07292] (https://128.84.21.199/abs/1703.07292)
 * Unique topological surface states of full-Heusler topological crystalline insulators, Anh Pham and Sean Li, [Phys. Rev. B 95, 115124 (2017)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.95.115124)

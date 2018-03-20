@@ -11,7 +11,7 @@ obj =  module.o aux.o symmetry.o readHmnR.o inverse.o proteus.o \
 
 
 # compiler
-f90  = mpif90 -fpp -DMPI -check all -pg -traceback
+f90  = mpif90 -fpp -DMPI # -check all -pg -traceback
 
 #FLAGS =  -O3 -nogen-interface  -warn all 
 flag =  -nogen-interface #-warn all 

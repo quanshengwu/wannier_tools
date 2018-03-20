@@ -37,7 +37,7 @@ MILLER_INDICES
 
 !> bulk band structure calculation flag
 &CONTROL
-BulkBand_calc         = T
+BulkBand_calc         = F
 BulkFS_calc           = F
 BulkGap_cube_calc     = F
 BulkGap_plane_calc    = F
@@ -48,7 +48,7 @@ SlabArc_calc          = F
 SlabQPI_calc          = F
 Z2_3D_calc            = F
 SlabSpintexture_calc  = F
-Wanniercenter_calc    = F
+Wanniercenter_calc    = T
 BerryPhase_calc       = F
 BerryCurvature_calc   = F
 EffectiveMass_calc    = F
@@ -71,8 +71,8 @@ E_arc = 0.0         ! energy for calculate Fermi Arc
 OmegaNum = 50       ! omega number       
 OmegaMin = -0.6     ! energy interval
 OmegaMax =  0.5     ! energy interval
-Nk1 = 11            ! number k points  odd number would be better
-Nk2 = 11            ! number k points  odd number would be better
+Nk1 = 41            ! number k points  odd number would be better
+Nk2 = 41            ! number k points  odd number would be better
 Nk3 = 11            ! number k points  odd number would be better
 NP = 1              ! number of principle layers
 Gap_threshold = 1.0 ! threshold for GapCube output
@@ -96,7 +96,7 @@ KPLANE_SLAB
  0.0  0.2      ! The second vector to define 2D k plane  for arc plots
 
 KPLANE_BULK
--0.00 -0.00  0.00   ! Original point for 3D k plane 
+ 0.00  0.00  0.50   ! Original point for 3D k plane 
  1.00  0.00  0.00   ! The first vector to define 3d k space plane
  0.00  0.50  0.00   ! The second vector to define 3d k space plane
 
