@@ -26,18 +26,14 @@ Se px py pz
 Se px py pz
 Se px py pz
 
-MILLER_INDICES   ! now you can specify surface by Miller indices
-0 0 1
-
-!SURFACE            ! Specify surface with three vectors, see doc
+SURFACE            ! Specify surface with two vectors, see doc
  1  0  0
  0  1  0
- 0  0  1
 
 
 !> bulk band structure calculation flag
 &CONTROL
-BulkBand_calc         = F
+BulkBand_calc         = T
 DOS_calc              = F
 BulkFS_calc           = F
 BulkGap_cube_calc     = F
@@ -49,7 +45,7 @@ SlabArc_calc          = F
 SlabQPI_calc          = F
 Z2_3D_calc            = F
 SlabSpintexture_calc  = F
-Wanniercenter_calc    = T
+Wanniercenter_calc    = F
 /
 
 &SYSTEM

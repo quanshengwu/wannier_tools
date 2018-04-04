@@ -505,9 +505,13 @@
         !> R3'=U31*R1+U32*R2+U33*R3
         read(1001, *)Umatrix(1, :)
         read(1001, *)Umatrix(2, :)
-        read(1001, *)Umatrix(3, :)
+
+        Umatrix(3,:)=(/0.0,0.0,1.0/)
+        read(1001, *, err=260, iostat=stat)Umatrix(3, :)
+        260 continue
    
         if (cpuid==0) then
+           write(stdout, '(a)')' '
            write(stdout, '(a)')'>> new vectors to define the surface (in unit of lattice vector)' 
            write(stdout, '(a, 3f12.6)')' The 1st vector on surface     :', Umatrix(1, :)
            write(stdout, '(a, 3f12.6)')' The 2nd vector on surface     :', Umatrix(2, :)
@@ -523,15 +527,16 @@
 
      !> check whether Umatrix is right
      !> the volume of the new cell should be the same as the old ones
+     !> Here R1, R2, R3 are vectors defined by SURFACE CARD in original cartesian coordinates
      R1= Umatrix(1, 1)*Rua+ Umatrix(1, 2)*Rub+ Umatrix(1, 3)*Ruc
      R2= Umatrix(2, 1)*Rua+ Umatrix(2, 2)*Rub+ Umatrix(2, 3)*Ruc
      R3= Umatrix(3, 1)*Rua+ Umatrix(3, 2)*Rub+ Umatrix(3, 3)*Ruc
 
-
      cell_volume2= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
                  +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
                  +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1)) 
-     cell_volume2= 2d0*3.1415926535d0/cell_volume2
+
+     if (abs(cell_volume2)>0.001d0) cell_volume2= 2d0*3.1415926535d0/cell_volume2
 
      if (cell_volume2<0) then
         R3=-R3
@@ -539,13 +544,18 @@
      endif
 
      if (abs(abs(cell_volume2)-abs(cell_volume))> 0.001d0.and.cpuid==0) then
-        write(stdout, *)' ERROR The Umatrix is wrong, the new cell', &
-           'volume should be the same as the old ones'
-        write(stdout, '(a,2f10.4)')'cell_volume vs cell_volume-new', cell_volume, cell_volume2
-        stop
-     endif
+        write(stdout, '(a)')' '
+        write(stdout, '(2a)')' Warnning: The Umatrix is wrongly set, the new cell', &
+           'volume should be the same as the old ones. '
+        write(stdout, '(a,2f10.4)')' cell_volume vs cell_volume-new', cell_volume, cell_volume2
+        write(stdout, '(a)')" However, don't worry, WannierTools will help you to find a suitable rotation matrix."
+        write(stdout, '(a)')" I am looking for new unit cell atuomatically: "
+        call FindTheThirdLatticeVector()
+        R1= Umatrix(1, 1)*Rua+ Umatrix(1, 2)*Rub+ Umatrix(1, 3)*Ruc
+        R2= Umatrix(2, 1)*Rua+ Umatrix(2, 2)*Rub+ Umatrix(2, 3)*Ruc
+        R3= Umatrix(3, 1)*Rua+ Umatrix(3, 2)*Rub+ Umatrix(3, 3)*Ruc
+     endif     !> print out the new basis
 
-     !> print out the new basis
      if (cpuid.eq.0) then
         write(stdout, *)" "
         write(stdout, *)"The rotated new unit cell : "
@@ -1556,3 +1566,194 @@
 
       return
    end subroutine MillerIndicestoumatrix
+
+
+   !> define a new unit cell with the given MillerIndices [hkl]
+   subroutine FindTheThirdLatticeVector()
+      use para
+      implicit none
+      integer :: i1, i2, i3, j1, j2, j3, h, k, l, it
+      real(dp) :: R(3), R1(3), R2(3), R3(3), cross(3), dot
+
+      integer, allocatable :: vectors_parallel_umatrix1(:, :)
+      integer, allocatable :: vectors_parallel_umatrix2(:, :)
+      integer :: Nvectors_parallel_umatrix1, Nvectors_parallel_umatrix2
+      real(dp) :: smallest_volume, cell_volume
+      real(dp) :: smallest_length
+      real(dp) :: norm_1, norm_2, norm_3
+
+      integer :: iRmax
+      iRmax= 6 
+
+      allocate(vectors_parallel_umatrix1(3, (2*iRmax+1)**3))
+      allocate(vectors_parallel_umatrix2(3, (2*iRmax+1)**3))
+      vectors_parallel_umatrix1= 0
+      vectors_parallel_umatrix2= 0
+
+      !> Firstly, find all vectors that are parallel to Umatrix(:,1)
+      it= 0
+      do i1=-iRmax, iRmax
+         do i2=-iRmax, iRmax
+            do i3=-iRmax, iRmax
+               if (i1==0 .and. i2==0 .and. i3==0) cycle
+              !R= i1*Rua+i2*Rub+i3*Ruc
+              !dot=abs(R(1)*Rhkl(1)+ R(2)*Rhkl(2)+ R(3)*Rhkl(3))
+               cross(1)= Umatrix(2, 1)*i3- i2*Umatrix(3, 1)
+               cross(2)= Umatrix(3, 1)*i1- i3*Umatrix(1, 1)
+               cross(3)= Umatrix(1, 1)*i2- i1*Umatrix(2, 1)
+               dot = i1*Umatrix(1, 1)+ i2*Umatrix(2, 1)+ i3*Umatrix(3, 1)
+               if ((abs(cross(1))+abs(cross(2))+abs(cross(3)))<eps9.and.dot>0) then
+                  it= it+1
+                  vectors_parallel_umatrix1(1, it)= i1
+                  vectors_parallel_umatrix1(2, it)= i2
+                  vectors_parallel_umatrix1(3, it)= i3
+               endif
+            enddo
+         enddo
+      enddo
+      Nvectors_parallel_umatrix1= it
+
+      !> and select the shortest vectors_parallel_umatrix1
+      smallest_length= 9999999d0
+      do it= 1, Nvectors_parallel_umatrix1
+         R1= vectors_parallel_umatrix1(1, it)*Rua+ &
+             vectors_parallel_umatrix1(2, it)*Rub+ &
+             vectors_parallel_umatrix1(3, it)*Ruc  
+         norm_3= dsqrt(R1(1)*R1(1)+ R1(2)*R1(2)+ R1(3)*R1(3))
+         if (norm_3< smallest_length) then
+            smallest_length= norm_3
+            Umatrix(:, 1) = vectors_parallel_umatrix1(:, it)
+         endif
+      enddo 
+
+
+      !> secondly, find all vectors that are parallel to Umatrix(:,2)
+      it= 0
+      do i1=-iRmax, iRmax
+         do i2=-iRmax, iRmax
+            do i3=-iRmax, iRmax
+               if (i1==0 .and. i2==0 .and. i3==0) cycle
+              !R= i1*Rua+i2*Rub+i3*Ruc
+              !dot=abs(R(1)*Rhkl(1)+ R(2)*Rhkl(2)+ R(3)*Rhkl(3))
+               cross(1)= Umatrix(2, 2)*i3- i2*Umatrix(3, 2)
+               cross(2)= Umatrix(3, 2)*i1- i3*Umatrix(1, 2)
+               cross(3)= Umatrix(1, 2)*i2- i1*Umatrix(2, 2)
+               dot = i1*Umatrix(1, 2)+ i2*Umatrix(2, 2)+ i3*Umatrix(3, 2)
+               if ((abs(cross(1))+abs(cross(2))+abs(cross(3)))<eps9.and.dot>0) then
+                  it= it+1
+                  vectors_parallel_umatrix2(1, it)= i1
+                  vectors_parallel_umatrix2(2, it)= i2
+                  vectors_parallel_umatrix2(3, it)= i3
+               endif
+            enddo
+         enddo
+      enddo
+      Nvectors_parallel_umatrix2= it
+
+      !> and select the shortest vectors_parallel_umatrix1
+      smallest_length= 9999999d0
+      do it= 1, Nvectors_parallel_umatrix2
+         R2= vectors_parallel_umatrix2(1, it)*Rua+ &
+             vectors_parallel_umatrix2(2, it)*Rub+ &
+             vectors_parallel_umatrix2(3, it)*Ruc  
+         norm_3= dsqrt(R2(1)*R2(1)+ R2(2)*R2(2)+ R2(3)*R2(3))
+         if (norm_3< smallest_length) then
+            smallest_length= norm_3
+            Umatrix(:, 2) = vectors_parallel_umatrix2(:, it)
+         endif
+      enddo 
+
+      !> The last step, find the third vector that makes the new unit cell has
+      !> the same volume as the old unit cell
+      smallest_volume= 9999999d0
+      R1= Umatrix(1, 1)*Rua+  Umatrix(1, 2)*Rub+  Umatrix(1, 3)*Ruc
+      R2= Umatrix(2, 1)*Rua+  Umatrix(2, 2)*Rub+  Umatrix(2, 3)*Ruc
+      do i1=-iRmax, iRmax
+         do i2=-iRmax, iRmax
+            do i3=-iRmax, iRmax
+               if (i1==0 .and. i2==0 .and. i3==0) cycle
+               R3= i1*Rua+i2*Rub+i3*Ruc
+               cell_volume= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
+                 +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
+                 +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1)) 
+               cell_volume= dabs(cell_volume)
+               if (cell_volume< eps9) cycle
+               if (cell_volume< smallest_volume) smallest_volume= cell_volume
+            enddo
+         enddo
+      enddo
+
+      !> find the third vector with the shortest length
+      smallest_length= 9999999d0
+      do i1=-iRmax, iRmax
+         do i2=-iRmax, iRmax
+            do i3=-iRmax, iRmax
+               if (i1==0 .and. i2==0 .and. i3==0) cycle
+               R3= i1*Rua+i2*Rub+i3*Ruc
+               cell_volume= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
+                 +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
+                 +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1)) 
+               cell_volume= dabs(cell_volume)
+               if (dabs(cell_volume- smallest_volume)<eps9) then
+                  norm_3= dsqrt(R3(1)*R3(1)+ R3(2)*R3(2)+ R3(3)*R3(3))
+                  if (norm_3< smallest_length) smallest_length= norm_3
+               endif
+            enddo
+         enddo
+      enddo 
+
+      l2: do i1=-iRmax, iRmax
+         do i2=-iRmax, iRmax
+            do i3=-iRmax, iRmax
+               if (i1==0 .and. i2==0 .and. i3==0) cycle
+               R3= i1*Rua+i2*Rub+i3*Ruc
+               cell_volume= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
+                 +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
+                 +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1)) 
+               cell_volume= dabs(cell_volume)
+               norm_3= dsqrt(R3(1)*R3(1)+ R3(2)*R3(2)+ R3(3)*R3(3))
+               if (dabs(cell_volume- smallest_volume)<eps9 .and. &
+                   dabs(norm_3- smallest_length)<eps9) then
+                  Umatrix(3, 1)= i1
+                  Umatrix(3, 2)= i2
+                  Umatrix(3, 3)= i3
+                  exit l2
+               endif
+            enddo
+         enddo
+      enddo l2
+
+      R1= Umatrix(1, 1)*Rua+  Umatrix(1, 2)*Rub+ Umatrix(1, 3)*Ruc  
+      R2= Umatrix(2, 1)*Rua+  Umatrix(2, 2)*Rub+ Umatrix(2, 3)*Ruc  
+      R3= Umatrix(3, 1)*Rua+  Umatrix(3, 2)*Rub+ Umatrix(3, 3)*Ruc  
+      cell_volume= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
+                 + R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
+                 + R1(3)*(R2(1)*R3(2)- R2(2)*R3(1)) 
+      if (cell_volume<0) Umatrix(3, :)= -Umatrix(3, :)
+
+      R1= Umatrix(1, 1)*Rua+  Umatrix(1, 2)*Rub+ Umatrix(1, 3)*Ruc  
+      R2= Umatrix(2, 1)*Rua+  Umatrix(2, 2)*Rub+ Umatrix(2, 3)*Ruc  
+      R3= Umatrix(3, 1)*Rua+  Umatrix(3, 2)*Rub+ Umatrix(3, 3)*Ruc  
+      cell_volume= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
+                 + R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
+                 + R1(3)*(R2(1)*R3(2)- R2(2)*R3(1)) 
+
+      if (abs(cell_volume- CellVolume)< eps9 .and. cpuid==0) then
+         write(stdout, *)'  Congratulations, you got a unit cell that has ', &
+         ' the same volume as the original unit cell '
+         write(stdout, *)' The unitary rotation matrix is : '
+         write(stdout, '(3f10.3)')Umatrix(1,:)
+         write(stdout, '(3f10.3)')Umatrix(2,:)
+         write(stdout, '(3f10.3)')Umatrix(3,:)
+
+         write(stdout, *)' '
+         write(stdout, *)'The lattice vectors for new cell are : '
+         write(stdout, '(a,3f10.3)')' R1=', R1
+         write(stdout, '(a,3f10.3)')' R2=', R2
+         write(stdout, '(a,3f10.3)')' R3=', R3
+         write(stdout, *)' Where R1, R2, R3 are in cartesian coordinates'
+      endif
+
+      return
+   end subroutine FindTheThirdLatticeVector
+
