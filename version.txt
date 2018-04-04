@@ -1,0 +1,4 @@
+2018.Apr.04
+version V2.2.6
+1. Discard the Miller indicies
+2. Discard the third vector in the SURFACE card. The surface plane is specified only by two lattice vectors sitting on it.
