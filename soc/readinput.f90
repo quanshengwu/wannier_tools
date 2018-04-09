@@ -1221,6 +1221,86 @@
         write(stdout, *) 'ERROR: you should specify the WEYL_CHIRALITY card, see documentation'
      endif
 
+     !> parameters for selectedorbitals
+     rewind(1001)
+     lfound = .false.
+     stat=0
+     do while (.true.)
+        read(1001, *, end= 331)inline
+        if (trim(adjustl(inline))=='SELECTEDORBITALS') then
+           lfound= .true.
+           if (cpuid==0) write(stdout, *)' '
+           if (cpuid==0) write(stdout, *)'We found SELECTEDORBITALS card'
+           exit
+        endif
+     enddo
+
+     it= 0
+     stat= 0
+     NumberofSelectedOrbitals= 0
+     read(1001, *, err=331, iostat=stat)NumberofSelectedOrbitals
+
+     if (NumberofSelectedOrbitals>0) then
+        allocate(Selected_Orbitals(NumberofSelectedOrbitals))
+        Selected_Orbitals= 0
+        read(1001, *, err=331, iostat=stat) (Selected_Orbitals(i), i=1, NumberofSelectedOrbitals)
+     else
+        stop 'NumberofSelectedOrbitals should be an integer and larger than zero'
+     endif
+   
+     331 continue
+     if (stat/=0) then
+        if (cpuid==0) write(stdout, *)' '
+        if (cpuid==0) write(stdout, *)' '
+        if (cpuid==0) write(stdout, '(a)')'Error: Please set the right number of orbitals and orbitals in wt.in like this:'
+        if (cpuid==0) write(stdout, *)' '
+        if (cpuid==0) write(stdout, '(a)')'SelectedOrbitals'
+        if (cpuid==0) write(stdout, '(a)')'4  ! number of selected orbitals'
+        if (cpuid==0) write(stdout, '(a)')'4 5 6 7 ! orbitals indices '
+        stop 'Errors happen in the WT.in, please check informations in the WT.out'
+     endif
+
+
+     !> parameters for selectedbands
+     rewind(1001)
+     lfound = .false.
+     stat=0
+     do while (.true.)
+        read(1001, *, end= 231)inline
+        if (trim(adjustl(inline))=='SELECTEDBANDS') then
+           lfound= .true.
+           if (cpuid==0) write(stdout, *)' '
+           if (cpuid==0) write(stdout, *)'We found SELECTEDBANDS card'
+           exit
+        endif
+     enddo
+
+     it= 0
+     stat= 0
+     NumberofSelectedBands= 0
+     read(1001, *, err=231, iostat=stat)NumberofSelectedBands
+
+     if (NumberofSelectedBands>0) then
+        allocate(Selected_band_index(NumberofSelectedBands))
+        Selected_band_index= 0
+        read(1001, *, err=231, iostat=stat) (Selected_band_index(i), i=1, NumberofSelectedBands)
+     else
+        stop 'NumberofSelectedBands should be an integer and larger than zero'
+     endif
+
+     231 continue
+     if (stat/=0) then
+        if (cpuid==0) write(stdout, *)' '
+        if (cpuid==0) write(stdout, *)' '
+        if (cpuid==0) write(stdout, '(a)')'Error: Please set the right number of bands and band indices in wt.in like this:'
+        if (cpuid==0) write(stdout, *)' '
+        if (cpuid==0) write(stdout, '(a)')'SELECTEDBANDS'
+        if (cpuid==0) write(stdout, '(a)')'4  ! number of selected bands'
+        if (cpuid==0) write(stdout, '(a)')'4 5 6 7 ! band indices '
+        stop 'Errors happen in the WT.in, please check informations in the WT.out'
+     endif
+
+
 
      !> close wt.in 
      close(1001)

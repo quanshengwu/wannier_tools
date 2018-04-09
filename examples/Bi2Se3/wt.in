@@ -34,18 +34,18 @@ SURFACE            ! Specify surface with two vectors, see doc
 !> bulk band structure calculation flag
 &CONTROL
 BulkBand_calc         = T
-DOS_calc              = F
-BulkFS_calc           = F
-BulkGap_cube_calc     = F
-BulkGap_plane_calc    = F
-SlabBand_calc         = F
-WireBand_calc         = F
-SlabSS_calc           = F
-SlabArc_calc          = F
-SlabQPI_calc          = F
-Z2_3D_calc            = F
-SlabSpintexture_calc  = F
-Wanniercenter_calc    = F
+DOS_calc              = T
+BulkFS_calc           = T
+BulkGap_cube_calc     = T
+BulkGap_plane_calc    = T
+SlabBand_calc         = T
+WireBand_calc         = T
+SlabSS_calc           = T
+SlabArc_calc          = T
+SlabQPI_calc          = T
+Z2_3D_calc            = T
+SlabSpintexture_calc  = T
+Wanniercenter_calc    = T
 /
 
 &SYSTEM
@@ -65,9 +65,9 @@ E_arc = 0.0         ! energy for calculate Fermi Arc
 OmegaNum = 100      ! omega number       
 OmegaMin = -0.6     ! energy interval
 OmegaMax =  0.5     ! energy interval
-Nk1 = 41            ! number k points  odd number would be better
-Nk2 = 41            ! number k points  odd number would be better
-Nk3 = 21            ! number k points  odd number would be better
+Nk1 = 11            ! number k points  odd number would be better
+Nk2 = 11            ! number k points  odd number would be better
+Nk3 = 11            ! number k points  odd number would be better
 NP = 1              ! number of principle layers
 Gap_threshold = 1.0 ! threshold for GapCube output
 /

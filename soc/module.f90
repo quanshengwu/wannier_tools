@@ -322,6 +322,18 @@
      real(dp), allocatable :: weyl_position_cart(:, :)
      real(dp), allocatable :: weyl_position_direct(:, :)
 
+     !> selected bands for magnetoresistance
+     integer :: NumberofSelectedOrbitals
+     integer, allocatable :: Selected_Orbitals(:)
+
+     !> selected bands for magnetoresistance
+     integer :: NumberofSelectedBands
+     integer, allocatable :: Selected_band_index(:)
+
+     !> time 
+     character(8)  :: date_now
+     character(10) :: time_now
+     character(5)  :: zone_now
 
  end module para
 
