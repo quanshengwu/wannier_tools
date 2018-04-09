@@ -42,6 +42,7 @@
      endif
 
     !read(1001,*)Hrfile
+     Particle='electron'
      Package= 'VASP'
      read(1001, TB_FILE, iostat= stat)
      if (stat/=0) then
@@ -50,6 +51,7 @@
         if (.not.exists) stop "TB_FIlE namelist should be given or wannier90_hr.dat should exist"
      endif
      if(cpuid==0)write(stdout,'(1x, a, a25)')"Tight binding Hamiltonian file: ",Hrfile
+     if(cpuid==0)write(stdout,'(1x, a, a25)')"System of particle: ", Particle
      if(cpuid==0)write(stdout,'(1x, a, a25)')"Tight binding Hamiltonian obtained from : ",Package
     
 

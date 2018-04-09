@@ -20,8 +20,9 @@
      integer, public, save :: outfileindex= 10
 
      character(80) :: Hrfile
+     character(80) :: Particle
      character(80) :: Package
-     namelist / TB_FILE / Hrfile, Package
+     namelist / TB_FILE / Hrfile, Particle, Package
 
      
      !> control parameters

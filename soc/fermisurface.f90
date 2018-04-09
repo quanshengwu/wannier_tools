@@ -144,7 +144,9 @@
         close(outfileindex)
      endif
 
+#if defined (MPI)
      call mpi_barrier(mpi_cmw, ierr)
+#endif
 
      deallocate(W)
      deallocate(Hamk_bulk)
@@ -304,7 +306,9 @@
         enddo
         close(outfileindex)
      endif
+#if defined (MPI)
      call mpi_barrier(mpi_cmw, ierr)
+#endif
 
 
      outfileindex= outfileindex+ 1
@@ -318,7 +322,9 @@
         enddo
         close(outfileindex)
      endif
+#if defined (MPI)
      call mpi_barrier(mpi_cmw, ierr)
+#endif
 
 
      outfileindex= outfileindex+ 1
@@ -335,7 +341,9 @@
         enddo
         close(outfileindex)
      endif
+#if defined (MPI)
      call mpi_barrier(mpi_cmw, ierr)
+#endif
 
 
 

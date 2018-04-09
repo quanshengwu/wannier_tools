@@ -1,13 +1,12 @@
-!+---------+---------+---------+---------+---------+---------+--------+!
-! this subroutine is used to calculate surface state using             !
-! green's function method  ---  J.Phys.F.Met.Phys.15(1985)851-858      !
-! 
-! History:
-!         by Quan Sheng Wu on 4/20/2010                                !
-!            mpi version      4/21/2010
-!         Ca3PbO version     11/12/2011
-!+---------+---------+---------+---------+---------+---------+--------+!
   subroutine fermiarc
+     ! This subroutine calculates surface states using             
+     ! iterative Green's function method  ---  J.Phys.F.Met.Phys.15(1985)851-858      
+     !
+     ! History:
+     !
+     !         by Quan Sheng Wu on 4/20/2010                                
+     !
+     !            mpi version      4/21/2010
 
 
      use wmpi
@@ -31,6 +30,8 @@
 
      real(dp) :: omega
      real(dp) :: k1min_shape, k1max_shape, k2min_shape, k2max_shape
+     
+     real(dp) :: time_start, time_end
 
      real(dp), allocatable :: k12(:,:)
      real(dp), allocatable :: k12_shape(:,:)
@@ -101,8 +102,19 @@
      omega = E_arc
      eta= eta_arc
 
+     !> deal with phonon system
+     !> for phonon system, omega should be changed to omega^2
+     if (index(Particle,'phonon')/=0) then
+        omega= omega*omega
+     endif
+
+     time_start= 0d0
+     time_end= 0d0
      do ikp= 1+cpuid, nk1*nk2, num_cpu
-        if (cpuid==0) write(stdout, *) 'Arc, ik, knv2', ikp, nk1*nk2
+        if (cpuid==0.and. mod(ikp/num_cpu, 100)==0) &
+           write(stdout, *) 'Arc, ik ', ikp, 'Nk',Nk1*Nk2, 'time left', &
+           (knv2-ikp)*(time_end- time_start)/num_cpu, ' s'
+        call now(time_start)
         k(1)= k12(1, ikp)
         k(2)= k12(2, ikp)
 
@@ -127,6 +139,7 @@
         do i= 1, Ndim
            dos_bulk(ikp)=dos_bulk(ikp)- aimag(GB (i,i))
         enddo ! i
+        call now(time_end)
 
      enddo
 
@@ -166,7 +179,7 @@
            if (mod(ikp, nk2)==0) write(arclfile, *)' '
            write(arcrfile, '(30f16.8)')k12_shape(:, ikp), log(dos_r_mpi(ikp)), log(dos_r_only(ikp))
            if (mod(ikp, nk2)==0) write(arcrfile, *)' '
-           write(arcbulkfile, '(30f16.8)')k12_shape(:, ikp), log(dos_bulk_mpi(ikp))
+           write(arcbulkfile, '(30f16.8)')k12_shape(:, ikp), log(abs(dos_bulk_mpi(ikp)))
            if (mod(ikp, nk2)==0) write(arcbulkfile, *)' '
         enddo
         close(arclfile)
@@ -357,16 +370,33 @@
         close(outfileindex)
      endif
 
+#if defined (MPI)
+     call mpi_barrier(mpi_cmw, ierr)
+#endif
+     deallocate( k12)
+     deallocate( k12_shape)
+     deallocate( dos_l)
+     deallocate( dos_l_mpi)
+     deallocate( dos_r)
+     deallocate( dos_l_only)
+     deallocate( dos_r_only)
+     deallocate( dos_r_mpi)
+     deallocate( dos_bulk)
+     deallocate( dos_bulk_mpi)
+     deallocate( GLL, GRR, GB)
+     deallocate(H00)
+     deallocate(H01)
+     deallocate(ones)
+ 
 
-  return   
+     return   
   end subroutine fermiarc
 
 
-  !> calculation joint density of state 
-  !> refs :http://science.sciencemag.org/content/sci/suppl/2016/03/09/351.6278.1184.DC1/Inoue.SM.pdf
-
-  !> in this version, we also calculate the spin density jdos
   subroutine fermiarc_jdos
+     !> Calculation joint density of state 
+     !> refs :http://science.sciencemag.org/content/sci/suppl/2016/03/09/351.6278.1184.DC1/Inoue.SM.pdf
+     !> in this version, we also calculate the spin density jdos
 
 
      use wmpi
@@ -394,6 +424,9 @@
 
      real(dp) :: omega
      real(dp) :: k1min_shape, k1max_shape, k2min_shape, k2max_shape
+
+     real(dp) :: dos_l_max, dos_r_max
+     real(dp) :: time_start, time_end
 
      real(dp) :: sx_bulk, sy_bulk, sz_bulk
 
@@ -558,8 +591,20 @@
      omega = E_arc
      eta= eta_arc
 
+     !> deal with phonon system
+     !> for phonon system, omega should be changed to omega^2
+     if (index(Particle,'phonon')/=0) then
+        omega= omega*omega
+     endif
+
+
+     time_start= 0d0
+     time_end= 0d0
      do ikp= 1+cpuid, nk1*nk2, num_cpu
-        if (cpuid==0) write(stdout, *) 'Arc, ik, knv2', ikp, nk1*nk2
+        if (cpuid==0.and. mod(ikp/num_cpu, 100)==0) &
+           write(stdout, *) 'Arc, ik ', ikp, 'Nk',Nk1*Nk2, 'time left', &
+           (nk1*nk2-ikp)*(time_end- time_start)/num_cpu, ' s'
+        call now(time_start)
         k(1)= k12(1, ikp)
         k(2)= k12(2, ikp)
 
@@ -624,8 +669,8 @@
            io= TopOrbitals(i)
            sx_l(ik1, ik2)=sx_l(ik1, ik2)- aimag(ctemp(io,io))
         enddo ! i
-        sx_l(ik1, ik2)= sx_l(ik1, ik2)- sx_bulk
-        if (sx_l(ik1, ik2)<0) sx_l(ik1, ik2)= eps9
+       !sx_l(ik1, ik2)= sx_l(ik1, ik2)- sx_bulk
+       !if (sx_l(ik1, ik2)<0) sx_l(ik1, ik2)= eps9
   
         !ctemp=matmul(surfgreen,sigma_y)       
         call mat_mul(ndim,GLL,sigma_y,ctemp)       
@@ -633,8 +678,8 @@
            io= TopOrbitals(i)
            sy_l(ik1, ik2)=sy_l(ik1, ik2)- aimag(ctemp(io,io))
         enddo ! i
-        sy_l(ik1, ik2)= sy_l(ik1, ik2)- sy_bulk
-        if (sy_l(ik1, ik2)<0) sy_l(ik1, ik2)= eps9
+       !sy_l(ik1, ik2)= sy_l(ik1, ik2)- sy_bulk
+       !if (sy_l(ik1, ik2)<0) sy_l(ik1, ik2)= eps9
   
   
         !ctemp=matmul(surfgreen,sigma_z)       
@@ -643,8 +688,8 @@
            io= TopOrbitals(i)
            sz_l(ik1, ik2)=sz_l(ik1, ik2)- aimag(ctemp(io,io))
         enddo ! i
-        sz_l(ik1, ik2)= sz_l(ik1, ik2)- sz_bulk
-        if (sz_l(ik1, ik2)<0) sz_l(ik1, ik2)= eps9
+       !sz_l(ik1, ik2)= sz_l(ik1, ik2)- sz_bulk
+       !if (sz_l(ik1, ik2)<0) sz_l(ik1, ik2)= eps9
   
 
         !ctemp=matmul(surfgreen,sigma_x)       
@@ -653,8 +698,8 @@
            io= Ndim- Num_wann+ BottomOrbitals(i)
            sx_r(ik1, ik2)=sx_r(ik1, ik2)- aimag(ctemp(io,io))
         enddo ! i
-        sx_r(ik1, ik2)= sx_r(ik1, ik2)- sz_bulk
-        if (sx_r(ik1, ik2)<0) sx_r(ik1, ik2)= eps9
+       !sx_r(ik1, ik2)= sx_r(ik1, ik2)- sz_bulk
+       !if (sx_r(ik1, ik2)<0) sx_r(ik1, ik2)= eps9
   
   
         !ctemp=matmul(surfgreen,sigma_y)       
@@ -663,8 +708,8 @@
            io= Ndim- Num_wann+ BottomOrbitals(i)
            sy_r(ik1, ik2)=sy_r(ik1, ik2)- aimag(ctemp(io,io))
         enddo ! i
-        sy_r(ik1, ik2)= sy_r(ik1, ik2)- sz_bulk
-        if (sy_r(ik1, ik2)<0) sy_r(ik1, ik2)= eps9
+       !sy_r(ik1, ik2)= sy_r(ik1, ik2)- sz_bulk
+       !if (sy_r(ik1, ik2)<0) sy_r(ik1, ik2)= eps9
   
   
         !ctemp=matmul(surfgreen,sigma_z)       
@@ -673,8 +718,10 @@
            io= Ndim- Num_wann+ BottomOrbitals(i)
            sz_r(ik1, ik2)=sz_r(ik1, ik2)- aimag(ctemp(io,io))
         enddo ! i
-        sz_r(ik1, ik2)= sz_r(ik1, ik2)- sz_bulk
-        if (sz_r(ik1, ik2)<0) sz_r(ik1, ik2)= eps9
+       !sz_r(ik1, ik2)= sz_r(ik1, ik2)- sz_bulk
+       !if (sz_r(ik1, ik2)<0) sz_r(ik1, ik2)= eps9
+        
+        call now(time_end)
   
      enddo
 
@@ -711,14 +758,47 @@
      sz_r_mpi= sz_r
 #endif
 
+!    do ikp=1, Nk1*Nk2
+!       ik1= ik12(1, ikp)
+!       ik2= ik12(2, ikp)
+
+!       dos_l_only(ik1, ik2)= dos_l_mpi(ik1, ik2)- dos_bulk_mpi(ik1, ik2)
+!       if (dos_l_only(ik1, ik2)<0) then
+!          dos_l_only(ik1, ik2)=eps9
+!          sx_l_mpi(ik1, ik2)=eps9
+!          sy_l_mpi(ik1, ik2)=eps9
+!          sz_l_mpi(ik1, ik2)=eps9
+!       endif
+!       dos_r_only(ik1, ik2)= dos_r_mpi(ik1, ik2)- dos_bulk_mpi(ik1, ik2)
+!       if (dos_r_only(ik1, ik2)<0) then
+!          dos_r_only(ik1, ik2)=eps9
+!          sx_r_mpi(ik1, ik2)=eps9
+!          sy_r_mpi(ik1, ik2)=eps9
+!          sz_r_mpi(ik1, ik2)=eps9
+!       endif
+!    enddo
+
+     dos_l_max= maxval(dos_l_mpi)
+     dos_r_max= maxval(dos_r_mpi)
+
      do ikp=1, Nk1*Nk2
         ik1= ik12(1, ikp)
         ik2= ik12(2, ikp)
 
-        dos_l_only(ik1, ik2)= dos_l_mpi(ik1, ik2)- dos_bulk_mpi(ik1, ik2)
-        if (dos_l_only(ik1, ik2)<0) dos_l_only(ik1, ik2)=eps9
-        dos_r_only(ik1, ik2)= dos_r_mpi(ik1, ik2)- dos_bulk_mpi(ik1, ik2)
-        if (dos_r_only(ik1, ik2)<0) dos_r_only(ik1, ik2)=eps9
+        dos_l_only(ik1, ik2)= dos_l_mpi(ik1, ik2)
+        if (dos_l_only(ik1, ik2)<dos_l_max/10d0) then
+           dos_l_only(ik1, ik2)=eps9
+           sx_l_mpi(ik1, ik2)=eps9
+           sy_l_mpi(ik1, ik2)=eps9
+           sz_l_mpi(ik1, ik2)=eps9
+        endif
+        dos_r_only(ik1, ik2)= dos_r_mpi(ik1, ik2)
+        if (dos_r_only(ik1, ik2)<dos_r_max/10d0) then
+           dos_r_only(ik1, ik2)=eps9
+           sx_r_mpi(ik1, ik2)=eps9
+           sy_r_mpi(ik1, ik2)=eps9
+           sz_r_mpi(ik1, ik2)=eps9
+        endif
      enddo
 
      outfileindex= outfileindex+ 1
@@ -769,13 +849,16 @@
      do iq= 1+ cpuid, Nk1*Nk2, num_cpu
         iq1= ik12(1, iq)- Nk1_half
         iq2= ik12(2, iq)- Nk2_half
-        if (cpuid==0) write(stdout, *) 'Jdos, iq, knv2', iq, nk1*nk2
+        if (cpuid==0.and. mod(iq/num_cpu, 100)==0) &
+           write(stdout, *) 'JDOS, iq ', iq, 'Nq',Nk1*Nk2, 'time left', &
+           (nk1*nk2-iq)*(time_end- time_start)/num_cpu, ' s'
+        call now(time_start)
         imin1= max(-Nk1_half-iq1, -Nk1_half)+ Nk1_half+ 1
         imax1= min(Nk1_half-iq1, Nk1_half)+ Nk1_half+ 1
         imin2= max(-Nk2_half-iq2, -Nk2_half)+ Nk2_half+ 1
         imax2= min(Nk2_half-iq2, Nk2_half)+ Nk2_half+ 1
-        do ik1= imin1, imax1
-           do ik2= imin2, imax2
+        do ik2= imin2, imax2
+           do ik1= imin1, imax1
               jdos_l(iq)= jdos_l(iq)+ dos_l_only(ik1, ik2)* dos_l_only(ik1+iq1, ik2+iq2)
               jdos_r(iq)= jdos_r(iq)+ dos_r_only(ik1, ik2)* dos_r_only(ik1+iq1, ik2+iq2)
               jsdos_l(iq)= jsdos_l(iq)+ dos_l_only(ik1, ik2)* dos_l_only(ik1+iq1, ik2+iq2) &
@@ -786,9 +869,10 @@
                                       + sx_r_mpi(ik1, ik2)* sx_r_mpi(ik1+iq1, ik2+iq2) &
                                       + sy_r_mpi(ik1, ik2)* sy_r_mpi(ik1+iq1, ik2+iq2) &
                                       + sz_r_mpi(ik1, ik2)* sz_r_mpi(ik1+iq1, ik2+iq2)
-           enddo !ik
-        enddo !ik
-     enddo !ik
+           enddo !ik1
+        enddo !ik2
+        call now(time_end)
+     enddo !iq
 
      jdos_l_mpi=1d-12
      jdos_r_mpi=1d-12
@@ -815,31 +899,42 @@
      arcljfile= outfileindex
      outfileindex= outfileindex+ 1
      arcrjfile= outfileindex
-     outfileindex= outfileindex+ 1
+     outfileindex= outfileindex+ 3
      arcljsfile= outfileindex
-     outfileindex= outfileindex+ 1
+     outfileindex= outfileindex+ 3
      arcrjsfile= outfileindex
      if (cpuid.eq.0)then
+        write(stdout,*)'The calculation of joint density of state was done.'    
+        write(stdout,*)'Now it is ready to write out.'    
         open (unit=arcljfile, file='arc.jdat_l')
-        open (unit=arcrjfile, file='arc.jdat_r')
-        open (unit=arcljsfile, file='arc.jsdat_l')
-        open (unit=arcrjsfile, file='arc.jsdat_r')
         do ikp=1, nk1*nk2
-           write(arcljfile, '(30f16.8)')k12_shape(:, ikp), log(jdos_l_mpi(ikp))
+           write(arcljfile, '(30f16.8)')k12_shape(:, ikp),  log(abs(jdos_l_mpi(ikp)))
            if (mod(ikp, nk2)==0) write(arcljfile, *)' '
-           write(arcrjfile, '(30f16.8)')k12_shape(:, ikp), log(jdos_r_mpi(ikp))
+        enddo
+        close(arcljfile)
+        
+        open (unit=arcrjfile, file='arc.jdat_r')
+        do ikp=1, nk1*nk2
+           write(arcrjfile, '(30f16.8)')k12_shape(:, ikp),  log(abs(jdos_r_mpi(ikp)))
            if (mod(ikp, nk2)==0) write(arcrjfile, *)' '
-           write(arcljsfile, '(30f16.8)')k12_shape(:, ikp), log(jsdos_l_mpi(ikp))
+        enddo
+        close(arcrjfile)
+        
+        open (unit=arcljsfile, file='arc.jsdat_l')
+        do ikp=1, nk1*nk2
+           write(arcljsfile, '(30f16.8)')k12_shape(:, ikp), log(abs(jsdos_l_mpi(ikp)))
            if (mod(ikp, nk2)==0) write(arcljsfile, *)' '
-           write(arcrjsfile, '(30f16.8)')k12_shape(:, ikp), log(jsdos_r_mpi(ikp))
-           if (mod(ikp, nk2)==0) write(arcrjsfile, *)' '
         enddo
         close(arcljsfile)
-        close(arcrjsfile)
-        close(arcljsfile)
+        
+        open (unit=arcrjsfile, file='arc.jsdat_r')
+        do ikp=1, nk1*nk2
+           write(arcrjsfile, '(30f16.8)')k12_shape(:, ikp), log(abs(jsdos_r_mpi(ikp)))
+           if (mod(ikp, nk2)==0) write(arcrjsfile, *)' '
+        enddo
         close(arcrjsfile)
         write(stdout,*)'calculate joint density of state successfully'    
-     endif
+     endif ! cpuid==0
 
      !> write script for gnuplot
      outfileindex= outfileindex+ 1
@@ -1054,6 +1149,51 @@
 
         close(outfileindex)
      endif
+
+#if defined (MPI)
+     call mpi_barrier(mpi_cmw, ierr)
+#endif
+
+     deallocate( ik12)
+     deallocate( k12)
+     deallocate( k12_shape)
+     deallocate( dos_l)
+     deallocate( dos_l_mpi)
+     deallocate( dos_r)
+     deallocate( dos_r_mpi)
+     deallocate( dos_r_only)
+     deallocate( dos_l_only)
+     deallocate( dos_bulk)
+     deallocate( dos_bulk_mpi)
+     deallocate( jdos_l)
+     deallocate( jdos_l_mpi)
+     deallocate( jdos_r)
+     deallocate( jdos_r_mpi)
+     deallocate( jsdos_l)
+     deallocate( jsdos_l_mpi)
+     deallocate( jsdos_r)
+     deallocate( jsdos_r_mpi)
+     deallocate( sx_l)
+     deallocate( sx_l_mpi)
+     deallocate( sy_l)
+     deallocate( sy_l_mpi)
+     deallocate( sz_l)
+     deallocate( sz_l_mpi)
+     deallocate( sx_r)
+     deallocate( sx_r_mpi)
+     deallocate( sy_r)
+     deallocate( sy_r_mpi)
+     deallocate( sz_r)
+     deallocate( sz_r_mpi)
+     deallocate( GLL, GRR, GB)
+     deallocate(sigma_x)
+     deallocate(sigma_y)
+     deallocate(sigma_z)
+     deallocate(ctemp)
+     deallocate(H00)
+     deallocate(H01)
+     deallocate(ones)
+
 
 
   return   
