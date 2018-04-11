@@ -82,9 +82,9 @@
         ikx= (ik-1)/(nk2*nk3)+1
         iky= ((ik-1-(ikx-1)*Nk2*Nk3)/nk3)+1
         ikz= (ik-(iky-1)*Nk3- (ikx-1)*Nk2*Nk3)
-        k= K3D_start_cube+ K3D_vec1_cube*(ikx-1)/dble(nk1)  &
-         + K3D_vec2_cube*(iky-1)/dble(nk2)  &
-         + K3D_vec3_cube*(ikz-1)/dble(nk3)
+        k= K3D_start_cube+ K3D_vec1_cube*(ikx-1)/dble(nk1-1)  &
+         + K3D_vec2_cube*(iky-1)/dble(nk2-1)  &
+         + K3D_vec3_cube*(ikz-1)/dble(nk3-1)
 
 
         ! calculation bulk hamiltonian

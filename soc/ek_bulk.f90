@@ -43,8 +43,8 @@
 
         ! calculation bulk hamiltonian
         Hamk_bulk= 0d0
-       !call ham_bulk_old(k, Hamk_bulk)
-        call ham_bulk    (k, Hamk_bulk)
+        call ham_bulk_old(k, Hamk_bulk)
+       !call ham_bulk    (k, Hamk_bulk)
 
         !> diagonalization by call zheev in lapack
         W= 0d0
