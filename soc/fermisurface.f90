@@ -41,15 +41,12 @@
         nband_max= Numoccupied+ 8
      endif
 
-     if (nband_min< 1) then
+     if ((nband_min< 1).or.(nband_max> Num_wann)) then
         nband_min= 1
         nband_max= 4
-        if (SOC>0) nband_max = 8
-     endif
-
-     if (nband_max> Num_wann) then
-        nband_max= Num_wann
-        nband_min= Num_wann-4
+        nband_max= min(4, Num_wann)
+        nband_min= max(1, Num_wann-4)
+        if (SOC>0) nband_max= min(8, Num_wann)
         if (SOC>0) nband_min= max(1, Num_wann-8)
      endif
 
