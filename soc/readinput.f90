@@ -552,6 +552,8 @@
         write(stdout, '(a,2f10.4)')' cell_volume vs cell_volume-new', cell_volume, cell_volume2
         write(stdout, '(a)')" However, don't worry, WannierTools will help you to find a suitable rotation matrix."
         write(stdout, '(a)')" I am looking for new unit cell atuomatically: "
+     endif     !> print out the new basis
+     if (abs(abs(cell_volume2)-abs(cell_volume))> 0.001d0) then
         call FindTheThirdLatticeVector()
         R1= Umatrix(1, 1)*Rua+ Umatrix(1, 2)*Rub+ Umatrix(1, 3)*Ruc
         R2= Umatrix(2, 1)*Rua+ Umatrix(2, 2)*Rub+ Umatrix(2, 3)*Ruc
