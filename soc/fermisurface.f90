@@ -378,7 +378,8 @@
         write(outfileindex, '(a)')'set autoscale fix'
         write(outfileindex, '(a)')'set pm3d interpolate 2,2'
         write(outfileindex, '(2a)')"splot 'fs.dat' u 4:5:(($8)) w pm3d , \"
-        write(outfileindex, '(a)')"     'orbitaltexture.dat' u 4:5:(0):($7/90000):($8/90000):(0)  w vec  head lw 5 lc rgb 'orange' front"
+        write(outfileindex, '(a)')"     'orbitaltexture.dat' u 4:5:(0):($7/90000):($8/90000):(0) \"
+        write(outfileindex, '(a)')" w vec  head lw 5 lc rgb 'orange' front"
 
         close(outfileindex)
      endif
