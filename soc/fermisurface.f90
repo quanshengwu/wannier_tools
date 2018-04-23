@@ -41,16 +41,22 @@
         nband_max= Numoccupied+ 8
      endif
 
-     if ((nband_min< 1).or.(nband_max> Num_wann)) then
+     if (nband_min< 1) then 
         nband_min= 1
-        nband_max= 4
-        nband_max= min(4, Num_wann)
-        nband_min= max(1, Num_wann-4)
-        if (SOC>0) nband_max= min(8, Num_wann)
-        if (SOC>0) nband_min= max(1, Num_wann-8)
+     endif
+     if (nband_max> Num_wann) then
+        nband_max= Num_wann
+     endif
+     if (nband_min>nband_max) then
+        nband_min= max(1, nband_max-4)
+        if (SOC>0) nband_min= max(1, nband_max-8)
      endif
 
      nband_store= nband_max- nband_min+ 1
+     if (cpuid.eq.0) then
+        write(stdout, *)">> In fermisurface3D"
+        write(stdout, '(a, i8, a, i8)')">> We are going to write out the bands from band ", nband_min, ' to', nband_max
+     endif
 
      kxmin= 0.00d0/1d0
      kxmax= 1.00d0/1d0
@@ -89,8 +95,8 @@
 
         ! calculation bulk hamiltonian
         Hamk_bulk= 0d0
-        call ham_bulk_old(k, Hamk_bulk)
-        call eigensystem_c( 'N', 'U', Num_wann ,Hamk_bulk, W)
+        call ham_bulk    (k, Hamk_bulk)
+        call eigensystem_c( 'N', 'U', Num_wann, Hamk_bulk, W)
         eigval_mpi(:, ik)= W(nband_min:nband_max)
         call now(time_end)
      enddo
@@ -141,9 +147,7 @@
         close(outfileindex)
      endif
 
-#if defined (MPI)
      call mpi_barrier(mpi_cmw, ierr)
-#endif
 
      deallocate(W)
      deallocate(Hamk_bulk)
@@ -303,9 +307,7 @@
         enddo
         close(outfileindex)
      endif
-#if defined (MPI)
      call mpi_barrier(mpi_cmw, ierr)
-#endif
 
 
      outfileindex= outfileindex+ 1
@@ -319,9 +321,7 @@
         enddo
         close(outfileindex)
      endif
-#if defined (MPI)
      call mpi_barrier(mpi_cmw, ierr)
-#endif
 
 
      outfileindex= outfileindex+ 1
@@ -338,9 +338,7 @@
         enddo
         close(outfileindex)
      endif
-#if defined (MPI)
      call mpi_barrier(mpi_cmw, ierr)
-#endif
 
 
 
@@ -380,8 +378,7 @@
         write(outfileindex, '(a)')'set autoscale fix'
         write(outfileindex, '(a)')'set pm3d interpolate 2,2'
         write(outfileindex, '(2a)')"splot 'fs.dat' u 4:5:(($8)) w pm3d , \"
-        write(outfileindex, '(a)')"     'orbitaltexture.dat' u 4:5:(0):($7/90000):($8/90000):(0) \" 
-        write(outfileindex, '(a)')"   w vec  head lw 5 lc rgb 'orange' front"
+        write(outfileindex, '(a)')"     'orbitaltexture.dat' u 4:5:(0):($7/90000):($8/90000):(0)  w vec  head lw 5 lc rgb 'orange' front"
 
         close(outfileindex)
      endif
@@ -967,7 +964,7 @@
 
       real(dp) :: k(3)
 
-      real(dp) ::  Beta 
+      real(dp) ::  Beta_fake 
 
       real(dp) :: lmin
       real(dp) :: lmax
@@ -998,7 +995,7 @@
       eigvals_mpi= 0d0
       ham= 0d0
       kpoints= 0d0
-      Beta= 200d0
+      Beta_fake= 200d0
 
       ik= 0
       do i1=1, Nk
@@ -1045,7 +1042,7 @@
          tot= 0d0
          do ik=1, knv3
             do io=1, Num_wann
-               tot= tot+ fermi(eigvals(io, ik)- EF, Beta)
+               tot= tot+ fermi(eigvals(io, ik)- EF, Beta_fake)
             enddo ! io
          enddo ! ik
          tot= tot/dble(knv3)
@@ -1073,7 +1070,7 @@
       return
    end subroutine get_fermilevel
 
-   function fermi(omega, Beta) result(value)
+   function fermi(omega, Beta_fake) result(value)
       ! This function sets the Fermi-Dirac distribution
 
       use para
@@ -1081,18 +1078,18 @@
 
       ! >> inout variables
       real(dp), intent(in) :: omega
-      real(dp), intent(in) :: Beta
+      real(dp), intent(in) :: Beta_fake
 
       ! return value
       real(dp) :: value
     
       ! avoid numerical instability 
-      if (beta*omega .ge. 20d0) then
+      if (Beta_fake*omega .ge. 20d0) then
          value = zero
-      elseif (beta*omega.le. -20d0)then
+      elseif (Beta_fake*omega.le. -20d0)then
          value = one
       else
-         value= one/(one+exp(beta*omega))
+         value= one/(one+exp(Beta_fake*omega))
       endif
 
       return
