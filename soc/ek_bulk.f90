@@ -8,17 +8,12 @@
 
      implicit none
 
-     integer :: ik, i, j
-     integer :: knv3
-     integer :: Nwann
-     integer :: ierr
-     real(dp) :: emin
-     real(dp) :: emax
-     real(Dp) :: k(3)
-     real(Dp) :: W(Num_wann)
+     integer :: ik, i, j, knv3, Nwann, ierr
+     real(dp) :: emin, emax, k(3)
+     real(Dp), allocatable :: W(:)
      
      ! Hamiltonian of bulk system
-     complex(Dp) :: Hamk_bulk(Num_wann,Num_wann) 
+     complex(Dp), allocatable :: Hamk_bulk(:, :)
 
      ! eigen value of H
 	  real(dp), allocatable :: eigv(:,:)
@@ -27,8 +22,10 @@
 	  real(dp), allocatable :: weight_mpi(:,:,:)
 
      knv3= nk3_band
+     allocate( W(Num_wann))
      allocate( eigv    (Num_wann, knv3))
      allocate( eigv_mpi(Num_wann, knv3))
+     allocate( Hamk_bulk (Num_wann,Num_wann))
      allocate( weight    (Num_wann,Num_wann, knv3))
      allocate( weight_mpi(Num_wann,Num_wann, knv3))
      eigv    = 0d0
@@ -137,6 +134,102 @@
    end subroutine ek_bulk
 
 
+  !>> calculate energy band levels at given kpoints
+  subroutine ek_bulk_point_mode
+
+     use wmpi
+     use para
+
+     implicit none
+
+     integer :: ik, i, j, knv3, Nwann, ierr
+     real(dp) :: emin, emax, k(3)
+     real(Dp), allocatable :: W(:)
+     
+     ! Hamiltonian of bulk system
+     complex(Dp), allocatable :: Hamk_bulk(:, :)
+
+     ! eigen value of H
+	  real(dp), allocatable :: eigv(:,:)
+	  real(dp), allocatable :: eigv_mpi(:,:)
+	  real(dp), allocatable :: weight(:,:,:)
+	  real(dp), allocatable :: weight_mpi(:,:,:)
+
+     knv3= nk3_band
+     allocate( W(Num_wann))
+     allocate( eigv    (Num_wann, knv3))
+     allocate( eigv_mpi(Num_wann, knv3))
+     allocate( Hamk_bulk (Num_wann,Num_wann))
+     allocate( weight    (Num_wann,Num_wann, knv3))
+     allocate( weight_mpi(Num_wann,Num_wann, knv3))
+     eigv    = 0d0
+     weight  = 0d0
+     eigv_mpi= 0d0
+     weight_mpi = 0d0
+
+     do ik= 1+cpuid, Nk3_point_mode, num_cpu
+        if (cpuid==0) write(stdout, *)'# BulkBand in point mode, ik, knv3 ', ik, knv3
+
+        k = k3points_pointmode_direct(:, ik)
+
+        !> calculation bulk hamiltonian
+        Hamk_bulk= 0d0
+        call ham_bulk_old(k, Hamk_bulk)
+       !call ham_bulk    (k, Hamk_bulk)
+
+        !> diagonalization by call zheev in lapack
+        W= 0d0
+        call eigensystem_c( 'V', 'U', Num_wann ,Hamk_bulk, W)
+
+        eigv(:, ik)= W
+        do i=1, Num_wann  !> band 
+           if (SOC==0) then
+              do j=1, Num_wann  !> projector
+                 weight(j, i, ik)= (abs(Hamk_bulk(j, i))**2)
+              enddo ! j
+           else
+              do j=1, Num_wann  !> projector
+                 weight(j, i, ik)= abs(Hamk_bulk(j, i))**2     
+              enddo ! j
+           endif
+        enddo ! i
+ 
+     enddo ! ik
+
+#if defined (MPI)
+     call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
+                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+     call mpi_allreduce(weight, weight_mpi,size(weight),&
+                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     eigv_mpi= eigv
+     weight_mpi= weight
+#endif
+
+     weight= weight_mpi/maxval(weight_mpi)*255d0
+
+     outfileindex= outfileindex+ 1
+     if (cpuid==0)then
+        open(unit=outfileindex, file='bulkek-pointsmode.dat')
+   
+        do ik=1, Nk3_point_mode
+           write(outfileindex, '(a, i10)')'# No. of k point', ik
+           write(outfileindex, '("#",a9,100a10)')'k1', 'k2', 'k3', 'kx', 'ky', 'kz'  
+           write(outfileindex, '(100f10.6)')k3points_pointmode_direct(:, ik), k3points_pointmode_cart(:, ik)
+           write(outfileindex, '("#", a11, a19, a)')'band index', 'Eigenvalue', '     orbital weights (0-255)'
+           do i=1, Num_wann
+              write(outfileindex, '(i12, f19.10, 1000i5)')i, eigv_mpi(i, ik), &
+                 int(weight(:, i, ik))
+           enddo
+           write(outfileindex, *)' '
+        enddo
+        close(outfileindex)
+     endif
+
+     return
+   end subroutine ek_bulk_point_mode
+
+
   ! calculate bulk's energy band using wannier TB method
   !> calculate spin direction for each band and each kpoint
   subroutine ek_bulk_spin
@@ -146,15 +239,8 @@
 
      implicit none
 
-     integer :: ik, i, j, ib
-	  integer :: knv3
-     integer :: ierr
-     integer :: nwann
-     real(dp) :: sx, sy, sz
-     real(dp) :: emin
-     real(dp) :: emax
-     real(dp) :: k(3)
-     real(dp) :: W(Num_wann)
+     integer :: ik, i, j, ib, knv3, ierr, nwann
+     real(dp) :: sx, sy, sz, emin, emax, k(3), W(Num_wann)
      
      ! Hamiltonian of bulk system
      complex(dp), allocatable :: Hamk_bulk(:, :) 

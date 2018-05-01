@@ -33,19 +33,20 @@ SURFACE            ! Specify surface with two vectors, see doc
 
 !> bulk band structure calculation flag
 &CONTROL
-BulkBand_calc         = T
-DOS_calc              = T
-BulkFS_calc           = T
-BulkGap_cube_calc     = T
-BulkGap_plane_calc    = T
-SlabBand_calc         = T
-WireBand_calc         = T
-SlabSS_calc           = T
-SlabArc_calc          = T
-SlabQPI_calc          = T
-Z2_3D_calc            = T
-SlabSpintexture_calc  = T
-Wanniercenter_calc    = T
+BulkBand_calc         = F
+BulkBand_points_calc  = T
+DOS_calc              = F
+BulkFS_calc           = F
+BulkGap_cube_calc     = F
+BulkGap_plane_calc    = F
+SlabBand_calc         = F
+WireBand_calc         = F
+SlabSS_calc           = F
+SlabArc_calc          = F
+SlabQPI_calc          = F
+Z2_3D_calc            = F
+SlabSpintexture_calc  = F
+Wanniercenter_calc    = F
 /
 
 &SYSTEM
@@ -106,6 +107,15 @@ EFFECTIVE_MASS      ! optional
 2                   ! The i'th band to be calculated
 0.01                ! k step in unit of (1/Angstrom)
 0.0 0.0 0.0         ! k point where the effective mass calculated.
+
+KPOINTS_3D
+4 
+Direct
+0.0  0.0  0.0
+0.5  0.0  0.0
+0.0  0.5  0.0
+0.0  0.0  0.5
+
 
 
 WANNIER_CENTRES     ! copy from wannier90.wout

@@ -27,12 +27,14 @@
      
      !> control parameters
      logical :: BulkBand_calc    ! Flag for bulk energy band calculation
+     logical :: BulkBand_points_calc    ! Flag for bulk energy band calculation
      logical :: BulkBand_plane_calc    ! Flag for bulk energy band calculation
      logical :: BulkFS_calc      ! Flag for bulk 3D fermi surface in 3D BZ calculation
      logical :: BulkFS_plane_calc ! Flag for bulk fermi surface for a fix k plane calculation
      logical :: BulkGap_cube_calc  ! Flag for Gap_cube calculation
      logical :: BulkGap_plane_calc ! Flag for Gap_plane calculation
      logical :: SlabBand_calc  ! Flag for 2D slab energy band calculation
+     logical :: AHC_calc  ! Flag for Boltzmann tranport under magnetic field
      logical :: WireBand_calc  ! Flag for 1D wire energy band calculation
      logical :: SlabSS_calc    ! Flag for surface state ARPES spectrum calculation
      logical :: Dos_calc       ! Flag for density of state calculation
@@ -56,7 +58,7 @@
                           WannierCenter_calc,BerryPhase_calc,BerryCurvature_calc, &
                           Z2_3D_calc, Chern_3D_calc, WeylChirality_calc, &
                           Dos_calc, JDos_calc, EffectiveMass_calc, SlabQPI_calc, FindNodes_calc, &
-                          BulkBand_plane_calc
+                          BulkBand_plane_calc, AHC_Calc, BulkBand_points_calc
  
      ! double precision  
      integer,parameter :: Dp=kind(1.0d0)
@@ -201,13 +203,16 @@
      real(dp),allocatable :: K3len(:)
      real(dp),allocatable :: K3points(:, :)
 
+     !> k points in the point mode 
+     integer :: Nk3_point_mode
+     real(dp), allocatable :: k3points_pointmode_cart(:, :)
+     real(dp), allocatable :: k3points_pointmode_direct(:, :)
+
      ! k path for berry phase, read from the input.dat
      ! in the KPATH_BERRY card
      integer :: NK_Berry
      character(10) :: DirectOrCart_Berry ! Whether direct coordinates or Cartisen coordinates
      real(dp), allocatable :: k3points_Berry(:, :) ! only in direct coordinates
-
-
 
      !>> top surface atoms
      integer :: NtopAtoms, NtopOrbitals
@@ -235,6 +240,15 @@
      character(4) :: k2line_name(32)
      real(dp),allocatable :: k2len(:)
      real(dp),allocatable :: k2_path(:, :)
+
+     !> A kpoint for 3D system--> only one k point
+     real(dp), public, save :: Kpoint_3D_direct(3) ! the k point for effective mass calculation
+     real(dp), public, save :: Kpoint_3D_cart(3) ! the k point for effective mass calculation
+     
+     character(10) :: DirectOrCart_SINGLE ! Whether direct coordinates or Cartisen coordinates
+     real(dp), public, save :: Single_KPOINT_3D_DIRECT(3) ! the k point for effective mass calculation
+     real(dp), public, save :: Single_KPOINT_3D_CART(3) ! the k point for effective mass calculation
+
 
      !> kpoints plane for 2D system--> arcs  
      real(dp) :: K2D_start(2)

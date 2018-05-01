@@ -56,6 +56,7 @@
     
 
      BulkBand_calc         = .FALSE.
+     BulkBand_points_calc  = .FALSE.
      BulkBand_plane_calc   = .FALSE.
      BulkFS_calc           = .FALSE.
      BulkGap_cube_calc     = .FALSE.
@@ -77,6 +78,7 @@
      JDos_calc             = .FALSE.
      EffectiveMass_calc    = .FALSE.
      FindNodes_calc        = .FALSE.
+     AHC_Calc              = .FALSE.
      
      read(1001, CONTROL, iostat=stat)
 
@@ -117,6 +119,7 @@
         write(stdout, *) "WeylChirality_calc  : ",  WeylChirality_calc
         write(stdout, *) "BerryPhase_calc     : ", BerryPhase_calc
         write(stdout, *) "Dos_calc            : ",  DOS_calc
+        write(stdout, *) "AHC_calc            : ",  AHC_calc
         write(stdout, *) "JDos_calc           : ",  JDOS_calc
         write(stdout, *) "FindNodes_calc      : ",  FindNodes_calc
         write(stdout, *) "BerryCurvature_calc : ", BerryCurvature_calc
@@ -1074,7 +1077,134 @@
      k1=k_mass
      call direct_cart_rec(k1, k_mass)
      if (cpuid==0) write(stdout, '(a, 3f7.4, a)')'>> k points ', k_mass, " in unit of 1/Angstrom"
-    
+
+ 
+
+     !>> setting up a series of k points in 3D BZ
+     rewind(1001)
+     lfound = .false.
+     do while (.true.)
+        read(1001, *, end= 311)inline
+        if (trim(adjustl(inline))=='KPOINTS_3D') then
+           lfound= .true.
+           if (cpuid==0) write(stdout, *)' '
+           if (cpuid==0) write(stdout, *)'We found KPOINTS_3D card'
+           exit
+        endif
+     enddo
+
+     read(1001, *, end=319, err=319, iostat=stat)Nk3_point_mode   ! The unit of lattice vector
+     allocate(k3points_pointmode_cart(3, Nk3_point_mode))
+     allocate(k3points_pointmode_direct(3, Nk3_point_mode))
+     k3points_pointmode_cart= 0d0
+     k3points_pointmode_direct= 0d0
+
+     read(1001, *, end=319, err=319, iostat=stat)inline   ! The unit of lattice vector
+     if (index(trim(adjustl(inline)), "D")>0)then
+        do ik= 1, Nk3_point_mode
+           read(1001, *, end=319, err=319, iostat=stat)k3points_pointmode_direct(:, ik)
+           call direct_cart_rec(k3points_pointmode_direct(:, ik), &
+              k3points_pointmode_cart(:, ik))
+        enddo
+     else
+        do ik= 1, Nk3_point_mode
+           read(1001, *, end=319, err=319, iostat=stat)k3points_pointmode_cart(:, ik)
+           call cart_direct_rec(k3points_pointmode_cart(:, ik), &
+              k3points_pointmode_direct(:, ik))
+        enddo
+     endif
+     
+     319 continue
+     if (stat/=0 .and. cpuid==0) then
+        write(stdout, '(8f10.5)') "ERROR: there are something wrong in KPOINTS_3D card"
+        write(stdout, '(8f10.5)') "It should be like this:"
+        write(stdout, '(8f10.5)') "The number of lines below 'Direct' "
+        write(stdout, '(8f10.5)') "should be the same as the number of k points"
+        write(stdout, '(8f10.5)') "KPOINTS_3D"
+        write(stdout, '(8f10.5)') "4 ! number of k points"
+        write(stdout, '(8f10.5)') "Direct"
+        write(stdout, '(8f10.5)') "0.0  0.0  0.0"
+        write(stdout, '(8f10.5)') "0.5  0.0  0.0"
+        write(stdout, '(8f10.5)') "0.0  0.5  0.0"
+        write(stdout, '(8f10.5)') "0.0  0.0  0.5"
+     endif
+
+     !> print out the single kpoint positions
+     if (cpuid==0) then
+        write(stdout, '(a)')" "
+        write(stdout, '(a)')"KPOINTS_3D positions"
+        do ik=1, Nk3_point_mode
+           write(stdout, '(8a10)')"kx", 'ky', 'kz', 'k1', 'k2', 'k3'
+           write(stdout, '(8f10.5)')k3points_pointmode_cart(:, ik), k3points_pointmode_direct(:, ik)
+        enddo
+        write(stdout, '(a)')" "
+     endif
+
+     321 continue
+     if (cpuid==0) write(stdout, *)' '
+     if (.not. lfound) then
+        Nk3_point_mode = 1
+        allocate(k3points_pointmode_cart(3, Nk3_point_mode))
+        allocate(k3points_pointmode_direct(3, Nk3_point_mode))
+        k3points_pointmode_cart= 0d0
+        k3points_pointmode_direct= 0d0
+     endif
+     if (.not.lfound.and.cpuid==0)write(stdout, *)'>> We use the default values for k3points_pointmode_direct=[0,0,0]' 
+     if (.not.lfound.and.cpuid==0)write(stdout, *)'>> and Nk3_point_mode = 1'
+
+
+
+
+
+     !>> setting up a single k points in 3D BZ
+     Single_KPOINT_3D_CART= [0.d0, 0d0, 0d0]
+     Single_KPOINT_3D_DIRECT= [0.d0, 0d0, 0d0]
+     rewind(1001)
+     lfound = .false.
+     do while (.true.)
+        read(1001, *, end= 311)inline
+        if (trim(adjustl(inline))=='SINGLEKPOINT_3D') then
+           lfound= .true.
+           if (cpuid==0) write(stdout, *)' '
+           if (cpuid==0) write(stdout, *)'We found SINGLEKPOINT_3D card'
+           exit
+        endif
+     enddo
+
+     read(1001, *, end=309, err=309, iostat=stat)inline   ! The unit of lattice vector
+     DirectOrCart_SINGLE= trim(adjustl(inline))
+     if (index(DirectOrCart_SINGLE, "D")>0)then
+        read(1001, *, end=309, err=309, iostat=stat)Single_KPOINT_3D_DIRECT(1:3)
+        call direct_cart_rec(Single_KPOINT_3D_DIRECT, Single_KPOINT_3D_CART)
+     else
+        read(1001, *, end=309, err=309, iostat=stat)Single_KPOINT_3D_CART(1:3)
+        call cart_direct_rec(Single_KPOINT_3D_CART, Single_KPOINT_3D_DIRECT)
+     endif
+     
+     309 continue
+     if (stat/=0 .and. cpuid==0) then
+        write(stdout, '(8f10.5)') "ERROR: there are something wrong in SINGLEKPOINT_3D card"
+        write(stdout, '(8f10.5)') "It should be like this:"
+        write(stdout, '(8f10.5)') "SINGLEKPOINT_3D"
+        write(stdout, '(8f10.5)') "Direct"
+        write(stdout, '(8f10.5)') "0.0  0.0  0.0"
+     endif
+
+     !> print out the single kpoint positions
+     if (cpuid==0) then
+        write(stdout, '(a)')" "
+        write(stdout, '(a)')"Single_KPOINT_3D positions"
+        write(stdout, '(8a10)')"kx", 'ky', 'kz', 'k1', 'k2', 'k3'
+        write(stdout, '(8f10.5)') Single_KPOINT_3D_CART, Single_KPOINT_3D_DIRECT
+        write(stdout, '(a)')" "
+     endif
+
+     311 continue
+     if (cpuid==0) write(stdout, *)' '
+     if (.not.lfound.and.cpuid==0)write(stdout, *)'>> We use the default values for Single_KPOINT_3D_DIRECT=[0,0,0]' 
+
+
+   
      !> setup the atoms on top and bottom surface that used for output the 
      !> surface-state spectrum
      !> by default we output all the atoms' weight

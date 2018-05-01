@@ -6,7 +6,7 @@ obj =  module.o aux.o symmetry.o readHmnR.o inverse.o proteus.o \
        fermiarc.o spintexture.o berrycurvature.o \
 		 wanniercenter.o dos.o  orbital_momenta.o \
 		 landau_level.o berry.o wanniercenter_adaptive.o \
-		 effective_mass.o findnodes.o \
+		 effective_mass.o findnodes.o sigma_AHC.o \
        main.o
 
 # compiler

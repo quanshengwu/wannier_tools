@@ -140,6 +140,18 @@
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating bulk band'
      endif
 
+     !> bulk band of a series k points. 
+     if (BulkBand_points_calc) then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the bulk band in points mode'
+        call now(time_start)
+        call ek_bulk_point_mode
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'BulkBand_points')
+        if(cpuid.eq.0)write(stdout, *)'<< End of calculating the bulk band in points mode'
+     endif
+
+
 
      !> bulk band in a plane. For Dirac or Weyl cone
      if (BulkBand_plane_calc) then
@@ -347,6 +359,18 @@
         call print_time_cost(time_start, time_end, 'BerryPhase')
         if(cpuid.eq.0)write(stdout, *)'End of calculating the Berry phase'
      endif
+
+     !> calculate anomalouls hall conductivity
+     if (AHC_calc)then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start to calculate anomalouls hall conductivity'
+        call now(time_start)
+        call sigma_AHC
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'AHC_calc')
+        if(cpuid.eq.0)write(stdout, *)'End of AHC calculation'
+     endif
+
 
      !> surface state
      if (SlabSS_calc) then

@@ -188,7 +188,7 @@
      outfileindex= outfileindex+ 1
      if (cpuid==0) then
         open(unit=outfileindex, file='Berrycurvature.dat')
-        write(outfileindex, '(20a18)')'# kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
+        write(outfileindex, '(20a28)')'# kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
            'real(Omega_x)', 'imag(Omega_x)', &
            'real(Omega_y)', 'imag(Omega_y)', &
            'real(Omega_z)', 'imag(Omega_z)'
@@ -220,7 +220,7 @@
               ik= ik+ 1
               o1=real(Omega_mpi(:,ik))
               if (norm(o1)>eps9) o1= o1/norm(o1)
-              write(outfileindex, '(20f28.10)')kslice_shape(:, ik), o1
+              write(outfileindex, '(20f18.10)')kslice_shape(:, ik), o1
            enddo
            write(outfileindex, *) ' '
         enddo
@@ -303,14 +303,12 @@
         write(outfileindex, '(a)')"set xlabel 'k (1/{\305})'"
         write(outfileindex, '(a)')"set ylabel 'k (1/{\305})'"
         write(outfileindex, '(a)')"unset colorbox"
-        write(outfileindex, '(a)')"unset xtics"
-        write(outfileindex, '(a)')"unset xlabel"
         write(outfileindex, '(a)')"set xrange [] noextend"
         write(outfileindex, '(a)')"set yrange [] noextend"
         write(outfileindex, '(a)')"set ytics 0.5 nomirror scale 0.5"
         write(outfileindex, '(a)')"set pm3d interpolate 2,2"
-        write(outfileindex, '(a)')"set title '(Omega_x, Omega_y) real'"
-        write(outfileindex, '(a)')"plot 'Berrycurvature-normalized.dat' u 1:2:($4/500):($5/500) w vec"
+        write(outfileindex, '(a)')"set title '(Omega_x, Omega_z) real'"
+        write(outfileindex, '(a)')"plot 'Berrycurvature-normalized.dat' u 1:3:($4/500):($6/500) w vec"
         close(outfileindex)
      endif
 

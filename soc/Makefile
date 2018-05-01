@@ -6,16 +6,20 @@ obj =  module.o aux.o symmetry.o readHmnR.o inverse.o proteus.o \
        fermiarc.o spintexture.o berrycurvature.o \
 		 wanniercenter.o dos.o  orbital_momenta.o \
 		 landau_level.o berry.o wanniercenter_adaptive.o \
-		 effective_mass.o findnodes.o \
+		 effective_mass.o findnodes.o sigma_AHC.o \
        main.o
 
-# compiler
-f90  = gfortran -cpp                                              
 
-flag = -O3                              
+# compiler
+f90  = mpif90 -fpp -DMPI # -check all -pg -traceback
+
+#FLAGS =  -O3 -nogen-interface  -warn all 
+flag = -O3 -nogen-interface #-warn all 
 
 # blas and lapack libraries
-libs = -L/usr/lib/ -llapack -lblas
+libs = -L/opt/intel/mkl/lib/ \
+		-lmkl_intel_lp64 -lmkl_sequential \
+		-lmkl_core -liomp5
  
 main :  $(obj)
 	$(f90) $(obj) -o wt.x $(libs) 
