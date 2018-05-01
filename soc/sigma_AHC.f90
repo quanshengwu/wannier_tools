@@ -195,7 +195,7 @@
      outfileindex= outfileindex+ 1
      if (cpuid.eq.0) then
         open(unit=outfileindex, file='sigma_ahe.txt')
-        write(outfileindex, '("#",20a16)')'Conductivity in unit of (Ohm*cm)^-1'
+        write(outfileindex, '("#",a)')'Conductivity in unit of (Ohm*cm)^-1'
         write(outfileindex, '("#",20a16)')'E(eV)', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
         do ie=1, OmegaNum
            write(outfileindex, '(200f16.8)')energy(ie), ((sigma_tensor_ahc(i, j, ie), i=1, 3), j=1, 3)
