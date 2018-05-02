@@ -155,7 +155,7 @@
 	  real(dp), allocatable :: weight(:,:,:)
 	  real(dp), allocatable :: weight_mpi(:,:,:)
 
-     knv3= nk3_band
+     knv3= Nk3_point_mode
      allocate( W(Num_wann))
      allocate( eigv    (Num_wann, knv3))
      allocate( eigv_mpi(Num_wann, knv3))
