@@ -1007,6 +1007,7 @@
         do ik=1, NK_Berry
            read(1001, *, end=208, err=208)k    ! The unit of lattice vector
            call cart_direct_rec(k, k3points_Berry(:, ik))
+           it = it+ 1
         enddo
      endif  ! Direct or Cart coordinates
      208 continue
