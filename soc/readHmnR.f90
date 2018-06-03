@@ -106,5 +106,41 @@
         crvec(:, iR)= Rua*irvec(1,iR) + Rub*irvec(2,iR) + Ruc*irvec(3,iR)
      enddo
 
+     !> setup SelectedOrbitals if not specified by input.dat
+     if (.not.allocated(Selected_Orbitals)) then
+        NumberofSelectedOrbitals= Num_wann
+        allocate(Selected_Orbitals(NumberofSelectedOrbitals))
+        do i=1, Num_wann
+           Selected_Orbitals(i)= i
+        enddo
+     endif
+ 
+     if (cpuid==0) write(stdout, *)' '
+     if (cpuid==0) write(stdout, *)'>> SelectedOrbitals'
+     if (cpuid==0) write(stdout, '(a, 3i10)')'>> Number of orbitals selected (including spin degenarcy)', &
+        NumberofSelectedOrbitals
+     if (cpuid==0) write(stdout, '(a)')'>> Orbitals are'  
+     if (cpuid==0) write(stdout, '(1000i5)')Selected_Orbitals(:)
+   
+     !> setup SELECTEDBANDS
+     if (.not.allocated(Selected_band_index))then
+        NumberofSelectedBands= Num_wann
+        allocate(Selected_band_index(NumberofSelectedBands))
+        do i=1, Num_wann
+           Selected_band_index(i)= i
+        enddo
+     endif
+    
+     if (cpuid==0) write(stdout, *)' '
+     if (cpuid==0) write(stdout, *)'>> SELECTEDBANDS'
+     if (cpuid==0) write(stdout, '(a, 3i10)')'>> Number of bands selected ', &
+        NumberofSelectedBands
+     if (cpuid==0) write(stdout, '(a)')'>> Band indices are'  
+     if (cpuid==0) write(stdout, '(1000i5)')Selected_band_index(:)
+     if (cpuid==0) write(stdout, *) ' '
+
+
+
+
      return
   end subroutine readHmnR

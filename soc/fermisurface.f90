@@ -536,6 +536,7 @@
 #endif
 
      dos_total= 0d0
+
      do ik=1, knv3
         do i=1, NumberofSelectedOrbitals
            dos_total(ik)= dos_total(ik)+ dos_mpi(ik, Selected_Orbitals(i))
