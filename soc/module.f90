@@ -50,6 +50,7 @@
      logical :: BerryCurvature_calc ! Flag for Berry curvature calculation
      logical :: EffectiveMass_calc  ! Flag for effective mass calculation
      logical :: FindNodes_calc  ! Flag for effective mass calculation
+     logical :: Translate_to_WS_calc  ! whether translate the k points into the Wigner-Seitz cell
      
 
      namelist / Control / BulkBand_calc,BulkFS_calc, BulkGap_plane_calc, BulkFS_plane_calc, &
@@ -58,7 +59,7 @@
                           WannierCenter_calc,BerryPhase_calc,BerryCurvature_calc, &
                           Z2_3D_calc, Chern_3D_calc, WeylChirality_calc, &
                           Dos_calc, JDos_calc, EffectiveMass_calc, SlabQPI_calc, FindNodes_calc, &
-                          BulkBand_plane_calc, AHC_Calc, BulkBand_points_calc
+                          BulkBand_plane_calc, AHC_Calc, BulkBand_points_calc, Translate_to_WS_calc
  
      ! double precision  
      integer,parameter :: Dp=kind(1.0d0)

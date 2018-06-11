@@ -79,6 +79,7 @@
      EffectiveMass_calc    = .FALSE.
      FindNodes_calc        = .FALSE.
      AHC_Calc              = .FALSE.
+     Translate_to_WS_calc  = .FALSE.
      
      read(1001, CONTROL, iostat=stat)
 
@@ -94,6 +95,7 @@
         write(*, *)"Z2_3D_calc"
         write(*, *)"Chern_3D_calc"
         write(*, *)"WeylChirality_calc"
+        write(*, *)"Translate_to_WS_calc"
         write(*, *)"The default Vaule is F"
         write(*, *)"Or there should be some unknonw tags set with = "
         stop
@@ -104,7 +106,7 @@
         write(stdout, *) "  "
         write(stdout, *) ">>>Control parameters: " 
         write(stdout, *) "BulkBand_calc       : ",  BulkBand_calc
-        write(stdout, *) "BulkBand_plane_calc       : ",  BulkBand_plane_calc
+        write(stdout, *) "BulkBand_plane_calc : ",  BulkBand_plane_calc
         write(stdout, *) "BulkFS_calc         : ",  BulkFS_calc
         write(stdout, *) "BulkFS_Plane_calc   : ",  BulkFS_Plane_calc
         write(stdout, *) "BulkGap_cube_calc   : ",  BulkGap_cube_calc
@@ -113,17 +115,18 @@
         write(stdout, *) "SlabSS_calc         : ",  SlabSS_calc
         write(stdout, *) "SlabArc_calc        : ",  SlabArc_calc
         write(stdout, *) "SlabSpintexture_calc: ",  SlabSpintexture_calc
-        write(stdout, *) "wanniercenter_calc  : ", wanniercenter_calc
+        write(stdout, *) "wanniercenter_calc  : ",  wanniercenter_calc
         write(stdout, *) "Z2_3D_calc          : ",  Z2_3D_calc
         write(stdout, *) "Chern_3D_calc       : ",  Chern_3D_calc
         write(stdout, *) "WeylChirality_calc  : ",  WeylChirality_calc
-        write(stdout, *) "BerryPhase_calc     : ", BerryPhase_calc
+        write(stdout, *) "BerryPhase_calc     : ",  BerryPhase_calc
         write(stdout, *) "Dos_calc            : ",  DOS_calc
         write(stdout, *) "AHC_calc            : ",  AHC_calc
         write(stdout, *) "JDos_calc           : ",  JDOS_calc
         write(stdout, *) "FindNodes_calc      : ",  FindNodes_calc
-        write(stdout, *) "BerryCurvature_calc : ", BerryCurvature_calc
-        write(stdout, *) "EffectiveMass_calc  : ", EffectiveMass_calc 
+        write(stdout, *) "BerryCurvature_calc : ",  BerryCurvature_calc
+        write(stdout, *) "EffectiveMass_calc  : ",  EffectiveMass_calc 
+        write(stdout, *) "Translate_to_WS_calc: ",  Translate_to_WS_calc
      endif
 
      !> set system parameters by default

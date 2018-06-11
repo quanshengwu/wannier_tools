@@ -407,15 +407,10 @@
 
      implicit none
 
-     integer :: ia
-     integer :: ik, i, j, i1, i2
-     integer :: knv3
-     integer :: nkx
-     integer :: nky
+     integer :: ia, ik, i, j, i1, i2
+     integer :: knv3, nkx, nky, ierr
 
-     integer :: ierr
-     real(dp) :: kz
-     real(Dp) :: k(3)
+     real(dp) :: kz, k(3)
      
      ! Hamiltonian of bulk system
      complex(Dp), allocatable :: Hamk_bulk(:, :)
@@ -425,20 +420,17 @@
      real(dp) :: zmin, zmax
      real(dp) :: kxmin_shape, kxmax_shape, kymin_shape, kymax_shape
 
-     real(dp), allocatable :: kxy(:,:)
-     real(dp), allocatable :: kxy_shape(:,:)
-     real(dp), allocatable :: kxy_plane(:,:)
+     real(dp), allocatable :: kxy(:,:), kxy_shape(:,:), kxy_plane(:,:)
     
      !> atomic and k resolved spectral function
-     real(dp), allocatable :: dos(:, :)
-     real(dp), allocatable :: dos_mpi(:, :)
-     real(dp), allocatable :: dos_atom(:, :)
-     real(dp), allocatable :: dos_atom_mpi(:, :)
-     real(dp), allocatable :: dos_total(:)
+     real(dp), allocatable :: dos(:, :), dos_mpi(:, :), dos_atom(:, :)
+     real(dp), allocatable :: dos_atom_mpi(:, :), dos_total(:)
 
      complex(dp), allocatable :: ones(:,:)
 
      integer, allocatable :: orbitals_end(:)
+
+     logical, external :: if_in_the_WS
 
      allocate(Hamk_bulk(Num_wann, Num_wann))
      allocate(orbitals_end(Num_atoms))
@@ -501,6 +493,15 @@
         call now(time_start)
 
         k = kxy(:, ik)
+
+        if (Translate_to_WS_calc)then
+           if (.not.if_in_the_WS(k)) then
+              dos(ik, :)= eps6
+              dos_atom(ik, :)= eps6
+              cycle
+           endif
+        endif
+
 
         ! calculation bulk hamiltonian
         Hamk_bulk= 0d0

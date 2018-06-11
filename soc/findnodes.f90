@@ -418,3 +418,33 @@
 
 
 
+   function if_in_the_WS(kin)
+      ! check whether kin is in the Wigner-Seitz cell
+      !
+      ! By QuanSheng Wu 
+      !
+      ! wuquansheng@gmail.com
+      !
+      ! Jun 11 2018  at EPFL
+      ! kin(3) must be in unit of reciprocal lattice
+
+      use para, only : dp, eps6
+      implicit none
+
+      integer :: i
+      logical :: if_in_the_WS
+      real(dp), intent(in) :: kin(3)
+      real(dp) :: k(3)
+
+      k= kin
+      call moveinto_wigner_seitzcell(k)
+
+      !> check whethe k is the same as kin
+      if_in_the_WS= .False.
+      if (sum(abs(k-kin))<eps6) if_in_the_WS= .True.
+
+      return
+   end function if_in_the_WS
+
+
+
