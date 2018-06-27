@@ -1,10 +1,10 @@
-! This subroutine is used to caculate Hamiltonian for 
-! slab system . 
-
-! History  
-!        4/18/2010 by Quansheng Wu
-! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
   subroutine ham_slab(k,Hamk_slab)
+     ! This subroutine is used to caculate Hamiltonian for 
+     ! slab system . 
+     ! 
+     ! History  
+     !        4/18/2010 by Quansheng Wu
+     ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
   
      use para
      implicit none
@@ -23,7 +23,15 @@
      complex(Dp), allocatable :: Hij(:, :, :)
 
      allocate( Hij(-ijmax:ijmax,Num_wann,Num_wann))
-     call ham_qlayer2qlayer2(k,Hij)
+
+
+     !> deal with phonon system
+     if (index(Particle,'phonon')/=0.and.LOTO_correction) then
+        call ham_qlayer2qlayer2_LOTO(k,Hij)
+     else
+        call ham_qlayer2qlayer2(k,Hij)
+     endif
+
 
      Hamk_slab=0.0d0 
      ! i1 column index
@@ -43,25 +51,26 @@
      do i1=1,nslab*Num_wann
      do i2=1,nslab*Num_wann
         if(abs(Hamk_slab(i1,i2)-conjg(Hamk_slab(i2,i1))).ge.1e-6)then
-          write(stdout,*)'there are something wrong with Hamk_slab'
-          stop
+         !write(stdout,*)'there are something wrong with Hamk_slab'
+         !stop
         endif 
      enddo
      enddo
 
+     deallocate( Hij)
   return
   end subroutine ham_slab
 
 
-  ! This subroutine is used to caculate Hamiltonian for 
-  ! slab system . 
-  !> for slab with in-plane magnetic field
-  !> the magnetic phase are chosen like this
-  !> phi_ij= alpha*[By*(xj-xi)*(zi+zj)-Bx*(yj-yi)*(zi+zj)] 
-  !> x, z are in unit of Angstrom, Bx, By are in unit of Tesla
-  !> History :
-  !        9/21/2015 by Quansheng Wu @ETH Zurich
   subroutine ham_slab_parallel_B(k,Hamk_slab)
+     ! This subroutine is used to caculate Hamiltonian for 
+     ! slab system . 
+     !> for slab with in-plane magnetic field
+     !> the magnetic phase are chosen like this
+     !> phi_ij= alpha*[By*(xj-xi)*(zi+zj)-Bx*(yj-yi)*(zi+zj)] 
+     !> x, z are in unit of Angstrom, Bx, By are in unit of Tesla
+     !> History :
+     !        9/21/2015 by Quansheng Wu @ETH Zurich
   
      use para
      implicit none

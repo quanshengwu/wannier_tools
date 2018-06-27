@@ -40,8 +40,19 @@
 
         ! calculation bulk hamiltonian
         Hamk_bulk= 0d0
-        call ham_bulk_old(k, Hamk_bulk)
-       !call ham_bulk    (k, Hamk_bulk)
+
+        ! generate bulk Hamiltonian
+        if (index(KPorTB, 'KP')/=0)then
+           call ham_bulk_kp(k, Hamk_bulk)
+        else
+          !> deal with phonon system
+          if (index(Particle,'phonon')/=0.and.LOTO_correction) then
+             call ham_bulk_LOTO(k, Hamk_bulk)
+          else
+             call ham_bulk_old    (k, Hamk_bulk)
+          endif
+        endif
+
 
         !> diagonalization by call zheev in lapack
         W= 0d0
@@ -74,6 +85,20 @@
      eigv_mpi= eigv
      weight_mpi= weight
 #endif
+
+     if (index(Particle,'phonon')/=0) then
+     !  eigv_mpi = eigv_mpi - MINVAL(eigv_mpi)
+     endif
+
+     !> deal with phonon system
+     if (index(Particle,'phonon')/=0) then
+        do ik=1, knv3
+           do j=1, Num_wann
+              eigv_mpi(j, ik)= sqrt(abs(eigv_mpi(j, ik)))*sign(1d0, eigv_mpi(j, ik))
+           enddo
+        enddo
+     endif
+
 
      weight= weight_mpi/maxval(weight_mpi)*255d0
 
@@ -114,15 +139,26 @@
         write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
         write(outfileindex, '(a)')'set ylabel offset 1.5,0'
         write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
-        write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
+
+        if (index(Particle,'phonon')/=0) then
+           write(outfileindex, '(a, f10.5, a)')'set yrange [0:', emax, ']'
+           write(outfileindex, '(a)')'set ylabel "Frequency (THz)"'
+        else
+           write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+           write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
+        endif
         write(outfileindex, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
         write(outfileindex, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
 
         do i=1, nk3lines-1
-           write(outfileindex, 204)k3line_stop(i+1), emin, k3line_stop(i+1), emax
+           if (index(Particle,'phonon')/=0) then
+              write(outfileindex, 204)k3line_stop(i+1), 0.0, k3line_stop(i+1), emax
+           else
+              write(outfileindex, 204)k3line_stop(i+1), emin, k3line_stop(i+1), emax
+           endif
         enddo
         write(outfileindex, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
-            "w lp lw 2 pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2"
+            " w lp lw 2 pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2"
         close(outfileindex)
      endif
 

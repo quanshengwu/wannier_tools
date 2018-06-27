@@ -113,12 +113,18 @@
      do ikp= 1+cpuid, nk1*nk2, num_cpu
         if (cpuid==0.and. mod(ikp/num_cpu, 100)==0) &
            write(stdout, *) 'Arc, ik ', ikp, 'Nk',Nk1*Nk2, 'time left', &
-           (knv2-ikp)*(time_end- time_start)/num_cpu, ' s'
+           (nk1*nk2-ikp)/num_cpu*(time_end- time_start), ' s'
         call now(time_start)
         k(1)= k12(1, ikp)
         k(2)= k12(2, ikp)
 
-        call ham_qlayer2qlayer(k,H00,H01) 
+
+        if (index(Particle,'phonon')/=0.and.LOTO_correction) then
+           call ham_qlayer2qlayer_LOTO(k,H00,H01) 
+        else
+           call ham_qlayer2qlayer(k,H00,H01) 
+        endif
+
 
         !> calculate surface green function
         ! there are two method to calculate surface green's function 
@@ -608,7 +614,12 @@
         k(1)= k12(1, ikp)
         k(2)= k12(2, ikp)
 
-        call ham_qlayer2qlayer(k,H00,H01) 
+        if (index(Particle,'phonon')/=0.and.LOTO_correction) then
+           call ham_qlayer2qlayer_LOTO(k,H00,H01) 
+        else
+           call ham_qlayer2qlayer(k,H00,H01) 
+        endif
+
 
         !> calculate surface green function
         ! there are two method to calculate surface green's function 

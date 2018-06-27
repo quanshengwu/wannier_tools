@@ -62,3 +62,27 @@
      endif
   end subroutine header
 
+  !> print footer
+  subroutine footer
+     use wmpi
+     use para, only : stdout, cpuid
+     implicit none
+     if (cpuid==0) then
+        write(stdout, '(2x,a)') ''
+        write(stdout, '(2x,a)') ''
+        write(stdout, '(2x,a)') 'Congratulations! you finished the calculation.'
+        write(stdout, '(2x,a)') "I hope you could find something useful from this calculation."
+        write(stdout, '(2x,a)') "If so, I would like to ask you to cite our this paper:"
+        write(stdout, '(2x,a)') ''
+        write(stdout, '(2x,a)') "WannierTools : An open-source software package for novel topological materials"
+        write(stdout, '(2x,a)') "QuanSheng Wu and ShengNan Zhang and Hai-Feng Song and Matthias Troyer and Alexey A. Soluyanov"
+        write(stdout, '(2x,a)') "Computer Physics Communications 224, 405 (2018)"
+        write(stdout, '(2x,a)') "https://doi.org/10.1016/j.cpc.2017.09.033"
+        write(stdout, '(2x,a)') ''
+        write(stdout, '(2x,a)') "For bugs, please report to wuquansheng@gmail.com                   "
+        write(stdout, '(2x,a)') "or wanniertools@groups.google.com.                 "
+        write(stdout, '(2x,a)') "More information could find on www.wanniertools.com            "
+        write(stdout, '(2x,a)') 'See you next time :)'
+     endif
+  end subroutine footer
+

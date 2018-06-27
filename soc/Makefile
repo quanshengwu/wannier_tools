@@ -14,7 +14,7 @@ obj =  module.o aux.o symmetry.o readHmnR.o inverse.o proteus.o \
 f90  = mpif90 -fpp -DMPI # -check all -pg -traceback
 
 #FLAGS =  -O3 -nogen-interface  -warn all 
-flag = -O3 -nogen-interface #-warn all 
+flag = -O2 -nogen-interface #-warn all 
 
 # blas and lapack libraries
 libs = -L/opt/intel/mkl/lib/ \

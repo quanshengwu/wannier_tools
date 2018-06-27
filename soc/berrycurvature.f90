@@ -1,3 +1,184 @@
+  subroutine berry_curvarture_singlek_EF(k, Omega_x, Omega_y, Omega_z)
+     !> Calculate Berry curvature for a sigle k point
+     !> The Fermi distribution is determined by the Fermi level E_arc
+     !> ref : Physical Review B 74, 195118(2006)
+     !
+     !> eqn (34)
+     !
+     !> Jun. 11 2018 by Quansheng Wu @ ETHZ
+     !> Try to write some simple subroutines. 
+     !> on the output, only the real part is meaningfull.
+     ! Copyright (c) 2018 QuanSheng Wu. All rights reserved.
+
+     use wmpi
+     use para
+     implicit none
+
+     !> input parameter, k is in unit of reciprocal lattice vectors
+     real(dp), intent(in) :: k(3)
+     complex(dp), intent(out) :: Omega_x(Num_wann)
+     complex(dp), intent(out) :: Omega_y(Num_wann)
+     complex(dp), intent(out) :: Omega_z(Num_wann)
+
+     integer :: iR, m, n, i, j
+     real(dp), allocatable :: W(:)
+     real(dp) :: kdotr, Beta_fake
+     complex(dp), allocatable :: Amat(:, :), DHDk(:, :, :), DHDkdag(:, :, :)
+     complex(dp), allocatable :: UU(:, :), UU_dag(:, :), Hamk_bulk(:, :)
+     complex(dp), allocatable :: vx(:, :), vy(:, :), vz(:, :)
+
+     !> Fermi-Dirac distribution
+     real(dp), external :: fermi
+
+     allocate(W(Num_wann))
+     allocate(vx(Num_wann, Num_wann), vy(Num_wann, Num_wann), vz(Num_wann, Num_wann))
+     allocate(UU(Num_wann, Num_wann), UU_dag(Num_wann, Num_wann), Hamk_bulk(Num_wann, Num_wann))
+     allocate(Amat(Num_wann, Num_wann), DHDk(Num_wann, Num_wann, 3), DHDkdag(Num_wann, Num_wann, 3))
+     W=0d0; vx= 0d0; vy= 0d0; vz= 0d0; UU= 0d0; UU_dag= 0d0
+
+     ! calculation bulk hamiltonian by a direct Fourier transformation of HmnR
+     ! generate bulk Hamiltonian
+     if (index(KPorTB, 'KP')/=0)then
+        call ham_bulk_kp(k, Hamk_bulk)
+     else
+       !> deal with phonon system
+       if (index(Particle,'phonon')/=0.and.LOTO_correction) then
+          call ham_bulk_LOTO(k, Hamk_bulk)
+       else
+          call ham_bulk_old    (k, Hamk_bulk)
+       endif
+     endif
+
+     !> diagonalization by call zheev in lapack
+     UU=Hamk_bulk
+     call eigensystem_c( 'V', 'U', Num_wann, UU, W)
+    !call zhpevx_pack(hamk_bulk,Num_wann, W, UU)
+
+     UU_dag= conjg(transpose(UU))
+     do iR= 1, Nrpts
+        kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
+        vx= vx+ zi*crvec(1, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
+        vy= vy+ zi*crvec(2, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
+        vz= vz+ zi*crvec(3, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
+     enddo ! iR
+
+     !> unitility rotate velocity
+     call mat_mul(Num_wann, vx, UU, Amat) 
+     call mat_mul(Num_wann, UU_dag, Amat, vx) 
+     call mat_mul(Num_wann, vy, UU, Amat) 
+     call mat_mul(Num_wann, UU_dag, Amat, vy) 
+     call mat_mul(Num_wann, vz, UU, Amat) 
+     call mat_mul(Num_wann, UU_dag, Amat, vz) 
+
+     Omega_x=0d0;Omega_y=0d0; Omega_z=0d0
+     do m= 1, Num_wann
+        do n= 1, Num_wann
+           if (m==n) cycle
+           Omega_x(m)= Omega_x(m)+ vy(n, m)*vz(m, n)/((W(m)-W(n))**2)
+           Omega_y(m)= Omega_y(m)+ vz(n, m)*vx(m, n)/((W(m)-W(n))**2)
+           Omega_z(m)= Omega_z(m)+ vx(n, m)*vy(m, n)/((W(m)-W(n))**2)
+        enddo ! m
+     enddo ! n
+
+     Omega_x= -Omega_x*2d0*zi
+     Omega_y= -Omega_y*2d0*zi
+     Omega_z= -Omega_z*2d0*zi
+
+     !> consider the Fermi-distribution according to the brodening Earc_eta
+     Beta_fake= 1d0/Eta_Arc
+     do m= 1, Num_wann
+        Omega_x(m)= Omega_x(m)*fermi(W(m), Beta_fake)
+        Omega_y(m)= Omega_y(m)*fermi(W(m), Beta_fake)
+        Omega_z(m)= Omega_z(m)*fermi(W(m), Beta_fake)
+     enddo
+
+     return
+  end subroutine berry_curvarture_singlek_EF
+
+  subroutine berry_curvarture_singlek_numoccupied(k, Omega_x, Omega_y, Omega_z)
+     !> Calculate Berry curvature for a sigle k point
+     !> The Fermi distribution is determined by the NumOccupied bands, not the Fermi level
+     !> ref : Physical Review B 74, 195118(2006)
+     !
+     !> eqn (30), we only calculate yz, zx, xy
+     !
+     !> Jun. 25 2018 by Quansheng Wu @ airplane CA781 from Beijing to Zurich
+     !> Try to write some simple subroutines. 
+     ! Copyright (c) 2018 QuanSheng Wu. All rights reserved.
+
+     use wmpi
+     use para
+     implicit none
+
+     !> input parameter, k is in unit of reciprocal lattice vectors
+     real(dp), intent(in) :: k(3)
+     complex(dp), intent(out) :: Omega_x(Num_wann)
+     complex(dp), intent(out) :: Omega_y(Num_wann)
+     complex(dp), intent(out) :: Omega_z(Num_wann)
+
+     integer :: iR, m, n, i, j
+     real(dp), allocatable :: W(:)
+     real(dp) :: kdotr
+     complex(dp), allocatable :: Amat(:, :), DHDk(:, :, :), DHDkdag(:, :, :)
+     complex(dp), allocatable :: UU(:, :), UU_dag(:, :), Hamk_bulk(:, :)
+     complex(dp), allocatable :: vx(:, :), vy(:, :), vz(:, :)
+
+     allocate(W(Num_wann))
+     allocate(vx(Num_wann, Num_wann), vy(Num_wann, Num_wann), vz(Num_wann, Num_wann))
+     allocate(UU(Num_wann, Num_wann), UU_dag(Num_wann, Num_wann), Hamk_bulk(Num_wann, Num_wann))
+     allocate(Amat(Num_wann, Num_wann), DHDk(Num_wann, Num_wann, 3), DHDkdag(Num_wann, Num_wann, 3))
+     W=0d0; vx= 0d0; vy= 0d0; vz= 0d0; UU= 0d0; UU_dag= 0d0
+
+     ! calculation bulk hamiltonian by a direct Fourier transformation of HmnR
+     if (index(KPorTB, 'KP')/=0)then
+        call ham_bulk_kp(k, Hamk_bulk)
+     else
+       !> deal with phonon system
+       if (index(Particle,'phonon')/=0.and.LOTO_correction) then
+          call ham_bulk_LOTO(k, Hamk_bulk)
+       else
+          call ham_bulk_old    (k, Hamk_bulk)
+       endif
+     endif
+
+     !> diagonalization by call zheev in lapack
+     UU=Hamk_bulk
+     call eigensystem_c( 'V', 'U', Num_wann, UU, W)
+    !call zhpevx_pack(hamk_bulk,Num_wann, W, UU)
+
+     UU_dag= conjg(transpose(UU))
+     do iR= 1, Nrpts
+        kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
+        vx= vx+ zi*crvec(1, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
+        vy= vy+ zi*crvec(2, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
+        vz= vz+ zi*crvec(3, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
+     enddo ! iR
+
+     !> unitility rotate velocity
+     call mat_mul(Num_wann, vx, UU, Amat) 
+     call mat_mul(Num_wann, UU_dag, Amat, vx) 
+     call mat_mul(Num_wann, vy, UU, Amat) 
+     call mat_mul(Num_wann, UU_dag, Amat, vy) 
+     call mat_mul(Num_wann, vz, UU, Amat) 
+     call mat_mul(Num_wann, UU_dag, Amat, vz) 
+
+     Omega_x=0d0;Omega_y=0d0; Omega_z=0d0
+     do m= 1, NumOccupied
+        do n= 1, Num_wann
+           if (m==n) cycle
+           Omega_x(m)= Omega_x(m)+ vy(n, m)*vz(m, n)/((W(m)-W(n))**2)
+           Omega_y(m)= Omega_y(m)+ vz(n, m)*vx(m, n)/((W(m)-W(n))**2)
+           Omega_z(m)= Omega_z(m)+ vx(n, m)*vy(m, n)/((W(m)-W(n))**2)
+        enddo ! m
+     enddo ! n
+
+     Omega_x= -Omega_x*2d0*zi
+     Omega_y= -Omega_y*2d0*zi
+     Omega_z= -Omega_z*2d0*zi
+
+     return
+  end subroutine berry_curvarture_singlek_numoccupied
+
   subroutine berry_curvarture
      !> Calculate Berry curvature 
      !
@@ -13,55 +194,32 @@
      use para
      implicit none
     
-     integer :: iR
-     integer :: ik
+     integer :: ik, m, n, i, j, ierr
 
-     integer :: m, n, i, j
-
-     integer :: ierr
-
-
-     real(dp) :: kdotr
-     real(dp) :: k(3), o1(3)
+     real(dp) :: kdotr, k(3), o1(3)
 
      !> k points slice
-     real(dp), allocatable :: kslice(:, :)
-     real(dp), allocatable :: kslice_shape(:, :)
+     real(dp), allocatable :: kslice(:, :), kslice_shape(:, :)
    
      real(dp), external :: norm
 
-     ! eigen value of H
-	  real(dp), allocatable :: W(:)
-     complex(dp), allocatable :: Hamk_bulk(:, :)
-     complex(dp), allocatable :: Amat(:, :)
-     complex(dp), allocatable :: UU(:, :)
-     complex(dp), allocatable :: UU_dag(:, :)
-
      !> velocities
-     complex(dp), allocatable :: vx(:, :)
-     complex(dp), allocatable :: vy(:, :)
-     complex(dp), allocatable :: vz(:, :)
-     complex(dp), allocatable :: DHDk(:, :, :)
-     complex(dp), allocatable :: DHDkdag(:, :, :)
+     real(dp), allocatable :: vx(:), vy(:), vz(:)
     
      !> Berry curvature  (3, bands, k)
-     complex(dp), allocatable :: Omega(:, :)
-     complex(dp), allocatable :: Omega_mpi(:, :)
+     complex(dp), allocatable :: Omega_x(:), Omega_y(:), Omega_z(:)
+     complex(dp), allocatable :: Omega(:, :), Omega_mpi(:, :)
 
      allocate( kslice(3, Nk1*Nk2))
      allocate( kslice_shape(3, Nk1*Nk2))
-     allocate( W       (Num_wann))
+     allocate( Omega_x(Num_wann))
+     allocate( Omega_y(Num_wann))
+     allocate( Omega_z(Num_wann))
      allocate( Omega    (3, Nk1*Nk2))
      allocate( Omega_mpi(3, Nk1*Nk2))
-     allocate( vx      (Num_wann, Num_wann))
-     allocate( vy      (Num_wann, Num_wann))
-     allocate( vz      (Num_wann, Num_wann))
-     allocate( Hamk_bulk(Num_wann, Num_wann))
-     allocate( Amat(Num_wann, Num_wann))
-     allocate( UU(Num_wann, Num_wann))
-     allocate( UU_dag(Num_wann, Num_wann))
-     allocate( DHDk    (Num_wann, Num_wann, 3))
-     allocate( DHDkdag (Num_wann, Num_wann, 3))
+     allocate( vx      (Num_wann))
+     allocate( vy      (Num_wann))
+     allocate( vz      (Num_wann))
      kslice=0d0
      kslice_shape=0d0
      omega= 0d0
@@ -69,114 +227,38 @@
      vx=0d0
      vy=0d0
      vz=0d0
-     Hamk_bulk=0d0
-     Amat= 0d0
-     UU_dag=0d0
-     UU= 0d0
-     DHDk= 0d0
-     DHDkdag= 0d0
-     
-
-
+    
+     !> kslice is centered at K3d_start
      ik =0
      do i= 1, nk1
         do j= 1, nk2
            ik =ik +1
            kslice(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(nk1-1)  &
-                     + K3D_vec2*(j-1)/dble(nk2-1)  
+                     + K3D_vec2*(j-1)/dble(nk2-1) - (K3D_vec1+ K3D_vec2)/2d0
            kslice_shape(:, ik)= kslice(1, ik)* Kua+ kslice(2, ik)* Kub+ kslice(3, ik)* Kuc 
         enddo
      enddo
+
      do ik= 1+ cpuid, Nk1*Nk2, num_cpu
         if (cpuid==0) write(stdout, *)'Berry curvature ik, nk1*nk2 ', ik, Nk1*Nk2
 
         !> diagonalize hamiltonian
         k= kslice(:, ik)
 
-        ! calculation bulk hamiltonian
-        UU= 0d0
-        call ham_bulk_old(k, Hamk_bulk)
-        
+        Omega_x= 0d0
+        Omega_y= 0d0
+        Omega_z= 0d0
 
-        !> diagonalization by call zheev in lapack
-        W= 0d0
-        UU=Hamk_bulk
-        call eigensystem_c( 'V', 'U', Num_wann, UU, W)
-       !call zhpevx_pack(hamk_bulk,Num_wann, W, UU)
-
-        UU_dag= conjg(transpose(UU))
-
-        vx= 0d0
-        vy= 0d0
-        vz= 0d0
-        do iR= 1, Nrpts
-           kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
-           vx= vx+ zi*crvec(1, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
-           vy= vy+ zi*crvec(2, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
-           vz= vz+ zi*crvec(3, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
-        enddo ! iR
-
-
-        !> unitility rotate velocity
-        call mat_mul(Num_wann, vx, UU, Amat) 
-        call mat_mul(Num_wann, UU_dag, Amat, vx) 
-        call mat_mul(Num_wann, vy, UU, Amat) 
-        call mat_mul(Num_wann, UU_dag, Amat, vy) 
-        call mat_mul(Num_wann, vz, UU, Amat) 
-        call mat_mul(Num_wann, UU_dag, Amat, vz) 
-
-        DHDk= 0d0
-        DHDkdag= 0d0
-        do m= 1, Num_wann
-           do n= 1, Num_wann
-             !if (W(n) > E_arc .and. W(m)<E_arc) then
-              if (n> Numoccupied .and. m<= Numoccupied) then  ! "=" a bug reported by Linlin Wang
-                 DHDk(n, m, 1)= zi*vx(n, m)/(W(m)-W(n))
-                 DHDk(n, m, 2)= zi*vy(n, m)/(W(m)-W(n))
-                 DHDk(n, m, 3)= zi*vz(n, m)/(W(m)-W(n))
-              else
-                 DHDk(n, m, 1)= 0d0
-                 DHDk(n, m, 2)= 0d0
-                 DHDk(n, m, 3)= 0d0
-              endif
-           enddo ! m
-        enddo ! n
-
-        do m= 1, Num_wann
-           do n= 1, Num_wann
-             !if (W(m) > E_arc .and. W(n)< E_arc) then
-              if (m>Numoccupied .and. n<=Numoccupied) then  ! "=" a bug reported by Linlin Wang
-                 DHDkdag(n, m, 1)= zi*vx(n, m)/(W(m)-W(n))
-                 DHDkdag(n, m, 2)= zi*vy(n, m)/(W(m)-W(n))
-                 DHDkdag(n, m, 3)= zi*vz(n, m)/(W(m)-W(n))
-              else              
-                 DHDkdag(n, m, 1)= 0d0
-                 DHDkdag(n, m, 2)= 0d0
-                 DHDkdag(n, m, 3)= 0d0
-              endif
-           enddo ! m
-        enddo ! n
-
-        !> rotate DHDk and DHDkdag to diagonal basis
-        do i=1, 3
-           call mat_mul(Num_wann, DHDk(:, :, i), UU_dag, Amat) 
-           call mat_mul(Num_wann, UU, Amat, DHDk(:, :, i)) 
-           call mat_mul(Num_wann, DHDkdag(:, :, i), UU_dag, Amat) 
-           call mat_mul(Num_wann, UU, Amat, DHDkdag(:, :, i)) 
-        enddo
-
-        call mat_mul(Num_wann, DHDk(:, :, 1), DHDkdag(:, :, 2), vz)
-        call mat_mul(Num_wann, DHDk(:, :, 2), DHDkdag(:, :, 3), vx)
-        call mat_mul(Num_wann, DHDk(:, :, 3), DHDkdag(:, :, 1), vy)
-
-        call trace(Num_wann, vx, Omega(1, ik))
-        call trace(Num_wann, vy, Omega(2, ik))
-        call trace(Num_wann, vz, Omega(3, ik))
-        Omega(:, ik)= -2d0*zi*omega(:, ik)
+        call berry_curvarture_singlek_numoccupied(k, Omega_x, Omega_y, Omega_z)
+       !call berry_curvarture_singlek_EF(k, Omega_x, Omega_y, Omega_z)
+        Omega(1, ik) = sum(Omega_x)
+        Omega(2, ik) = sum(Omega_y)
+        Omega(3, ik) = sum(Omega_z)
 
      enddo ! ik
 
      Omega_mpi= 0d0
+
 #if defined (MPI)
      call mpi_allreduce(Omega,Omega_mpi,size(Omega_mpi),&
                        mpi_dc,mpi_sum,mpi_cmw,ierr)
@@ -188,6 +270,7 @@
      outfileindex= outfileindex+ 1
      if (cpuid==0) then
         open(unit=outfileindex, file='Berrycurvature.dat')
+        write(outfileindex, '(20a28)')'# Please take the real part for your use'
         write(outfileindex, '(20a28)')'# kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
            'real(Omega_x)', 'imag(Omega_x)', &
            'real(Omega_y)', 'imag(Omega_y)', &
@@ -196,7 +279,7 @@
         do i= 1, nk1
            do j= 1, nk2
               ik= ik+ 1
-              write(outfileindex, '(20f28.10)')kslice_shape(:, ik), Omega_mpi(:, ik)
+              write(outfileindex, '(20E28.10)')kslice_shape(:, ik), Omega_mpi(:, ik)
            enddo
            write(outfileindex, *) ' '
         enddo
@@ -205,12 +288,12 @@
 
      endif
 
-
      !> output the Berry curvature to file
      outfileindex= outfileindex+ 1
      if (cpuid==0) then
         open(unit=outfileindex, file='Berrycurvature-normalized.dat')
-        write(outfileindex, '(20a18)')'# kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
+        write(outfileindex, '(20a28)')'# Please take the real part for your use'
+        write(outfileindex, '(20a28)')'# kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
            'real(Omega_x)',  &
            'real(Omega_y)',  &
            'real(Omega_z)'
@@ -220,7 +303,7 @@
               ik= ik+ 1
               o1=real(Omega_mpi(:,ik))
               if (norm(o1)>eps9) o1= o1/norm(o1)
-              write(outfileindex, '(20f18.10)')kslice_shape(:, ik), o1
+              write(outfileindex, '(20f28.10)')kslice_shape(:, ik), o1
            enddo
            write(outfileindex, *) ' '
         enddo
@@ -303,15 +386,26 @@
         write(outfileindex, '(a)')"set xlabel 'k (1/{\305})'"
         write(outfileindex, '(a)')"set ylabel 'k (1/{\305})'"
         write(outfileindex, '(a)')"unset colorbox"
+        write(outfileindex, '(a)')"unset xtics"
+        write(outfileindex, '(a)')"unset xlabel"
         write(outfileindex, '(a)')"set xrange [] noextend"
         write(outfileindex, '(a)')"set yrange [] noextend"
         write(outfileindex, '(a)')"set ytics 0.5 nomirror scale 0.5"
         write(outfileindex, '(a)')"set pm3d interpolate 2,2"
-        write(outfileindex, '(a)')"set title '(Omega_x, Omega_z) real'"
-        write(outfileindex, '(a)')"plot 'Berrycurvature-normalized.dat' u 1:3:($4/500):($6/500) w vec"
+        write(outfileindex, '(a)')"set title '(Omega_x, Omega_y) real'"
+        write(outfileindex, '(a)')"plot 'Berrycurvature-normalized.dat' u 1:2:($4/500):($5/500) w vec"
         close(outfileindex)
      endif
 
+#if defined (MPI)
+     call mpi_barrier(mpi_cmw, ierr)
+#endif
+
+     deallocate( kslice)
+     deallocate( kslice_shape)
+     deallocate( Omega_x, Omega_y, Omega_z)
+     deallocate( Omega, Omega_mpi)
+ 
      return
 
   end subroutine berry_curvarture

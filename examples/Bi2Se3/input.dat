@@ -1,6 +1,7 @@
 &TB_FILE
 Hrfile = 'wannier90_hr.dat'      
 Package = 'VASP'             ! obtained from VASP, it could be 'VASP', 'QE', 'Wien2k', 'OpenMx'
+!Particle = 'Electron'
 /
 
 LATTICE
@@ -26,33 +27,29 @@ Se px py pz
 Se px py pz
 Se px py pz
 
-MILLER_INDICES
-0 0 1
-
-!SURFACE            ! See doc for details
+SURFACE            ! See doc for details
  1  0  0
  0  1  0
- 0  0  1
 
 
 !> bulk band structure calculation flag
 &CONTROL
-BulkBand_calc         = F
+BulkBand_calc         = T
 BulkBand_points_calc  = T
-BulkFS_calc           = F
-BulkGap_cube_calc     = F
-BulkGap_plane_calc    = F
-SlabBand_calc         = F
-WireBand_calc         = F
-SlabSS_calc           = F
-SlabArc_calc          = F
-SlabQPI_calc          = F
-Z2_3D_calc            = F
-SlabSpintexture_calc  = F
-Wanniercenter_calc    = F
-BerryPhase_calc       = F
-BerryCurvature_calc   = F
-EffectiveMass_calc    = F
+BulkFS_calc           = T
+BulkGap_cube_calc     = T
+BulkGap_plane_calc    = T
+SlabBand_calc         = T
+WireBand_calc         = T
+SlabSS_calc           = T
+SlabArc_calc          = T
+SlabQPI_calc          = T
+Z2_3D_calc            = T
+SlabSpintexture_calc  = T
+Wanniercenter_calc    = T
+BerryPhase_calc       = T
+BerryCurvature_calc   = T
+EffectiveMass_calc    = T
 /
 
 &SYSTEM
@@ -72,9 +69,9 @@ E_arc = 0.0         ! energy for calculate Fermi Arc
 OmegaNum = 50       ! omega number       
 OmegaMin = -0.6     ! energy interval
 OmegaMax =  0.5     ! energy interval
-Nk1 = 41            ! number k points  odd number would be better
-Nk2 = 41            ! number k points  odd number would be better
-Nk3 = 11            ! number k points  odd number would be better
+Nk1 = 21            ! number k points  odd number would be better
+Nk2 = 21            ! number k points  odd number would be better
+Nk3 = 21            ! number k points  odd number would be better
 NP = 1              ! number of principle layers
 Gap_threshold = 1.0 ! threshold for GapCube output
 /

@@ -774,7 +774,19 @@
          do ik1=1, Nk1
             k= kpoints(:, ik1, ik2)
 
-            call ham_bulk_old(k,hamk)
+
+            ! generate bulk Hamiltonian
+            if (index(KPorTB, 'KP')/=0)then
+               call ham_bulk_kp(k, Hamk)
+            else
+              !> deal with phonon system
+              if (index(Particle,'phonon')/=0.and.LOTO_correction) then
+                 call ham_bulk_LOTO(k, Hamk)
+              else
+                 call ham_bulk_old    (k, Hamk)
+              endif
+            endif
+
 
             !> symmetrization
             call mat_mul(Num_wann, mirror_z, hamk, mat1)
@@ -1140,7 +1152,19 @@
          do ik1=1, Nk1
             k= kpoints(:, ik1, ik2)
 
-            call ham_bulk_old(k,hamk)
+
+            ! generate bulk Hamiltonian
+            if (index(KPorTB, 'KP')/=0)then
+               call ham_bulk_kp(k, Hamk)
+            else
+              !> deal with phonon system
+              if (index(Particle,'phonon')/=0.and.LOTO_correction) then
+                 call ham_bulk_LOTO(k, Hamk)
+              else
+                 call ham_bulk_old    (k, Hamk)
+              endif
+            endif
+
 
             !> symmetrization
             call mat_mul(Num_wann, mirror_z, hamk, mat1)
@@ -1481,7 +1505,18 @@
          do ik1=1, Nk1
             k= kpoints(:, ik1, ik2)
 
-            call ham_bulk_old(k,hamk)
+            ! generate bulk Hamiltonian
+            if (index(KPorTB, 'KP')/=0)then
+               call ham_bulk_kp(k, Hamk)
+            else
+              !> deal with phonon system
+              if (index(Particle,'phonon')/=0.and.LOTO_correction) then
+                 call ham_bulk_LOTO(k, Hamk)
+              else
+                 call ham_bulk_old    (k, Hamk)
+              endif
+            endif
+
 
             !> diagonal hamk
             call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
@@ -1820,7 +1855,19 @@
          do ik1=1, Nk1
             k= kpoints(:, ik1, ik2)
 
-            call ham_bulk_old(k,hamk)
+
+            ! generate bulk Hamiltonian
+            if (index(KPorTB, 'KP')/=0)then
+               call ham_bulk_kp(k, Hamk)
+            else
+              !> deal with phonon system
+              if (index(Particle,'phonon')/=0.and.LOTO_correction) then
+                 call ham_bulk_LOTO(k, Hamk)
+              else
+                 call ham_bulk_old    (k, Hamk)
+              endif
+            endif
+
 
             !> diagonal hamk
             call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
@@ -2117,7 +2164,20 @@
             k(2)= 0d0
             k(3)= kpoints(2, ik1, ik2)
 
-            call ham_bulk_old(k,hamk)
+
+            ! generate bulk Hamiltonian
+            if (index(KPorTB, 'KP')/=0)then
+               call ham_bulk_kp(k, Hamk)
+            else
+              !> deal with phonon system
+              if (index(Particle,'phonon')/=0.and.LOTO_correction) then
+                 call ham_bulk_LOTO(k, Hamk)
+              else
+                 call ham_bulk_old    (k, Hamk)
+              endif
+            endif
+
+
 
             !> diagonal hamk
             call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
@@ -2274,7 +2334,18 @@
             k(2)= 0.5d0
             k(3)= kpoints(2, ik1, ik2)
 
-            call ham_bulk_old(k,hamk)
+            ! generate bulk Hamiltonian
+            if (index(KPorTB, 'KP')/=0)then
+               call ham_bulk_kp(k, Hamk)
+            else
+              !> deal with phonon system
+              if (index(Particle,'phonon')/=0.and.LOTO_correction) then
+                 call ham_bulk_LOTO(k, Hamk)
+              else
+                 call ham_bulk_old    (k, Hamk)
+              endif
+            endif
+
 
             !> diagonal hamk
             call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
@@ -2736,7 +2807,19 @@
          do ik1=1, Nk1
             k= kpoints(:, ik1, ik2)
 
-            call ham_bulk_old(k,hamk)
+
+            ! generate bulk Hamiltonian
+            if (index(KPorTB, 'KP')/=0)then
+               call ham_bulk_kp(k, Hamk)
+            else
+              !> deal with phonon system
+              if (index(Particle,'phonon')/=0.and.LOTO_correction) then
+                 call ham_bulk_LOTO(k, Hamk)
+              else
+                 call ham_bulk_old    (k, Hamk)
+              endif
+            endif
+
 
             !> diagonal hamk
             call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)

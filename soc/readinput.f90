@@ -30,6 +30,10 @@
      real(dp) :: R1(3), R2(3), R3(3), Rt(3)
      real(dp), external :: norm
 
+     real(dp), allocatable :: mass_temp(:)
+     real(dp), allocatable :: Born_Charge_temp(:, :, :)
+
+
     
      inquire(file=fname,exist=exists)
      if (exists)then
@@ -41,18 +45,27 @@
         stop
      endif
 
-    !read(1001,*)Hrfile
      Particle='electron'
      Package= 'VASP'
+     KPorTB = 'TB'
      read(1001, TB_FILE, iostat= stat)
      if (stat/=0) then
         Hrfile='wannier90_hr.dat'
+        Particle='electron'
         inquire(file='wannier90_hr.dat',exist=exists)
         if (.not.exists) stop "TB_FIlE namelist should be given or wannier90_hr.dat should exist"
      endif
+     if(cpuid==0)write(stdout,'(1x, a, a6, a)')"You are using : ", KPorTB, " model"
      if(cpuid==0)write(stdout,'(1x, a, a25)')"Tight binding Hamiltonian file: ",Hrfile
      if(cpuid==0)write(stdout,'(1x, a, a25)')"System of particle: ", Particle
      if(cpuid==0)write(stdout,'(1x, a, a25)')"Tight binding Hamiltonian obtained from : ",Package
+
+     if (index(Particle, 'electron')==0 .and. index(Particle, 'phonon')==0 &
+        .and. index(Particle, 'photon')==0) then
+        write(stdout, *)' ERROR: Particle shoule equal either "electron", &
+           "phonon", or "photon"' 
+        stop
+     endif
     
 
      BulkBand_calc         = .FALSE.
@@ -78,19 +91,26 @@
      JDos_calc             = .FALSE.
      EffectiveMass_calc    = .FALSE.
      FindNodes_calc        = .FALSE.
+     LOTO_correction       = .FALSE.
      AHC_Calc              = .FALSE.
      Translate_to_WS_calc  = .FALSE.
      
      read(1001, CONTROL, iostat=stat)
 
+
      if (stat/=0) then
+        backspace(1001)
+        read(1001,fmt='(A)') inline
+        write(*,'(A)') &
+           'Invalid line in namelist: '//trim(inline)
         write(*, *)"ERROR: namelist CONTROL should be set"
         write(*, *)"You should set one of these functions to be T"
-        write(*, *)"BulkBand_calc,BulkFS_calc,BulkGap_cube_calc,BulkGap_plane_calc"
+        write(*, *)"BulkBand_points_calc, BulkBand_calc,BulkGap_plane_calc"
+        write(*, *)"BulkFS_calc,BulkGap_cube_calc"
         write(*, *)"SlabBand_calc,WireBand_calc,SlabSS_calc,SlabArc_calc "
         write(*, *)"SlabSpintexture,wanniercenter_calc"
         write(*, *)"BerryPhase_calc,BerryCurvature_calc, Z2_3D_calc"
-        write(*, *)"Dos_calc, JDos_calc, FindNodes_calc "
+        write(*, *)"Dos_calc, JDos_calc, FindNodes_calc, LOTO_correction "
         write(*, *)"BulkFS_plane_calc, BulkBand_plane_calc"
         write(*, *)"Z2_3D_calc"
         write(*, *)"Chern_3D_calc"
@@ -106,6 +126,7 @@
         write(stdout, *) "  "
         write(stdout, *) ">>>Control parameters: " 
         write(stdout, *) "BulkBand_calc       : ",  BulkBand_calc
+        write(stdout, *) "BulkBand_points_calc : ",  BulkBand_points_calc
         write(stdout, *) "BulkBand_plane_calc : ",  BulkBand_plane_calc
         write(stdout, *) "BulkFS_calc         : ",  BulkFS_calc
         write(stdout, *) "BulkFS_Plane_calc   : ",  BulkFS_Plane_calc
@@ -124,6 +145,7 @@
         write(stdout, *) "AHC_calc            : ",  AHC_calc
         write(stdout, *) "JDos_calc           : ",  JDOS_calc
         write(stdout, *) "FindNodes_calc      : ",  FindNodes_calc
+        write(stdout, *) "LOTO_correction     : ", LOTO_correction
         write(stdout, *) "BerryCurvature_calc : ",  BerryCurvature_calc
         write(stdout, *) "EffectiveMass_calc  : ",  EffectiveMass_calc 
         write(stdout, *) "Translate_to_WS_calc: ",  Translate_to_WS_calc
@@ -168,8 +190,8 @@
         write(stdout, *) "  "
         write(stdout, *) ">>>System parameters: " 
         write(stdout, '(1x, a, i6 )')"NumSlabs :", Nslab
-        write(stdout, '(1x, a, i6)')"Nslab1 for ribbon  :", Nslab1
-        write(stdout, '(1x, a, i6)')"Nslab2 for ribbon  :", Nslab2
+        write(stdout, '(1x, a, i6)')"Nslab1 for nonawire  :", Nslab1
+        write(stdout, '(1x, a, i6)')"Nslab2 for nanowire  :", Nslab2
         write(stdout, '(1x, a, i6)')"Number of Occupied bands:", NumOccupied
         write(stdout, '(1x, a, i6)')"Number of total electrons:", Ntotch
         write(stdout, '(1x, a, i6)')"With SOC or not in Hrfile:", SOC
@@ -356,6 +378,19 @@
      do i=1, Num_atoms-1
         orbitals_start(i+1)= orbitals_start(i)+ nprojs(i)
      enddo
+
+     !> orbital index order 
+     allocate(index_start(Num_atoms))
+     allocate(index_end  (Num_atoms))
+     index_start= 0
+     index_end= 0
+     index_start(1)= 1
+     index_end(1)= nprojs(1)
+     do i=2, Num_atoms
+        index_start(i)= index_start(i-1)+ nprojs(i-1)
+        index_end(i)= index_end(i-1)+ nprojs(i)
+     enddo
+
 
 
      !> read Wannier centres
@@ -917,7 +952,7 @@
 
      !> read kcube_bulk information
      !> default value for KCUBE_BULK
-     K3D_start_cube= (/-0.5, -0.5,  -0.5/)
+     K3D_start_cube= (/ 0.0,  0.0,   0.0/)
      K3D_vec1_cube = (/ 1.0,  0.0,   0.0/)
      K3D_vec2_cube = (/ 0.0,  1.0,   0.0/)
      K3D_vec3_cube = (/ 0.0,  0.0,   1.0/)
@@ -1437,6 +1472,118 @@
         if (cpuid==0) write(stdout, '(a)')'4 5 6 7 ! band indices '
         stop 'Errors happen in the WT.in, please check informations in the WT.out'
      endif
+
+
+     !> for phonon system,  LO-TO correction, by T.T Zhang
+     !> Atomic MASS in unit of g/mol
+     rewind(1001)
+     lfound = .false.
+     do while (.true.)
+        read(1001, *, end= 221)inline
+        if (trim(adjustl(inline))=='ATOM_MASS') then
+           lfound= .true.
+           if (cpuid==0) write(stdout, *)' '
+           if (cpuid==0) write(stdout, *)'We found ATOM_MASS card'
+           exit
+        endif
+     enddo
+     221 continue
+
+     if (lfound) then
+        read(1001,*)Num_atom_type
+        if(cpuid==0)write(stdout,'(a,i10,a)')'There are', Num_atom_type, 'kind of atoms'
+        if (.not. allocated(Num_atoms_eachtype)) allocate(Num_atoms_eachtype(Num_atom_type))
+        if (.not. allocated(mass_temp)) allocate(mass_temp(Num_atom_type))
+        if (.not. allocated(ATOM_MASS)) allocate(ATOM_MASS(Num_atoms))
+        read(1001,*)Num_atoms_eachtype(1:Num_atom_type)
+        read(1001,*)mass_temp(1:Num_atom_type)
+        do i= 1, Num_atom_type
+           write(stdout,'(a,i10,a)')'Each type have', Num_atoms_eachtype(i), ' atoms'
+           write(stdout,'(a,f12.6)')'And their mass is', mass_temp(i)
+        enddo
+        it=0
+        do i=1, Num_atom_type   
+           do j=1, Num_atoms_eachtype(i)
+              it=it+1
+              ATOM_MASS(it)=mass_temp(i)
+           enddo
+        enddo
+     else 
+        if (LOTO_correction)stop "ERROR: please set ATOM_MASS card for LOTO correction of phonon spectrum"
+     endif
+
+     !>> setup Dielectric tensor for a given material
+     rewind(1001)
+     lfound = .false.
+     do while (.true.)
+        read(1001, *, end= 222)inline
+        if (trim(adjustl(inline))=='LOTO_DT') then
+           lfound= .true.
+           if (cpuid==0) write(stdout, *)' '
+           if (cpuid==0) write(stdout, *)'We found LOTO_DT card for LOTO correction'
+           exit
+        endif
+     enddo
+     222 continue
+
+     if (lfound) then
+           read(1001, *)Diele_Tensor(1,:)   ! Diele_Tensor is a 3*3 tensor for a material
+           write(stdout,'(a,3f12.5)')'Diele_tensor(1,:)',Diele_Tensor(1,:)
+           read(1001, *)Diele_Tensor(2,:)
+           write(stdout,'(a,3f12.5)')'Diele_tensor(2,:)',Diele_Tensor(2,:)
+           read(1001, *)Diele_Tensor(3,:)
+           write(stdout,'(a,3f12.5)')'Diele_tensor(3,:)',Diele_Tensor(3,:)
+     else 
+        if (LOTO_correction) then
+           if (cpuid==0) then
+              write(stdout, *)"ERROR: please set LOTO_DT card for LOTO correction of phonon spectrum"
+              write(stdout, *)"ERROR: please set Dielectronic Tensor information"
+              stop "ERROR: Check error messages in WT.out"
+           endif
+        endif
+     endif
+
+     !>> setup Born charge for a given material
+     rewind(1001)
+     lfound = .false.
+     do while (.true.)
+        read(1001, *, end= 223)inline
+        if (trim(adjustl(inline))=='LOTO_BC') then
+           lfound= .true.
+           if (cpuid==0) write(stdout, *)' '
+           if (cpuid==0) write(stdout, *)'We found LOTO_BC card for LOTO correction'
+           exit
+        endif
+     enddo
+     223 continue
+
+     if (lfound) then
+        it=0
+        allocate(Born_Charge(Num_atoms,3,3))
+        allocate(Born_Charge_temp(Num_atom_type,3,3))
+        do i=1,Num_atom_type  
+           read(1001, *)Born_Charge_temp(i,1,:)
+           read(1001, *)Born_Charge_temp(i,2,:)
+           read(1001, *)Born_Charge_temp(i,3,:)
+           do j=1,Num_atoms_eachtype(i)
+              it=it+1
+              Born_Charge(it,:,:)=Born_Charge_temp(i,:,:)
+              write(stdout,'(a,i3,2X,a6)')'Born_Charge for atom ', it, atom_name(it)
+              write(stdout,'(3f12.5)')Born_Charge(it,1,:)
+              write(stdout,'(3f12.5)')Born_Charge(it,2,:)
+              write(stdout,'(3f12.5)')Born_Charge(it,3,:)
+           enddo
+        enddo
+     else 
+        if (LOTO_correction) then
+           if (cpuid==0) then
+              write(stdout, *)"ERROR: please set LOTO_BC card for LOTO correction of phonon spectrum"
+              write(stdout, *)"ERROR: please set Born charge information"
+              stop "ERROR: Check error messages in WT.out"
+           endif
+        endif
+     endif
+
 
 
 

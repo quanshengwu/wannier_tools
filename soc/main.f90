@@ -56,6 +56,11 @@
      !> readin the control parameters for this program 
      call readinput
 
+     !> determine whether you are using kp model or TB model
+     IF (index(KPorTB, 'KP')/=0) then
+        Num_wann= sum(nprojs)
+        if (SOC>0) num_wann= 2*num_wann
+     ELSE  ! you are using TB model
      !> open file Hmn_R.data to get Num_wann and Nrpts
      if (cpuid.eq.0)then
         write(stdout,*)''
@@ -88,6 +93,7 @@
         endif ! exists or not
         if ((soc==0 .and. sum(nprojs)/=Num_wann) .or. &
            (soc>0 .and. sum(nprojs)/=Num_wann/2))then
+           print *, 'sum(nprojs), num_wann, num_wann/2'
            print *, sum(nprojs), num_wann, num_wann/2
            stop 'projectors are wrong'
         endif
@@ -123,6 +129,7 @@
      call MPI_bcast(HmnR,size(HmnR),mpi_dc,0,mpi_cmw,ierr)
      call MPI_bcast(ndegen,size(ndegen),mpi_in,0,mpi_cmw,ierr)
 #endif 
+     ENDIF  ! end if the choice of kp model or TB model
 
      !> import symmetry 
     !call symmetry
@@ -421,8 +428,7 @@
 
      if(cpuid.eq.0)write(stdout, *)' '
      call print_time_cost(time_init, time_end, 'whole program')
-     if (cpuid.eq.0)write(stdout,*)'Congratulations! you finished the calculation.'
-     if (cpuid.eq.0)write(stdout,*)'See you next time :)'
+     call footer
 
      
 #if defined (MPI)

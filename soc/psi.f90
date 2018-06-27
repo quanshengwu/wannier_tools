@@ -6,7 +6,6 @@
      use para,only : Dp,Num_wann,Nslab, stdout, cpuid 
      
      implicit none 
-
 ! loop index
      integer     :: i,j     
      integer     :: info

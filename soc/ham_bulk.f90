@@ -3,112 +3,147 @@
 
 ! History  
 !        May/29/2011 by Quansheng Wu
-! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
   subroutine ham_bulk(k,Hamk_bulk)
   
      use para
      implicit none
 
 ! loop index  
-     integer :: i1,i2,ia,ib,ic,iR, ia1, ia2
-     integer :: istart1, istart2, iend1, iend2
+     integer :: i1,i2,ia,ib,ic,iR
+
+     integer :: ia1, ia2
+
      integer :: nwann
 
      real(dp) :: kdotr
 
 ! wave vector in 2d
-     real(Dp) :: k(3) 
+     real(Dp) :: k(3)      
 
      ! coordinates of R vector 
-     real(Dp) :: R(3), R1(3), R2(3), R3(3), R3_cart(3)
+     real(Dp) :: R(3)      
 
-     real(dp) :: bondlength
+     !> row start; row end; column start; column end
+     integer :: rs, re
+     integer :: cs, ce
+
+     real(dp) :: pos(3)
+     real(dp) :: pos1(3)
+     real(dp) :: pos2(3)
+
+     !> distance between two atoms
+     real(dp) :: dis
+
+     ! Hamiltonian of bulk system
+     complex(Dp),intent(out) ::Hamk_bulk(Num_wann, Num_wann) 
+
      real(dp), external :: norm
 
-! Hamiltonian of bulk system
-     complex(Dp),intent(out) ::Hamk_bulk(Num_wann, Num_wann) 
-     complex(dp), allocatable :: mat1(:, :)
-     complex(dp), allocatable :: mat2(:, :)
-     allocate(mat1(Num_wann, Num_wann))
-     allocate(mat2(Num_wann, Num_wann))
-
-     if (SOC>0) nwann= Num_wann/2
+     nwann= Num_wann/2
      Hamk_bulk=0d0
-     do iR=1, Nrpts
-        ia=irvec(1,iR)  
-        ib=irvec(2,iR) 
-        ic=irvec(3,iR)
+     if (soc>0 ) then
+        !> the first atom in home unit cell
+        do ia1=1, Num_atoms
+           pos1= Atom_position(:, ia1)
+           rs= index_start(ia1)
+           re= index_end(ia1)
+           !> the second atom in unit cell R
+           do ia2=1, Num_atoms
+              pos2= Atom_position(:, ia2)
+              cs= index_start(ia2)
+              ce= index_end(ia2)
+              do iR=1,Nrpts
+                 ia=irvec(1,iR)
+                 ib=irvec(2,iR)
+                 ic=irvec(3,iR)
+         
+                 pos= ia*Rua+ ib*Rub+ ic* Ruc
+                 pos= pos+ pos2- pos1
+                 dis= norm(pos)
+         
+                 if (dis> Rcut) cycle
+        
+                 kdotr=k(1)*ia + k(2)*ib + k(3)*ic
+               
+                 Hamk_bulk(rs:re, cs:ce)=Hamk_bulk(rs:re, cs:ce)&
+                 +HmnR(rs:re, cs:ce,iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
 
-        R(1)=dble(ia)
-        R(2)=dble(ib)
-        R(3)=dble(ic)
+                 Hamk_bulk(rs:re, cs+nwann:ce+nwann)= &
+                 Hamk_bulk(rs:re, cs+nwann:ce+nwann)+ &
+                 HmnR(rs:re, cs+nwann:ce+nwann,iR)* &
+                 Exp(2d0*pi*zi*kdotr)/ndegen(iR)
 
+                 Hamk_bulk(rs+nwann:re+nwann, cs:ce)= &
+                 Hamk_bulk(rs+nwann:re+nwann, cs:ce)+ &
+                 HmnR(rs+nwann:re+nwann, cs:ce,iR)* &
+                 Exp(2d0*pi*zi*kdotr)/ndegen(iR)
 
-        do ia1= 1, Num_atoms
-           istart1= sum(nprojs(1:ia1-1))+1
-           iend1= sum(nprojs(1:ia1))
-           do ia2= 1, Num_atoms
-              istart2= sum(nprojs(1:ia2-1))+1
-              iend2= sum(nprojs(1:ia2))
-              R1= Atom_position_direct(:, ia1)
-              R2= Atom_position_direct(:, ia2)
-              R3= R+ R2- R1
+                 Hamk_bulk(rs+nwann:re+nwann, cs+nwann:ce+nwann)= &
+                 Hamk_bulk(rs+nwann:re+nwann, cs+nwann:ce+nwann)+ &
+                 HmnR(rs+nwann:re+nwann, cs+nwann:ce+nwann,iR)* &
+                 Exp(2d0*pi*zi*kdotr)/ndegen(iR)
 
-              call direct_cart_real(R3, R3_cart)
-              bondlength= norm(R3_cart)
-              if (bondlength> bondlength_cutoff) cycle
-
-              kdotr=k(1)*R3(1) + k(2)*R3(2) + k(3)*R3(3)
-             !kdotr=k(1)*R (1) + k(2)*R (2) + k(3)*R (3)
-
-              Hamk_bulk(istart1:iend1,istart2:iend2)=&
-              Hamk_bulk(istart1:iend1,istart2:iend2) &
-              +HmnR(istart1:iend1,istart2:iend2,iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
-
-              if (soc>0) then
-                  Hamk_bulk(istart1+nwann:iend1+nwann,istart2:iend2)=&
-                  Hamk_bulk(istart1+nwann:iend1+nwann,istart2:iend2) &
-                  +HmnR(istart1+nwann:iend1+nwann,istart2:iend2,iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
-
-                  Hamk_bulk(istart1+nwann:iend1+nwann,istart2+nwann:iend2+nwann)=&
-                  Hamk_bulk(istart1+nwann:iend1+nwann,istart2+nwann:iend2+nwann) &
-                  +HmnR(istart1+nwann:iend1+nwann,istart2+nwann:iend2+nwann,iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
-
-                  Hamk_bulk(istart1:iend1,istart2+nwann:iend2+nwann)=&
-                  Hamk_bulk(istart1:iend1,istart2+nwann:iend2+nwann) &
-                  +HmnR(istart1:iend1,istart2+nwann:iend2+nwann,iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
-
-              endif
-
+              enddo ! iR
            enddo ! ia2
         enddo ! ia1
-     enddo ! iR
+     else
+        !> the first atom in home unit cell
+        do ia1=1, Num_atoms
+           pos1= Atom_position(:, ia1)
+           rs= index_start(ia1)
+           re= index_end(ia1)
+           !> the second atom in unit cell R
+           do ia2=1, Num_atoms
+              pos2= Atom_position(:, ia2)
+              cs= index_start(ia2)
+              ce= index_end(ia2)
+              do iR=1,Nrpts
+                 ia=irvec(1,iR)
+                 ib=irvec(2,iR)
+                 ic=irvec(3,iR)
+         
+                 pos= ia*Rua+ ib*Rub+ ic* Ruc
+                 pos= pos+ pos2- pos1
+                 dis= norm(pos)
+         
+                 if (dis> Rcut) cycle
+        
+                 kdotr=k(1)*ia + k(2)*ib + k(3)*ic
+               
+                 Hamk_bulk(rs:re, cs:ce)=Hamk_bulk(rs:re, cs:ce)&
+                 +HmnR(rs:re, cs:ce,iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
 
-    !call mat_mul(Num_wann, mirror_z, Hamk_bulk, mat1)
-    !call mat_mul(Num_wann, mat1, mirror_z, mat2)
-    !Hamk_bulk= (Hamk_bulk+ mat2)/2d0
+              enddo ! iR
+           enddo ! ia2
+        enddo ! ia1
 
-     ! check hermitcity
+     endif ! soc
+
+! check hermitcity
+
      do i1=1, Num_wann
      do i2=1, Num_wann
         if(abs(Hamk_bulk(i1,i2)-conjg(Hamk_bulk(i2,i1))).ge.1e-6)then
           write(stdout,*)'there are something wrong with Hamk_bulk'
-          stop
+          write(stdout,*)'i1, i2', i1, i2
+          write(stdout,*)'value at (i1, i2)', Hamk_bulk(i1, i2)
+          write(stdout,*)'value at (i2, i1)', Hamk_bulk(i2, i1)
+         !stop
         endif 
      enddo
      enddo
 
   return
-  end  subroutine ham_bulk
+  end subroutine ham_bulk
 
 
-
-! This subroutine is used to caculate Hamiltonian for 
-! bulk system . 
-
-! History  
-!        May/29/2011 by Quansheng Wu
   subroutine ham_bulk_old(k,Hamk_bulk)
+     ! This subroutine caculates Hamiltonian for 
+     ! bulk system without the consideration of the atom's position
+     !
+     ! History  
+     !
+     !        May/29/2011 by Quansheng Wu
   
      use para
      implicit none
@@ -125,12 +160,14 @@
      ! coordinates of R vector 
      real(Dp) :: R(3), R1(3), R2(3)
 
+     complex(dp) :: factor
+
 ! Hamiltonian of bulk system
      complex(Dp),intent(out) ::Hamk_bulk(Num_wann, Num_wann) 
-     complex(dp), allocatable :: mat1(:, :)
-     complex(dp), allocatable :: mat2(:, :)
-     allocate(mat1(Num_wann, Num_wann))
-     allocate(mat2(Num_wann, Num_wann))
+!    complex(dp), allocatable :: mat1(:, :)
+!    complex(dp), allocatable :: mat2(:, :)
+!    allocate(mat1(Num_wann, Num_wann))
+!    allocate(mat2(Num_wann, Num_wann))
 
      Hamk_bulk=0d0
      do iR=1, Nrpts
@@ -142,10 +179,11 @@
         R(2)=dble(ib)
         R(3)=dble(ic)
         kdotr=k(1)*R (1) + k(2)*R (2) + k(3)*R (3)
+        factor= exp(pi2zi*kdotr)
 
         Hamk_bulk(:, :)=&
         Hamk_bulk(:, :) &
-        + HmnR(:, :, iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
+        + HmnR(:, :, iR)*factor/ndegen(iR)
      enddo ! iR
 
     !call mat_mul(Num_wann, mirror_z, Hamk_bulk, mat1)
@@ -157,11 +195,205 @@
      do i2=1, Num_wann
         if(abs(Hamk_bulk(i1,i2)-conjg(Hamk_bulk(i2,i1))).ge.1e-6)then
           write(stdout,*)'there are something wrong with Hamk_bulk'
-          stop
+          write(stdout,*)'i1, i2', i1, i2
+          write(stdout,*)'value at (i1, i2)', Hamk_bulk(i1, i2)
+          write(stdout,*)'value at (i2, i1)', Hamk_bulk(i2, i1)
+         !stop
         endif 
      enddo
      enddo
 
   return
   end subroutine ham_bulk_old
+
+
+  subroutine ham_bulk_LOTO(k,Hamk_bulk)
+     ! This subroutine caculates Hamiltonian for 
+     ! bulk system without the consideration of the atom's position
+     ! with the LOTO correction for phonon system
+     !
+     ! History  
+     !
+     !        July/15/2017 by TianTian Zhang
+  
+     use para
+     implicit none
+
+     ! loop index  
+     integer :: i1,i2,ia,ib,ic,iR
+     integer  :: ii,jj,mm,nn,pp,qq,xx,yy,zz
+
+     real(dp) :: kdotr
+
+     ! wave vector in 2d
+     real(Dp) :: k(3)      
+
+     ! coordinates of R vector 
+     real(Dp) :: R(3), R1(3), R2(3)
+
+     ! Hamiltonian of bulk system
+     complex(Dp),intent(out) ::Hamk_bulk(Num_wann, Num_wann) 
+
+     !> see eqn. (3) in J. Phys.: Condens. Matter 22 (2010) 202201
+     complex(Dp),allocatable :: nac_correction(:, :, :) 
+
+     complex(dp), allocatable :: mat1(:, :)
+     complex(dp), allocatable :: mat2(:, :)
+     real(dp) :: temp1(3)=(/0.0,0.0,0.0/)
+     real(dp) :: temp2=0.0
+     real(dp) :: temp3(30),constant_t
+     real(dp) ::A_ii(3)=(/0.0,0.0,0.0/)
+     real(dp) ::A_jj(3)=(/0.0,0.0,0.0/)
+
+     !> k times Born charge
+     real(dp), allocatable :: kBorn(:, :)
+
+     real(dp) :: nac_q
+
+     allocate(kBorn(Num_atoms, 3))
+     allocate(mat1(Num_wann, Num_wann))
+     allocate(mat2(Num_wann, Num_wann))
+     allocate(nac_correction(Num_wann, Num_wann, Nrpts))
+     mat1 = 0d0
+     mat2 = 0d0
+     nac_correction= 0d0
+
+     Hamk_bulk=0d0
+
+     !>  add loto splitting term
+     temp1(1:3)= (/0.0,0.0,0.0/)
+     temp2= 0.0
+     if (abs((k(1)**2+k(2)**2+k(3)**2)).le.0.00001)then  !> skip k=0
+        k(1)=0.00001d0
+        k(2)=0.00001d0
+        k(3)=0.00001d0
+     endif
+
+     !> see eqn. (3) in J. Phys.: Condens. Matter 22 (2010) 202201
+     do qq= 1, 3
+        temp1(qq)= k(1)*Diele_Tensor(qq, 1)+k(2)*Diele_Tensor(qq, 2)+k(3)*Diele_Tensor(qq, 3) 
+     enddo
+     temp2= k(1)*temp1(1)+ k(2)*temp1(2)+ k(3)*temp1(3)
+     constant_t= 4d0*3.1415926d0/(temp2*CellVolume)*VASPToTHZ
+
+     do ii=1, Num_atoms
+        do pp=1, 3
+           kBorn(ii, pp)=  k(1)*Born_Charge(ii,1,pp)+k(2)*Born_Charge(ii,2,pp)+k(3)*Born_Charge(ii,3,pp) 
+        enddo
+     enddo
+     
+     nac_correction= 0d0
+     do iR=1, Nrpts
+        R(1)=dble(irvec(1,iR))
+        R(2)=dble(irvec(2,iR))
+        R(3)=dble(irvec(3,iR))
+        kdotr=k(1)*R(1) + k(2)*R(2) + k(3)*R(3)
+
+        do ii= 1,Num_atoms
+           do pp= 1, 3
+              do jj= 1, Num_atoms
+                 do qq= 1,3
+                    nac_q= kBorn(jj, qq)*kBorn(ii, pp)*constant_t/sqrt(Atom_Mass(ii)*Atom_Mass(jj))
+                    nac_correction((ii-1)*3+pp,(jj-1)*3+qq,iR) = HmnR((ii-1)*3+pp,(jj-1)*3+qq,iR) + dcmplx(nac_q,0)
+                 enddo  ! qq
+              enddo  ! jj
+           enddo ! pp
+        enddo  ! ii
+
+        Hamk_bulk(:, :)= Hamk_bulk(:, :) &
+        + nac_correction(:, :, iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
+     enddo ! iR
+
+     ! check hermitcity
+     do i1=1, Num_wann
+     do i2=1, Num_wann
+        if(abs(Hamk_bulk(i1,i2)-conjg(Hamk_bulk(i2,i1))).ge.1e-6)then
+          write(stdout,*)'there are something wrong with Hamk_bulk'
+          write(stdout,*)'i1, i2', i1, i2
+          write(stdout,*)'value at (i1, i2)', Hamk_bulk(i1, i2)
+          write(stdout,*)'value at (i2, i1)', Hamk_bulk(i2, i1)
+         !stop
+        endif 
+     enddo
+     enddo
+
+     deallocate(kBorn)
+     deallocate(mat1)
+     deallocate(mat2)
+     deallocate(nac_correction)
+  return
+  end subroutine ham_bulk_LOTO
+
+  subroutine ham_bulk_kp(k,Hamk_bulk)
+     ! This subroutine caculates Hamiltonian for 
+     ! bulk system without the consideration of the atom's position
+     !
+     ! History  
+     !
+     !        May/29/2011 by Quansheng Wu
+  
+     use para
+     implicit none
+
+     integer :: i1,i2,ia,ib,ic,iR, nwann
+
+     ! coordinates of R vector 
+     real(Dp) :: R(3), R1(3), R2(3), kdotr, kx, ky, kz, m, shift
+
+     complex(dp) :: factor
+
+     real(dp), intent(in) :: k(3)
+     
+     ! Hamiltonian of bulk system
+     complex(Dp),intent(out) ::Hamk_bulk(Num_wann, Num_wann) 
+     if (Num_wann/=3) then
+        print *, "Error : in this kp model, num_wann should be 3"
+        print *, 'Num_wann', Num_wann
+
+        stop
+     endif
+
+     kx=k(1)
+     ky=k(2)
+     kz=k(3)
+     m=-0.60d0
+
+     shift= 0.625d0
+     !> kp
+     Hamk_bulk(1, 1)= kx**3+ shift
+     Hamk_bulk(1, 2)= ky   
+     Hamk_bulk(1, 3)= kz   
+     Hamk_bulk(2, 1)= ky   
+     Hamk_bulk(2, 2)= -kx+ kx**2+ m
+     Hamk_bulk(2, 3)= -1d0/4d0*ky*kz   
+     Hamk_bulk(3, 1)= kz   
+     Hamk_bulk(3, 2)= -1d0/4d0*ky*kz   
+     Hamk_bulk(3, 3)= -kx- kx**2- m
+ 
+    !Hamk_bulk(1, 1)= sin(kx)**3
+    !Hamk_bulk(1, 2)= sin(ky)
+    !Hamk_bulk(1, 3)= sin(kz)
+    !Hamk_bulk(2, 1)= sin(ky)
+    !Hamk_bulk(2, 2)= -sin(kx)+ (1-cos(kx))*2d0+ m
+    !Hamk_bulk(2, 3)= -1d0/4d0*sin(ky)*sin(kz)
+    !Hamk_bulk(3, 1)= sin(kz)  
+    !Hamk_bulk(3, 2)= -1d0/4d0*sin(ky)*sin(kz)  
+    !Hamk_bulk(3, 3)= -sin(kx)- (1-cos(kx))*2d0- m
+     
+     ! check hermitcity
+     do i1=1, Num_wann
+     do i2=1, Num_wann
+        if(abs(Hamk_bulk(i1,i2)-conjg(Hamk_bulk(i2,i1))).ge.1e-6)then
+          write(stdout,*)'there are something wrong with Hamk_bulk'
+          write(stdout,*)'i1, i2', i1, i2
+          write(stdout,*)'value at (i1, i2)', Hamk_bulk(i1, i2)
+          write(stdout,*)'value at (i2, i1)', Hamk_bulk(i2, i1)
+         !stop
+        endif 
+     enddo
+     enddo
+
+     return
+  end subroutine ham_bulk_kp
+
 

@@ -131,6 +131,10 @@
     enddo
 
 
+    if (index(Particle,'phonon')/=0) then
+       stop "ERROR: we don't support spintexture calculation for phonon system"
+    endif
+
     Nband= Num_wann/2
 
     !> spin operator matrix

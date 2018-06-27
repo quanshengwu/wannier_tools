@@ -138,11 +138,11 @@
         call now(time_start)
         !> deal with phonon system
         !> get the hopping matrix between two principle layers
-       !if (index(Particle,'phonon')/=0.and.LOTO_correction) then
-       !  !call ham_qlayer2qlayer_LOTO(k,H00,H01) 
-       !else
+        if (index(Particle,'phonon')/=0.and.LOTO_correction) then
+           call ham_qlayer2qlayer_LOTO(k,H00,H01) 
+        else
            call ham_qlayer2qlayer(k,H00,H01) 
-       !endif
+        endif
 
 
         do j = 1, omeganum

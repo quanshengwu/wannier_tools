@@ -29,9 +29,10 @@ SURFACE            ! See doc for details (100) surface
 
 &CONTROL
 !> bulk band structure calculation flag
-BulkBand_calc         = T
+BulkBand_calc         = F
 FindNodes_calc        = F
 BulkFS_calc           = F
+BulkFS_plane_calc     = T
 BulkGap_cube_calc     = F
 BulkGap_plane_calc    = F
 SlabBand_calc         = F
@@ -40,9 +41,10 @@ SlabSS_calc           = T
 SlabArc_calc          = F
 SlabSpintexture_calc  = F
 Wanniercenter_calc    = F
-BerryPhase_calc       = T
+BerryPhase_calc       = F
 BerryCurvature_calc   = F
 EffectiveMass_calc    = F
+Translate_to_WS_calc  = F
 /
 
 &SYSTEM
@@ -86,9 +88,9 @@ KPLANE_SLAB
  0.0  1.0      ! The second vector to define 2D k plane  for arc plots
 
 KPLANE_BULK
--0.00 -0.00  0.00   ! Original point for 3D k plane 
- 1.00  0.00  0.00   ! The first vector to define 3d k space plane
- 0.00  0.50  0.00   ! The second vector to define 3d k space plane
+-1.00 -1.00  0.00   ! Original point for 3D k plane 
+ 2.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  2.00  0.00   ! The second vector to define 3d k space plane
 
 
 KCUBE_BULK
