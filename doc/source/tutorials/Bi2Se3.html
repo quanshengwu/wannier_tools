@@ -1,0 +1,435 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+        <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>2.1. Bi2Se3 (3D strong TI) &#8212; WannierTools 2.2.4 documentation</title>
+    <link rel="stylesheet" href="../static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.2.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../static/jquery.js"></script>
+    <script type="text/javascript" src="../static/underscore.js"></script>
+    <script type="text/javascript" src="../static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="2.2. MoS2 (2D QSHE)" href="MoS2-1Tp.html" />
+    <link rel="prev" title="2. Tutorial: learning WannierTools through examples" href="../tutorials.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="MoS2-1Tp.html" title="2.2. MoS2 (2D QSHE)"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="../tutorials.html" title="2. Tutorial: learning WannierTools through examples"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">WannierTools 2.2.4 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../tutorials.html" accesskey="U">2. Tutorial: learning WannierTools through examples</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="bi2se3-3d-strong-ti">
+<h1>2.1. Bi2Se3 (3D strong TI)<a class="headerlink" href="#bi2se3-3d-strong-ti" title="Permalink to this headline">¶</a></h1>
+<p>Bi2Se3 is a strong topological insulator. The Z2 topological index is (1, 000).
+Theoretical and experimental validation can be found in Nature Physics 5, 438-442 (2009) and
+Nature Physics 5, 398-402 (2009)  respectively. Here we show you how to use WannierTools to
+study strong topological materials. The input file and some related files are included in each
+distribution.</p>
+<p>Here is the primitive unit cell of Bi2Se3</p>
+<a class="reference internal image-reference" href="../images/Bi2Se3_poscar.png"><img alt="../images/Bi2Se3_poscar.png" src="../images/Bi2Se3_poscar.png" style="width: 459.6px; height: 247.2px;" /></a>
+<div class="section" id="first-principle-calculation">
+<h2>2.1.1. First principle calculation<a class="headerlink" href="#first-principle-calculation" title="Permalink to this headline">¶</a></h2>
+<p>Firstly, you need to study the electronic structure of Bi2Se3 with first-principle
+software package, like VASP, Wien2k, Abinit, Quantum-espresso et al. In this tutorial,
+we select VASP. Here is the calculated band structure.</p>
+<a class="reference internal image-reference" href="../images/Bi2Se3_vasp_band.png"><img alt="../images/Bi2Se3_vasp_band.png" src="../images/Bi2Se3_vasp_band.png" style="width: 495.0px; height: 382.5px;" /></a>
+</div>
+<div class="section" id="band-structure">
+<h2>2.1.2. Band structure<a class="headerlink" href="#band-structure" title="Permalink to this headline">¶</a></h2>
+<p>Then Wannier90 is applied to construct MLWF tight binding (TB) model (see more details from <a class="reference external" href="http://www.wannier.org">http://www.wannier.org</a>).
+Here we only tell you that the p orbitals of Bi and Se are selected as the initial projectors
+for Wannier90. The band structure calculated from the MLWF-TB model is as follows</p>
+<a class="reference internal image-reference" href="../images/Bi2Se3_TB_band.png"><img alt="../images/Bi2Se3_TB_band.png" src="../images/Bi2Se3_TB_band.png" style="width: 499.2px; height: 312.0px;" /></a>
+<p>This band structure can be calculated directly from Wannier90. Also can be calculated from
+WannierTools. The settings in <strong>WT.in</strong> are</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>&amp;CONTROL
+BulkBand_calc         = T
+/
+
+&amp;SYSTEM
+SOC = 1                 ! soc
+E_FERMI = 4.4195        ! e-fermi
+/
+
+&amp;PARAMETERS
+Nk1 = 41            ! number k points  odd number would be better
+/
+
+KPATH_BULK            ! k point path
+4              ! number of k line only for bulk band
+G 0.00000 0.00000 0.0000 Z 0.00000 0.00000 0.5000
+Z 0.00000 0.00000 0.5000 F 0.50000 0.50000 0.0000
+F 0.50000 0.50000 0.0000 G 0.00000 0.00000 0.0000
+G 0.00000 0.00000 0.0000 L 0.50000 0.00000 0.0000
+</pre></div>
+</div>
+</div>
+<div class="section" id="z2-topological-number">
+<h2>2.1.3. Z2 topological number<a class="headerlink" href="#z2-topological-number" title="Permalink to this headline">¶</a></h2>
+<p>From the band structure above, it is clear that it is a insulator. This is also can be checked by calculating the
+density of state (DOS). In order to identify the topological properties, we have to calculate the Z2 topological
+number, which is valid for time-reversal invariant system with a continuous full gap in the Brilloin Zone. The Z2
+topological number for 3D bulk system can be obtained from the calculation of the Wilson loop (Wannier charge center)
+for the six time-reversal invariant momentum plane. k1=0.0, k1=0.5; k2=0.0; k2=0.5; k3=0.0, k3=0.5. It can be done
+using WannierTools with setting in <strong>WT.in</strong></p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>&amp;CONTROL
+Z2_3D_calc            = T
+/
+
+&amp;SYSTEM
+SOC = 1                 ! soc
+NumOccupied = 18        ! Number of occupied Wannier bands
+/
+
+&amp;PARAMETERS
+Nk1 = 41            ! number k points  odd number would be better
+Nk2 = 41           ! number k points  odd number would be better
+/
+</pre></div>
+</div>
+<p>The resutls are</p>
+<a class="reference internal image-reference" href="../images/Bi2Se3_wanniercenter3D_Z2.png"><img alt="../images/Bi2Se3_wanniercenter3D_Z2.png" src="../images/Bi2Se3_wanniercenter3D_Z2.png" style="width: 726.0px; height: 561.0px;" /></a>
+<p>(a) k1=0.0, z2=1; (b) k1=0.5, z2=0;
+(c) k2=0.0, z2=1; (d) k2=0.5, z2=0;
+(e) k3=0.0, z2=1; (f) k3=0.5, z2=0;</p>
+<p>So the bulk Z2 topological number is (1, 000), which means a strongly topological insulator.</p>
+</div>
+<div class="section" id="surface-state">
+<h2>2.1.4. Surface state<a class="headerlink" href="#surface-state" title="Permalink to this headline">¶</a></h2>
+<p>The surface states are the correspondence to the non-trivial bulk topology. They are detectable
+from ARPES experiments. The calculated surface states of Bi2Se3 on (0001) surface are</p>
+<a class="reference internal image-reference" href="../images/Bi2Se3_surfdos_l.png"><img alt="../images/Bi2Se3_surfdos_l.png" src="../images/Bi2Se3_surfdos_l.png" style="width: 422.4px; height: 369.6px;" /></a>
+<a class="reference internal image-reference" href="../images/Bi2Se3_arc_l.png"><img alt="../images/Bi2Se3_arc_l.png" src="../images/Bi2Se3_arc_l.png" style="width: 422.4px; height: 369.6px;" /></a>
+<p>The settings in <strong>WT.in</strong> are</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>&amp;CONTROL
+SlabSS_calc           = T
+SlabArc_calc          = T
+/
+
+&amp;SYSTEM
+SOC = 1                 ! soc
+NumOccupied = 18        ! Number of occupied Wannier bands
+E_FERMI = 4.4195        ! e-fermi
+/
+
+&amp;PARAMETERS
+Eta_Arc = 0.001     ! infinite small value, like brodening
+E_arc = 0.0         ! energy for calculate Fermi Arc
+OmegaMin = -0.6     ! energy interval
+OmegaMax =  0.5     ! energy interval
+OmegaNum = 401      ! omega number
+Nk1 = 101           ! number k points  odd number would be better
+Nk2 = 101           ! number k points  odd number would be better
+/
+
+SURFACE            ! See doc for details
+ 1  0  0
+ 0  1  0
+ 0  0  1
+
+KPATH_SLAB
+2        ! numker of k line for 2D case
+K 0.33 0.67 G 0.0 0.0  ! k path for 2D case
+G 0.0 0.0 M 0.5 0.5
+
+KPLANE_SLAB
+-0.1 -0.1      ! Original point for 2D k plane
+ 0.2  0.0      ! The first vector to define 2D k plane
+ 0.0  0.2      ! The second vector to define 2D k plane  for arc plots
+</pre></div>
+</div>
+</div>
+<div class="section" id="spin-texture">
+<h2>2.1.5. Spin texture<a class="headerlink" href="#spin-texture" title="Permalink to this headline">¶</a></h2>
+<p>Spin orbital coupling (SOC) is a very important to topological insulator. The spin texture of the surface states
+will form due to SOC. WannierTools can calculate spin texture like this</p>
+<a class="reference internal image-reference" href="../images/Bi2Se3_spintext.png"><img alt="../images/Bi2Se3_spintext.png" src="../images/Bi2Se3_spintext.png" style="width: 809.6px; height: 739.2px;" /></a>
+<p>by setting</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>&amp;CONTROL
+SlabSpintexture_calc  = F
+/
+
+&amp;SYSTEM
+SOC = 1                 ! soc
+E_FERMI = 4.4195        ! e-fermi
+/
+
+&amp;PARAMETERS
+Eta_Arc = 0.001     ! infinite small value, like brodening
+E_arc = 0.0         ! energy for calculate Fermi Arc
+Nk1 = 101           ! number k points  odd number would be better
+Nk2 = 101           ! number k points  odd number would be better
+/
+
+SURFACE            ! See doc for details
+ 1  0  0
+ 0  1  0
+ 0  0  1
+
+KPLANE_SLAB
+-0.1 -0.1      ! Original point for 2D k plane
+ 0.2  0.0      ! The first vector to define 2D k plane
+ 0.0  0.2      ! The second vector to define 2D k plane  for arc plots
+</pre></div>
+</div>
+</div>
+<div class="section" id="full-settings-in-wt-in-of-bi2se3">
+<h2>2.1.6. Full settings in WT.in of Bi2Se3<a class="headerlink" href="#full-settings-in-wt-in-of-bi2se3" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default"><div class="highlight"><pre><span></span>&amp;TB_FILE
+Hrfile = &#39;wannier90_hr.dat&#39;
+/
+
+
+&amp;CONTROL
+BulkBand_calc         = T
+BulkFS_calc           = F
+BulkGap_cube_calc     = F
+BulkGap_plane_calc    = F
+SlabBand_calc         = T
+WireBand_calc         = F
+SlabSS_calc           = T
+SlabArc_calc          = T
+SlabQPI_calc          = F
+Z2_3D_calc            = T
+Chern_3D_calc         = F
+SlabSpintexture_calc  = F
+Wanniercenter_calc    = F
+BerryPhase_calc       = F
+BerryCurvature_calc   = F
+EffectiveMass_calc    = F
+/
+
+&amp;SYSTEM
+NSLAB = 10              ! for thin film system
+NSLAB1= 4               ! nanowire system
+NSLAB2= 4               ! nanowire system
+NumOccupied = 18        ! NumOccupied
+SOC = 1                 ! soc
+E_FERMI = 4.4195        ! e-fermi
+Bx= 0, By= 0, Bz= 0     ! Bx By Bz
+surf_onsite= 0.0        ! surf_onsite
+/
+
+&amp;PARAMETERS
+Eta_Arc = 0.001     ! infinite small value, like brodening
+E_arc = 0.0         ! energy for calculate Fermi Arc
+OmegaNum = 401      ! omega number
+OmegaMin = -0.6     ! energy interval
+OmegaMax =  0.5     ! energy interval
+Nk1 = 41            ! number k points  odd number would be better
+Nk2 = 41           ! number k points  odd number would be better
+Nk3 = 21           ! number k points  odd number would be better
+NP = 1              ! number of principle layers
+Gap_threshold = 1.0 ! threshold for GapCube output
+/
+
+LATTICE
+Angstrom
+-2.069  -3.583614  0.000000     ! crystal lattice information
+ 2.069  -3.583614  0.000000
+ 0.000   2.389075  9.546667
+
+ATOM_POSITIONS
+5                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+ Bi 0.3990    0.3990    0.6970
+ Bi 0.6010    0.6010    0.3030
+ Se 0     0     0.5
+ Se 0.2060    0.2060    0.1180
+ Se 0.7940    0.7940    0.8820
+
+PROJECTORS
+ 3 3 3 3 3          ! number of projectors
+Bi px py pz         ! projectors
+Bi px py pz
+Se px py pz
+Se px py pz
+Se px py pz
+
+SURFACE            ! See doc for details
+ 1  0  0
+ 0  1  0
+ 0  0  1
+
+KPATH_BULK            ! k point path
+4              ! number of k line only for bulk band
+G 0.00000 0.00000 0.0000 Z 0.00000 0.00000 0.5000
+Z 0.00000 0.00000 0.5000 F 0.50000 0.50000 0.0000
+F 0.50000 0.50000 0.0000 G 0.00000 0.00000 0.0000
+G 0.00000 0.00000 0.0000 L 0.50000 0.00000 0.0000
+
+KPATH_SLAB
+2        ! numker of k line for 2D case
+K 0.33 0.67 G 0.0 0.0  ! k path for 2D case
+G 0.0 0.0 M 0.5 0.5
+
+KPLANE_SLAB
+-0.1 -0.1      ! Original point for 2D k plane
+ 0.2  0.0      ! The first vector to define 2D k plane
+ 0.0  0.2      ! The second vector to define 2D k plane  for arc plots
+
+KPLANE_BULK
+ 0.00  0.00  0.50   ! Original point for 3D k plane  k3=0.5, bar{a}, along k1
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  0.50  0.00   ! The second vector to define 3d k space plane
+
+!&gt; The following 5 matrices are for backup using, will not affect the main input for WannierTools
+ 0.00  0.00  0.00   ! Original point for 3D k plane  k3=0.0, bar{a}, along k1
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  0.50  0.00   ! The second vector to define 3d k space plane
+
+ 0.00  0.50  0.00   ! Original point for 3D k plane  k2=0.5, bar{c}, along ka
+ 0.00  0.00  1.00   ! The first vector to define 3d k space plane
+ 0.50  0.00  0.00   ! The second vector to define 3d k space plane
+
+ 0.00  0.00  0.00   ! Original point for 3D k plane  k2=0, bar{c}, along ka
+ 0.00  0.00  1.00   ! The first vector to define 3d k space plane
+ 0.50  0.00  0.00   ! The second vector to define 3d k space plane
+
+ 0.50  0.00  0.00   ! Original point for 3D k plane  k1=0.5, bar{c}, along kb
+ 0.00  0.00  1.00   ! The first vector to define 3d k space plane
+ 0.00  0.50  0.00   ! The second vector to define 3d k space plane
+
+ 0.00  0.00  0.00   ! Original point for 3D k plane  k1=0, bar{c}, along kb
+ 0.00  0.00  1.00   ! The first vector to define 3d k space plane
+ 0.00  0.50  0.00   ! The second vector to define 3d k space plane
+
+
+
+KCUBE_BULK
+-0.50 -0.50 -0.50   ! Original point for 3D k plane
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  1.00  0.00   ! The second vector to define 3d k space plane
+ 0.00  0.00  1.00   ! The third vector to define 3d k cube
+
+
+EFFECTIVE_MASS      ! optional
+2                   ! The i&#39;th band to be calculated
+0.01                ! k step in unit of (1/Angstrom)
+0.0 0.0 0.0         ! k point where the effective mass calculated.
+
+
+WANNIER_CENTRES     ! copy from wannier90.wout
+Cartesian
+ -0.000040  -1.194745   6.638646
+  0.000038  -1.196699   6.640059
+ -0.000032  -1.192363   6.640243
+ -0.000086  -3.583414   2.908040
+  0.000047  -3.581457   2.906587
+ -0.000033  -3.585864   2.906443
+ -0.000001   1.194527   4.773338
+  0.000003   1.194538   4.773336
+ -0.000037   1.194536   4.773327
+  0.000006  -1.194384   1.130261
+ -0.000018  -1.216986   1.140267
+  0.000007  -1.172216   1.140684
+  0.000011  -3.583770   8.416406
+ -0.000002  -3.561169   8.406398
+ -0.000007  -3.605960   8.405979
+  0.000086  -1.194737   6.638626
+ -0.000047  -1.196693   6.640080
+  0.000033  -1.192286   6.640223
+  0.000040  -3.583406   2.908021
+ -0.000038  -3.581452   2.906608
+  0.000032  -3.585788   2.906424
+  0.000001   1.194548   4.773330
+ -0.000003   1.194537   4.773332
+  0.000037   1.194539   4.773340
+ -0.000011  -1.194381   1.130260
+  0.000002  -1.216981   1.140268
+  0.000007  -1.172191   1.140687
+ -0.000006  -3.583766   8.416405
+  0.000018  -3.561165   8.406400
+ -0.000007  -3.605935   8.405982
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">2.1. Bi2Se3 (3D strong TI)</a><ul>
+<li><a class="reference internal" href="#first-principle-calculation">2.1.1. First principle calculation</a></li>
+<li><a class="reference internal" href="#band-structure">2.1.2. Band structure</a></li>
+<li><a class="reference internal" href="#z2-topological-number">2.1.3. Z2 topological number</a></li>
+<li><a class="reference internal" href="#surface-state">2.1.4. Surface state</a></li>
+<li><a class="reference internal" href="#spin-texture">2.1.5. Spin texture</a></li>
+<li><a class="reference internal" href="#full-settings-in-wt-in-of-bi2se3">2.1.6. Full settings in WT.in of Bi2Se3</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../tutorials.html"
+                        title="previous chapter">2. Tutorial: learning WannierTools through examples</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="MoS2-1Tp.html"
+                        title="next chapter">2.2. MoS2 (2D QSHE)</a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="MoS2-1Tp.html" title="2.2. MoS2 (2D QSHE)"
+             >next</a></li>
+        <li class="right" >
+          <a href="../tutorials.html" title="2. Tutorial: learning WannierTools through examples"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">WannierTools 2.2.4 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../tutorials.html" >2. Tutorial: learning WannierTools through examples</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016, QuanSheng Wu.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7+.
+    </div>
+  </body>
+</html>
