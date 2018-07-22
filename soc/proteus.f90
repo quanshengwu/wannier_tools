@@ -3,7 +3,7 @@
       ! parameters space
       ! Ref:  Nelder, J.A., and Mead, R. 1965, Computer Journal, vol. 7, pp. 308–313. [1]
 
-      use para, only : dp, cpuid, stdout
+      use para, only : dp, cpuid, stdout, eps9
       implicit none
 
       integer, intent(in) :: ndim  ! number of parameters
@@ -25,7 +25,7 @@
          end function func_gap
       end interface
 
-      integer, parameter :: itmax=1000  ! maximum iterations
+      integer, parameter :: itmax=500  ! maximum iterations
       real(dp), parameter :: tiny=1.0e-10
       integer :: iworst
       real(dp), dimension(size(k,2)) :: ksum
@@ -59,7 +59,7 @@
          ! satisfactory.
          ! If returning, put best point and value in slot 1.
          rtol=2.0_dp*abs(gap(iworst)-gap(ibest))/(abs(gap(iworst))+abs(gap(ibest))+tiny)
-         if (rtol < ptol) then
+         if (rtol < ptol.or.gap(ibest)<eps9) then
             call swap1(gap(1),gap(ibest))
             call swap2(k(1,:),k(ibest,:))
             call printkgap(k, gap)
