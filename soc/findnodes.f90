@@ -237,13 +237,29 @@
       allocate(Hamk_bulk(num_wann, num_wann))
 
       ! generate bulk Hamiltonian
-      call ham_bulk_old(X, Hamk_bulk)
+      if (index(KPorTB, 'KP')/=0)then
+         call ham_bulk_kp(X, Hamk_bulk)
+      else
+        !> deal with phonon system
+        if (index(Particle,'phonon')/=0.and.LOTO_correction) then
+           call ham_bulk_LOTO(X, Hamk_bulk)
+        else
+           call ham_bulk_old (X, Hamk_bulk)
+        endif
+      endif
+
 
       ! diagonalization by call zheev in lapack
       W= 0d0
       call eigensystem_c( 'N', 'U', Num_wann ,Hamk_bulk, W)
 
       func_energy= W(Numoccupied)
+
+      !> deal with phonon system
+      !> sign(A, B) returns the value of A with the sign of B.
+      if (index(Particle,'phonon')/=0) then
+         func_energy= sqrt(abs(func_energy))*sign(1d0, func_energy)
+      endif
 
       deallocate(W, Hamk_bulk)
 
@@ -275,7 +291,16 @@
       allocate(Hamk_bulk(num_wann, num_wann))
 
       ! generate bulk Hamiltonian
-      call ham_bulk_old(X, Hamk_bulk)
+      if (index(KPorTB, 'KP')/=0)then
+         call ham_bulk_kp(X, Hamk_bulk)
+      else
+        !> deal with phonon system
+        if (index(Particle,'phonon')/=0.and.LOTO_correction) then
+           call ham_bulk_LOTO(X, Hamk_bulk)
+        else
+           call ham_bulk_old (X, Hamk_bulk)
+        endif
+      endif
 
       ! diagonalization by call zheev in lapack
       W= 0d0

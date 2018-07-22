@@ -1,3 +1,5 @@
+# phonon_hr.py is well tested with phonopy-1.11.8
+
 # In this folder we use WannierTools to perform the phonon calculation.
 0. Quick running, to get the results in PRL
 tar -xzvf phonopyTB_hr.dat.tar.gz
