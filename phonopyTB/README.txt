@@ -1,4 +1,4 @@
-# it is well tested with phononpy==1.11.8
+# it is well tested with phonopy==1.11.8
 
 A python tool based on Phononpy to generate phonon tight-binding Hamiltonian
 whose format is similar to wannier90_hr.dat produced by Wannier90.
