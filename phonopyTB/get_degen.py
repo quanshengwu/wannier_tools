@@ -2,7 +2,7 @@
 import sys
 import os
 import numpy as np
-from input_vectors import *
+#from input_vectors import *
 
 # Amat(:,i): a_i, primitive cell vectors
 def get_rpts(supercell_dim1,supercell_dim2,supercell_dim3):

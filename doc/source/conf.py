@@ -38,7 +38,7 @@ extensions = [
     'sphinx.ext.githubpages',
 #    'sphinxfortran.fortran_domain',
 #    'sphinxfortran.fortran_autodoc',
-#   'sphinxtogithub',
+    'sphinxtogithub',
 #   'sphinxcontrib.exceltable'
 ]
 
