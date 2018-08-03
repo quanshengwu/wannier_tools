@@ -34,22 +34,22 @@ SURFACE            ! See doc for details
 
 !> bulk band structure calculation flag
 &CONTROL
-BulkBand_calc         = T
-BulkBand_points_calc  = T
-BulkFS_calc           = T
-BulkGap_cube_calc     = T
-BulkGap_plane_calc    = T
-SlabBand_calc         = T
-WireBand_calc         = T
+BulkBand_calc         = F
+BulkBand_points_calc  = F
+BulkFS_calc           = F
+BulkGap_cube_calc     = F
+BulkGap_plane_calc    = F
+SlabBand_calc         = F
+WireBand_calc         = F
 SlabSS_calc           = T
-SlabArc_calc          = T
-SlabQPI_calc          = T
-Z2_3D_calc            = T
-SlabSpintexture_calc  = T
-Wanniercenter_calc    = T
-BerryPhase_calc       = T
-BerryCurvature_calc   = T
-EffectiveMass_calc    = T
+SlabArc_calc          = F
+SlabQPI_calc          = F
+Z2_3D_calc            = F
+SlabSpintexture_calc  = F
+Wanniercenter_calc    = F
+BerryPhase_calc       = F
+BerryCurvature_calc   = F
+EffectiveMass_calc    = F
 /
 
 &SYSTEM

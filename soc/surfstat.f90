@@ -220,7 +220,7 @@
            do j=1, omeganum 
               write(doslfile, '(30f16.8)')k2len(ikp), omega(j), dos_l(ikp, j), log(dos_l_only(ikp, j))
               write(dosrfile, '(30f16.8)')k2len(ikp), omega(j), dos_r(ikp, j), log(dos_r_only(ikp, j))
-              write(dosbulkfile, '(30f16.8)')k2len(ikp), omega(j), log(abs(dos_bulk(ikp, j))+eps9)
+              write(dosbulkfile, '(30f16.8)')k2len(ikp), omega(j), dos_bulk(ikp, j)
            enddo
            write(doslfile, *) ' '
            write(dosrfile, *) ' '
