@@ -1,0 +1,35 @@
+Dependencies: 
+This codes is only tested with python 2.7 on ubuntu. Sympy, spglib, and numpy are the
+necessities. We recommend you to install anaconda2 which is a free Python distribution
+from Continuum Analytics that includes SymPy, Matplotlib, IPython, NumPy, and many more
+useful packages for scientific computing. 
+
+Link for anaconda2: https://www.continuum.io/downloads, select "Download for Linux" and 
+download the "Python 2.7 version", install it by "bash Anaconda2-4.3.1-Linux-x86_64.sh" 
+in your linux system. Don't forget to add "export PATH="/your/anaconda2/bin:$PATH" to
+~/.bashrc and source ~/.bashrc. 
+You can update sympy by "conda update sympy"
+
+To install spglib, you have to download and install cmake(https://cmake.org/download/) 
+following its README.rst firstly. Then you can do the following as
+(Suppose your my current directory is /home/cmyue/Source/). Download spglib from 
+https://github.com/atztogo/spglib.git and unzip it as "spglib"
+cd spglib
+mkdir _build; cd _build
+cmake ..
+make
+make install
+cd ..
+cd python 
+python setup.py install --user
+
+Add the following 2 lines to your ~/.bashrc
+export LD_LIBRARY_PATH=/your/spglib/lib:$LD_LIBRARY_PATH
+export INCLUDE=/your/spglib/lib/include:$INCLUDE
+
+and now do
+source ~/.bashrc
+
+Add Python environmental path variable which looks like
+export PYTHONPATH=/home/cmyue/Source/Wannier_Hamiltonian_symmetrization/lib:$PYTHONPATH
+to your ~/.bashrc. Do not forget to run source ~/.bashrc
