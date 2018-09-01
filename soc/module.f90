@@ -1,4 +1,4 @@
-include 'mkl_dss.f90'
+!include 'mkl_dss.f90'
   module prec
      !>> A module controls the precision. 
      !> when the nnzmax is larger than 2,147,483,647 then li=8,

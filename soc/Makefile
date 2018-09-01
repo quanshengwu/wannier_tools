@@ -9,17 +9,13 @@ obj =  module.o aux.o symmetry.o readHmnR.o inverse.o proteus.o \
 		 effective_mass.o findnodes.o sigma_AHC.o \
        main.o
 
-
 # compiler
-f90  = mpif90 -fpp -DMPI # -check all -pg -traceback
+f90  = gfortran -cpp                                              
 
-#FLAGS =  -O3 -nogen-interface  -warn all 
-flag = -O2 -nogen-interface #-warn all 
+flag = -O3                              
 
 # blas and lapack libraries
-libs = -L/opt/intel/mkl/lib/ \
-		-lmkl_intel_lp64 -lmkl_sequential \
-		-lmkl_core -liomp5
+libs = -L/usr/lib/ -llapack -lblas
  
 main :  $(obj)
 	$(f90) $(obj) -o wt.x $(libs) 
