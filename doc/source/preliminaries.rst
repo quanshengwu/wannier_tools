@@ -7,3 +7,4 @@ Preliminaries
    installation
    input
    features
+   symmetrization 

@@ -15,11 +15,12 @@ Capabilities of WannierTools
 -  :ref:`spintexturecalculation`
 -  :ref:`berryphasecalculation`
 -  :ref:`berrycurvcalculation`
--  :ref:`berrycurvcalculationslab`
+-  :ref:`berrycurvcalculationslab` **New**
 -  :ref:`ahccalculation`
 -  :ref:`wanniercentercalculation`
 -  :ref:`z2bulkcalculation`
 -  :ref:`chernbulkcalculation`
+-  :ref:`mirrorchernnumbercalculation` **New**
 -  :ref:`weylchiralitycalculation`
 -  :ref:`landaulevel`
 
