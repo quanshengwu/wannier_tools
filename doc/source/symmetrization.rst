@@ -1,5 +1,5 @@
-Symmetrization of wannier90_hr.dat
-=====================================
+Symmetrization of wannier90_hr.dat **New**
+===========================================
 
 Here is a brief introduction of the symmetrization functionalities. Basically, wannhr_symm is an independent package based on Python2.7 
 written by Changming Yue (yuechangming8@gmail.com). Although this package is very useful, its requirement is also very restrict. 

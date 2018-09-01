@@ -44,18 +44,31 @@ Please cite this paper when using WannierTools for your researchs::
    }
 
 **Correspondence**
-^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^
 
 Please report bugs to wuquansheng at gmail.com.
 
-**Advertisement**
-^^^^^^^^^^^^^^^^^^^
+Licence
+^^^^^^^^^^^^^^^^^^^^^
 
-We already developed a tool to symmetrize Wannier tight binding models. It can symmetrize your wannier90_hr.dat which made of 
-s, p, d and f orbitals. However, it is not released and under testing (The new version after May 10 2018 is more powerful and accurate).
-If you want to use this part, plase contact one of our 
-developers Changming Yue (yuechangming8 at gmail.com).  Before contacting him, please make sure that the Wannier functions you constructed should
-are atomic-like orbitals. If you use random projectors in the Wannier90.win, we can't help you to symmetrize the Hamiltonian. 
+The WannierTools code is licensed under GPLv3. 
+The licence text in the LICENSE file is included in the root directory 
+of the WannierTools distribution.
+
+
+**Authors and contributions**
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+WannierTools 2.x have been written by :
+
+* QuanSheng Wu (EPFL, Switzerland)
+* ShengNan Zhang (EPFL, Switzerland)
+
+Contributors to the code include:
+
+* Changming Yue (IOP, Beijing, China): symmetrization
+* Yifei Guan (EPFL, Switzerland): Landau level
+* Yi Liu (BNU, Beijing, China): Runge-Kutta integration
 
 .. image:: wannier_tools-logo-crop.png
    :scale: 20 %
