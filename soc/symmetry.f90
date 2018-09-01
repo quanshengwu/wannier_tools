@@ -1,4 +1,18 @@
 !> set symmetry 
+!> This subroutine is a temporary solution. 
+!> It can be used in the mirror chern number calculation
+!> In the future, we will added the automatically detection of the groups
+!> and automatically generate the matrix representations for each operators 
+!> in the basis of atomic like Wannier functions. 
+!> If you want to study the mirror Chern number, you have to define the
+!> operator matrix yourself. For example, mirror_x, mirror_z.
+!> In the mirror Chern number calculation subroutine, we now only support 
+!> very simple mirror symmetries mirror_x and mirror_z. So you have to rotate
+!> your coordinates so that the mirror plane you concern is mirror_z or mirror_x
+!> By default we use mirror_z. So if you want to use mirror_x, please modify 
+!> wanniercenter.f90
+!> If you have problems with that, please contact with wuquansheng@gmail.com
+!> Sep/01/2018 EPFL Switzerland
   subroutine symmetry
      use para
      implicit none
@@ -59,8 +73,7 @@
               inversion(n, n)= 1
               inversion(n+ nwan, n+ nwan)= 1
            case default
-              write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 orbitals"
-              stop
+              if (cpuid.eq.0)write(stdout, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 orbitals"
            end select
         enddo ! i
      enddo ! ia
@@ -105,8 +118,7 @@
               mirror_x(n, n+ nwan)= 1d0
               mirror_x(n+ nwan, n)= 1d0
            case default
-              write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 orbitals"
-              stop
+              if (cpuid.eq.0)write(stdout, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 orbitals"
            end select
         enddo ! i
      enddo ! ia
@@ -154,8 +166,7 @@
               mirror_z(n, n)= 1
               mirror_z(n+ nwan, n+ nwan)=-1
            case default
-              write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 orbitals"
-              stop
+              if (cpuid.eq.0)write(stdout, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 orbitals"
            end select
         enddo ! i
      enddo ! ia

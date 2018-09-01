@@ -331,6 +331,64 @@
   end subroutine ham_qlayer2qlayer2
 
 
+  subroutine ham_qlayer2qlayer_velocity(k,Vij_x,Vij_y)
+     ! This subroutine caculates velocity matrix between
+     ! slabs  
+     ! 06/Aug/2018 by QS Wu
+     ! Copyright (c) 2018 QuanSheng Wu. All rights reserved.
+
+     use para
+     implicit none
+
+     ! loop index
+     integer :: iR, ia, ib, ic, inew_ic
+
+     ! new index used to sign irvec     
+     real(dp) :: new_ia,new_ib,new_ic
+
+     ! wave vector k times lattice vector R  
+     real(Dp) :: kdotr, r0(3), r1(3)
+
+     ! input wave vector k's cooridinates
+     real(Dp),intent(in) :: k(2)
+
+     complex(dp) :: ratio
+
+     complex(Dp), intent(out) :: Vij_x(-ijmax:ijmax,Num_wann,Num_wann)
+     complex(Dp), intent(out) :: Vij_y(-ijmax:ijmax,Num_wann,Num_wann)
+
+     Vij_x=0.0d0; Vij_y= 0d0;
+     do iR=1,Nrpts
+        ia=irvec(1,iR)
+        ib=irvec(2,iR)
+        ic=irvec(3,iR)
+
+        !> new lattice
+        call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
+        r0= new_ia*Rua_newcell+ new_ib* Rub_newcell
+
+        !> rotate the vector from the original coordinate to the new coordinates
+        !> which defined like this: x is along R1', z is along R1'xR2', y is along z x y
+        call rotate(r0, r1)
+
+        inew_ic= int(new_ic)
+        if (abs(new_ic).le.ijmax)then
+           kdotr= k(1)*new_ia+ k(2)*new_ib
+           ratio= cos(2d0*pi*kdotr)+ zi*sin(2d0*pi*kdotr)
+
+           Vij_x(inew_ic, 1:Num_wann, 1:Num_wann ) &
+           = Vij_x(inew_ic, 1:Num_wann, 1:Num_wann ) &
+           + zi*r1(1)*HmnR(:,:,iR)*ratio/ndegen(iR)
+           Vij_y(inew_ic, 1:Num_wann, 1:Num_wann ) &
+           = Vij_y(inew_ic, 1:Num_wann, 1:Num_wann ) &
+           + zi*r1(2)*HmnR(:,:,iR)*ratio/ndegen(iR)
+        endif
+     enddo
+
+     return
+  end subroutine ham_qlayer2qlayer_velocity
+
+
 
   subroutine ham_qlayer2qlayer2_LOTO(k,Hij)
      ! This subroutine caculates Hamiltonian between

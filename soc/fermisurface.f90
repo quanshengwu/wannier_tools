@@ -264,7 +264,7 @@
           if (index(Particle,'phonon')/=0.and.LOTO_correction) then
              call ham_bulk_LOTO(k, Hamk_bulk)
           else
-             call ham_bulk_old    (k, Hamk_bulk)
+             call ham_bulk_latticegauge    (k, Hamk_bulk)
           endif
         endif
 
@@ -295,7 +295,7 @@
      dos_selected= 0d0
      do ik=1, knv3
         do i=1, NumberofSelectedOrbitals
-           dos_selected(ik)= dos_selected(ik)+ dos_mpi(ik, Selected_Orbitals(i))
+        dos_selected(ik)= dos_selected(ik)+ dos_mpi(ik, Selected_WannierOrbitals(i))
         enddo
         dos_unselected(ik)= dos_total(ik)- dos_selected(ik)
      enddo
@@ -522,7 +522,7 @@
           if (index(Particle,'phonon')/=0.and.LOTO_correction) then
              call ham_bulk_LOTO(k, Hamk_bulk)
           else
-             call ham_bulk_old    (k, Hamk_bulk)
+             call ham_bulk_latticegauge    (k, Hamk_bulk)
           endif
         endif
 
@@ -560,7 +560,7 @@
 
      do ik=1, knv3
         do i=1, NumberofSelectedOrbitals
-           dos_total(ik)= dos_total(ik)+ dos_mpi(ik, Selected_Orbitals(i))
+        dos_total(ik)= dos_total(ik)+ dos_mpi(ik, Selected_WannierOrbitals(i))
         enddo
      enddo
 
@@ -720,7 +720,7 @@
           if (index(Particle,'phonon')/=0.and.LOTO_correction) then
              call ham_bulk_LOTO(k, Hamk_bulk)
           else
-             call ham_bulk_old    (k, Hamk_bulk)
+             call ham_bulk_latticegauge    (k, Hamk_bulk)
           endif
         endif
 
@@ -889,7 +889,7 @@
           if (index(Particle,'phonon')/=0.and.LOTO_correction) then
              call ham_bulk_LOTO(k, Hamk_bulk)
           else
-             call ham_bulk_old    (k, Hamk_bulk)
+             call ham_bulk_latticegauge    (k, Hamk_bulk)
           endif
         endif
 
@@ -1071,7 +1071,7 @@
           if (index(Particle,'phonon')/=0.and.LOTO_correction) then
              call ham_bulk_LOTO(k, Ham)
           else
-             call ham_bulk_old    (k, Ham)
+             call ham_bulk_latticegauge    (k, Ham)
           endif
         endif
 

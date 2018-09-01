@@ -1,3 +1,4 @@
+include 'mkl_dss.f90'
   module prec
      !>> A module controls the precision. 
      !> when the nnzmax is larger than 2,147,483,647 then li=8,
@@ -341,6 +342,8 @@
      use prec
      implicit none
 
+     character(80) :: version
+
      integer,parameter :: stdout= 8
 
      !> define the file index to void the same index in different subroutines
@@ -350,12 +353,14 @@
      character(80) :: Particle
      character(80) :: Package
      character(80) :: KPorTB
-     namelist / TB_FILE / Hrfile, Particle, Package, KPorTB
+     real(dp) :: vef
+     logical :: Is_HrFile, Is_Sparse, Use_ELPA
+     namelist / TB_FILE / Hrfile, Particle, Package, KPorTB, Is_HrFile, Is_Sparse, Use_ELPA,vef
 
      !> control parameters
      logical :: BulkBand_calc    ! Flag for bulk energy band calculation
-     logical :: BulkBand_points_calc    ! Flag for bulk energy band calculation for some k points
      logical :: BulkBand_plane_calc    ! Flag for bulk energy band calculation for a fixed k plane 
+     logical :: BulkBand_points_calc    ! Flag for bulk energy band calculation for some k points
      logical :: BulkFS_calc      ! Flag for bulk 3D fermi surface in 3D BZ calculation
      logical :: BulkFS_plane_calc ! Flag for bulk fermi surface for a fix k plane calculation
      logical :: BulkGap_cube_calc  ! Flag for Gap_cube calculation
@@ -373,12 +378,15 @@
      logical :: WeylChirality_calc  ! Weyl chirality calculation
      logical :: NLChirality_calc  ! Chirality calculation for nodal line
      logical :: Chern_3D_calc  ! Flag for Chern number calculations of 6 planes
+     logical :: MirrorChern_calc  ! Flag for mirror Chern number calculations
      logical :: BerryPhase_calc   ! Flag for Berry phase calculation
      logical :: BerryCurvature_calc ! Flag for Berry curvature calculation
+     logical :: BerryCurvature_slab_calc ! Flag for Berry curvature calculation for a slab system
      logical :: EffectiveMass_calc  ! Flag for effective mass calculation
      logical :: FindNodes_calc  ! Flag for effective mass calculation
      logical :: TBtoKP_calc  ! Flag for kp model construction from tight binding model
      logical :: Hof_Butt_calc  ! Flag for Hofstader butterfly
+     logical :: LandauLevel_B_calc  ! Flag for Hofstader butterfly
      logical :: LOTO_correction  ! Flag for LOTO correction of phonon spectrum 
      logical :: Boltz_OHE_calc  ! Flag for Boltzmann tranport under magnetic field
      logical :: Symmetry_Import_calc  ! Flag for Boltzmann tranport under magnetic field using symmetry
@@ -386,6 +394,9 @@
      logical :: Boltz_k_calc  ! Flag for Boltzmann tranport under magnetic field
      logical :: AHC_calc  ! Flag for Boltzmann tranport under magnetic field
      logical :: LandauLevel_k_calc  ! Flag for landau level calculation along k direction with fixed B
+     logical :: LandauLevel_kplane_calc  ! Flag for landau level calculation along in a kplane in the magnetic BZ
+     logical :: LandauLevel_k_dos_calc  ! Flag for landau level spectrum mode calculation along k direction with fixed B
+     logical :: LandauLevel_B_dos_calc  ! Flag for landau level spectrum mode calculation for different B with given k point
      logical :: LandauLevel_wavefunction_calc  ! Flag for landau level calculation along k direction with fixed B
      logical :: OrbitalTexture_calc  ! Flag for Orbital texture calculation in a given k plane
      logical :: OrbitalTexture_3D_calc  ! Flag for Orbital texture calculation in a given k plane
@@ -394,10 +405,16 @@
      logical :: LanczosSeqDOS_calc  ! DOS
      logical :: Translate_to_WS_calc  ! whether translate the k points into the Wigner-Seitz cell
      
+     logical :: LanczosBand_calc=.false.
+     logical :: LanczosDos_calc= .false.
+     logical :: landau_chern_calc = .false.
+     
      namelist / Control / BulkBand_calc,BulkFS_calc,  BulkFS_Plane_calc, BulkGap_plane_calc, &
+                          BulkBand_points_calc, &
                           BulkGap_cube_calc, SlabBand_calc, WireBand_calc, &
                           SlabSS_calc, SlabArc_calc, SlabSpintexture_calc, &
                           WannierCenter_calc,BerryPhase_calc,BerryCurvature_calc, &
+                          BerryCurvature_slab_calc, MirrorChern_calc, &
                           Z2_3D_calc, Chern_3D_calc, WeylChirality_calc, NLChirality_calc, &
                           Dos_calc, JDos_calc, EffectiveMass_calc, SlabQPI_calc, &
                           FindNodes_calc, TBtoKP_calc, LOTO_correction, &
@@ -405,11 +422,10 @@
                           Boltz_k_calc, Boltz_evolve_k, Boltz_OHE_calc, AHC_Calc, &
                           LandauLevel_k_calc, OrbitalTexture_calc, OrbitalTexture_3D_calc, &
                           LandauLevel_wavefunction_calc, Fit_kp_calc, DMFT_MAG_calc, &
-                          LanczosSeqDOS_calc, Translate_to_WS_calc, BulkBand_points_calc
+                          LanczosSeqDOS_calc, Translate_to_WS_calc, LandauLevel_k_dos_calc, &
+                          LandauLevel_B_dos_calc,LanczosBand_calc,LanczosDos_calc, &
+                          LandauLevel_B_calc, LandauLevel_kplane_calc,landau_chern_calc
 
-     
-
-          
      integer :: Nslab  ! Number of slabs for 2d Slab system
      integer :: Nslab1 ! Number of slabs for 1D wire system
      integer :: Nslab2 ! Number of slabs for 1D wire system
@@ -453,7 +469,12 @@
 
    
      integer :: OmegaNum   ! The number of energy slices between OmegaMin and OmegaMax
-     
+
+     integer :: NumLCZVecs  !> number of Lanczos vectors
+
+     integer :: NumRandomConfs  !> number of random configurations, used in the Lanczos DOS calculation, default is 1
+
+     !~      real(dp) :: vef
      real(dp) :: OmegaMin, OmegaMax ! omega interval 
 
   
@@ -461,11 +482,6 @@
 
    
      real(Dp) :: Gap_threshold  ! threshold value for output the the k points data for Gap3D
-
-
-     !> The largest distance between two WFs for which the Hamiltonian matrix element is retained and used in the band
-     !interpolation
-     real(dp) :: bondlength_cutoff
 
      !>> some parameters for DMFT
      !> The inverse of temperature Beta= 1/(KB*T), Beta*T=11600, T is in unit of Kelvin
@@ -497,7 +513,7 @@
      !> namelist parameters
      namelist /PARAMETERS/ Eta_Arc, OmegaNum, OmegaMin, OmegaMax, &
         E_arc, Nk1, Nk2, Nk3, NP, Gap_threshold, Tmin, Tmax, NumT, NBTau, BTauMax, Rcut, Magp, Nslice_BTau_Max, &
-        wcc_neighbour_tol, wcc_calc_tol, Beta
+        wcc_neighbour_tol, wcc_calc_tol, Beta,NumLCZVecs, NumRandomConfs
 
     
      real(Dp) :: E_fermi  ! Fermi energy, search E-fermi in OUTCAR for VASP, set to zero for Wien2k
@@ -511,7 +527,7 @@
 
      !> system parameters namelist
      namelist / SYSTEM / Soc, E_fermi, Bx, By, Bz, Btheta, Bphi, surf_onsite, &
-        Nslab, Nslab1, Nslab2, Numoccupied, Ntotch, bondlength_cutoff
+        Nslab, Nslab1, Nslab2, Numoccupied, Ntotch
 
      real(dp),parameter :: alpha= 1.20736d0*1D-6  !> e/2/h*a*a   a=1d-10m, h is the planck constant then the flux equals alpha*B*s
 
@@ -580,7 +596,6 @@
      real(dp),allocatable :: K3list_band(:, :) ! coordinate of k points for bulk band calculation in kpath mode
      real(dp),allocatable :: K3len(:)  ! put all k points in a line in order to plot the bands 
      real(dp),allocatable :: K3points(:, :) ! coordinate of k points for bulk band calculation in cube mode
-
 
      !> k points in the point mode 
      integer :: Nk3_point_mode
@@ -651,6 +666,14 @@
      integer, allocatable     :: irvec(:,:)   ! R coordinates in fractional units
      real(dp), allocatable    :: crvec(:,:)   ! R coordinates in Cartesian coordinates in units of Angstrom
      complex(dp), allocatable :: HmnR(:,:,:)   ! Hamiltonian m,n are band indexes
+     
+     
+     !sparse HmnR arraies
+     integer,allocatable :: hicoo(:),hjcoo(:),hirv(:)
+     complex(dp),allocatable :: hacoo(:)
+     integer :: splen
+     
+     
      integer, allocatable     :: ndegen(:)  ! degree of degeneracy of R point
 
      complex(dp), allocatable :: HmnR_newcell(:,:,:)   ! Hamiltonian m,n are band indexes
@@ -682,9 +705,11 @@
      character(10) :: DirectOrCart ! Whether direct coordinates or Cartisen coordinates
      character(10), allocatable :: Atom_name(:)  ! Atom's name
      real(dp) :: CellVolume ! Cell volume
-     real(dp) :: ProjectedArea !Projected area respect to the first vector specifed in SURFACE card in Angstrom^2
+     real(dp) :: MagneticSuperCellVolume ! Cell volume
+     real(dp) :: MagneticSuperProjectedArea !Projected area respect to the first vector specifed in SURFACE card in Angstrom^2
      real(dp) :: kCubeVolume
-     real(dp) :: PrimitiveCellVolume
+     real(dp) :: ReciprocalCellVolume
+     real(dp) :: MagneticReciprocalCellVolume
      real(dp), allocatable :: Atom_position(:, :)  ! Atom's position, only the atoms which have Wannier orbitals
      real(dp), allocatable :: Atom_position_direct(:, :)
      real(dp), allocatable :: wannier_centers_cart(:, :)
@@ -783,10 +808,18 @@
 
      type(kcube_type_symm) :: KCube3D_symm
 
+     !> Select those atoms which used in the construction of the Wannier functions
+     !> It can be useful when calculate the projected weight related properties
+     !> such as the surface state, slab energy bands.
+     integer :: NumberofSelectedAtoms
+     integer, allocatable :: Selected_Atoms(:)
 
-     !> selected bands for magnetoresistance
+     !> selected wannier orbitals 
+     !> this part can be read from the input.dat or wt.in file
+     !> if not specified in the input.dat or wt.in, we will try to specify it from  the
+     !> SelectedAtoms part. 
      integer :: NumberofSelectedOrbitals
-     integer, allocatable :: Selected_Orbitals(:)
+     integer, allocatable :: Selected_WannierOrbitals(:)
 
      !> selected bands for magnetoresistance
      integer :: NumberofSelectedBands

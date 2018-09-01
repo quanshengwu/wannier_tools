@@ -836,7 +836,7 @@
             k= kline_integrate(ik1)%k
   
             !> get the TB hamiltonian in k space
-            call ham_bulk_old(k,hamk)
+            call ham_bulk_latticegauge(k,hamk)
    
             !> diagonal hamk
             call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)

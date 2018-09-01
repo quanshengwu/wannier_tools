@@ -49,7 +49,7 @@
           if (index(Particle,'phonon')/=0.and.LOTO_correction) then
              call ham_bulk_LOTO(k, Hamk_bulk)
           else
-             call ham_bulk_old    (k, Hamk_bulk)
+             call ham_bulk_latticegauge    (k, Hamk_bulk)
           endif
         endif
 
@@ -210,7 +210,7 @@
 
         !> calculation bulk hamiltonian
         Hamk_bulk= 0d0
-        call ham_bulk_old(k, Hamk_bulk)
+        call ham_bulk_latticegauge(k, Hamk_bulk)
        !call ham_bulk    (k, Hamk_bulk)
 
         !> diagonalization by call zheev in lapack
@@ -330,7 +330,7 @@
 
         ! calculation bulk hamiltonian
         Hamk_bulk= 0d0
-        call ham_bulk_old(k, Hamk_bulk)
+        call ham_bulk_latticegauge(k, Hamk_bulk)
 
         !> diagonalization by call zheev in lapack
         W= 0d0
@@ -459,7 +459,7 @@
 
         ! calculation bulk hamiltonian
         Hamk_bulk= 0d0
-        call ham_bulk_old(k, Hamk_bulk)
+        call ham_bulk_latticegauge(k, Hamk_bulk)
 
         !> diagonalization by call zheev in lapack
         W= 0d0
@@ -537,12 +537,12 @@
 
         ! calculation bulk hamiltonian
         Hamk_bulk= 0d0
-        call ham_bulk_old    (k, Hamk_bulk)
+        call ham_bulk                 (k, Hamk_bulk)
 
         k = k3points(:, ik)
         k(3)= -k(3)
         Hamk= 0d0
-        call ham_bulk_old    (k, Hamk)
+        call ham_bulk                 (k, Hamk)
 
         !> symmetrization
         call mat_mul(Num_wann, mirror_z, hamk, mat1)
@@ -700,12 +700,12 @@
 
         ! calculation bulk hamiltonian
         Hamk_bulk= 0d0
-        call ham_bulk_old    (k, Hamk_bulk)
+        call ham_bulk_latticegauge    (k, Hamk_bulk)
 
        !k = k3points(:, ik)
        !k(1)= -k(1)
        !Hamk= 0d0
-       !call ham_bulk_old    (k, Hamk)
+       !call ham_bulk_latticegauge    (k, Hamk)
 
 
         hamk=  Hamk_bulk

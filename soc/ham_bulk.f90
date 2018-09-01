@@ -1,143 +1,313 @@
-! This subroutine is used to caculate Hamiltonian for 
-! bulk system . 
+! This subroutine is used to caculate Hamiltonian for
+! bulk system .
 
-! History  
+! History
 !        May/29/2011 by Quansheng Wu
-  subroutine ham_bulk(k,Hamk_bulk)
-  
-     use para
-     implicit none
+!        Aug/31/2018 by Quansheng Wu
+subroutine ham_bulk(k,Hamk_bulk)
 
-! loop index  
-     integer :: i1,i2,ia,ib,ic,iR
+   use para
+   implicit none
 
-     integer :: ia1, ia2
+   real(dp), intent(in) :: k(3)
 
-     integer :: nwann
+   ! Hamiltonian of bulk system
+   complex(Dp),intent(out) ::Hamk_bulk(Num_wann, Num_wann)
 
-     real(dp) :: kdotr
+   ! temporary integers
+   integer :: i1,i2,ia,ib,ic,iR, ia1, ia2, nwann
 
-! wave vector in 2d
-     real(Dp) :: k(3)      
+   real(dp) :: kdotr, R(3)
 
-     ! coordinates of R vector 
-     real(Dp) :: R(3)      
+   !> row start; row end; column start; column end
+   integer :: rs, re, cs, ce
 
-     !> row start; row end; column start; column end
-     integer :: rs, re
-     integer :: cs, ce
+   real(dp) :: pos(3), pos1(3), pos2(3), pos_cart(3), pos_direct(3)
 
-     real(dp) :: pos(3)
-     real(dp) :: pos1(3)
-     real(dp) :: pos2(3)
+   !> distance between two atoms
+   real(dp) :: dis
 
-     !> distance between two atoms
-     real(dp) :: dis
+   real(dp), external :: norm
+   complex(dp) :: ratio
 
-     ! Hamiltonian of bulk system
-     complex(Dp),intent(out) ::Hamk_bulk(Num_wann, Num_wann) 
+   nwann= Num_wann/2
+   Hamk_bulk=0d0
+   if (soc>0 ) then
+      !> the first atom in home unit cell
+      do ia1=1, Num_atoms
+         pos1= Atom_position_direct(:, ia1)
+         rs= index_start(ia1)
+         re= index_end(ia1)
 
-     real(dp), external :: norm
+         !> the second atom in unit cell R
+         do ia2=1, Num_atoms
+            pos2= Atom_position_direct(:, ia2)
+            cs= index_start(ia2)
+            ce= index_end(ia2)
+            do iR=1,Nrpts
 
-     nwann= Num_wann/2
-     Hamk_bulk=0d0
-     if (soc>0 ) then
-        !> the first atom in home unit cell
-        do ia1=1, Num_atoms
-           pos1= Atom_position(:, ia1)
-           rs= index_start(ia1)
-           re= index_end(ia1)
-           !> the second atom in unit cell R
-           do ia2=1, Num_atoms
-              pos2= Atom_position(:, ia2)
-              cs= index_start(ia2)
-              ce= index_end(ia2)
-              do iR=1,Nrpts
-                 ia=irvec(1,iR)
-                 ib=irvec(2,iR)
-                 ic=irvec(3,iR)
-         
-                 pos= ia*Rua+ ib*Rub+ ic* Ruc
-                 pos= pos+ pos2- pos1
-                 dis= norm(pos)
-         
-                 if (dis> Rcut) cycle
-        
-                 kdotr=k(1)*ia + k(2)*ib + k(3)*ic
-               
-                 Hamk_bulk(rs:re, cs:ce)=Hamk_bulk(rs:re, cs:ce)&
-                 +HmnR(rs:re, cs:ce,iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
+               pos_direct= irvec(:, iR)
+               pos_direct= pos_direct+ pos2- pos1
 
-                 Hamk_bulk(rs:re, cs+nwann:ce+nwann)= &
-                 Hamk_bulk(rs:re, cs+nwann:ce+nwann)+ &
-                 HmnR(rs:re, cs+nwann:ce+nwann,iR)* &
-                 Exp(2d0*pi*zi*kdotr)/ndegen(iR)
+               call direct_cart_real(pos_direct, pos_cart)
 
-                 Hamk_bulk(rs+nwann:re+nwann, cs:ce)= &
-                 Hamk_bulk(rs+nwann:re+nwann, cs:ce)+ &
-                 HmnR(rs+nwann:re+nwann, cs:ce,iR)* &
-                 Exp(2d0*pi*zi*kdotr)/ndegen(iR)
+               dis= norm(pos_cart)
+               if (dis> Rcut) cycle
 
-                 Hamk_bulk(rs+nwann:re+nwann, cs+nwann:ce+nwann)= &
-                 Hamk_bulk(rs+nwann:re+nwann, cs+nwann:ce+nwann)+ &
-                 HmnR(rs+nwann:re+nwann, cs+nwann:ce+nwann,iR)* &
-                 Exp(2d0*pi*zi*kdotr)/ndegen(iR)
+               kdotr=k(1)*pos_direct(1) + k(2)*pos_direct(2) + k(3)*pos_direct(3)
+               ratio= exp(pi2zi*kdotr)/ndegen(iR)
 
-              enddo ! iR
-           enddo ! ia2
-        enddo ! ia1
-     else
-        !> the first atom in home unit cell
-        do ia1=1, Num_atoms
-           pos1= Atom_position(:, ia1)
-           rs= index_start(ia1)
-           re= index_end(ia1)
-           !> the second atom in unit cell R
-           do ia2=1, Num_atoms
-              pos2= Atom_position(:, ia2)
-              cs= index_start(ia2)
-              ce= index_end(ia2)
-              do iR=1,Nrpts
-                 ia=irvec(1,iR)
-                 ib=irvec(2,iR)
-                 ic=irvec(3,iR)
-         
-                 pos= ia*Rua+ ib*Rub+ ic* Ruc
-                 pos= pos+ pos2- pos1
-                 dis= norm(pos)
-         
-                 if (dis> Rcut) cycle
-        
-                 kdotr=k(1)*ia + k(2)*ib + k(3)*ic
-               
-                 Hamk_bulk(rs:re, cs:ce)=Hamk_bulk(rs:re, cs:ce)&
-                 +HmnR(rs:re, cs:ce,iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
+               Hamk_bulk(rs:re, cs:ce)=Hamk_bulk(rs:re, cs:ce)&
+                  +HmnR(rs:re, cs:ce,iR)*ratio
 
-              enddo ! iR
-           enddo ! ia2
-        enddo ! ia1
+               Hamk_bulk(rs:re, cs+nwann:ce+nwann)= &
+                  Hamk_bulk(rs:re, cs+nwann:ce+nwann)+ &
+                  HmnR(rs:re, cs+nwann:ce+nwann,iR)* &
+                  ratio
 
-     endif ! soc
+               Hamk_bulk(rs+nwann:re+nwann, cs:ce)= &
+                  Hamk_bulk(rs+nwann:re+nwann, cs:ce)+ &
+                  HmnR(rs+nwann:re+nwann, cs:ce,iR)* &
+                  ratio
+
+               Hamk_bulk(rs+nwann:re+nwann, cs+nwann:ce+nwann)= &
+                  Hamk_bulk(rs+nwann:re+nwann, cs+nwann:ce+nwann)+ &
+                  HmnR(rs+nwann:re+nwann, cs+nwann:ce+nwann,iR)* &
+                  ratio
+
+            enddo ! iR
+         enddo ! ia2
+      enddo ! ia1
+   else
+      !> the first atom in home unit cell
+      do ia1=1, Num_atoms
+         pos1= Atom_position_direct(:, ia1)
+         rs= index_start(ia1)
+         re= index_end(ia1)
+
+         !> the second atom in unit cell R
+         do ia2=1, Num_atoms
+            pos2= Atom_position_direct(:, ia2)
+            cs= index_start(ia2)
+            ce= index_end(ia2)
+            do iR=1,Nrpts
+
+               pos_direct= irvec(:, iR)
+               pos_direct= pos_direct+ pos2- pos1
+
+               call direct_cart_real(pos_direct, pos_cart)
+
+               dis= norm(pos_cart)
+               if (dis> Rcut) cycle
+
+               kdotr=k(1)*pos_direct(1) + k(2)*pos_direct(2) + k(3)*pos_direct(3)
+               ratio= exp(pi2zi*kdotr)/ndegen(iR)
+
+               Hamk_bulk(rs:re, cs:ce)=Hamk_bulk(rs:re, cs:ce)&
+                 +HmnR(rs:re, cs:ce,iR)*ratio
+
+            enddo ! iR
+         enddo ! ia2
+      enddo ! ia1
+
+   endif ! soc
 
 ! check hermitcity
 
-     do i1=1, Num_wann
-     do i2=1, Num_wann
-        if(abs(Hamk_bulk(i1,i2)-conjg(Hamk_bulk(i2,i1))).ge.1e-6)then
-          write(stdout,*)'there are something wrong with Hamk_bulk'
-          write(stdout,*)'i1, i2', i1, i2
-          write(stdout,*)'value at (i1, i2)', Hamk_bulk(i1, i2)
-          write(stdout,*)'value at (i2, i1)', Hamk_bulk(i2, i1)
-         !stop
-        endif 
-     enddo
-     enddo
+   do i1=1, Num_wann
+      do i2=1, Num_wann
+         if(abs(Hamk_bulk(i1,i2)-conjg(Hamk_bulk(i2,i1))).ge.1e-6)then
+            write(stdout,*)'there is something wrong with Hamk_bulk'
+            write(stdout,*)'i1, i2', i1, i2
+            write(stdout,*)'value at (i1, i2)', Hamk_bulk(i1, i2)
+            write(stdout,*)'value at (i2, i1)', Hamk_bulk(i2, i1)
+            !stop
+         endif
+      enddo
+   enddo
 
-  return
-  end subroutine ham_bulk
+   return
+end subroutine ham_bulk
 
 
-  subroutine ham_bulk_old(k,Hamk_bulk)
+subroutine dHdk_atomicgauge(k, vx, vy, vz)
+   use para, only : Nrpts, irvec, crvec, Atom_position, HmnR, ndegen, &
+      Atom_position_direct, Num_wann, dp, Rcut, pi2zi, index_start, index_end, &
+      zi, soc, Num_atoms
+   implicit none
+
+   !> momentum in 3D BZ
+   real(dp), intent(in) :: k(3)
+
+   !> velocity operator using lattice guage 
+   !> which don't take into account the atom's position
+   !> this is a nature choice, while maybe not consistent with the symmetry
+   complex(dp), intent(out) :: vx(Num_wann, Num_wann)
+   complex(dp), intent(out) :: vy(Num_wann, Num_wann)
+   complex(dp), intent(out) :: vz(Num_wann, Num_wann)
+
+   integer :: iR, ia1, ia2, rs, re, cs, ce, nwann
+
+   real(dp) :: pos(3), pos1(3), pos2(3), pos_cart(3), pos_direct(3)
+   real(dp) :: kdotr, dis
+   complex(dp) :: ratio
+   real(dp), external :: norm
+
+   nwann= Num_wann/2
+   vx=0d0; vy=0d0; vz=0d0
+   if (soc>0 ) then
+      !> the first atom in home unit cell
+      do ia1=1, Num_atoms
+         pos1= Atom_position_direct(:, ia1)
+         rs= index_start(ia1)
+         re= index_end(ia1)
+
+         !> the second atom in unit cell R
+         do ia2=1, Num_atoms
+            pos2= Atom_position_direct(:, ia2)
+            cs= index_start(ia2)
+            ce= index_end(ia2)
+            do iR=1,Nrpts
+
+               pos_direct= irvec(:, iR)
+               pos_direct= pos_direct+ pos2- pos1
+
+               call direct_cart_real(pos_direct, pos_cart)
+
+               dis= norm(pos_cart)
+               if (dis> Rcut) cycle
+
+               kdotr=k(1)*pos_direct(1) + k(2)*pos_direct(2) + k(3)*pos_direct(3)
+               ratio= exp(pi2zi*kdotr)/ndegen(iR)
+
+               vx(rs:re, cs:ce)=vx(rs:re, cs:ce)+ &
+                  zi*pos_cart(1)*HmnR(rs:re, cs:ce,iR)*ratio
+
+               vx(rs:re, cs+nwann:ce+nwann)= &
+                  vx(rs:re, cs+nwann:ce+nwann)+ &
+                  zi*pos_cart(1)*HmnR(rs:re, cs+nwann:ce+nwann,iR)* ratio
+
+               vx(rs+nwann:re+nwann, cs:ce)= &
+                  vx(rs+nwann:re+nwann, cs:ce)+ &
+                  zi*pos_cart(1)*HmnR(rs+nwann:re+nwann, cs:ce,iR)* ratio
+
+               vx(rs+nwann:re+nwann, cs+nwann:ce+nwann)= &
+                  vx(rs+nwann:re+nwann, cs+nwann:ce+nwann)+ &
+                  zi*pos_cart(1)*HmnR(rs+nwann:re+nwann, cs+nwann:ce+nwann,iR)* ratio
+
+
+               vy(rs:re, cs:ce)=vy(rs:re, cs:ce) + &
+                  zi*pos_cart(2)*HmnR(rs:re, cs:ce,iR)*ratio
+
+               vy(rs:re, cs+nwann:ce+nwann)= &
+                  vy(rs:re, cs+nwann:ce+nwann)+ &
+                  zi*pos_cart(2)*HmnR(rs:re, cs+nwann:ce+nwann,iR)* ratio
+
+               vy(rs+nwann:re+nwann, cs:ce)= &
+                  vy(rs+nwann:re+nwann, cs:ce)+ &
+                  zi*pos_cart(2)*HmnR(rs+nwann:re+nwann, cs:ce,iR)* ratio
+
+               vy(rs+nwann:re+nwann, cs+nwann:ce+nwann)= &
+                  vy(rs+nwann:re+nwann, cs+nwann:ce+nwann)+ &
+                  zi*pos_cart(2)*HmnR(rs+nwann:re+nwann, cs+nwann:ce+nwann,iR)* ratio
+
+
+               vz(rs:re, cs:ce)=vz(rs:re, cs:ce)+ &
+                  zi*pos_cart(3)*HmnR(rs:re, cs:ce,iR)*ratio
+
+               vz(rs:re, cs+nwann:ce+nwann)= &
+                  vz(rs:re, cs+nwann:ce+nwann)+ &
+                  zi*pos_cart(3)*HmnR(rs:re, cs+nwann:ce+nwann,iR)* ratio
+
+               vz(rs+nwann:re+nwann, cs:ce)= &
+                  vz(rs+nwann:re+nwann, cs:ce)+ &
+                  zi*pos_cart(3)*HmnR(rs+nwann:re+nwann, cs:ce,iR)* ratio
+
+               vz(rs+nwann:re+nwann, cs+nwann:ce+nwann)= &
+                  vz(rs+nwann:re+nwann, cs+nwann:ce+nwann)+ &
+                  zi*pos_cart(3)*HmnR(rs+nwann:re+nwann, cs+nwann:ce+nwann,iR)* ratio
+
+            enddo ! iR
+         enddo ! ia2
+      enddo ! ia1
+   else
+      !> the first atom in home unit cell
+      do ia1=1, Num_atoms
+         pos1= Atom_position_direct(:, ia1)
+         rs= index_start(ia1)
+         re= index_end(ia1)
+
+         !> the second atom in unit cell R
+         do ia2=1, Num_atoms
+            pos2= Atom_position_direct(:, ia2)
+            cs= index_start(ia2)
+            ce= index_end(ia2)
+            do iR=1,Nrpts
+
+               pos_direct= irvec(:, iR)
+               pos_direct= pos_direct+ pos2- pos1
+
+               call direct_cart_real(pos_direct, pos_cart)
+
+               dis= norm(pos_cart)
+               if (dis> Rcut) cycle
+
+               kdotr=k(1)*pos_direct(1) + k(2)*pos_direct(2) + k(3)*pos_direct(3)
+               ratio= exp(pi2zi*kdotr)/ndegen(iR)
+
+               vx(rs:re, cs:ce)=vx(rs:re, cs:ce)+ &
+                  zi*pos_cart(1)*HmnR(rs:re, cs:ce,iR)*ratio
+
+               vy(rs:re, cs:ce)=vy(rs:re, cs:ce)+ &
+                  zi*pos_cart(2)*HmnR(rs:re, cs:ce,iR)*ratio
+
+               vz(rs:re, cs:ce)=vz(rs:re, cs:ce)+ &
+                  zi*pos_cart(3)*HmnR(rs:re, cs:ce,iR)*ratio
+
+            enddo ! iR
+         enddo ! ia2
+      enddo ! ia1
+
+   endif ! soc
+
+
+   return
+end subroutine dHdk_atomicgauge
+
+
+subroutine dHdk_latticegauge(k, vx, vy, vz)
+   use para, only : Nrpts, irvec, crvec, Atom_position, &
+      HmnR, ndegen, Num_wann, zi, pi2zi, dp
+   implicit none
+
+   !> momentum in 3D BZ
+   real(dp), intent(in) :: k(3)
+
+   !> velocity operator using lattice guage 
+   !> which don't take into account the atom's position
+   !> this is a nature choice, while maybe not consistent with the symmetry
+   complex(dp), intent(out) :: vx(Num_wann, Num_wann)
+   complex(dp), intent(out) :: vy(Num_wann, Num_wann)
+   complex(dp), intent(out) :: vz(Num_wann, Num_wann)
+
+   integer :: iR
+
+   real(dp) :: kdotr
+   complex(dp) :: ratio
+
+   do iR= 1, Nrpts
+      kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
+      ratio= Exp(pi2zi*kdotr)
+      vx= vx+ zi*crvec(1, iR)*HmnR(:,:,iR)*ratio/ndegen(iR)
+      vy= vy+ zi*crvec(2, iR)*HmnR(:,:,iR)*ratio/ndegen(iR)
+      vz= vz+ zi*crvec(3, iR)*HmnR(:,:,iR)*ratio/ndegen(iR)
+   enddo ! iR
+
+   return
+end subroutine dHdk_latticegauge
+
+
+  subroutine ham_bulk_latticegauge(k,Hamk_bulk)
      ! This subroutine caculates Hamiltonian for 
      ! bulk system without the consideration of the atom's position
      !
@@ -204,7 +374,7 @@
      enddo
 
   return
-  end subroutine ham_bulk_old
+  end subroutine ham_bulk_latticegauge
 
 
   subroutine ham_bulk_LOTO(k,Hamk_bulk)

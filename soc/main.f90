@@ -1,5 +1,10 @@
 !--------+--------+--------+--------+--------+--------+--------+------!
-! Main program of WannierTools based on Wannier90 tight binding model
+! Main program of WannierTools based on tight binding model formated
+! as wannier90_hr.dat defined in Wannier90 software package.
+!
+! Ref:
+! Q.S. Wu et al., Computer Physics Communications 224, 405 (2018)
+!
 ! constructed by Q.S.Wu on 4/9/2010
 ! change      by Q.S.Wu on 4/22/2010
 ! changed     by Q.S.wu on July/15/2010
@@ -8,6 +13,7 @@
 ! mpi-version is  tested , please report bugs to QSWU
 ! Jan 25 2015 by Q.S.Wu at ETH Zurich 
 ! version     2.2.1  At EPFL, Switzerland, Sep. 14. 2017
+! version     2.3.2  At EPFL, Switzerland, Aug. 31. 2018
 ! wuquansheng@gmail.com
 ! Copyright (c) 2017 QuanSheng Wu. All rights reserved.
 !--------+--------+--------+--------+--------+--------+--------+------!
@@ -25,6 +31,10 @@
 
      !> time measure
      real(dp) :: time_start, time_end, time_init
+
+
+     !> version of WannierTools 
+     version='2.3.2'
 
      ierr = 0
      cpuid= 0
@@ -132,7 +142,7 @@
      ENDIF  ! end if the choice of kp model or TB model
 
      !> import symmetry 
-    !call symmetry
+     call symmetry
 
      !> bulk band
      if (BulkBand_calc) then
@@ -289,7 +299,18 @@
         call print_time_cost(time_start, time_end, 'SlabBand')
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the slab band structure'
      endif
- 
+  
+     if (BerryCurvature_slab_calc)then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Berry curvature for a slab system'
+        call now(time_start)
+        call berry_curvarture_slab
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'BerryCurvature_slab')
+        if(cpuid.eq.0)write(stdout, *)'End of calculating the Berry curvature for a slab system'
+     endif
+     
+
      if (BerryCurvature_calc)then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Berry curvature'
@@ -332,6 +353,17 @@
         call now(time_end)
         call print_time_cost(time_start, time_end, 'WannierCenter')
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the Wilson loop'
+     endif
+
+     !> mirror chern number calculation
+     if (MirrorChern_calc)then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the mirror chern number'
+        call now(time_start)
+        call wannier_center3D_plane_mirror
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'MirrorChern_calc')
+        if(cpuid.eq.0)write(stdout, *)'<< End of calculating the mirror chern number'
      endif
 
      !> wannier center calculattion for the whole BZ, 6 planes
@@ -386,7 +418,7 @@
         call now(time_start)
         call surfstat
         call now(time_end)
-        call print_time_cost(time_start, time_end, 'BerryCurvature')
+        call print_time_cost(time_start, time_end, 'SlabSS_calc')
         if(cpuid.eq.0)write(stdout, *)'End of calculating the surface state'
      endif
     

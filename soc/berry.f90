@@ -166,7 +166,7 @@
         !k = kpoints(:, ik)
         !k(3)= -k(3)
         !Hamk= 0d0
-         call ham_bulk_old(k, Hamk)
+         call ham_bulk_latticegauge(k, Hamk)
         
          !> symmetrization
         !call mat_mul(Num_wann, mirror_z, hamk, mat1)

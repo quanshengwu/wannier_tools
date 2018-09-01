@@ -244,7 +244,7 @@
         if (index(Particle,'phonon')/=0.and.LOTO_correction) then
            call ham_bulk_LOTO(X, Hamk_bulk)
         else
-           call ham_bulk_old (X, Hamk_bulk)
+           call ham_bulk_latticegauge (X, Hamk_bulk)
         endif
       endif
 
@@ -298,7 +298,7 @@
         if (index(Particle,'phonon')/=0.and.LOTO_correction) then
            call ham_bulk_LOTO(X, Hamk_bulk)
         else
-           call ham_bulk_old (X, Hamk_bulk)
+           call ham_bulk_latticegauge (X, Hamk_bulk)
         endif
       endif
 

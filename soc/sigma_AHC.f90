@@ -102,7 +102,7 @@
 
 
         ! calculation bulk hamiltonian
-        call ham_bulk_old(k, Hamk_bulk)
+        call ham_bulk_latticegauge(k, Hamk_bulk)
 
         !> diagonalization by call zheev in lapack
         W= 0d0
@@ -319,7 +319,7 @@
          + K3D_vec3_cube*(ikz-1)/dble(nk3)
 
         ! calculation bulk hamiltonian by a direct Fourier transformation of HmnR
-        call ham_bulk_old(k, Hamk_bulk)
+        call ham_bulk_latticegauge(k, Hamk_bulk)
    
         !> diagonalization by call zheev in lapack
         UU=Hamk_bulk

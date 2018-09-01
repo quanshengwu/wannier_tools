@@ -9,18 +9,25 @@
 
      character*4 :: c_temp
 
-! file existenct
+     ! file existenct
      logical :: exists
 
-     integer :: i, j, ir, ia
+     integer :: i, j, ir, ia, io
      integer :: n, m
      integer :: i1, i2, i3
      integer :: i4, i5    
      integer :: nwan
      real(dp) :: r1, r2
 
-! real and imag of HmnR
+     ! real and imag of HmnR
      real(dp) :: rh,ih
+
+     !> add a check for NumOccupied parameter
+     if (NumOccupied<=0 .or. NumOccupied>Num_wann) then
+        write(stdout, '(a, i6, a)')">>> ERROR: NumOccupied should be in [1, ", Num_wann, " ]"
+        write(stdout, '(a)')">>> Usually, it is the number of occupied Wannier bands."
+        stop
+     endif
      
      if(cpuid.eq.0)write(stdout,*)''
      open(12, file=Hrfile)
@@ -105,39 +112,77 @@
      do iR=1, Nrpts
         crvec(:, iR)= Rua*irvec(1,iR) + Rub*irvec(2,iR) + Ruc*irvec(3,iR)
      enddo
+   !> setup SelectedAtoms if not specified by input.dat
+   if (.not.allocated(Selected_Atoms)) then
+      NumberofSelectedAtoms= Num_atoms
+      allocate(Selected_Atoms(NumberofSelectedAtoms))
+      do i=1, Num_atoms
+         Selected_Atoms(i)= i
+      enddo
+   endif
 
-     !> setup SelectedOrbitals if not specified by input.dat
-     if (.not.allocated(Selected_Orbitals)) then
-        NumberofSelectedOrbitals= Num_wann
-        allocate(Selected_Orbitals(NumberofSelectedOrbitals))
-        do i=1, Num_wann
-           Selected_Orbitals(i)= i
-        enddo
-     endif
- 
-     if (cpuid==0) write(stdout, *)' '
-     if (cpuid==0) write(stdout, *)'>> SelectedOrbitals'
-     if (cpuid==0) write(stdout, '(a, 3i10)')'>> Number of orbitals selected (including spin degenarcy)', &
-        NumberofSelectedOrbitals
-     if (cpuid==0) write(stdout, '(a)')'>> Orbitals are'  
-     if (cpuid==0) write(stdout, '(1000i5)')Selected_Orbitals(:)
-   
-     !> setup SELECTEDBANDS
-     if (.not.allocated(Selected_band_index))then
-        NumberofSelectedBands= Num_wann
-        allocate(Selected_band_index(NumberofSelectedBands))
-        do i=1, Num_wann
-           Selected_band_index(i)= i
-        enddo
-     endif
-    
-     if (cpuid==0) write(stdout, *)' '
-     if (cpuid==0) write(stdout, *)'>> SELECTEDBANDS'
-     if (cpuid==0) write(stdout, '(a, 3i10)')'>> Number of bands selected ', &
-        NumberofSelectedBands
-     if (cpuid==0) write(stdout, '(a)')'>> Band indices are'  
-     if (cpuid==0) write(stdout, '(1000i5)')Selected_band_index(:)
-     if (cpuid==0) write(stdout, *) ' '
+   if (cpuid==0) write(stdout, *)' '
+   if (cpuid==0) write(stdout, *)'>> SelectedAtoms'
+   if (cpuid==0) write(stdout, '(a, 3i10)')'>> Number of atoms selected', &
+      NumberofSelectedAtoms
+   if (cpuid==0) write(stdout, '(a)')'>> Selected atoms are'
+   if (cpuid==0) write(stdout, '(10(i5, 2X, a))') &
+      (Selected_Atoms(i), Atom_name(Selected_Atoms(i)), i=1, NumberofSelectedAtoms)
+
+
+   !> setup SelectedOrbitals if not specified by input.dat
+   if (.not.allocated(Selected_WannierOrbitals)) then
+      NumberofSelectedOrbitals= 0
+      do i=1, NumberofSelectedAtoms
+         ia = Selected_Atoms(i)
+         NumberofSelectedOrbitals= NumberofSelectedOrbitals+ nprojs(ia)
+      enddo
+      if (SOC>0) NumberofSelectedOrbitals= NumberofSelectedOrbitals*2
+
+      allocate(Selected_WannierOrbitals(NumberofSelectedOrbitals))
+      Selected_WannierOrbitals = 0
+      io= 0
+      do i=1, NumberofSelectedAtoms
+         ia = Selected_Atoms(i)
+         do j=1, nprojs(ia)
+            io = io+ 1
+            Selected_WannierOrbitals(io)= index_start(ia)+ j- 1
+         enddo
+      enddo
+      if (SOC>0) then
+         do i=1, NumberofSelectedAtoms
+            ia = Selected_Atoms(i)
+            do j=1, nprojs(ia)
+               io = io+ 1
+               Selected_WannierOrbitals(io)=index_start(ia)+ j+ Num_wann/2- 1
+            enddo
+         enddo
+      endif
+   endif
+
+   if (cpuid==0) write(stdout, *)' '
+   if (cpuid==0) write(stdout, *)'>> SelectedOrbitals'
+   if (cpuid==0) write(stdout, '(a, 3i10)')'>> Number of orbitals selected (including spin degenarcy)', &
+      NumberofSelectedOrbitals
+   if (cpuid==0) write(stdout, '(a)')'>> Orbitals are'
+   if (cpuid==0) write(stdout, '(12i6)')Selected_WannierOrbitals(:)
+
+   !> setup SELECTEDBANDS
+   if (.not.allocated(Selected_band_index))then
+      NumberofSelectedBands= Num_wann
+      allocate(Selected_band_index(NumberofSelectedBands))
+      do i=1, Num_wann
+         Selected_band_index(i)= i
+      enddo
+   endif
+
+   if (cpuid==0) write(stdout, *)' '
+   if (cpuid==0) write(stdout, *)'>> SELECTEDBANDS'
+   if (cpuid==0) write(stdout, '(a, 3i10)')'>> Number of bands selected ', &
+      NumberofSelectedBands
+   if (cpuid==0) write(stdout, '(a)')'>> Band indices are'
+   if (cpuid==0) write(stdout, '(12i6)')Selected_band_index(:)
+   if (cpuid==0) write(stdout, *) ' '
 
 
 

@@ -47,7 +47,7 @@
          k1(2)= ik2*dk_mass+ k_mass(2)
          k1(3)= ik3*dk_mass+ k_mass(3)
          call cart_direct_rec(k1, k)
-         call ham_bulk_old(k, Hamk_bulk)
+         call ham_bulk_latticegauge(k, Hamk_bulk)
 
          W= 0d0
          call eigensystem_c( 'V', 'U', Num_wann ,Hamk_bulk, W)

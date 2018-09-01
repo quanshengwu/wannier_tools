@@ -37,7 +37,7 @@
   !> print header
   subroutine header
      use wmpi
-     use para, only : stdout, cpuid
+     use para, only : stdout, cpuid, version
      implicit none
      if (cpuid==0) then
         write(stdout, '(a)') " -----------------------------------------------------------------------"
@@ -50,9 +50,9 @@
         write(stdout, '(a)') "        WW           WW                             TT                  "
         write(stdout, '(a)') "        W             W                             TT                  "
         write(stdout, '(a)') "                                                                        "
-        write(stdout, '(a)') "                        Welcome to Wannier_tools.                       "
-        write(stdout, '(a)') "                             Version 2.2.1                              "
-        write(stdout, '(a)') "                   Tools for topological novel materials.               "
+        write(stdout, '(a)') "                        Welcome to WannierTools.                       "
+        write(stdout, '(a,a10)') "                             Version ", version                             
+        write(stdout, '(a)') "                   Tools for novel topological materials.               "
         write(stdout, '(a)') "                          Enjoy it and good luck.                       "
         write(stdout, '(a)') "                           Author : QuanSheng Wu                        "
         write(stdout, '(a)') "                        Email : wuquansheng@gmail.com                   "
@@ -70,6 +70,7 @@
      if (cpuid==0) then
         write(stdout, '(2x,a)') ''
         write(stdout, '(2x,a)') ''
+        write(stdout, '(2x,a)') "======================================================================="
         write(stdout, '(2x,a)') 'Congratulations! you finished the calculation.'
         write(stdout, '(2x,a)') "I hope you could find something useful from this calculation."
         write(stdout, '(2x,a)') "If so, I would like to ask you to cite our this paper:"
@@ -83,6 +84,7 @@
         write(stdout, '(2x,a)') "or wanniertools@groups.google.com.                 "
         write(stdout, '(2x,a)') "More information could find on www.wanniertools.com            "
         write(stdout, '(2x,a)') 'See you next time :)'
+        write(stdout, '(2x,a)') "======================================================================="
      endif
   end subroutine footer
 
