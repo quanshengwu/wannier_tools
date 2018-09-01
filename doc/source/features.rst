@@ -15,6 +15,7 @@ Capabilities of WannierTools
 -  :ref:`spintexturecalculation`
 -  :ref:`berryphasecalculation`
 -  :ref:`berrycurvcalculation`
+-  :ref:`berrycurvcalculationslab`
 -  :ref:`ahccalculation`
 -  :ref:`wanniercentercalculation`
 -  :ref:`z2bulkcalculation`
@@ -685,7 +686,7 @@ In WannierTools, you can specify a k path by a serials  k points. Here we take t
 K point.
 
 Input
-^^^^^
+------
 ::
  
   &CONTROL
@@ -733,9 +734,59 @@ The value of Berry phase can be found in the **WT.out**.
 Berry curvature calculation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Calculate Berry curvature at a fixed k plane in 3D BZ. Set BerryCurvature_calc=T, and  set Nk1, Nk2, in NAMELISTS PARAMETERS, set k plane in KPLANE_BULK CARD. Get the plot with  "gnuplot Berrycurvature.gnu”.
+3D bulk case
+------------
+
+Calculate Berry curvature at a fixed k plane in 3D BZ. Set BerryCurvature_calc=T, 
+and  set Nk1, Nk2, in NAMELISTS PARAMETERS, set k plane in KPLANE_BULK CARD. Get the plot with  "gnuplot Berrycurvature.gnu”.
 
 please set NumOccpuied correctly. It represents the “occpuied” wannier bands, not the total number of electrons. In this application, the Berrycurvature is the summation over NumOccupied bands. 
+
+A typical input (take ZrTe as an example)::
+
+   &CONTROL
+    BerryCurvature_calc=T 
+   /
+   &SYSTEM
+   NumOccupied = 8         ! Number of occupied Wannier orbitals
+   /
+   &PARAMETERS
+   Nk1 = 101    ! No. of slices for the 1st reciprocal vector
+   Nk2 = 101    ! No. of slices for the 2st reciprocal vector
+   /
+
+   KPLANE_BULK
+   0.00  0.00  0.00   ! Central point for 3D k slice  k3=0
+   1.00  0.00  0.00   ! The first vector. Integrate along this direction to get WCC 
+   0.00  1.00  0.00   ! WCC along this direction, for Z2, usually half of the reciprocal lattice vector
+
+
+2D slab case
+------------
+
+.. NOTE::
+
+   Not well tested.. Use it carefully. 
+
+A typical input::
+
+   &CONTROL
+    BerryCurvature_slab_calc=T 
+   /
+
+   &SYSTEM
+   NumOccupied = 8  ! Number of occupied Wannier orbitals of the unit cell 
+   /
+
+   &PARAMETERS
+   Nk1 = 101    ! No. of slices for the 1st reciprocal vector
+   Nk2 = 101    ! No. of slices for the 2st reciprocal vector
+   /
+
+   KPLANE_SLAB
+   0.00  0.00         ! Central point for 3D k slice  k3=0
+   1.00  0.00         ! The first vector. Integrate along this direction to get WCC 
+   0.00  1.00         ! WCC along this direction, for Z2, usually half of the reciprocal lattice vector
 
 
 .. _ahccalculation:
@@ -774,7 +825,13 @@ Output is **sigma_ahe.txt**.
 Wannier charge center/Wilson loop calculation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Wannier charge center, which is sometimes called Wilson loop can be calculated by set WannierCenter_calc=T and set KPLANE_BULK CARD,  set number of k points for two vectors is Nk1, Nk2 in NAMELISTS PARAMETERS.  Notice: You should notice that the first vector in KPLANE_BULK CARD is the integration direction, this vector should be equal to one primitive reciprocal lattice vector.  If you want to calculate the Z2 number, Please set the second vector to be half of the reciprocal lattice vector. You can get the Wannier charge center  along the second k line. See more details In the paper written by Alexey. Soluyanov (2011). 
+Wannier charge center, which is sometimes called Wilson loop can be calculated by set WannierCenter_calc=T and set KPLANE_BULK CARD, 
+set number of k points for two vectors is Nk1, Nk2 in NAMELISTS PARAMETERS.  
+Notice: You should notice that the first vector in KPLANE_BULK CARD is the integration direction, 
+this vector should be equal to one primitive reciprocal lattice vector. 
+If you want to calculate the Z2 number, Please set the second vector to be half of the reciprocal lattice vector. 
+You can get the Wannier charge center  along the second k line. See more details In the paper written by Alexey. Soluyanov (2011). 
+If you want to calculate the Chern number, Please set the second vector to be one primitive reciprocal lattice vector. 
 
 .. NOTE::
 
@@ -796,6 +853,7 @@ Outputs are **wcc.dat** and **wcc.gnu**, the format of **wcc.dat** is::
 
 The second column is the position of the largest gap of WCC. It is used for drawing a line to calculate the Z2 number (see A. Soluyanov 2011), 
 From the fourth column to the last column, they are wcc for the occupied bands specified with "NumOccupied". 
+The third line is the summation of the WCC over all the "occupied" bands. It's usefull for telling the Chern number. 
 
 Example
 ----------
@@ -831,6 +889,52 @@ Here is an example.
    :scale: 60 %
 
 
+.. _mirrorchernnumbercalculation:
+
+Mirror Chern number calculation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+At present, We can only calculate mirror Chern number for the simplest case (1. There is only one atom per atom's type in the
+unit cell e.g. ZrTe. 2. kz=0 is the mirror plane we concern). For the more complex case, you can modify the source code by setting the 
+mirror operator properly. Define your own mirror operator based on the atomic like Wannier functions in the symmetry.f90 and change the 
+subroutine wanniercenter_mirror in wanniercenter.f90. 
+
+After properly setting of the mirror operator, you can run WannierTools with the basic parameters and the following additional 
+parameters (Here we take ZrTe at kz=0 plane as an example) ::
+ 
+   &CONTROL
+    MirrorChern_calc=T 
+   /
+   &SYSTEM
+   NumOccupied = 8         ! Number of occupied Wannier orbitals
+   /
+   &PARAMETERS
+   Nk1 = 101   ! No. of slices for the 1st reciprocal vector
+   Nk2 = 101   ! No. of slices for the 2st reciprocal vector
+   /
+
+   KPLANE_BULK
+   0.00  0.00  0.00   ! Original point for 3D k slice  k3=0
+   1.00  0.00  0.00   ! The first vector. Integrate along this direction to get WCC, should be a close path
+   0.00  1.00  0.00   ! WCC along this direction, for Chern, usually one reciprocal lattice vector
+
+
+Output
+--------
+
+The mirror Chern number can be found in the WT.out. The WCC/Wilson loop is included in the files
+**wcc-mirrorminus.dat** and **wcc-mirrorplus.dat**. The gnuplot script is **wcc-mirrorchernnumber.gnu**. The format of **wcc-mirrorplus.dat** is::
+
+        #      k    sum(wcc(:,ik))      wcc(:, ik)
+        0.00000000      0.93401098      0.26748313      0.33122324      0.37761566      0.95768895
+        0.01000000      0.93458410      0.26776394      0.33149191      0.37747362      0.95785463
+        0.02000000      0.93515725      0.26806334      0.33205065      0.37717770      0.95786557
+        0.03000000      0.93572256      0.26838206      0.33288980      0.37673021      0.95772050
+        ...
+
+The first column is k=i/Nk2 (i=0, Nk2), we take the second vector defined in KPLANE_BULK as unit of 1. 
+The second line is the summation of the WCC over all the "occupied/2" bands. It's usefull for telling the Chern number. 
+From the third column to the last column, they are wcc for the occupied/2 bands specified with "NumOccupied". 
 
 
 .. _z2bulkcalculation:
@@ -882,6 +986,10 @@ For the 2D system, if you set the Z axis as the stack axis, please only take the
 
 Chern number for 3D bulk materials
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. NOTE::
+
+Basically, you can calculate the Chern number for a closed manifold, for example, a 2D torus. For this purpose, I would suggest you using
+ WannierCenter_calc=T in the calculation. 
 
 We can get Chern number of six k planes, i.e. k1=0.0; k1=0.5; k2=0.0; k2=0.5; k3=0.0; k3=0.5; where k1, k2, k3 is in fractional units.
 Usually, you can call "Wannier charge center calculation for a plane"  six times. Here we packed them up to get another function. You can set the input file like the following.
