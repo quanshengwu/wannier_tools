@@ -731,11 +731,8 @@ The value of Berry phase can be found in the **WT.out**.
 
 .. _berrycurvcalculation:
 
-Berry curvature calculation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-3D bulk case
-------------
+Berry curvature calculation for 3D bulk case
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Calculate Berry curvature at a fixed k plane in 3D BZ. Set BerryCurvature_calc=T, 
 and  set Nk1, Nk2, in NAMELISTS PARAMETERS, set k plane in KPLANE_BULK CARD. Get the plot with  "gnuplot Berrycurvature.gnu”.
@@ -761,8 +758,10 @@ A typical input (take ZrTe as an example)::
    0.00  1.00  0.00   ! WCC along this direction, for Z2, usually half of the reciprocal lattice vector
 
 
-2D slab case
-------------
+.. _berrycurvcalculationslab:
+
+Berry curvature calculation for slab system
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. NOTE::
 

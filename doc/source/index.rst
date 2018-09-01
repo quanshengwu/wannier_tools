@@ -44,12 +44,12 @@ Please cite this paper when using WannierTools for your researchs::
    }
 
 **Correspondence**
-^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^
 
 Please report bugs to wuquansheng at gmail.com.
 
 **Advertisement**
-^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^
 
 We already developed a tool to symmetrize Wannier tight binding models. It can symmetrize your wannier90_hr.dat which made of 
 s, p, d and f orbitals. However, it is not released and under testing (The new version after May 10 2018 is more powerful and accurate).
@@ -61,7 +61,7 @@ are atomic-like orbitals. If you use random projectors in the Wannier90.win, we 
    :scale: 20 %
 
 **Sponsors**
-^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^
 
 This work was sponsored by the following institutes: 
 

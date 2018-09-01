@@ -57,7 +57,7 @@ The output information during the running are written in WT.out.
 .. _usefultools: 
 
 Plotting tools
-------------
+---------------------
 
 1. `gnuplot <http://gnuplot.sourceforge.net>`_
 2. `xmgrace <http://plasma-gate.weizmann.ac.il/Grace/>`_
