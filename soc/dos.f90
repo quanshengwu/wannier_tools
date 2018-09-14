@@ -8,34 +8,16 @@ subroutine dos_sub
    implicit none
 
    !> the integration k space
-   real(dp) :: kxmin
-   real(dp) :: kxmax
-   real(dp) :: kymin
-   real(dp) :: kymax
-   real(dp) :: kzmin
-   real(dp) :: kzmax
-   real(dp) :: emin
-   real(dp) :: emax
+   real(dp) :: kxmin, kxmax, kymin, kymax, kzmin, kzmax, emin, emax
 
-   integer :: ik
-   integer :: ie
-   integer :: ib
-   integer :: ikx
-   integer :: iky
-   integer :: ikz
-   integer :: knv3
-   integer :: NE
-   integer :: ierr
+   real(dp) :: eta_brodening
+
+   integer :: ik, ie, ib, ikx, iky, ikz, knv3, NE, ierr
 
    !> integration for band
-   integer :: iband_low
-   integer :: iband_high
-   integer :: iband_tot
+   integer :: iband_low, iband_high, iband_tot
 
-   real(dp) :: x
-   real(dp) :: dk3
-
-   real(dp) :: k(3)
+   real(dp) :: x, dk3, k(3)
    real(dp) :: time_start, time_end, time_init
 
    real(dp), allocatable :: eigval(:)
@@ -50,7 +32,9 @@ subroutine dos_sub
 
    knv3= Nk1*Nk2*Nk3
 
+   if (OmegaNum<2) OmegaNum=2
    NE= OmegaNum
+
    iband_low= Numoccupied- 10000
    iband_high= Numoccupied+ 10000
 
@@ -66,6 +50,9 @@ subroutine dos_sub
    allocate(dos(NE))
    allocate(dos_mpi(NE))
    allocate(omega(NE))
+   omega= 0d0
+   Hk= 0d0
+   W=0d0
    dos=0d0
    dos_mpi=0d0
    eigval= 0d0
@@ -73,7 +60,7 @@ subroutine dos_sub
 
    emin= OmegaMin
    emax= OmegaMax
-   eta= (emax- emin)/ dble(NE)*3d0
+   eta_brodening= (emax- emin)/ dble(NE)*6d0
 
 
    !> energy
@@ -101,16 +88,16 @@ subroutine dos_sub
        + K3D_vec2_cube*(iky-1)/dble(nk2)  &
        + K3D_vec3_cube*(ikz-1)/dble(nk3)
 
+      !> get Hamiltonian at a given k point and diagonalize it
       call ham_bulk(k, Hk)
       W= 0d0
       call eigensystem_c( 'N', 'U', Num_wann ,Hk, W)
       eigval(:)= W(iband_low:iband_high)
 
-      !> get density of state
       do ie= 1, NE
          do ib= 1, iband_tot
             x= omega(ie)- eigval(ib)
-            dos_mpi(ie) = dos_mpi(ie)+ delta(eta, x)
+            dos_mpi(ie) = dos_mpi(ie)+ delta(eta_brodening, x)
          enddo ! ib
       enddo ! ie
       call now(time_end)
@@ -125,11 +112,14 @@ call mpi_allreduce(dos_mpi,dos,size(dos),&
 #endif
    dos= dos*dk3
 
+   !> include the spin degeneracy if there is no SOC in the tight binding Hamiltonian.
+   if (SOC<=0) dos=dos*2d0
+
    outfileindex= outfileindex+ 1
    if (cpuid.eq.0) then
       open(unit=outfileindex, file='dos.dat')
       write(outfileindex, *)'# Density of state of bulk system'
-      write(outfileindex, '(2a16)')'# E(eV)', 'DOS(E) (1/eV)'
+      write(outfileindex, '(2a16)')'# E(eV)', 'DOS(E) (1/eV/unit cell)'
       do ie=1, NE
          write(outfileindex, '(2f16.6)')omega(ie), dos(ie)
       enddo ! ie 
@@ -148,7 +138,7 @@ call mpi_allreduce(dos_mpi,dos,size(dos),&
       write(outfileindex, '(a)')'set yrange [0:1]'
       write(outfileindex, '(a)')'unset key'
       write(outfileindex, '(a)')'set xlabel "Energy (eV)"'
-      write(outfileindex, '(a)')'set ylabel "DOS (1/eV)"'
+      write(outfileindex, '(a)')'set ylabel "DOS (1/eV/unit cell)"'
       write(outfileindex, '(2a)')"plot 'dos.dat' u 1:2 w l lw 4 lc rgb 'black'"
       close(outfileindex)
    endif
@@ -524,17 +514,27 @@ end subroutine dos_joint_dos
 
 
 function delta(eta, x)
-   !>  Lorentz expansion of the Delta function
+   !>  Lorentz or Gaussian expansion of the Delta function
+   use para, only : dp, pi
    implicit none
-   integer, parameter :: dp=kind(1d0)
-   integer, parameter :: pi= 3.1415926535d0
    real(dp), intent(in) :: eta
    real(dp), intent(in) :: x
-   real(dp) :: delta
+   real(dp) :: delta, y
 
+   !> lorentz brodening
   !delta= 1d0/pi*eta/(eta*eta+x*x)
-   delta= exp(-x*x/eta/eta/2d0)/sqrt(2d0*pi)/eta
 
+   y= x*x/eta/eta/2d0
+
+   !> Gaussian brodening
+   !> exp(-60)=8.75651076269652e-27
+   if (y>60) then
+      delta= 0d0
+   else
+      delta= exp(-y)/sqrt(2d0*pi)/eta
+   endif
+
+   return
 end function
 
 

@@ -162,7 +162,7 @@
         close(outfileindex)
      endif
 
-     202 format('set xtics (',:20('"',A3,'" ',F10.5,','))
+     202 format('set xtics (',20('"',A4,'" ',F10.5,','))
      203 format(A3,'" ',F10.5,')')
      204 format('set arrow from ',F10.5,',',F10.5,' to ',F10.5,',',F10.5, ' nohead')
      
@@ -414,7 +414,7 @@
         close(outfileindex)
      endif
 
-     202 format('set xtics (',:20('"',A3,'" ',F10.5,','))
+     202 format('set xtics (',20('"',A3,'" ',F10.5,','))
      203 format(A3,'" ',F10.5,')')
      204 format('set arrow from ',F10.5,',',F10.5,' to ',F10.5,',',F10.5, ' nohead')
      
@@ -644,7 +644,7 @@
         close(outfileindex)
      endif
 
-     202 format('set xtics (',:20('"',A3,'" ',F10.5,','))
+     202 format('set xtics (',20('"',A3,'" ',F10.5,','))
      203 format(A3,'" ',F10.5,')')
      204 format('set arrow from ',F10.5,',',F10.5,' to ',F10.5,',',F10.5, ' nohead')
      
@@ -816,7 +816,7 @@
         close(outfileindex)
      endif
 
-     202 format('set xtics (',:20('"',A3,'" ',F10.5,','))
+     202 format('set xtics (',20('"',A3,'" ',F10.5,','))
      203 format(A3,'" ',F10.5,')')
      204 format('set arrow from ',F10.5,',',F10.5,' to ',F10.5,',',F10.5, ' nohead')
      

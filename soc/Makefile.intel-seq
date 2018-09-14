@@ -11,7 +11,7 @@ obj =  module.o aux.o symmetry.o readHmnR.o inverse.o proteus.o \
 
 
 # compiler
-f90  = ifort -fpp  # -check all -pg -traceback
+f90  = ifort -fpp  # -check all -pg -fpe0 -warn -traceback -debug extended
 
 #FLAGS =  -O3 -nogen-interface  -warn all 
 flag = -O3 -nogen-interface #-warn all 

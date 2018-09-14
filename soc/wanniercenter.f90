@@ -1634,6 +1634,7 @@
 
    !>> swap two real numbers
    subroutine swap(a, b)
+      implicit none
       real(8), intent(inout) :: a
       real(8), intent(inout) :: b
       real(8) :: c
@@ -1650,8 +1651,9 @@
 
       use para
       use wmpi
+      implicit none
 
-      integer :: i
+      integer :: i, j, ik2
       integer :: chirality
 
       character(40) :: epsfilename, wccfilename

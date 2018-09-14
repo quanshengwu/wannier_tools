@@ -981,6 +981,7 @@ subroutine readinput
    allocate(k3line_name(nk3lines+1))
    allocate(k3line_stop(nk3lines+1))
    allocate(k3line_mag_stop(nk3lines+1))
+   k3line_stop= 0d0
    k3line_mag_stop= 0d0
    k3line_start= 0d0
    k3line_end= 0d0
@@ -1888,6 +1889,7 @@ subroutine readinput
       if (cpuid==0) write(stdout, '(a)')'4 5 6 7 ! orbitals indices '
       stop 'Errors happen in the WT.in, please check informations in the WT.out'
    endif
+
 
 
    !> parameters for selectedbands

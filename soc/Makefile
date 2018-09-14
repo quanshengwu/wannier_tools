@@ -12,7 +12,8 @@ obj =  module.o aux.o symmetry.o readHmnR.o inverse.o proteus.o \
 # compiler
 f90  = gfortran -cpp                                              
 
-flag = -O3                              
+flag = -O   -g -Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=nan
+
 
 # blas and lapack libraries
 libs = -L/usr/lib/ -llapack -lblas
