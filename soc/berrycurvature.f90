@@ -771,7 +771,6 @@
            ' time elapsed: ', time_end-time_start0 
 
         call now(time_start)
-
         !> diagonalize hamiltonian
         k= kslice(:, ik)
 

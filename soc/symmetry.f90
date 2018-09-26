@@ -26,7 +26,8 @@
      !> set up symmetry operators
      !> here we assume that the wannier functions have the symmetry 
      !> as atomic orbitals
-    
+   
+     if (SOC<=0) return
      nwan= Num_wann/2
 
      allocate(iatom_mirror_x(Num_atoms))
