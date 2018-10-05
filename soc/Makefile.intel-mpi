@@ -1,34 +1,37 @@
-obj =  module.o aux.o symmetry.o readHmnR.o inverse.o proteus.o \
+OBJ =  module.o aux.o symmetry.o readHmnR.o inverse.o proteus.o \
        eigen.o ham_qlayer2qlayer.o psi.o \
-		 ham_slab.o ek_slab.o ek_bulk_polar.o ek_bulk2D.o \
+  		 ham_slab.o ek_slab.o ek_bulk_polar.o ek_bulk2D.o \
        readinput.o fermisurface.o surfgreen.o surfstat.o \
-		 mat_mul.o ham_ribbon.o ek_ribbon.o ham_bulk.o ek_bulk.o \
+  		 mat_mul.o ham_ribbon.o ek_ribbon.o ham_bulk.o ek_bulk.o \
        fermiarc.o spintexture.o berrycurvature.o \
-		 wanniercenter.o dos.o  orbital_momenta.o \
-		 landau_level.o berry.o wanniercenter_adaptive.o \
-		 effective_mass.o findnodes.o sigma_AHC.o \
+  		 wanniercenter.o dos.o  orbital_momenta.o \
+  		 landau_level.o berry.o wanniercenter_adaptive.o \
+  		 effective_mass.o findnodes.o sigma_AHC.o \
        main.o
 
-
 # compiler
-f90  = mpiifort -fpp  # -check all -pg -fpe0 -warn -traceback -debug extended
+F90  = mpiifort -fpp -DMPI
 
-#FLAGS =  -O3 -nogen-interface  -warn all 
-flag = -O3 -nogen-interface #-warn all 
+INCLUDE = -I${MKLROOT}/include
+WFLAG = -warn all
+OFLAG = -g -traceback -static-intel
+FFLAG = $(OFLAG) $(WFLAG)
+LFLAG = $(OFLAG)
 
 # blas and lapack libraries
-libs = -L/opt/intel/mkl/lib/ \
-		-lmkl_intel_lp64 -lmkl_sequential \
-		-lmkl_core -liomp5
- 
-main :  $(obj)
-	$(f90) $(obj) -o wt.x $(libs) 
+LIBS = -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a \
+        ${MKLROOT}/lib/intel64/libmkl_sequential.a \
+        ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl
+
+main : $(OBJ)
+	$(F90) $(LFLAG) $(OBJ) -o wt.x $(LIBS)
 	cp -f wt.x ../bin
 
 .SUFFIXES: .o .f90
 
 .f90.o :
-	$(f90) -c $(flag) $(includes) $*.f90
+	$(F90) $(FFLAG) $(INCLUDE) -c $*.f90
 
 clean :
 	rm -f *.o *.mod *~ wt.x
+

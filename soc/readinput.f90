@@ -94,6 +94,7 @@ subroutine readinput
    SlabSS_calc           = .FALSE.
    SlabArc_calc          = .FALSE.
    SlabQPI_calc          = .FALSE.
+   ArcQPI_calc           = .FALSE.
    SlabSpintexture_calc  = .FALSE.
    wanniercenter_calc    = .FALSE.
    Z2_3D_calc            = .FALSE.
@@ -375,7 +376,7 @@ subroutine readinput
       +Rua(3)*(Rub(1)*Ruc(2)- Rub(2)*Ruc(1))
    ReciprocalCellVolume= (2d0*3.1415926535d0)**3/CellVolume
 
-   
+
    Kua(1)= 2d0*pi*(Rub(2)*Ruc(3)- Rub(3)*Ruc(2))/CellVolume
    Kua(2)= 2d0*pi*(Rub(3)*Ruc(1)- Rub(1)*Ruc(3))/CellVolume
    Kua(3)= 2d0*pi*(Rub(1)*Ruc(2)- Rub(2)*Ruc(1))/CellVolume
@@ -869,7 +870,7 @@ subroutine readinput
    Urot(2, 2)= (Urot(3, 3)*Urot(1, 1)- Urot(3, 1)*Urot(1, 3))
    Urot(2, 3)= (Urot(3, 1)*Urot(1, 2)- Urot(3, 2)*Urot(1, 1))
    Urot(2, :)= Urot(2, :)/norm(Urot(2, :))
-   
+
    !> Here Rua_new, Rub_new, Ruc_new are vectors defined by SURFACE CARD in new coordinates
    call rotate(R1, Rua_new)
    call rotate(R2, Rub_new)
@@ -1483,7 +1484,7 @@ subroutine readinput
               k3points_pointmode_direct(:, ik))
         enddo
      endif
-     
+
      319 continue
      if (stat/=0 .and. cpuid==0) then
         write(stdout, '(8f10.5)') "ERROR: there are something wrong in KPOINTS_3D card"
@@ -1519,7 +1520,7 @@ subroutine readinput
         k3points_pointmode_cart= 0d0
         k3points_pointmode_direct= 0d0
      endif
-     if (.not.lfound.and.cpuid==0)write(stdout, *)'>> We use the default values for k3points_pointmode_direct=[0,0,0]' 
+     if (.not.lfound.and.cpuid==0)write(stdout, *)'>> We use the default values for k3points_pointmode_direct=[0,0,0]'
      if (.not.lfound.and.cpuid==0)write(stdout, *)'>> and Nk3_point_mode = 1'
 
 
@@ -1611,7 +1612,7 @@ subroutine readinput
 
    !> error happens when reading SURFACE_ATOMS
 116 if (stat/=0 .and. cpuid==0) then
-       write(stdout, '(a)')'>>> ERROR: There are something wrong with the SURFACE_ATOMS card' 
+       write(stdout, '(a)')'>>> ERROR: There are something wrong with the SURFACE_ATOMS card'
        write(stdout, '(a)')'    It should like this:'
        write(stdout, '(a)')'SURFACE_ATOMS '
        write(stdout, '(a)')'2 ! number of atoms on the top surface (large c fractional coordinate)'

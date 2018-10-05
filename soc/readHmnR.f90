@@ -10,12 +10,12 @@
      character*4 :: c_temp
 
      ! file existenct
-     logical :: exists
+     ! logical :: exists
 
      integer :: i, j, ir, ia, io
      integer :: n, m
      integer :: i1, i2, i3
-     integer :: i4, i5    
+     integer :: i4, i5
      integer :: nwan
      real(dp) :: r1, r2
 
@@ -28,7 +28,7 @@
         write(stdout, '(a)')">>> Usually, it is the number of occupied Wannier bands."
         stop
      endif
-     
+
      if(cpuid.eq.0)write(stdout,*)''
      open(12, file=Hrfile)
      if (index(Hrfile, 'HWR')==0) then
@@ -104,11 +104,11 @@
            enddo
         endif
      enddo
-   
+
      !> get the Cartesian coordinates for R points
      allocate( crvec(3, nrpts))
-    
-     !> get R coordinates 
+
+     !> get R coordinates
      do iR=1, Nrpts
         crvec(:, iR)= Rua*irvec(1,iR) + Rub*irvec(2,iR) + Ruc*irvec(3,iR)
      enddo
@@ -162,7 +162,7 @@
 
    if (cpuid==0) write(stdout, *)' '
    if (cpuid==0) write(stdout, *)'>> SelectedOrbitals'
-   if (cpuid==0) write(stdout, '(a, 3i10)')'>> Number of orbitals selected (including spin degenarcy)', &
+   if (cpuid==0) write(stdout, '(a, 3i10)')'>> Number of orbitals selected (including spin degeneracy)', &
       NumberofSelectedOrbitals
    if (cpuid==0) write(stdout, '(a)')'>> Orbitals are'
    if (cpuid==0) write(stdout, '(12i6)')Selected_WannierOrbitals(:)
