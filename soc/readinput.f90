@@ -100,7 +100,7 @@ subroutine readinput
    Z2_3D_calc            = .FALSE.
    Chern_3D_calc         = .FALSE.
    WeylChirality_calc    = .FALSE.
-   NLChirality_calc    = .FALSE.
+   NLChirality_calc      = .FALSE.
    BerryPhase_calc       = .FALSE.
    BerryCurvature_calc   = .FALSE.
    BerryCurvature_slab_calc = .FALSE.

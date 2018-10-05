@@ -282,8 +282,6 @@
 
      endif
 
-
-
      outfileindex= outfileindex+ 1
      if (cpuid==0) then
         open(unit=outfileindex, file='surfdos_l_only.gnu')
@@ -519,7 +517,7 @@ SUBROUTINE surfstat_jdos
     USE wmpi
     USE para, only: omeganum, omegamin, omegamax, ndim, knv2, k2_path, outfileindex, &
                     BottomOrbitals, TopOrbitals, NBottomOrbitals, NtopOrbitals, stdout, &
-                    k2len, Num_wann, eps9
+                    k2len, Num_wann, eps9, zi, Np
     IMPLICIT NONE
 
     ! MPI error code
@@ -527,11 +525,11 @@ SUBROUTINE surfstat_jdos
 
     ! file id
     INTEGER :: jdoslfile, jdosrfile, dosbulkfile
-    INTEGER :: doslfile, dosrfile
+    INTEGER :: doslfile, dosrfile, spindoslfile, spindosrfile
 
     ! general loop index
     INTEGER :: i, j, io, iq, iq1, ik1, ikp
-    INTEGER :: Nk_half, imin1, imax1
+    INTEGER :: Nk_half, imin1, imax1, nw_half
     REAL(DP) :: ktmp(2), eta
     ! string for integer
     CHARACTER(LEN=140) :: ichar, jchar, kchar, fmt
@@ -540,21 +538,28 @@ SUBROUTINE surfstat_jdos
     REAL(DP) :: time_start, time_end, time_togo
 
     ! Omega
-    REAL(DP), ALLOCATABLE :: omega(:)
+    REAL(DP),    ALLOCATABLE  :: omega(:)
     ! DOS for surface and bulk
-    REAL(DP), ALLOCATABLE :: dos_l(:,:), dos_r(:,:), dos_bulk(:,:)
+    REAL(DP),    ALLOCATABLE  :: dos_l(:,:), dos_r(:,:), dos_bulk(:,:)
     ! DOS for surface ONLY
-    REAL(DP), ALLOCATABLE :: dos_l_only(:,:), dos_r_only(:,:)
+    REAL(DP),    ALLOCATABLE  :: dos_l_only(:,:), dos_r_only(:,:)
     ! JDOS for both side
-    REAL(DP), ALLOCATABLE :: jdos_l(:,:), jdos_r(:,:), jdos_l_only(:,:), jdos_r_only(:,:)
+    REAL(DP),    ALLOCATABLE  :: jdos_l(:,:), jdos_r(:,:), jdos_l_only(:,:), jdos_r_only(:,:)
     ! Array for MPI
-    REAL(DP), ALLOCATABLE :: dos_l_mpi(:,:), dos_r_mpi(:,:), dos_bulk_mpi(:,:)
-    REAL(DP), ALLOCATABLE :: jdos_l_mpi(:,:), jdos_r_mpi(:,:), jdos_l_only_mpi(:,:), jdos_r_only_mpi(:,:)
+    REAL(DP),    ALLOCATABLE  :: dos_l_mpi(:,:), dos_r_mpi(:,:), dos_bulk_mpi(:,:)
+    REAL(DP),    ALLOCATABLE  :: jdos_l_mpi(:,:), jdos_r_mpi(:,:), jdos_l_only_mpi(:,:), jdos_r_only_mpi(:,:)
     ! Green's function
-    COMPLEX(DP), ALLOCATABLE :: GLL(:,:), GRR(:,:), GB (:,:)
-    COMPLEX(DP), ALLOCATABLE :: H00(:,:), H01(:,:)
+    COMPLEX(DP), ALLOCATABLE  :: GLL(:,:), GRR(:,:), GB (:,:)
+    COMPLEX(DP), ALLOCATABLE  :: H00(:,:), H01(:,:)
     ! Unit array
-    COMPLEX(DP), ALLOCATABLE :: ones(:,:)
+    COMPLEX(DP), ALLOCATABLE  :: ones(:,:)
+    ! Spin resolved component
+    REAL(DP),    ALLOCATABLE  :: sx_l(:, :), sy_l(:, :), sz_l(:, :)
+    REAL(DP),    ALLOCATABLE  :: sx_r(:, :), sy_r(:, :), sz_r(:, :)
+    REAL(DP),    ALLOCATABLE  :: sx_l_mpi(:, :), sy_l_mpi(:, :), sz_l_mpi(:, :)
+    REAL(DP),    ALLOCATABLE  :: sx_r_mpi(:, :), sy_r_mpi(:, :), sz_r_mpi(:, :)
+    COMPLEX(DP), ALLOCATABLE  :: sigma_x(:,:), sigma_y(:,:), sigma_z(:,:)
+    COMPLEX(DP), ALLOCATABLE  :: ctemp(:,:)
 
     ALLOCATE( omega(omeganum) )
     ALLOCATE( dos_l(knv2, omeganum), dos_r(knv2, omeganum), dos_bulk(knv2, omeganum) )
@@ -568,6 +573,11 @@ SUBROUTINE surfstat_jdos
     ALLOCATE( GLL(Ndim, Ndim),GRR(Ndim, Ndim),GB (Ndim, Ndim) )
     ALLOCATE( H00(Ndim, Ndim),H01(Ndim, Ndim) )
     ALLOCATE( ones(Ndim, Ndim) )
+    ALLOCATE( sx_l(knv2, omeganum), sy_l(knv2, omeganum), sz_l(knv2, omeganum))
+    ALLOCATE( sx_l_mpi(knv2, omeganum), sy_l_mpi(knv2, omeganum), sz_l_mpi(knv2, omeganum))
+    ALLOCATE( sx_r(knv2, omeganum), sy_r(knv2, omeganum), sz_r(knv2, omeganum))
+    ALLOCATE( sx_r_mpi(knv2, omeganum), sy_r_mpi(knv2, omeganum), sz_r_mpi(knv2, omeganum))
+    ALLOCATE( sigma_x(ndim,ndim), sigma_y(ndim,ndim), sigma_z(ndim,ndim), ctemp(ndim,ndim))
 
     omega        = 0d0
     dos_l        = 0d0
@@ -584,6 +594,21 @@ SUBROUTINE surfstat_jdos
     H00          = 0d0
     H01          = 0d0
     ones         = 0d0
+    sigma_x      = 0d0
+    sigma_y      = 0d0
+    sigma_z      = 0d0
+    sx_l         = 0d0
+    sy_l         = 0d0
+    sz_l         = 0d0
+    sx_r         = 0d0
+    sy_r         = 0d0
+    sz_r         = 0d0
+    sx_l_mpi     = 0d0
+    sy_l_mpi     = 0d0
+    sz_l_mpi     = 0d0
+    sx_r_mpi     = 0d0
+    sy_r_mpi     = 0d0
+    sz_r_mpi     = 0d0
 
     ! Broaden coeffient
     eta=(omegamax- omegamin)/DBLE(omeganum)
@@ -595,6 +620,19 @@ SUBROUTINE surfstat_jdos
 
     DO i=1,Ndim
         ones(i,i) = 1.0d0
+    ENDDO
+
+    !> spin operator matrix
+    nw_half = Num_wann/2
+    DO i=1, Np
+        DO j=1, nw_half
+            sigma_x( Num_wann*(i-1)+j         , Num_wann*(i-1)+J+nw_half ) =  1.0d0
+            sigma_x( Num_wann*(i-1)+j+nw_half , Num_wann*(i-1)+j         ) =  1.0d0
+            sigma_y( Num_wann*(i-1)+j         , Num_wann*(i-1)+j+nw_half ) = -zi
+            sigma_y( Num_wann*(i-1)+j+nw_half , Num_wann*(i-1)+j         ) =  zi
+            sigma_z( Num_wann*(i-1)+j         , Num_wann*(i-1)+j         ) =  1d0
+            sigma_z( Num_wann*(i-1)+j+nw_half , Num_wann*(i-1)+j+nw_half ) = -1d0
+        ENDDO
     ENDDO
 
     time_start = 0d0
@@ -626,6 +664,39 @@ SUBROUTINE surfstat_jdos
             DO i = 1, Ndim
                 dos_bulk_mpi(ikp, j) = dos_bulk_mpi(ikp,j) - AIMAG(GB(i,i))
             ENDDO ! i
+
+            ! Spin resolved sprectrum
+            CALL mat_mul(ndim,gll,sigma_x,ctemp)
+            DO i = 1, NtopOrbitals
+                io = TopOrbitals(i)
+                sx_l_mpi(ikp, j) = sx_l_mpi(ikp, j)- aimag(ctemp(io,io))
+            ENDDO ! i
+            CALL mat_mul(ndim,gll,sigma_y,ctemp)
+            DO i = 1, NtopOrbitals
+                io = TopOrbitals(i)
+                sy_l_mpi(ikp, j) = sy_l_mpi(ikp, j)- aimag(ctemp(io,io))
+            ENDDO !
+            CALL mat_mul(ndim,gll,sigma_z,ctemp)
+            DO i = 1, NtopOrbitals
+                io = TopOrbitals(i)
+                sz_l_mpi(ikp, j) = sz_l_mpi(ikp, j)- aimag(ctemp(io,io))
+            ENDDO ! i
+            CALL mat_mul(ndim,grr,sigma_x,ctemp)
+            DO i = 1, NtopOrbitals
+                io = TopOrbitals(i)
+                sx_r_mpi(ikp, j) = sx_r_mpi(ikp, j)- aimag(ctemp(io,io))
+            ENDDO ! i
+            CALL mat_mul(ndim,grr,sigma_y,ctemp)
+            DO i = 1, NtopOrbitals
+                io = TopOrbitals(i)
+                sy_r_mpi(ikp, j) = sy_r_mpi(ikp, j)- aimag(ctemp(io,io))
+            ENDDO !
+            CALL mat_mul(ndim,grr,sigma_z,ctemp)
+            DO i = 1, NtopOrbitals
+                io = TopOrbitals(i)
+                sz_r_mpi(ikp, j) = sz_r_mpi(ikp, j)- aimag(ctemp(io,io))
+            ENDDO ! i
+
         ENDDO ! j
         CALL now(time_end)
 
@@ -651,11 +722,34 @@ SUBROUTINE surfstat_jdos
     mpi_sum, mpi_comm_world, ierr)
     CALL mpi_allreduce(dos_bulk_mpi, dos_bulk, size(dos_bulk), mpi_double_precision,&
     mpi_sum, mpi_comm_world, ierr)
+    CALL mpi_allreduce(sx_l_mpi, sx_l, size(sx_l), mpi_double_precision,&
+    mpi_sum, mpi_comm_world, ierr)
+    CALL mpi_allreduce(sy_l_mpi, sy_l, size(sy_l), mpi_double_precision,&
+    mpi_sum, mpi_comm_world, ierr)
+    CALL mpi_allreduce(sz_l_mpi, sz_l, size(sz_l), mpi_double_precision,&
+    mpi_sum, mpi_comm_world, ierr)
+    CALL mpi_allreduce(sx_r_mpi, sx_r, size(sx_r), mpi_double_precision,&
+    mpi_sum, mpi_comm_world, ierr)
+    CALL mpi_allreduce(sy_r_mpi, sy_r, size(sy_r), mpi_double_precision,&
+    mpi_sum, mpi_comm_world, ierr)
+    CALL mpi_allreduce(sz_r_mpi, sz_r, size(sz_r), mpi_double_precision,&
+    mpi_sum, mpi_comm_world, ierr)
 #else
     dos_l    = dos_l_mpi
     dos_r    = dos_r_mpi
     dos_bulk = dos_bulk_mpi
+    sx_l     = sx_l_mpi
+    sy_l     = sy_l_mpi
+    sz_l     = sz_l_mpi
+    sx_r     = sx_r_mpi
+    sy_r     = sy_r_mpi
+    sz_r     = sz_r_mpi
 #endif
+
+    DEALLOCATE( dos_l_mpi, dos_r_mpi, dos_bulk_mpi )
+    DEALLOCATE( sx_l_mpi, sy_l_mpi, sz_l_mpi )
+    DEALLOCATE( sx_r_mpi, sy_r_mpi, sz_r_mpi )
+    DEALLOCATE( sigma_x, sigma_y, sigma_z, ctemp )
 
     DO ikp=1, knv2
         DO j=1, omeganum
@@ -672,21 +766,31 @@ SUBROUTINE surfstat_jdos
     dosrfile     = outfileindex
     outfileindex = outfileindex+ 1
     dosbulkfile  = outfileindex
+    outfileindex = outfileindex+ 1
+    spindoslfile = outfileindex
+    outfileindex = outfileindex+ 1
+    spindosrfile = outfileindex
 
     ! Write surface state to files
     IF (cpuid .eq. 0) THEN
-        OPEN(unit=doslfile, file='dos.dat_l')
-        OPEN(unit=dosrfile, file='dos.dat_r')
-        OPEN(unit=dosbulkfile, file='dos.dat_bulk')
+        OPEN(unit=doslfile    , file='dos.dat_l')
+        OPEN(unit=dosrfile    , file='dos.dat_r')
+        OPEN(unit=dosbulkfile , file='dos.dat_bulk')
+        OPEN(unit=spindoslfile, file='spindos.dat_l')
+        OPEN(unit=spindosrfile, file='spindos.dat_r')
         DO ikp = 1, knv2
             DO j = 1, omeganum
                 WRITE(doslfile,    2002) k2len(ikp), omega(j), dos_l(ikp, j), dos_l_only(ikp, j)
                 WRITE(dosrfile,    2002) k2len(ikp), omega(j), dos_r(ikp, j), dos_r_only(ikp, j)
                 WRITE(dosbulkfile, 2003) k2len(ikp), omega(j), dos_bulk(ikp, j)
+                WRITE(spindoslfile,2001) k2len(ikp), omega(j), sx_l(ikp, j), sy_l(ikp, j), sz_l(ikp,j)
+                WRITE(spindosrfile,2001) k2len(ikp), omega(j), sx_r(ikp, j), sy_r(ikp, j), sz_r(ikp,j)
             ENDDO
-            WRITE(doslfile, *)
-            WRITE(dosrfile, *)
-            WRITE(dosbulkfile, *)
+            WRITE(doslfile    , *)
+            WRITE(dosrfile    , *)
+            WRITE(dosbulkfile , *)
+            WRITE(spindoslfile, *)
+            WRITE(spindosrfile, *)
         ENDDO
         CLOSE(doslfile)
         CLOSE(dosrfile)
@@ -753,13 +857,15 @@ SUBROUTINE surfstat_jdos
 
     DEALLOCATE( ones, omega )
     DEALLOCATE( dos_l, dos_r, dos_l_only, dos_r_only, dos_bulk )
-    DEALLOCATE( dos_l_mpi, dos_r_mpi, dos_bulk_mpi )
     DEALLOCATE( GLL, GRR, GB )
     DEALLOCATE( H00, H01 )
     DEALLOCATE( jdos_l, jdos_r, jdos_l_only, jdos_r_only )
     DEALLOCATE( jdos_l_mpi, jdos_r_mpi, jdos_l_only_mpi, jdos_r_only_mpi )
+    DEALLOCATE( sx_l, sy_l, sz_l )
+    DEALLOCATE( sx_r, sy_r, sz_r )
 
-2002 FORMAT(4F16.8)
-2003 FORMAT(3F16.8)
+2001 FORMAT(5(1X,F16.8))
+2002 FORMAT(4(1X,F16.8))
+2003 FORMAT(3(1X,F16.8))
 
 END SUBROUTINE surfstat_jdos

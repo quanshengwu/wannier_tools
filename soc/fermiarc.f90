@@ -636,13 +636,6 @@
            io= Ndim- Num_wann+ BottomOrbitals(i)
            dos_r(ik1, ik2)=dos_r(ik1, ik2)- aimag(GRR(io,io))
         enddo ! i
-
-        do i= 1, Ndim
-        !  dos_l(ik1, ik2)=dos_l(ik1, ik2)- aimag(GLL(i,i))
-        enddo ! i
-        do i= 1, Ndim
-        !  dos_r(ik1, ik2)=dos_r(ik1, ik2)- aimag(GRR(i,i))
-        enddo ! i
         DO i= 1, Ndim
            dos_bulk(ik1, ik2)=dos_bulk(ik1, ik2)- AIMAG(GB(i,i))
         ENDDO ! i
