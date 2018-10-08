@@ -14,8 +14,8 @@ F90  = mpif90 -cpp -DMPI
 
 INCLUDE =
 WFLAG = -Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none \
-       -fbacktrace -ffree-line-length-0 -fcheck=all -finit-real=nan \
-       -ffpe-trap=zero,overflow,underflow
+        -fbacktrace -ffree-line-length-0 -fcheck=all -finit-real=nan \
+        -ffpe-trap=zero,overflow,underflow
 OFLAG = -g
 FFLAG = $(OFLAG) $(WFLAG)
 LFLAG = $(OFLAG)

@@ -142,7 +142,6 @@
            call ham_qlayer2qlayer(k,H00,H01)
         endif
 
-
         do j = 1, omeganum
            w=omega(j)
 
@@ -150,7 +149,7 @@
            ! there are two method to calculate surface green's function
            ! the method in 1985 is better, you can find the ref in the
            ! subroutine
-             call surfgreen_1985(w,GLL,GRR,GB,H00,H01,ones)
+           call surfgreen_1985(w,GLL,GRR,GB,H00,H01,ones)
            ! call surfgreen_1984(w,GLL,GRR,H00,H01,ones)
 
            ! calculate spectral function
@@ -165,6 +164,7 @@
            do i= 1, Ndim
               dos_bulk(ikp, j)=dos_bulk(ikp,j)- aimag(GB(i,i))
            enddo ! i
+
         enddo ! j
         call now(time_end)
      enddo ! ikp
@@ -515,21 +515,21 @@ SUBROUTINE surfstat_jdos
 ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 
     USE wmpi
-    USE para, only: omeganum, omegamin, omegamax, ndim, knv2, k2_path, outfileindex, &
+    USE para, ONLY: omeganum, omegamin, omegamax, ndim, knv2, k2_path, outfileindex, &
                     BottomOrbitals, TopOrbitals, NBottomOrbitals, NtopOrbitals, stdout, &
                     k2len, Num_wann, eps9, zi, Np
     IMPLICIT NONE
 
     ! MPI error code
-    INTEGER :: ierr
+    INTEGER  :: ierr
 
     ! file id
-    INTEGER :: jdoslfile, jdosrfile, dosbulkfile
-    INTEGER :: doslfile, dosrfile, spindoslfile, spindosrfile
+    INTEGER  :: jdoslfile, jdosrfile, dosbulkfile
+    INTEGER  :: doslfile, dosrfile, spindoslfile, spindosrfile
 
     ! general loop index
-    INTEGER :: i, j, io, iq, iq1, ik1, ikp
-    INTEGER :: Nk_half, imin1, imax1, nw_half
+    INTEGER  :: i, j, io, iq, iq1, ik1, ikp
+    INTEGER  :: Nk_half, imin1, imax1, nw_half
     REAL(DP) :: ktmp(2), eta
     ! string for integer
     CHARACTER(LEN=140) :: ichar, jchar, kchar, fmt
@@ -579,36 +579,18 @@ SUBROUTINE surfstat_jdos
     ALLOCATE( sx_r_mpi(knv2, omeganum), sy_r_mpi(knv2, omeganum), sz_r_mpi(knv2, omeganum))
     ALLOCATE( sigma_x(ndim,ndim), sigma_y(ndim,ndim), sigma_z(ndim,ndim), ctemp(ndim,ndim))
 
-    omega        = 0d0
-    dos_l        = 0d0
-    dos_r        = 0d0
-    dos_l_only   = 0d0
-    dos_r_only   = 0d0
-    dos_l_mpi    = 0d0
-    dos_r_mpi    = 0d0
-    dos_bulk     = 0d0
-    dos_bulk_mpi = 0d0
-    GLL          = 0d0
-    GRR          = 0d0
-    GB           = 0d0
-    H00          = 0d0
-    H01          = 0d0
-    ones         = 0d0
-    sigma_x      = 0d0
-    sigma_y      = 0d0
-    sigma_z      = 0d0
-    sx_l         = 0d0
-    sy_l         = 0d0
-    sz_l         = 0d0
-    sx_r         = 0d0
-    sy_r         = 0d0
-    sz_r         = 0d0
-    sx_l_mpi     = 0d0
-    sy_l_mpi     = 0d0
-    sz_l_mpi     = 0d0
-    sx_r_mpi     = 0d0
-    sy_r_mpi     = 0d0
-    sz_r_mpi     = 0d0
+    omega        = 0d0;      ones         = 0d0
+    dos_l        = 0d0;      dos_r        = 0d0
+    dos_l_only   = 0d0;      dos_r_only   = 0d0
+    dos_l_mpi    = 0d0;      dos_r_mpi    = 0d0
+    dos_bulk     = 0d0;      dos_bulk_mpi = 0d0
+    GLL          = 0d0;      GRR          = 0d0;      GB           = 0d0
+    H00          = 0d0;      H01          = 0d0
+    sigma_x      = 0d0;      sigma_y      = 0d0;      sigma_z      = 0d0
+    sx_l         = 0d0;      sy_l         = 0d0;      sz_l         = 0d0
+    sx_r         = 0d0;      sy_r         = 0d0;      sz_r         = 0d0
+    sx_l_mpi     = 0d0;      sy_l_mpi     = 0d0;      sz_l_mpi     = 0d0
+    sx_r_mpi     = 0d0;      sy_r_mpi     = 0d0;      sz_r_mpi     = 0d0
 
     ! Broaden coeffient
     eta=(omegamax- omegamin)/DBLE(omeganum)
@@ -623,15 +605,16 @@ SUBROUTINE surfstat_jdos
     ENDDO
 
     !> spin operator matrix
+    !> Note, the basis here should be |↑↑↓↓>
     nw_half = Num_wann/2
     DO i=1, Np
         DO j=1, nw_half
-            sigma_x( Num_wann*(i-1)+j         , Num_wann*(i-1)+J+nw_half ) =  1.0d0
-            sigma_x( Num_wann*(i-1)+j+nw_half , Num_wann*(i-1)+j         ) =  1.0d0
-            sigma_y( Num_wann*(i-1)+j         , Num_wann*(i-1)+j+nw_half ) = -zi
-            sigma_y( Num_wann*(i-1)+j+nw_half , Num_wann*(i-1)+j         ) =  zi
-            sigma_z( Num_wann*(i-1)+j         , Num_wann*(i-1)+j         ) =  1d0
-            sigma_z( Num_wann*(i-1)+j+nw_half , Num_wann*(i-1)+j+nw_half ) = -1d0
+            sigma_x( Num_wann*(i-1)+j        , Num_wann*(i-1)+j+nw_half ) =  1.0d0
+            sigma_x( Num_wann*(i-1)+j+nw_half, Num_wann*(i-1)+j         ) =  1.0d0
+            sigma_y( Num_wann*(i-1)+j        , Num_wann*(i-1)+j+nw_half ) = -zi
+            sigma_y( Num_wann*(i-1)+j+nw_half, Num_wann*(i-1)+j         ) =  zi
+            sigma_z( Num_wann*(i-1)+j        , Num_wann*(i-1)+j         ) =  1.0d0
+            sigma_z( Num_wann*(i-1)+j+nw_half, Num_wann*(i-1)+j+nw_half ) = -1.0d0
         ENDDO
     ENDDO
 
@@ -669,81 +652,76 @@ SUBROUTINE surfstat_jdos
             CALL mat_mul(ndim,gll,sigma_x,ctemp)
             DO i = 1, NtopOrbitals
                 io = TopOrbitals(i)
-                sx_l_mpi(ikp, j) = sx_l_mpi(ikp, j)- aimag(ctemp(io,io))
+                sx_l_mpi(ikp, j) = sx_l_mpi(ikp, j)- AIMAG(ctemp(io,io))
             ENDDO ! i
             CALL mat_mul(ndim,gll,sigma_y,ctemp)
             DO i = 1, NtopOrbitals
                 io = TopOrbitals(i)
-                sy_l_mpi(ikp, j) = sy_l_mpi(ikp, j)- aimag(ctemp(io,io))
+                sy_l_mpi(ikp, j) = sy_l_mpi(ikp, j)- AIMAG(ctemp(io,io))
             ENDDO !
             CALL mat_mul(ndim,gll,sigma_z,ctemp)
             DO i = 1, NtopOrbitals
                 io = TopOrbitals(i)
-                sz_l_mpi(ikp, j) = sz_l_mpi(ikp, j)- aimag(ctemp(io,io))
+                sz_l_mpi(ikp, j) = sz_l_mpi(ikp, j)- AIMAG(ctemp(io,io))
             ENDDO ! i
             CALL mat_mul(ndim,grr,sigma_x,ctemp)
             DO i = 1, NtopOrbitals
                 io = TopOrbitals(i)
-                sx_r_mpi(ikp, j) = sx_r_mpi(ikp, j)- aimag(ctemp(io,io))
+                sx_r_mpi(ikp, j) = sx_r_mpi(ikp, j)- AIMAG(ctemp(io,io))
             ENDDO ! i
             CALL mat_mul(ndim,grr,sigma_y,ctemp)
             DO i = 1, NtopOrbitals
                 io = TopOrbitals(i)
-                sy_r_mpi(ikp, j) = sy_r_mpi(ikp, j)- aimag(ctemp(io,io))
+                sy_r_mpi(ikp, j) = sy_r_mpi(ikp, j)- AIMAG(ctemp(io,io))
             ENDDO !
             CALL mat_mul(ndim,grr,sigma_z,ctemp)
             DO i = 1, NtopOrbitals
                 io = TopOrbitals(i)
-                sz_r_mpi(ikp, j) = sz_r_mpi(ikp, j)- aimag(ctemp(io,io))
+                sz_r_mpi(ikp, j) = sz_r_mpi(ikp, j)- AIMAG(ctemp(io,io))
             ENDDO ! i
 
         ENDDO ! j
         CALL now(time_end)
 
         time_togo = (knv2-ikp)*(time_end-time_start)/num_cpu
-        IF (ikp == 1) then
+        IF (ikp == 1) THEN
             WRITE(ichar, *) knv2
-            WRITE(jchar, '("I", I0)') len(trim(adjustl(ichar)))
+            WRITE(jchar, '("I", I0)') LEN(TRIM(ADJUSTL(ichar)))
             WRITE(ichar, *) int(time_togo)
-            WRITE(kchar, '("F", I0, ".2")') len(trim(adjustl(ichar)))+4
-            fmt = "(' SSs ik/nk : ',"//trim(jchar)//",'/',"//trim(jchar)//",' , Estimated time remaining : ', "//trim(kchar)//", ' s')"
+            WRITE(kchar, '("F", I0, ".2")') LEN(TRIM(ADJUSTL(ichar)))+4
+            fmt = "(' SSs ik/nk : ',"//TRIM(jchar)//",'/',"//TRIM(jchar)//",' , &
+                  & Estimated time remaining : ', "//TRIM(kchar)//", ' s')"
         ENDIF
 
-        IF ( cpuid==0 .AND. mod(ikp/num_cpu, 10)==0 .AND. ikp/=1 ) &
+        IF ( cpuid==0 .AND. MOD(ikp/num_cpu, 10)==0 .AND. ikp/=1 ) &
         WRITE( stdout, fmt ) ikp, knv2, time_togo
 
     ENDDO ! ikp
 
 !> we do have to do allreduce operation
 #ifdef MPI
-    CALL mpi_allreduce(dos_l_mpi, dos_l, size(dos_l), mpi_double_precision,&
+    CALL mpi_allreduce(dos_l_mpi, dos_l, SIZE(dos_l), mpi_double_precision,&
     mpi_sum, mpi_comm_world, ierr)
-    CALL mpi_allreduce(dos_r_mpi, dos_r, size(dos_r), mpi_double_precision,&
+    CALL mpi_allreduce(dos_r_mpi, dos_r, SIZE(dos_r), mpi_double_precision,&
     mpi_sum, mpi_comm_world, ierr)
-    CALL mpi_allreduce(dos_bulk_mpi, dos_bulk, size(dos_bulk), mpi_double_precision,&
+    CALL mpi_allreduce(dos_bulk_mpi, dos_bulk, SIZE(dos_bulk), mpi_double_precision,&
     mpi_sum, mpi_comm_world, ierr)
-    CALL mpi_allreduce(sx_l_mpi, sx_l, size(sx_l), mpi_double_precision,&
+    CALL mpi_allreduce(sx_l_mpi, sx_l, SIZE(sx_l), mpi_double_precision,&
     mpi_sum, mpi_comm_world, ierr)
-    CALL mpi_allreduce(sy_l_mpi, sy_l, size(sy_l), mpi_double_precision,&
+    CALL mpi_allreduce(sy_l_mpi, sy_l, SIZE(sy_l), mpi_double_precision,&
     mpi_sum, mpi_comm_world, ierr)
-    CALL mpi_allreduce(sz_l_mpi, sz_l, size(sz_l), mpi_double_precision,&
+    CALL mpi_allreduce(sz_l_mpi, sz_l, SIZE(sz_l), mpi_double_precision,&
     mpi_sum, mpi_comm_world, ierr)
-    CALL mpi_allreduce(sx_r_mpi, sx_r, size(sx_r), mpi_double_precision,&
+    CALL mpi_allreduce(sx_r_mpi, sx_r, SIZE(sx_r), mpi_double_precision,&
     mpi_sum, mpi_comm_world, ierr)
-    CALL mpi_allreduce(sy_r_mpi, sy_r, size(sy_r), mpi_double_precision,&
+    CALL mpi_allreduce(sy_r_mpi, sy_r, SIZE(sy_r), mpi_double_precision,&
     mpi_sum, mpi_comm_world, ierr)
-    CALL mpi_allreduce(sz_r_mpi, sz_r, size(sz_r), mpi_double_precision,&
+    CALL mpi_allreduce(sz_r_mpi, sz_r, SIZE(sz_r), mpi_double_precision,&
     mpi_sum, mpi_comm_world, ierr)
 #else
-    dos_l    = dos_l_mpi
-    dos_r    = dos_r_mpi
-    dos_bulk = dos_bulk_mpi
-    sx_l     = sx_l_mpi
-    sy_l     = sy_l_mpi
-    sz_l     = sz_l_mpi
-    sx_r     = sx_r_mpi
-    sy_r     = sy_r_mpi
-    sz_r     = sz_r_mpi
+    dos_l    = dos_l_mpi;     dos_r    = dos_r_mpi;     dos_bulk = dos_bulk_mpi
+    sx_l     = sx_l_mpi;      sy_l     = sy_l_mpi;      sz_l     = sz_l_mpi
+    sx_r     = sx_r_mpi;      sy_r     = sy_r_mpi;      sz_r     = sz_r_mpi
 #endif
 
     DEALLOCATE( dos_l_mpi, dos_r_mpi, dos_bulk_mpi )
@@ -798,9 +776,9 @@ SUBROUTINE surfstat_jdos
     ENDIF
 
     ! Begin to calculate JDOS from DOS before
-    Nk_half    = (knv2-1)/2
-    jdos_l_mpi = 0.0d0
-    jdos_r_mpi = 0.0d0
+    Nk_half         = (knv2-1)/2
+    jdos_l_mpi      = 0.0d0
+    jdos_r_mpi      = 0.0d0
     jdos_l_only_mpi = 0.0d0
     jdos_r_only_mpi = 0.0d0
     DO j = 1+cpuid, omeganum,num_cpu
@@ -818,19 +796,17 @@ SUBROUTINE surfstat_jdos
     ENDDO
 
 #ifdef MPI
-    CALL mpi_reduce(jdos_l_mpi, jdos_l, size(jdos_l), mpi_double_precision,&
+    CALL mpi_reduce(jdos_l_mpi, jdos_l, SIZE(jdos_l), mpi_double_precision,&
     mpi_sum, 0, mpi_comm_world, ierr)
-    CALL mpi_reduce(jdos_r_mpi, jdos_r, size(jdos_r), mpi_double_precision,&
+    CALL mpi_reduce(jdos_r_mpi, jdos_r, SIZE(jdos_r), mpi_double_precision,&
     mpi_sum, 0, mpi_comm_world, ierr)
-    CALL mpi_reduce(jdos_l_only_mpi, jdos_l_only, size(jdos_l_only), mpi_double_precision,&
+    CALL mpi_reduce(jdos_l_only_mpi, jdos_l_only, SIZE(jdos_l_only), mpi_double_precision,&
     mpi_sum, 0, mpi_comm_world, ierr)
-    CALL mpi_reduce(jdos_r_only_mpi, jdos_r_only, size(jdos_r_only), mpi_double_precision,&
+    CALL mpi_reduce(jdos_r_only_mpi, jdos_r_only, SIZE(jdos_r_only), mpi_double_precision,&
     mpi_sum, 0, mpi_comm_world, ierr)
 #else
-    jdos_l      = jdos_l_mpi
-    jdos_r      = jdos_r_mpi
-    jdos_l_only = jdos_l_only_mpi
-    jdos_r_only = jdos_r_only_mpi
+    jdos_l      = jdos_l_mpi;         jdos_r      = jdos_r_mpi
+    jdos_l_only = jdos_l_only_mpi;    jdos_r_only = jdos_r_only_mpi
 #endif
 
     outfileindex = outfileindex+ 1
