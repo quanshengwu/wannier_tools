@@ -11,7 +11,7 @@
 ! version     HmnR.data  contains soc
 ! mpi-version is not test yet, take you own risk.
 ! mpi-version is  tested , please report bugs to QSWU
-! Jan 25 2015 by Q.S.Wu at ETH Zurich 
+! Jan 25 2015 by Q.S.Wu at ETH Zurich
 ! version     2.2.1  At EPFL, Switzerland, Sep. 14. 2017
 ! version     2.4.0  At EPFL, Switzerland, Aug. 31. 2018
 ! wuquansheng@gmail.com
@@ -33,13 +33,13 @@
      real(dp) :: time_start, time_end, time_init
 
 
-     !> version of WannierTools 
+     !> version of WannierTools
      version='2.4.0'
 
      ierr = 0
      cpuid= 0
      num_cpu= 1
-     !> initial the environment of mpi 
+     !> initial the environment of mpi
 #if defined (MPI)
      call mpi_init(ierr)
      call mpi_comm_rank(mpi_cmw,cpuid,ierr)
@@ -48,10 +48,10 @@
 
      if (cpuid==0) open(unit=stdout, file='WT.out')
 
-     !> if mpi initial wrong, alarm 
+     !> if mpi initial wrong, alarm
      if (cpuid==0.and.ierr.ne.0)then
         write(stdout,*)'mpi initialize wrong'
-        stop 
+        stop
      endif
 
      call now(time_init)
@@ -63,7 +63,7 @@
         write(stdout, *)' '
      endif
 
-     !> readin the control parameters for this program 
+     !> readin the control parameters for this program
      call readinput
 
      !> determine whether you are using kp model or TB model
@@ -83,17 +83,17 @@
               read(1001,*)
               read(1001,*) Num_wann
               read(1001,*) Nrpts
-              write(stdout,*)'>> Num_wann', Num_wann 
+              write(stdout,*)'>> Num_wann', Num_wann
               write(stdout,*)'>> NRPTS', NRPTS
               close(1001)
-           else 
+           else
               write(stdout,'(2x, 3a)')'File ',trim(Hrfile), &
                  ' exist, We are using HmnR from HWR'
               open(unit=1001,file=Hrfile,status='old')
               read(1001,*)
               read(1001,'(a26, i3)')cht, Num_wann
               read(1001,'(a32,i10)')cht,Nrpts
-              write(stdout,*)'>> Num_wann', Num_wann 
+              write(stdout,*)'>> Num_wann', Num_wann
               write(stdout,*)'>> NRPTS', NRPTS
               close(1001)
            endif ! hwr or not
@@ -114,7 +114,7 @@
 #if defined (MPI)
      call MPI_bcast(Num_wann,1,mpi_in,0,mpi_cmw,ierr)
      call MPI_bcast(Nrpts,1,mpi_in,0,mpi_cmw,ierr)
-#endif 
+#endif
      !> dimension for surface green's function
      Ndim= Num_wann* Np
 
@@ -127,7 +127,7 @@
      if (cpuid==0)then
         write(stdout,*) ' >> Begin to read Hmn_R.data'
      endif
-     call readHmnR() 
+     call readHmnR()
      if (cpuid==0)then
         write(stdout,*) ' << Read Hmn_R.data successfully'
      endif
@@ -138,10 +138,10 @@
      call MPI_bcast(irvec,size(irvec),mpi_in,0,mpi_cmw,ierr)
      call MPI_bcast(HmnR,size(HmnR),mpi_dc,0,mpi_cmw,ierr)
      call MPI_bcast(ndegen,size(ndegen),mpi_in,0,mpi_cmw,ierr)
-#endif 
+#endif
      ENDIF  ! end if the choice of kp model or TB model
 
-     !> import symmetry 
+     !> import symmetry
      call symmetry
 
      !> bulk band
@@ -157,7 +157,7 @@
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating bulk band'
      endif
 
-     !> bulk band of a series k points. 
+     !> bulk band of a series k points.
      if (BulkBand_points_calc) then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the bulk band in points mode'
@@ -234,7 +234,7 @@
            call print_time_cost(time_start, time_end, 'Dos_calc')
            if(cpuid.eq.0)write(stdout, *)'<< End of calculating the DOS for bulk system'
         endif
-   
+
         if (JDos_calc) then
            if(cpuid.eq.0)write(stdout, *)' '
            if(cpuid.eq.0)write(stdout, *)'>> Start of calculating JDOS for bulk system'
@@ -256,8 +256,6 @@
         call print_time_cost(time_start, time_end, 'EffectiveMass_calc')
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the effective mass'
      endif
-
-
 
 
      if (BulkGap_plane_calc) then
@@ -294,12 +292,12 @@
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the slab band structure'
         call now(time_start)
         call ek_slab
-       !call psik     
+       !call psik
         call now(time_end)
         call print_time_cost(time_start, time_end, 'SlabBand')
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the slab band structure'
      endif
-  
+
      if (BerryCurvature_slab_calc)then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Berry curvature for a slab system'
@@ -309,19 +307,19 @@
         call print_time_cost(time_start, time_end, 'BerryCurvature_slab')
         if(cpuid.eq.0)write(stdout, *)'End of calculating the Berry curvature for a slab system'
      endif
-     
+
 
      if (BerryCurvature_calc)then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Berry curvature'
         call now(time_start)
-        call berry_curvarture 
+        call berry_curvarture
         call now(time_end)
         call print_time_cost(time_start, time_end, 'BerryCurvature')
         if(cpuid.eq.0)write(stdout, *)'End of calculating the Berry curvature'
      endif
-     
-   
+
+
      if (WireBand_calc) then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the wire band'
@@ -331,7 +329,7 @@
         call print_time_cost(time_start, time_end, 'WireBand')
         if(cpuid.eq.0)write(stdout, *)'End of calculating the wire band'
      endif
-  
+
      !> Chirality of Weyl points calculation
      if (WeylChirality_calc)then
         if(cpuid.eq.0)write(stdout, *)' '
@@ -421,7 +419,7 @@
         call print_time_cost(time_start, time_end, 'SlabSS_calc')
         if(cpuid.eq.0)write(stdout, *)'End of calculating the surface state'
      endif
-    
+
      !> fermi arc
      if (SlabArc_calc) then
         if(cpuid.eq.0)write(stdout, *)' '
@@ -433,18 +431,29 @@
         if(cpuid.eq.0)write(stdout, *)'End of calculating the surface arc'
      endif
 
-     !> fermi arc QPI
+     !> Surface State QPI
      if (SlabQPI_calc) then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the surface QPI'
+        call now(time_start)
+        call surfstat_jdos
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'SlabQPI')
+        if(cpuid.eq.0)write(stdout, *)'End of calculating the surface QPI'
+     endif
+
+     !> fermi arc QPI
+     if (ArcQPI_calc) then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the fermi arc QPI'
         call now(time_start)
         call fermiarc_jdos
         call now(time_end)
         call print_time_cost(time_start, time_end, 'SlabQPI')
         if(cpuid.eq.0)write(stdout, *)'End of calculating the surface QPI'
      endif
-     
-     !> calculate spin-texture     
+
+     !> calculate spin-texture
      if (SlabSpintexture_calc)then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the spin texture for surface'
@@ -462,7 +471,7 @@
      call print_time_cost(time_init, time_end, 'whole program')
      call footer
 
-     
+
 #if defined (MPI)
      call mpi_finalize(ierr)
 #endif

@@ -10,18 +10,19 @@ OBJ =  module.o aux.o symmetry.o readHmnR.o inverse.o proteus.o \
        main.o
 
 # compiler
-F90  = mpiifort -fpp -DMPI
+F90  = mpif90 -cpp -DMPI
 
-INCLUDE = -I${MKLROOT}/include
-WFLAG = -warn all
-OFLAG = -g -traceback -static-intel
+INCLUDE =
+WFLAG = -Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none \
+       -fbacktrace -ffree-line-length-0 -fcheck=all -finit-real=nan \
+       -ffpe-trap=zero,overflow,underflow
+OFLAG = -g
 FFLAG = $(OFLAG) $(WFLAG)
 LFLAG = $(OFLAG)
 
+
 # blas and lapack libraries
-LIBS = -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a \
-        ${MKLROOT}/lib/intel64/libmkl_sequential.a \
-        ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl
+LIBS = /opt/local/lib/libopenblas.a
 
 main : $(OBJ)
 	$(F90) $(LFLAG) $(OBJ) -o wt.x $(LIBS)
@@ -34,4 +35,3 @@ main : $(OBJ)
 
 clean :
 	rm -f *.o *.mod *~ wt.x
-

@@ -1,10 +1,10 @@
   subroutine fermiarc
-     ! This subroutine calculates surface states using             
-     ! iterative Green's function method  ---  J.Phys.F.Met.Phys.15(1985)851-858      
+     ! This subroutine calculates surface states using
+     ! iterative Green's function method  ---  J.Phys.F.Met.Phys.15(1985)851-858
      !
      ! History:
      !
-     !         by Quan Sheng Wu on 4/20/2010                                
+     !         by Quan Sheng Wu on 4/20/2010
      !
      !            mpi version      4/21/2010
 
@@ -12,11 +12,9 @@
      use wmpi
      use para
      implicit none
-     
-
 
      integer :: ierr
-     
+
      integer :: arclfile, arcrfile, arcbulkfile
 
      ! general loop index
@@ -30,12 +28,12 @@
 
      real(dp) :: omega
      real(dp) :: k1min_shape, k1max_shape, k2min_shape, k2max_shape
-     
+
      real(dp) :: time_start, time_end
 
      real(dp), allocatable :: k12(:,:)
      real(dp), allocatable :: k12_shape(:,:)
-     
+
      real(dp), allocatable :: dos_l(:)
      real(dp), allocatable :: dos_l_mpi(:)
      real(dp), allocatable :: dos_r(:)
@@ -120,14 +118,14 @@
 
 
         if (index(Particle,'phonon')/=0.and.LOTO_correction) then
-           call ham_qlayer2qlayer_LOTO(k,H00,H01) 
+           call ham_qlayer2qlayer_LOTO(k,H00,H01)
         else
-           call ham_qlayer2qlayer(k,H00,H01) 
+           call ham_qlayer2qlayer(k,H00,H01)
         endif
 
 
         !> calculate surface green function
-        ! there are two method to calculate surface green's function 
+        ! there are two method to calculate surface green's function
         ! the method in 1985 is better, you can find the ref in the
         ! subroutine
         call surfgreen_1985(omega,GLL,GRR,GB,H00,H01,ones)
@@ -194,7 +192,7 @@
 
         write(stdout,*)'ndim',ndim
         write(stdout,*)'Nk1,Nk2,eta', Nk1, Nk2, eta
-        write(stdout,*)'calculate density of state successfully'    
+        write(stdout,*)'calculate density of state successfully'
      endif
 
      !> write script for gnuplot for bulk green's function
@@ -393,14 +391,14 @@
      deallocate(H00)
      deallocate(H01)
      deallocate(ones)
- 
 
-     return   
+
+     return
   end subroutine fermiarc
 
 
   subroutine fermiarc_jdos
-     !> Calculation joint density of state 
+     !> Calculation joint density of state
      !> refs :http://science.sciencemag.org/content/sci/suppl/2016/03/09/351.6278.1184.DC1/Inoue.SM.pdf
      !> in this version, we also calculate the spin density jdos
 
@@ -408,8 +406,6 @@
      use wmpi
      use para
      implicit none
-     
-
 
      integer :: ierr
 
@@ -439,7 +435,7 @@
      integer , allocatable :: ik12(:,:)
      real(dp), allocatable :: k12(:,:)
      real(dp), allocatable :: k12_shape(:,:)
-     
+
      real(dp), allocatable :: dos_l(:,:)
      real(dp), allocatable :: dos_l_mpi(:,:)
      real(dp), allocatable :: dos_r(:,:)
@@ -470,9 +466,9 @@
      real(dp), allocatable :: sz_r_mpi(:, :)
 
      ! spin operator matrix sigma_x,sigma_y in sigma_z representation
-     complex(Dp),allocatable :: sigma_x(:,:) 
-     complex(Dp),allocatable :: sigma_y(:,:) 
-     complex(Dp),allocatable :: sigma_z(:,:) 
+     complex(Dp),allocatable :: sigma_x(:,:)
+     complex(Dp),allocatable :: sigma_y(:,:)
+     complex(Dp),allocatable :: sigma_z(:,:)
      complex(Dp),allocatable :: ctemp(:,:)
      complex(dp), allocatable :: ones(:,:)
      complex(dp), allocatable :: GLL(:,:), GRR(:,:), GB(:,:)
@@ -581,7 +577,7 @@
      enddo
 
      Nwann= Num_wann/2
- 
+
      !> spin operator matrix
      do i=1, Np
         do j=1, Nwann
@@ -615,14 +611,14 @@
         k(2)= k12(2, ikp)
 
         if (index(Particle,'phonon')/=0.and.LOTO_correction) then
-           call ham_qlayer2qlayer_LOTO(k,H00,H01) 
+           call ham_qlayer2qlayer_LOTO(k,H00,H01)
         else
-           call ham_qlayer2qlayer(k,H00,H01) 
+           call ham_qlayer2qlayer(k,H00,H01)
         endif
 
 
         !> calculate surface green function
-        ! there are two method to calculate surface green's function 
+        ! there are two method to calculate surface green's function
         ! the method in 1985 is better, you can find the ref in the
         ! subroutine
         call surfgreen_1985(omega,GLL,GRR,GB,H00,H01,ones)
@@ -640,100 +636,91 @@
            io= Ndim- Num_wann+ BottomOrbitals(i)
            dos_r(ik1, ik2)=dos_r(ik1, ik2)- aimag(GRR(io,io))
         enddo ! i
-
-        do i= 1, Ndim
-        !  dos_l(ik1, ik2)=dos_l(ik1, ik2)- aimag(GLL(i,i))
-        enddo ! i
-        do i= 1, Ndim
-        !  dos_r(ik1, ik2)=dos_r(ik1, ik2)- aimag(GRR(i,i))
-        enddo ! i
-        do i= 1, Ndim
-           dos_bulk(ik1, ik2)=dos_bulk(ik1, ik2)- aimag(GB (i,i))
-        enddo ! i
+        DO i= 1, Ndim
+           dos_bulk(ik1, ik2)=dos_bulk(ik1, ik2)- AIMAG(GB(i,i))
+        ENDDO ! i
 
         !>> calculate spin-resolved bulk spectrum
         sx_bulk= 0d0
-        call mat_mul(ndim,GB ,sigma_x,ctemp)       
+        call mat_mul(ndim,GB ,sigma_x,ctemp)
         do i= 1, Ndim
            sx_bulk=sx_bulk- aimag(ctemp(i,i))
         enddo ! i
 
         sy_bulk= 0d0
-        call mat_mul(ndim,GB ,sigma_y,ctemp)       
+        call mat_mul(ndim,GB ,sigma_y,ctemp)
         do i= 1, Ndim
            sy_bulk=sy_bulk- aimag(ctemp(i,i))
         enddo ! i
 
         sz_bulk= 0d0
-        call mat_mul(ndim,GB ,sigma_z,ctemp)       
+        call mat_mul(ndim,GB ,sigma_z,ctemp)
         do i= 1, Ndim
            sz_bulk=sz_bulk- aimag(ctemp(i,i))
         enddo ! i
 
-
-
         !>> calculate spin-resolved surface spectrum
 
-        !ctemp=matmul(surfgreen,sigma_x)       
-        call mat_mul(ndim,GLL,sigma_x,ctemp)       
+        !ctemp=matmul(surfgreen,sigma_x)
+        call mat_mul(ndim,GLL,sigma_x,ctemp)
         do i= 1, NtopOrbitals
            io= TopOrbitals(i)
            sx_l(ik1, ik2)=sx_l(ik1, ik2)- aimag(ctemp(io,io))
         enddo ! i
        !sx_l(ik1, ik2)= sx_l(ik1, ik2)- sx_bulk
        !if (sx_l(ik1, ik2)<0) sx_l(ik1, ik2)= eps9
-  
-        !ctemp=matmul(surfgreen,sigma_y)       
-        call mat_mul(ndim,GLL,sigma_y,ctemp)       
+
+        !ctemp=matmul(surfgreen,sigma_y)
+        call mat_mul(ndim,GLL,sigma_y,ctemp)
         do i= 1, NtopOrbitals
            io= TopOrbitals(i)
            sy_l(ik1, ik2)=sy_l(ik1, ik2)- aimag(ctemp(io,io))
         enddo ! i
        !sy_l(ik1, ik2)= sy_l(ik1, ik2)- sy_bulk
        !if (sy_l(ik1, ik2)<0) sy_l(ik1, ik2)= eps9
-  
-  
-        !ctemp=matmul(surfgreen,sigma_z)       
-        call mat_mul(ndim,GLL,sigma_z,ctemp)       
+
+
+        !ctemp=matmul(surfgreen,sigma_z)
+        call mat_mul(ndim,GLL,sigma_z,ctemp)
         do i= 1, NtopOrbitals
            io= TopOrbitals(i)
            sz_l(ik1, ik2)=sz_l(ik1, ik2)- aimag(ctemp(io,io))
         enddo ! i
        !sz_l(ik1, ik2)= sz_l(ik1, ik2)- sz_bulk
        !if (sz_l(ik1, ik2)<0) sz_l(ik1, ik2)= eps9
-  
 
-        !ctemp=matmul(surfgreen,sigma_x)       
-        call mat_mul(ndim,GRR,sigma_x,ctemp)       
+
+        !ctemp=matmul(surfgreen,sigma_x)
+        call mat_mul(ndim,GRR,sigma_x,ctemp)
         do i= 1, NBottomOrbitals
            io= Ndim- Num_wann+ BottomOrbitals(i)
            sx_r(ik1, ik2)=sx_r(ik1, ik2)- aimag(ctemp(io,io))
         enddo ! i
        !sx_r(ik1, ik2)= sx_r(ik1, ik2)- sz_bulk
        !if (sx_r(ik1, ik2)<0) sx_r(ik1, ik2)= eps9
-  
-  
-        !ctemp=matmul(surfgreen,sigma_y)       
-        call mat_mul(ndim,GRR,sigma_y,ctemp)       
+
+
+        !ctemp=matmul(surfgreen,sigma_y)
+        call mat_mul(ndim,GRR,sigma_y,ctemp)
         do i= 1, NBottomOrbitals
            io= Ndim- Num_wann+ BottomOrbitals(i)
            sy_r(ik1, ik2)=sy_r(ik1, ik2)- aimag(ctemp(io,io))
         enddo ! i
        !sy_r(ik1, ik2)= sy_r(ik1, ik2)- sz_bulk
        !if (sy_r(ik1, ik2)<0) sy_r(ik1, ik2)= eps9
-  
-  
-        !ctemp=matmul(surfgreen,sigma_z)       
-        call mat_mul(ndim,GRR,sigma_z,ctemp)       
+
+
+        !ctemp=matmul(surfgreen,sigma_z)
+        call mat_mul(ndim,GRR,sigma_z,ctemp)
         do i= 1, NBottomOrbitals
            io= Ndim- Num_wann+ BottomOrbitals(i)
            sz_r(ik1, ik2)=sz_r(ik1, ik2)- aimag(ctemp(io,io))
         enddo ! i
        !sz_r(ik1, ik2)= sz_r(ik1, ik2)- sz_bulk
        !if (sz_r(ik1, ik2)<0) sz_r(ik1, ik2)= eps9
-        
+
         call now(time_end)
-  
+
      enddo
 
 #if defined (MPI)
@@ -756,7 +743,6 @@
                      mpi_sum, mpi_comm_world, ierr)
      call mpi_allreduce(sz_r, sz_r_mpi, size(sz_r),mpi_double_precision,&
                      mpi_sum, mpi_comm_world, ierr)
-
 #else
      dos_l_mpi= dos_l
      dos_r_mpi= dos_r
@@ -851,10 +837,8 @@
         close(spindoslfile)
         write(stdout,*)'ndim',ndim
         write(stdout,*) 'Nk1,Nk2,eta',Nk1, Nk2, eta
-        write(stdout,*)'calculate density of state successfully'    
+        write(stdout,*)'calculate density of state successfully'
      endif
-
-
 
      !> calculate jdos
      do iq= 1+ cpuid, Nk1*Nk2, num_cpu
@@ -889,6 +873,7 @@
      jdos_r_mpi=1d-12
      jsdos_l_mpi=1d-12
      jsdos_r_mpi=1d-12
+
 #if defined (MPI)
      call mpi_reduce(jdos_l, jdos_l_mpi, size(jdos_l),mpi_double_precision,&
                      mpi_sum, 0, mpi_comm_world, ierr)
@@ -898,7 +883,6 @@
                      mpi_sum, 0, mpi_comm_world, ierr)
      call mpi_reduce(jsdos_r, jsdos_r_mpi, size(jsdos_r),mpi_double_precision,&
                      mpi_sum, 0, mpi_comm_world, ierr)
-
 #else
      jdos_l_mpi= jdos_l
      jdos_r_mpi= jdos_r
@@ -915,36 +899,36 @@
      outfileindex= outfileindex+ 3
      arcrjsfile= outfileindex
      if (cpuid.eq.0)then
-        write(stdout,*)'The calculation of joint density of state was done.'    
-        write(stdout,*)'Now it is ready to write out.'    
+        write(stdout,*)'The calculation of joint density of state was done.'
+        write(stdout,*)'Now it is ready to write out.'
         open (unit=arcljfile, file='arc.jdat_l')
         do ikp=1, nk1*nk2
            write(arcljfile, '(30f16.8)')k12_shape(:, ikp),  log(abs(jdos_l_mpi(ikp)))
            if (mod(ikp, nk2)==0) write(arcljfile, *)' '
         enddo
         close(arcljfile)
-        
+
         open (unit=arcrjfile, file='arc.jdat_r')
         do ikp=1, nk1*nk2
            write(arcrjfile, '(30f16.8)')k12_shape(:, ikp),  log(abs(jdos_r_mpi(ikp)))
            if (mod(ikp, nk2)==0) write(arcrjfile, *)' '
         enddo
         close(arcrjfile)
-        
+
         open (unit=arcljsfile, file='arc.jsdat_l')
         do ikp=1, nk1*nk2
            write(arcljsfile, '(30f16.8)')k12_shape(:, ikp), log(abs(jsdos_l_mpi(ikp)))
            if (mod(ikp, nk2)==0) write(arcljsfile, *)' '
         enddo
         close(arcljsfile)
-        
+
         open (unit=arcrjsfile, file='arc.jsdat_r')
         do ikp=1, nk1*nk2
            write(arcrjsfile, '(30f16.8)')k12_shape(:, ikp), log(abs(jsdos_r_mpi(ikp)))
            if (mod(ikp, nk2)==0) write(arcrjsfile, *)' '
         enddo
         close(arcrjsfile)
-        write(stdout,*)'calculate joint density of state successfully'    
+        write(stdout,*)'calculate joint density of state successfully'
      endif ! cpuid==0
 
      !> write script for gnuplot
@@ -1207,6 +1191,6 @@
 
 
 
-  return   
+  return
   end subroutine fermiarc_jdos
 

@@ -1,31 +1,37 @@
-obj =  module.o aux.o symmetry.o readHmnR.o inverse.o proteus.o \
+OBJ =  module.o aux.o symmetry.o readHmnR.o inverse.o proteus.o \
        eigen.o ham_qlayer2qlayer.o psi.o \
-		 ham_slab.o ek_slab.o ek_bulk_polar.o ek_bulk2D.o \
+  		 ham_slab.o ek_slab.o ek_bulk_polar.o ek_bulk2D.o \
        readinput.o fermisurface.o surfgreen.o surfstat.o \
-		 mat_mul.o ham_ribbon.o ek_ribbon.o ham_bulk.o ek_bulk.o \
+  		 mat_mul.o ham_ribbon.o ek_ribbon.o ham_bulk.o ek_bulk.o \
        fermiarc.o spintexture.o berrycurvature.o \
-		 wanniercenter.o dos.o  orbital_momenta.o \
-		 landau_level.o berry.o wanniercenter_adaptive.o \
-		 effective_mass.o findnodes.o sigma_AHC.o \
+  		 wanniercenter.o dos.o  orbital_momenta.o \
+  		 landau_level.o berry.o wanniercenter_adaptive.o \
+  		 effective_mass.o findnodes.o sigma_AHC.o \
        main.o
 
 # compiler
-f90  = gfortran -cpp                                              
+F90  = mpif90 -cpp -DMPI
 
-flag = -O   -g -Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=nan
+INCLUDE =
+WFLAG = -Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none \
+        -fbacktrace -ffree-line-length-0 -fcheck=all -finit-real=nan \
+        -ffpe-trap=zero,overflow,underflow
+OFLAG = -g
+FFLAG = $(OFLAG) $(WFLAG)
+LFLAG = $(OFLAG)
 
 
 # blas and lapack libraries
-libs = -L/usr/lib/ -llapack -lblas
- 
-main :  $(obj)
-	$(f90) $(obj) -o wt.x $(libs) 
+LIBS = /opt/local/lib/libopenblas.a
+
+main : $(OBJ)
+	$(F90) $(LFLAG) $(OBJ) -o wt.x $(LIBS)
 	cp -f wt.x ../bin
 
 .SUFFIXES: .o .f90
 
 .f90.o :
-	$(f90) -c $(flag) $(includes) $*.f90
+	$(F90) $(FFLAG) $(INCLUDE) -c $*.f90
 
 clean :
 	rm -f *.o *.mod *~ wt.x

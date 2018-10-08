@@ -1,131 +1,131 @@
 !include 'mkl_dss.f90'
   module prec
-     !>> A module controls the precision. 
+     !>> A module controls the precision.
      !> when the nnzmax is larger than 2,147,483,647 then li=8,
-     !> otherwise, li=4. 
+     !> otherwise, li=4.
      !> warning: li=4 was tested, li=8 is not tested yet.
      integer,parameter :: li=4 ! long integer
-     integer,parameter :: Dp=kind(1.0d0) ! double precision  
+     integer,parameter :: Dp=kind(1.0d0) ! double precision
   end module prec
 
   module wmpi
      use prec
 
-#if defined (MPI)
+#ifdef MPI
      include 'mpif.h'
 #endif
 
      integer :: cpuid  ! CPU id for mpi
      integer :: num_cpu  ! Number of processors for mpi
 
-#if defined (MPI)
+#ifdef MPI
      integer, parameter :: mpi_in= mpi_integer
      integer, parameter :: mpi_dp= mpi_double_precision
      integer, parameter :: mpi_dc= mpi_double_complex
      integer, parameter :: mpi_cmw= mpi_comm_world
-#endif 
+#endif
 
      !> Define a structure containing information for doing communication
      type WTParCSRComm
-  
+
         !> mpi communicator
         integer :: comm
-  
+
         !> how many cpus that we need to send data on
         integer :: NumSends
-  
+
         !> which cpus that we need to send data on
         integer, pointer :: SendCPUs(:)
-  
-        !> when before we send the vector data to other cpus, we need to get the 
-        !> data which should be sent, then put these data to a array called 
-        !> x_buf_data(:). The array SendMapElements(:) gives the position of the 
+
+        !> when before we send the vector data to other cpus, we need to get the
+        !> data which should be sent, then put these data to a array called
+        !> x_buf_data(:). The array SendMapElements(:) gives the position of the
         !> data in vector that should be sent.
         integer, pointer :: SendMapStarts(:)
-  
+
         !> with this array, we can select the vector data that should be sent
         integer(li), pointer :: SendMapElements(:)
-  
+
         !> How many cpus that we need to recieve data from
         integer :: NumRecvs
-  
+
         !> Which cpus that we need to recieve data from
         integer, pointer :: RecvCPUs(:)
-  
-        !> When recieved data from other cpus, we need to arrange those data into 
-        !> an array. The length of this 
+
+        !> When recieved data from other cpus, we need to arrange those data into
+        !> an array. The length of this
         integer, pointer :: RecvVecStarts(:)
      end type WTParCSRComm
-  
+
      !> Define a structure containing information for doing communication
      type WTParVecComm
-  
+
         !> mpi communicator
         integer :: comm
-  
+
         !> how many cpus that we need to send data on
         integer :: NumSends
-  
+
         !> which cpus that we need to send data on
         integer, pointer :: SendCPUs(:)
-  
-        !> when before we send the vector data to other cpus, we need to get the 
-        !> data which should be sent, then put these data to a array called 
-        !> x_buf_data(:). The array SendMapElements(:) gives the position of the 
+
+        !> when before we send the vector data to other cpus, we need to get the
+        !> data which should be sent, then put these data to a array called
+        !> x_buf_data(:). The array SendMapElements(:) gives the position of the
         !> data in vector that should be sent.
         integer, pointer :: RecvMapStarts(:)
-  
+
         !> with this array, we can select the vector data that should be sent
         integer(li), pointer :: RecvMapElements(:)
-  
+
         !> How many cpus that we need to recieve data from
         integer :: NumRecvs
-  
+
         !> Which cpus that we need to recieve data from
         integer, pointer :: RecvCPUs(:)
-  
-        !> When recieved data from other cpus, we need to arrange those data into 
-        !> an array. The length of this 
+
+        !> When recieved data from other cpus, we need to arrange those data into
+        !> an array. The length of this
         integer, pointer :: SendVecStarts(:)
-  
+
         integer :: NumRowsDiag
         integer :: NumRowsOffd
-  
+
         integer(li), pointer :: RowMapOffd(:)
         integer(li), pointer :: LocalIndexOffd(:)
         integer(li), pointer :: LocalIndexDiag(:)
      end type WTParVecComm
-  
-  
-  
+
+
+
      !> define a handle for comm, that can be created and destroyed
      type WTCommHandle
-  
+
         type(WTParCSRComm), pointer :: sendrecv
-  
+
         integer :: numrequest
         integer, pointer :: mpirequest(:)
-        
+
         complex(dp), pointer :: senddata(:)
         complex(dp), pointer :: recvdata(:)
-  
+
      end type WTCommHandle
-  
+
      integer               :: BasisStart
      integer               :: BasisEnd
-  
+
      contains
-  
-     !> generate partition for any vector with a given length 
+
+     !> generate partition for any vector with a given length
      subroutine WTGeneratePartition(length, nprocs, part)
         integer(li), intent(in) :: length
         integer, intent(in) :: nprocs
         integer(li), intent(out) :: part(nprocs+1)
-  
+
         integer :: i
         integer(li) :: div
         integer(li) :: mod1
-  
+
         mod1= mod(length, nprocs)
         if (mod1.eq.0) then !< each cpu has the same load balance
            div= length/nprocs
@@ -143,11 +143,11 @@
            enddo
         endif
         part(nprocs+1)= length+ 1
-  
+
         return
      end subroutine WTGeneratePartition
-  
-     !> generate local partition for any vector with a given length 
+
+     !> generate local partition for any vector with a given length
      subroutine WTGenerateLocalPartition(length, nprocs, icpu, first, last)
         implicit none
         integer, intent(in) :: nprocs
@@ -155,10 +155,10 @@
         integer(li), intent(in) :: length
         integer(li), intent(out) :: first
         integer(li), intent(out) :: last
-  
+
         integer(li) :: div
         integer(li) :: mod1
-  
+
         mod1= mod(length, nprocs)
         if (mod1.eq.0) then !< each cpu has the same load balance
            div= length/nprocs
@@ -174,50 +174,50 @@
               last= (1+ icpu)*(div-1)!< the main cpu will get smaller data
            endif
         endif
-  
+
         return
      end subroutine WTGenerateLocalPartition
-  
+
      !> given the send data, recieve data and sendrecv list, we can use
      !> this subroutine to send and recieve data from other cpus.
      !> when finished this subroutine calls, we need call WTCommHandleDestroy
      !> to check whether the send recv operation is finished
      subroutine WTCommHandleCreate(SendRecv, SendData, RecvData, &
              CommHandle)
-  
+
         implicit none
-  
+
         !* in variables
         type(WTParCSRComm), intent(in), pointer :: SendRecv
         complex(dp), pointer :: SendData(:)
         complex(dp), pointer :: RecvData(:)
-  
+
         !* out variables
         type(WTCommHandle), pointer :: CommHandle
-  
+
         integer(li) :: VecStart
         integer(li) :: VecLen
-  
+
         !> sendrecv data
         integer, pointer :: SendCPUs(:)
         integer, pointer :: SendMapStarts(:)
         integer(li), pointer :: SendMapElements(:)
         integer, pointer :: RecvCPUs(:)
         integer, pointer :: RecvVecStarts(:)
-  
+
         integer :: NumRecvs
         integer :: NumSends
         integer :: NumRequest
         integer, pointer :: MpiRequest(:)
-  
+
         integer :: ierr
         integer :: comm
         integer :: NCPUs
         integer :: cpu_id
-  
+
         integer :: i, j
         integer :: icpu
-  
+
         !* initialize null pointers
         SendCPUs=> Null()
         SendMapStarts=> Null()
@@ -225,27 +225,27 @@
         RecvCPUs=> Null()
         RecvVecStarts=> Null()
         MpiRequest=> Null()
-  
+
 #if defined (MPI)
         comm= SendRecv%Comm
         call mpi_comm_size(comm, NCPUS, ierr)
         call mpi_comm_rank(comm, cpu_id, ierr)
-#endif  
+#endif
         NumSends= SendRecv%NumSends
         NumRecvs= SendRecv%NumRecvs
         NumRequest= NumSends+ NumRecvs
-  
+
         SendCPUs=> SendRecv%SendCPUs
         SendMapStarts=> SendRecv%SendMapStarts
         SendMapElements=> SendRecv%SendMapElements
         RecvCPUs=> SendRecv%RecvCPUs
         RecvVecStarts=> SendRecv%RecvVecStarts
-  
+
         MpiRequest=> Null()
         if (.not.associated(CommHandle)) allocate(CommHandle)
         allocate(CommHandle%MpiRequest(NumRequest))
         MpiRequest=> CommHandle%MpiRequest
-  
+
         !> recieve data from other cpus using non-block communication
         j=1
         do i=1, NumRecvs
@@ -258,7 +258,7 @@
 #endif
            j=j+1
         enddo
-  
+
         !> send data to other cpus using non-block communication
         do i=1, NumSends
            icpu= SendCPUs(i)
@@ -270,69 +270,69 @@
 #endif
            j=j+1
         enddo
-  
+
         CommHandle%NumRequest= NumRequest
         CommHandle%SendData=> SendData
         CommHandle%RecvData=> RecvData
         CommHandle%SendRecv=> SendRecv
-  
+
         return
-  
+
      end subroutine WTCommHandleCreate
-  
+
      subroutine WTCommHandleDestroy(CommHandle)
-  
+
         implicit none
-  
+
         type(WTCommHandle), pointer :: CommHandle
-  
+
         integer :: ierr
         integer :: NumRequest
         integer, pointer :: MpiRequest(:)
         integer, pointer :: MpiStatus(:)
-  
+
         NumRequest= CommHandle%NumRequest
         MpiRequest=> CommHandle%MpiRequest
-  
+
         if (.not.associated(CommHandle)) return
-  
+
         if (NumRequest>0) then
 #if defined (MPI)
            allocate(MpiStatus(mpi_status_size*NumRequest))
            call mpi_waitall(NumRequest, MpiRequest, MpiStatus, ierr)
 #endif
         endif
-  
+
         return
      end subroutine WTCommHandleDestroy
-  
+
      !> define my mpi_allreduce for complex array
      subroutine mp_allreduce_z(comm, ndim, vec, vec_mpi)
         implicit none
-  
+
         integer, intent(in) :: comm
         integer, intent(in) :: ndim
         complex(dp), intent(in) :: vec(ndim)
         complex(dp), intent(inout) :: vec_mpi(ndim)
-  
+
         integer :: ierr
-  
+
         vec_mpi= 0d0
-  
+
 #if defined (MPI)
         call mpi_allreduce(vec, vec_mpi, ndim, &
                            mpi_dc, mpi_sum, comm, ierr)
 #else
         vec_mpi= vec
 #endif
-  
+
         return
      end subroutine mp_allreduce_z
 
   end module wmpi
 
   module para
-     !> Some global parameters 
+     !> Some global parameters
      !
      !> Copyright (c) 2010 QuanSheng Wu. All rights reserved.
      !
@@ -359,7 +359,7 @@
 
      !> control parameters
      logical :: BulkBand_calc    ! Flag for bulk energy band calculation
-     logical :: BulkBand_plane_calc    ! Flag for bulk energy band calculation for a fixed k plane 
+     logical :: BulkBand_plane_calc    ! Flag for bulk energy band calculation for a fixed k plane
      logical :: BulkBand_points_calc    ! Flag for bulk energy band calculation for some k points
      logical :: BulkFS_calc      ! Flag for bulk 3D fermi surface in 3D BZ calculation
      logical :: BulkFS_plane_calc ! Flag for bulk fermi surface for a fix k plane calculation
@@ -372,6 +372,7 @@
      logical :: JDos_calc      ! Flag for joint density of state calculation
      logical :: SlabArc_calc   ! Flag for surface state fermi-arc calculation
      logical :: SlabQPI_calc   ! Flag for surface state QPI spectrum calculation
+     logical :: ArcQPI_calc   ! Flag for surface state QPI spectrum calculation
      logical :: SlabSpintexture_calc ! Flag for surface state spin-texture calculation
      logical :: WannierCenter_calc  ! Flag for Wilson loop calculation
      logical :: Z2_3D_calc  ! Flag for Z2 number calculations of 6 planes
@@ -387,7 +388,7 @@
      logical :: TBtoKP_calc  ! Flag for kp model construction from tight binding model
      logical :: Hof_Butt_calc  ! Flag for Hofstader butterfly
      logical :: LandauLevel_B_calc  ! Flag for Hofstader butterfly
-     logical :: LOTO_correction  ! Flag for LOTO correction of phonon spectrum 
+     logical :: LOTO_correction  ! Flag for LOTO correction of phonon spectrum
      logical :: Boltz_OHE_calc  ! Flag for Boltzmann tranport under magnetic field
      logical :: Symmetry_Import_calc  ! Flag for Boltzmann tranport under magnetic field using symmetry
      logical :: Boltz_evolve_k  ! Flag for Boltzmann tranport under magnetic field
@@ -404,11 +405,11 @@
      logical :: DMFT_MAG_calc  ! DMFT loop in uniform magnetic field
      logical :: LanczosSeqDOS_calc  ! DOS
      logical :: Translate_to_WS_calc  ! whether translate the k points into the Wigner-Seitz cell
-     
+
      logical :: LanczosBand_calc=.false.
      logical :: LanczosDos_calc= .false.
      logical :: landau_chern_calc = .false.
-     
+
      namelist / Control / BulkBand_calc,BulkFS_calc,  BulkFS_Plane_calc, BulkGap_plane_calc, &
                           BulkBand_points_calc, &
                           BulkGap_cube_calc, SlabBand_calc, WireBand_calc, &
@@ -416,7 +417,7 @@
                           WannierCenter_calc,BerryPhase_calc,BerryCurvature_calc, &
                           BerryCurvature_slab_calc, MirrorChern_calc, &
                           Z2_3D_calc, Chern_3D_calc, WeylChirality_calc, NLChirality_calc, &
-                          Dos_calc, JDos_calc, EffectiveMass_calc, SlabQPI_calc, &
+                          Dos_calc, JDos_calc, EffectiveMass_calc, SlabQPI_calc, ArcQPI_calc, &
                           FindNodes_calc, TBtoKP_calc, LOTO_correction, &
                           BulkBand_plane_calc, Hof_Butt_calc, Symmetry_Import_calc, &
                           Boltz_k_calc, Boltz_evolve_k, Boltz_OHE_calc, AHC_Calc, &
@@ -431,43 +432,43 @@
      integer :: Nslab2 ! Number of slabs for 1D wire system
 
      integer :: Np !> Number of princple layers for surface green's function
-     
+
      integer, public, save :: ijmax=6
 
-     integer :: Ndim !> Leading dimension of surface green's function 
+     integer :: Ndim !> Leading dimension of surface green's function
 
      integer :: Numoccupied !> Number of occupied bands for bulk unit cell
-    
+
 
      integer :: Ntotch !> Number of electrons
-    
+
      integer :: Num_wann  ! Number of Wannier functions
 
      integer :: Nrpts ! Number of R points
 
-   
+
      integer :: Nk   ! number of k points for different use
      integer :: Nk1  ! number of k points for different use
      integer :: Nk2  ! number of k points for different use
      integer :: Nk3  ! number of k points for different use
-     integer, parameter :: Nk2_max= 4096   ! maximum number of k points 
+     integer, parameter :: Nk2_max= 4096   ! maximum number of k points
 
      integer, public, save :: Nr1=5
      integer, public, save :: Nr2=5
      integer, public, save :: Nr3=2
 
-   
+
      integer,parameter :: kmesh(2)=(/200 , 200/)  ! kmesh used for spintexture
      integer,parameter :: knv=kmesh(1)*kmesh(2)  ! number of k points used for spintexture
 
 
      integer :: Soc  ! A parameter to control soc;  Soc=0 means no spin-orbit coupling; Soc>0 means spin-orbit coupling
 
-    
+
      real(Dp) :: eta     ! used to calculate dos epsilon+i eta
      real(Dp) :: Eta_Arc ! used to calculate dos epsilon+i eta
 
-   
+
      integer :: OmegaNum   ! The number of energy slices between OmegaMin and OmegaMax
 
      integer :: NumLCZVecs  !> number of Lanczos vectors
@@ -475,12 +476,12 @@
      integer :: NumRandomConfs  !> number of random configurations, used in the Lanczos DOS calculation, default is 1
 
      !~      real(dp) :: vef
-     real(dp) :: OmegaMin, OmegaMax ! omega interval 
+     real(dp) :: OmegaMin, OmegaMax ! omega interval
 
-  
+
      real(Dp) :: E_arc ! Fermi energy for arc calculation
 
-   
+
      real(Dp) :: Gap_threshold  ! threshold value for output the the k points data for Gap3D
 
      !>> some parameters for DMFT
@@ -515,15 +516,15 @@
         E_arc, Nk1, Nk2, Nk3, NP, Gap_threshold, Tmin, Tmax, NumT, NBTau, BTauMax, Rcut, Magp, Nslice_BTau_Max, &
         wcc_neighbour_tol, wcc_calc_tol, Beta,NumLCZVecs, NumRandomConfs
 
-    
+
      real(Dp) :: E_fermi  ! Fermi energy, search E-fermi in OUTCAR for VASP, set to zero for Wien2k
 
      real(dp) :: surf_onsite  !> surface onsite energy shift
-    
+
      real(dp) :: Bx, By, Bz !> magnetic field (in Tesla)
      real(dp) :: Btheta, Bphi !> magnetic field direction, Bx=cos(theta)*sin(phi), By=sin(theta)*sin(phi), Bz=cos(phi)
      real(dp) :: Bmagnitude  ! sqrt(Bx*Bx+By*By+Bz*Bz)
-     real(dp) :: Bdirection(3) !> a unit vector to represent the direction of B. 
+     real(dp) :: Bdirection(3) !> a unit vector to represent the direction of B.
 
      !> system parameters namelist
      namelist / SYSTEM / Soc, E_fermi, Bx, By, Bz, Btheta, Bphi, surf_onsite, &
@@ -538,9 +539,9 @@
      real(dp),parameter :: hbar= 1.054589E-34    ! electron charge in SI unit
      real(dp),parameter :: epsilon0= 8.85418781762E-12    ! dielectric constant in SI unit
 
-    
-     !real(dp),parameter :: Pi= 3.14159265359d0  ! circumference ratio pi  
-     real(dp),parameter ::  Pi= 3.14159265358979d0  ! circumference ratio pi  
+
+     !real(dp),parameter :: Pi= 3.14159265359d0  ! circumference ratio pi
+     real(dp),parameter ::  Pi= 3.14159265358979d0  ! circumference ratio pi
      real(dp),parameter :: half= 0.5d0  ! 1/2
      real(dp),parameter :: zero= 0.0d0  ! 0
      real(dp),parameter :: one = 1.0d0  ! 1
@@ -551,7 +552,7 @@
      real(dp),parameter :: eps12= 1e-12   ! 0.000000000001
      complex(dp),parameter :: zzero= 0.0d0  ! 0
 
-     real(Dp),parameter :: Ka(2)=(/1.0d0,0.0d0/)  
+     real(Dp),parameter :: Ka(2)=(/1.0d0,0.0d0/)
      real(Dp),parameter :: Kb(2)=(/0.0d0,1.0d0/)
 
      real(Dp),public, save :: Ra2(2)
@@ -560,12 +561,12 @@
      real(Dp),public, save :: Ka2(2)
      real(Dp),public, save :: Kb2(2)
 
-     
+
      real(dp),public, save :: Rua(3) ! three  primitive vectors in Cartsien coordinatec, a
      real(dp),public, save :: Rub(3) ! three  primitive vectors in Cartsien coordinatec, b
      real(dp),public, save :: Ruc(3) ! three  primitive vectors in Cartsien coordinatec, c
 
-    
+
      real(dp),public, save :: Rua_new(3) !> three primitive vectors in new coordinate system, see slab part
      real(dp),public, save :: Rub_new(3) !> three primitive vectors in new coordinate system, see slab part
      real(dp),public, save :: Ruc_new(3) !> three primitive vectors in new coordinate system, see slab part
@@ -574,7 +575,7 @@
      real(dp),public, save :: Rua_mag(3) ! three  primitive vectors in Cartsien coordinatec
      real(dp),public, save :: Rub_mag(3) ! three  primitive vectors in Cartsien coordinatec
      real(dp),public, save :: Ruc_mag(3) ! three  primitive vectors in Cartsien coordinatec
-    
+
      real(dp),public, save :: Kua(3)   ! three reciprocal primitive vectors
      real(dp),public, save :: Kub(3)   ! three reciprocal primitive vectors
      real(dp),public, save :: Kuc(3)   ! three reciprocal primitive vectors
@@ -584,7 +585,7 @@
      real(dp),public, save :: Kub_mag(3)   ! three reciprocal primitive vectors
      real(dp),public, save :: Kuc_mag(3)   ! three reciprocal primitive vectors
 
-     real(dp),public, save :: Urot(3, 3)  ! Rotate matrix for the new primitve cell 
+     real(dp),public, save :: Urot(3, 3)  ! Rotate matrix for the new primitve cell
 
      ! k list for 3D case band
      integer :: nk3lines  ! Howmany k lines for bulk band calculation
@@ -594,17 +595,17 @@
      real(dp),allocatable :: k3line_start(:, :) ! Start point for each k line
      real(dp),allocatable :: k3line_end(:, :) ! End point for each k line
      real(dp),allocatable :: K3list_band(:, :) ! coordinate of k points for bulk band calculation in kpath mode
-     real(dp),allocatable :: K3len(:)  ! put all k points in a line in order to plot the bands 
+     real(dp),allocatable :: K3len(:)  ! put all k points in a line in order to plot the bands
      real(dp),allocatable :: K3points(:, :) ! coordinate of k points for bulk band calculation in cube mode
 
-     !> k points in the point mode 
+     !> k points in the point mode
      integer :: Nk3_point_mode
      real(dp), allocatable :: k3points_pointmode_cart(:, :)
      real(dp), allocatable :: k3points_pointmode_direct(:, :)
 
 
      !> kpath for magnetic supercell
-     real(dp),allocatable :: K3len_mag(:)  ! put all k points in a line in order to plot the bands 
+     real(dp),allocatable :: K3len_mag(:)  ! put all k points in a line in order to plot the bands
      real(dp),allocatable :: k3line_mag_stop(:)  ! Connet points
 
      ! k path for berry phase, read from the input.dat
@@ -641,12 +642,12 @@
      !> A kpoint for 3D system--> only one k point
      real(dp), public, save :: Kpoint_3D_direct(3) ! the k point for effective mass calculation
      real(dp), public, save :: Kpoint_3D_cart(3) ! the k point for effective mass calculation
-     
+
      character(10) :: DirectOrCart_SINGLE ! Whether direct coordinates or Cartisen coordinates
      real(dp), public, save :: Single_KPOINT_3D_DIRECT(3) ! the k point for effective mass calculation
      real(dp), public, save :: Single_KPOINT_3D_CART(3) ! the k point for effective mass calculation
 
-     !> kpoints plane for 2D system--> arcs  
+     !> kpoints plane for 2D system--> arcs
      real(dp) :: K2D_start(2)   ! start k point for 2D system calculation, like arcs
      real(dp) :: K2D_vec1(2) ! the 1st k vector for the k plane
      real(dp) :: K2D_vec2(2) ! the 2nd k vector for the k plane
@@ -666,14 +667,14 @@
      integer, allocatable     :: irvec(:,:)   ! R coordinates in fractional units
      real(dp), allocatable    :: crvec(:,:)   ! R coordinates in Cartesian coordinates in units of Angstrom
      complex(dp), allocatable :: HmnR(:,:,:)   ! Hamiltonian m,n are band indexes
-     
-     
+
+
      !sparse HmnR arraies
      integer,allocatable :: hicoo(:),hjcoo(:),hirv(:)
      complex(dp),allocatable :: hacoo(:)
      integer :: splen
-     
-     
+
+
      integer, allocatable     :: ndegen(:)  ! degree of degeneracy of R point
 
      complex(dp), allocatable :: HmnR_newcell(:,:,:)   ! Hamiltonian m,n are band indexes
@@ -687,7 +688,7 @@
      real(dp),public, save :: Kua_newcell(3)   ! three reciprocal primitive vectors, a
      real(dp),public, save :: Kub_newcell(3)   ! three reciprocal primitive vectors, b
      real(dp),public, save :: Kuc_newcell(3)   ! three reciprocal primitive vectors, c
- 
+
      complex(dp),parameter    :: zi=(0.0d0, 1.0d0)    ! complex constant 0+1*i
      complex(dp),parameter    :: pi2zi=(0.0d0, 6.283185307179586d0) ! 2*pi*zi
 
@@ -698,8 +699,8 @@
      integer :: Num_atoms  ! number of atoms in one primitive cell
      integer :: Num_atom_type  ! number of atom's type in one primitive cell
      integer, allocatable :: Num_atoms_eachtype(:)  ! number of atoms for each atom's type in one primitive cell
-     character(10), allocatable :: Name_of_atomtype(:)  ! type of atom  
-     integer, allocatable :: itype_atom(:)  ! type of atom  
+     character(10), allocatable :: Name_of_atomtype(:)  ! type of atom
+     integer, allocatable :: itype_atom(:)  ! type of atom
 
      character(10) :: AngOrBohr  ! Angstrom unit to Bohr unit
      character(10) :: DirectOrCart ! Whether direct coordinates or Cartisen coordinates
@@ -718,7 +719,7 @@
 
      integer :: max_projs
      integer, allocatable :: nprojs(:) ! Number of projectors for each atoms
-     character(10), allocatable :: proj_name(:, :) 
+     character(10), allocatable :: proj_name(:, :)
 
      !> the start index for each atoms, only consider the spinless component
      integer, allocatable :: orbitals_start(:)
@@ -729,7 +730,7 @@
      complex(dp), allocatable :: mirror_y(:, :)
      complex(dp), allocatable :: mirror_z(:, :)
      complex(dp), allocatable :: glide(:, :)
-     
+
      !> symmetry operator apply on coordinate system
      real(dp), allocatable :: inv_op(:, :)
      real(dp), allocatable :: mirror_z_op(:, :)
@@ -767,8 +768,8 @@
      real(dp), parameter :: VASPToTHZ= 29.54263748d0 ! By T.T zhang
 
      type kcube_type
-        !> define a module for k points in BZ in purpose of MPI 
-    
+        !> define a module for k points in BZ in purpose of MPI
+
         integer :: Nk_total
         integer :: Nk_current
         integer :: Nk_start
@@ -814,10 +815,10 @@
      integer :: NumberofSelectedAtoms
      integer, allocatable :: Selected_Atoms(:)
 
-     !> selected wannier orbitals 
+     !> selected wannier orbitals
      !> this part can be read from the input.dat or wt.in file
      !> if not specified in the input.dat or wt.in, we will try to specify it from  the
-     !> SelectedAtoms part. 
+     !> SelectedAtoms part.
      integer :: NumberofSelectedOrbitals
      integer, allocatable :: Selected_WannierOrbitals(:)
 
@@ -825,12 +826,12 @@
      integer :: NumberofSelectedBands
      integer, allocatable :: Selected_band_index(:)
 
-     !> index for non-spin polarization 
+     !> index for non-spin polarization
      integer, allocatable :: index_start(:)
      integer, allocatable :: index_end(:)
 
 
-     !> time 
+     !> time
      character(8)  :: date_now
      character(10) :: time_now
      character(5)  :: zone_now
@@ -866,7 +867,7 @@
     use para
     implicit none
 
-    
+
     type kline_wcc_type
        ! define a type of all properties at the k point to get the wcc
        real(dp) :: k(3)  ! coordinate
@@ -876,7 +877,7 @@
        real(dp) :: largestgap_pos_i     ! largest gap position
        real(dp) :: largestgap_pos_val   ! largest gap position value
        real(dp) :: largestgap_val       ! largest gap value
-       logical  :: converged            ! converged or not 
+       logical  :: converged            ! converged or not
        logical  :: calculated
     end type kline_wcc_type
 

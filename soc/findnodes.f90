@@ -2,7 +2,7 @@
       ! We try to find all the local minimal of the energy gap in 3D BZ,
       ! basically, we generate a serials of starting k point for FindNode_k0
       !
-      ! By QuanSheng Wu 
+      ! By QuanSheng Wu
       !
       ! wuquansheng@gmail.com
       !
@@ -10,6 +10,7 @@
 
       use para
 
+      integer :: ierr
       integer :: ik, ikx, iky, ikz
       integer :: knv3
       integer :: Nleft
@@ -20,7 +21,7 @@
       real(dp), allocatable :: gap_minimal(:)
       real(dp), allocatable :: kabc_minimal_mpi(:, :)
       real(dp), allocatable :: gap_minimal_mpi(:)
-  
+
       interface
          function func_energy(x)
          implicit none
@@ -40,13 +41,13 @@
 
       kabc_minimal= 0d0
       gap_minimal= 0d0
-     
+
 
       do ik=1+cpuid, knv3, num_cpu
          ikx= (ik- 1)/(Nk2*Nk3)+ 1
          iky= (ik- (ikx-1)*Nk2*Nk3- 1)/Nk3+ 1
-         ikz= ik- (ikx-1)*Nk2*Nk3- (iky-1)*Nk3 
-         
+         ikz= ik- (ikx-1)*Nk2*Nk3- (iky-1)*Nk3
+
          k= K3D_start_cube+ K3D_vec1_cube*(ikx-1)/dble(nk1)  &
                    + K3D_vec2_cube*(iky-1)/dble(nk2)  &
                    + K3D_vec3_cube*(ikz-1)/dble(nk3)
@@ -54,8 +55,8 @@
          call FindNode_k0(k, k_out, gap_out)
          kabc_minimal(:, ik)= k_out
          gap_minimal(ik)= gap_out
- 
-      enddo 
+
+      enddo
 
 #if defined (MPI)
       kabc_minimal_mpi= 0
@@ -70,7 +71,7 @@
 #endif
 
 
-      outfileindex= outfileindex+ 1 
+      outfileindex= outfileindex+ 1
       if (cpuid==0)then
          open(unit=outfileindex, file='Nodes.dat')
          write (outfileindex, '(a)') '# local minimal position and the related energy gap'
@@ -98,7 +99,7 @@
          enddo
          close(outfileindex)
       endif
-       
+
       !> write script for gnuplot
       outfileindex= outfileindex+ 1
       if (cpuid==0) then
@@ -129,19 +130,19 @@
          write(outfileindex, '(a, f10.5, a, f10.5, a)')'set zrange [', -0.5, ':', 0.5, ']'
          write(outfileindex, '(2a)')"splot 'Nodes.dat' u 6:7:8 w p pt 7 ps 2"
          close(outfileindex)
-     
+
       endif
-      
+
 
       return
    end subroutine FindNodes
 
 
    subroutine FindNode_k0(k0, k_out, gap_out)
-      ! We find the local minimal of the energy gap in 3D BZ, 
+      ! We find the local minimal of the energy gap in 3D BZ,
       ! the result depends on the initial point
       !
-      ! By QuanSheng Wu 
+      ! By QuanSheng Wu
       !
       ! wuquansheng@gmail.com
       !
@@ -197,7 +198,7 @@
          gap(i)= func_gap(npara, k(i, :))
       enddo
 
-      ptol=1d-5 
+      ptol=1d-5
       call Proteus(npara, k, gap, ptol, func_gap, iter)
 
       x= k(1, :)
@@ -217,7 +218,7 @@
    function func_energy(X)
       ! this function calculates the energy gap at a given k point
       !
-      ! By QuanSheng Wu 
+      ! By QuanSheng Wu
       !
       ! wuquansheng@gmail.com
       !
@@ -269,7 +270,7 @@
    function func_gap(N,X)
       ! this function calculates the energy gap at a given k point
       !
-      ! By QuanSheng Wu 
+      ! By QuanSheng Wu
       !
       ! wuquansheng@gmail.com
       !
@@ -316,7 +317,7 @@
    subroutine transformto1BZ(kin)
       ! Transform the k points to the 1st BZ
       !
-      ! By QuanSheng Wu 
+      ! By QuanSheng Wu
       !
       ! wuquansheng@gmail.com
       !
@@ -346,7 +347,7 @@
    subroutine eliminate_duplicates(knv3, kabc_minimal, gap_minimal, Nleft)
       ! Eliminate the duplicated k points
       !
-      ! By QuanSheng Wu 
+      ! By QuanSheng Wu
       !
       ! wuquansheng@gmail.com
       !
@@ -398,7 +399,7 @@
    !> input : k(3) in fractional units
    !> output : k(3) in fractional units
    subroutine moveinto_wigner_seitzcell(k)
-      use para, only : dp, Kua, Kub, Kuc 
+      use para, only : dp, Kua, Kub, Kuc
       implicit none
 
       integer :: ik, l, m, n, ik0
@@ -446,7 +447,7 @@
    function if_in_the_WS(kin)
       ! check whether kin is in the Wigner-Seitz cell
       !
-      ! By QuanSheng Wu 
+      ! By QuanSheng Wu
       !
       ! wuquansheng@gmail.com
       !
