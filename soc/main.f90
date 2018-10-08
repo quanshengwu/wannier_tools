@@ -431,14 +431,14 @@
         if(cpuid.eq.0)write(stdout, *)'End of calculating the surface arc'
      endif
 
-     !> Surface State QPI
-     if (SlabQPI_calc) then
+     !> Wire State QPI
+     if (WireQPI_calc) then
         if(cpuid.eq.0)write(stdout, *)' '
-        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the surface QPI'
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the nanowire/nanoribbon edge state QPI'
         call now(time_start)
-        call surfstat_jdos
+        call wirestat_jdos
         call now(time_end)
-        call print_time_cost(time_start, time_end, 'SlabQPI')
+        call print_time_cost(time_start, time_end, 'WireQPI')
         if(cpuid.eq.0)write(stdout, *)'End of calculating the surface QPI'
      endif
 

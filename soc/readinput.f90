@@ -46,7 +46,6 @@ subroutine readinput
       stop
    endif
 
-
    Particle='electron'
    Package= 'VASP'
    KPorTB = 'TB'
@@ -93,7 +92,7 @@ subroutine readinput
    WireBand_calc         = .FALSE.
    SlabSS_calc           = .FALSE.
    SlabArc_calc          = .FALSE.
-   SlabQPI_calc          = .FALSE.
+   WireQPI_calc          = .FALSE.
    ArcQPI_calc           = .FALSE.
    SlabSpintexture_calc  = .FALSE.
    wanniercenter_calc    = .FALSE.

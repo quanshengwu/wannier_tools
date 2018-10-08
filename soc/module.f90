@@ -371,7 +371,7 @@
      logical :: Dos_calc       ! Flag for density of state calculation
      logical :: JDos_calc      ! Flag for joint density of state calculation
      logical :: SlabArc_calc   ! Flag for surface state fermi-arc calculation
-     logical :: SlabQPI_calc   ! Flag for surface state QPI spectrum calculation
+     logical :: WireQPI_calc   ! Flag for nanowire/nanoribbon edge state QPI spectrum calculation
      logical :: ArcQPI_calc   ! Flag for surface state QPI spectrum calculation
      logical :: SlabSpintexture_calc ! Flag for surface state spin-texture calculation
      logical :: WannierCenter_calc  ! Flag for Wilson loop calculation
@@ -417,7 +417,7 @@
                           WannierCenter_calc,BerryPhase_calc,BerryCurvature_calc, &
                           BerryCurvature_slab_calc, MirrorChern_calc, &
                           Z2_3D_calc, Chern_3D_calc, WeylChirality_calc, NLChirality_calc, &
-                          Dos_calc, JDos_calc, EffectiveMass_calc, SlabQPI_calc, ArcQPI_calc, &
+                          Dos_calc, JDos_calc, EffectiveMass_calc, WireQPI_calc, ArcQPI_calc, &
                           FindNodes_calc, TBtoKP_calc, LOTO_correction, &
                           BulkBand_plane_calc, Hof_Butt_calc, Symmetry_Import_calc, &
                           Boltz_k_calc, Boltz_evolve_k, Boltz_OHE_calc, AHC_Calc, &
