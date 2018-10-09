@@ -638,6 +638,7 @@ Surface state QPI calculation
 Settings for this feature are almost the same as :ref:`fermiarccalculation`. Only difference is that 
 you should set  ::
 
+   # please set ArcQPI_calc = T from V2.4.1
    &CONTROL
    SlabQPI_calc          = T
    /
@@ -648,15 +649,17 @@ Output
 There are a lot of outputs for QPI calculation. including 
  arc.dat_l, arc.dat_r,     
  arc_l.gnu, arc_r.gnu,     
- arc_l_only.gnu, arc_l_only.gnu,           
  arc.jdat_l, arc.jdat_r,   
  arc.jsdat_l, arc.jsdat_r, 
  arc_l_jdos.gnu, arc_l_jsdos.gnu,          
  arc_r_jdos.gnu, arc_r_jsdos.gnu. 
 
  The gnu script with 'only' means we only plot the spectrum with the surface contribution, exclude the 
- bulk contribution.  jdat_l is the QPI data without consideration of spin scattering. jsdat_l is the QPI data in consideration of spin scattering. 
+ bulk contribution. (we remove file arc_l_only.gnu after v2.4.1 for the reason of misleading)
+ jdat_l is the QPI data without consideration of spin scattering. 
+ jsdat_l is the QPI data in consideration of spin scattering. 
 
+.. NOTE::
 
 .. _fermiarccalculation:
 
@@ -670,10 +673,17 @@ Get the plots with  "gnuplot arc_l.gnu”, "gnuplot arc_r.gnu”. **_l** and **_
 
 Spin texture calculation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Spin texture calculation at fixed energy level E_arc set in NAMELISTS PARAMETERS . 
+Spin texture calculation at a fixed energy level E_arc set in NAMELISTS PARAMETERS . 
 Set Slabspintexture_calc=T, and  set Nk1, Nk2, in NAMELISTS PARAMETERS, set k plane in KPLANE_SLAB CARD. 
 Get the plots with  "gnuplot spintext_l.gnu”, "gnuplot spintext_r.gnu”.
 
+.. NOTE::
+
+   Here we asumme that the tight-binding basis are pure spin up or pure spin down, which means that the 
+   spin up and spin down are not mixed in the basis. This could be realized if you don't do the maximal-localized
+   step by setting num_iter=0 in wannier90.win and select the projectors, disentanglement windown properly. 
+   If your Wannier functions are the maximal localized ones, then this feature doesn't work. I suggest you using
+   Wannier90 to get spin-texture which needs information from the first-principle calculations. 
 
 .. _berryphasecalculation:
 
