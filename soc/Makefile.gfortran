@@ -3,7 +3,7 @@ obj =  module.o aux.o symmetry.o readHmnR.o inverse.o proteus.o \
 		 ham_slab.o ek_slab.o ek_bulk_polar.o ek_bulk2D.o \
        readinput.o fermisurface.o surfgreen.o surfstat.o \
 		 mat_mul.o ham_ribbon.o ek_ribbon.o ham_bulk.o ek_bulk.o \
-       fermiarc.o spintexture.o berrycurvature.o \
+       fermiarc.o  berrycurvature.o \
 		 wanniercenter.o dos.o  orbital_momenta.o \
 		 landau_level.o berry.o wanniercenter_adaptive.o \
 		 effective_mass.o findnodes.o sigma_AHC.o \
