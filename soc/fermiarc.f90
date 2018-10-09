@@ -381,6 +381,16 @@
      spindosrfile= outfileindex
      outfileindex= outfileindex+ 1
      arcbulkfile= outfileindex
+
+     outfileindex= outfileindex+ 1
+     arcljfile= outfileindex
+     outfileindex= outfileindex+ 1
+     arcrjfile= outfileindex
+     outfileindex= outfileindex+ 3
+     arcljsfile= outfileindex
+     outfileindex= outfileindex+ 3
+     arcrjsfile= outfileindex
+ 
      if (cpuid.eq.0)then
         open (unit=arclfile, file='arc.dat_l')
         open (unit=arcrfile, file='arc.dat_r')
@@ -521,16 +531,9 @@
         jsdos_r_mpi= jsdos_r
      endif
 #endif
+     ENDIF ! ArcQPI_calc= T
 
-     outfileindex= outfileindex+ 1
-     arcljfile= outfileindex
-     outfileindex= outfileindex+ 1
-     arcrjfile= outfileindex
-     outfileindex= outfileindex+ 3
-     arcljsfile= outfileindex
-     outfileindex= outfileindex+ 3
-     arcrjsfile= outfileindex
-     if (cpuid.eq.0)then
+     if (cpuid.eq.0.and.ArcQPI_calc)then
         write(stdout,*)'The calculation of joint density of state was done.'
         write(stdout,*)'Now it is ready to write out.'
         open (unit=arcljfile, file='arc.jdat_l')
@@ -560,112 +563,109 @@
         close(arcrjfile)
      endif ! cpuid==0
 
-     if (SOC>0) then
-        if (cpuid.eq.0)then
-           open (unit=arcljsfile, file='arc.jsdat_l')
-           write(arcljsfile,'(a)')'# Surface joint density of states(in consideration of spin contribution) of bottom surface'
-           write(arcljsfile,'(a)')'# The coordinate of k is redefined according to the SURFACE card'
-           write(arcljsfile,'(a)')"# x axis is parallel to R1'"
-           write(arcljsfile,'(a)')"# z axis is parallel to R1'xR2'"
-           write(arcljsfile,'(a)')"# y axis is parallel to z x x"
-           write(arcljsfile,'(30a16)')'#kx', 'ky', 'log(dos)'
-           do ikp=1, nkx*nky
-              write(arcljsfile, '(30f16.8)')k12_shape(:, ikp), log(abs(jsdos_l_mpi(ikp)))
-              if (mod(ikp, nky)==0) write(arcljsfile, *)' '
-           enddo
-           close(arcljsfile)
+     if (cpuid.eq.0.and.SOC>0.and.ArcQPI_calc)then
+        open (unit=arcljsfile, file='arc.jsdat_l')
+        write(arcljsfile,'(a)')'# Surface joint density of states(in consideration of spin contribution) of bottom surface'
+        write(arcljsfile,'(a)')'# The coordinate of k is redefined according to the SURFACE card'
+        write(arcljsfile,'(a)')"# x axis is parallel to R1'"
+        write(arcljsfile,'(a)')"# z axis is parallel to R1'xR2'"
+        write(arcljsfile,'(a)')"# y axis is parallel to z x x"
+        write(arcljsfile,'(30a16)')'#kx', 'ky', 'log(dos)'
+        do ikp=1, nkx*nky
+           write(arcljsfile, '(30f16.8)')k12_shape(:, ikp), log(abs(jsdos_l_mpi(ikp)))
+           if (mod(ikp, nky)==0) write(arcljsfile, *)' '
+        enddo
+        close(arcljsfile)
    
-           open (unit=arcrjsfile, file='arc.jsdat_r')
-           write(arcrjsfile,'(a)')'# Surface joint density of states(in consideration of spin contribution) of top surface'
-           write(arcrjsfile,'(a)')'# The coordinate of k is redefined according to the SURFACE card'
-           write(arcrjsfile,'(a)')"# x axis is parallel to R1'"
-           write(arcrjsfile,'(a)')"# z axis is parallel to R1'xR2'"
-           write(arcrjsfile,'(a)')"# y axis is parallel to z x x"
-           write(arcrjsfile,'(30a16)')'#kx', 'ky', 'log(dos)'
-           do ikp=1, nkx*nky
-              write(arcrjsfile, '(30f16.8)')k12_shape(:, ikp), log(abs(jsdos_r_mpi(ikp)))
-              if (mod(ikp, nky)==0) write(arcrjsfile, *)' '
-           enddo
-           close(arcrjsfile)
-           write(stdout,*)'calculate joint density of state successfully'
-       endif ! cpuid==0
+        open (unit=arcrjsfile, file='arc.jsdat_r')
+        write(arcrjsfile,'(a)')'# Surface joint density of states(in consideration of spin contribution) of top surface'
+        write(arcrjsfile,'(a)')'# The coordinate of k is redefined according to the SURFACE card'
+        write(arcrjsfile,'(a)')"# x axis is parallel to R1'"
+        write(arcrjsfile,'(a)')"# z axis is parallel to R1'xR2'"
+        write(arcrjsfile,'(a)')"# y axis is parallel to z x x"
+        write(arcrjsfile,'(30a16)')'#kx', 'ky', 'log(dos)'
+        do ikp=1, nkx*nky
+           write(arcrjsfile, '(30f16.8)')k12_shape(:, ikp), log(abs(jsdos_r_mpi(ikp)))
+           if (mod(ikp, nky)==0) write(arcrjsfile, *)' '
+        enddo
+        close(arcrjsfile)
+        write(stdout,*)'calculate joint density of state successfully'
+     endif !> SOC>0
 
-       !> write script for gnuplot
-       outfileindex= outfileindex+ 1
-       if (cpuid==0) then
-          open(unit=outfileindex, file='arc_l_jsdos.gnu')
-          write(outfileindex, '(a)')"set encoding iso_8859_1"
-          write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
-          write(outfileindex, '(a)')"#set output 'arc_l_jsdos.eps'"
-          write(outfileindex, '(3a)')'#set terminal pngcairo truecolor enhanced', &
-             '  font ",50" size 1920, 1680'
-          write(outfileindex, '(3a)')'set terminal png truecolor enhanced', &
-             ' font ",50" size 1920, 1680'
-          write(outfileindex, '(a)')"set output 'arc_l_jsdos.png'"
-          write(outfileindex,'(2a)') 'set palette defined (0  "white", ', &
-             '6 "red", 20 "black" )'
-          write(outfileindex, '(a)')'#set palette rgbformulae 33,13,10'
-          write(outfileindex, '(a)')'unset ztics'
-          write(outfileindex, '(a)')'unset key'
-          write(outfileindex, '(a)')'set pm3d'
-          write(outfileindex, '(a)')'set border lw 6'
-          write(outfileindex, '(a)')'set size ratio -1'
-          write(outfileindex, '(a)')'set view map'
-          write(outfileindex, '(a)')'set xtics'
-          write(outfileindex, '(a)')'set ytics'
-          write(outfileindex, '(a)')'set xlabel "K_1 (1/{\305})"'
-          write(outfileindex, '(a)')'set ylabel "K_2 (1/{\305})"'
-          write(outfileindex, '(a)')'set ylabel offset 1, 0'
-          write(outfileindex, '(a)')'set colorbox'
-          write(outfileindex, '(a)')'unset cbtics'
-          write(outfileindex, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape, ':', k1max_shape, ']'
-          write(outfileindex, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape, ':', k2max_shape, ']'
-          write(outfileindex, '(a)')'set pm3d interpolate 2,2'
-          write(outfileindex, '(2a)')"splot 'arc.jsdat_l' u 1:2:(exp($3)) w pm3d"
-          close(outfileindex)
-       endif
+     outfileindex= outfileindex+ 1
+     if (cpuid.eq.0.and.SOC>0.and.ArcQPI_calc)then
+        open(unit=outfileindex, file='arc_l_jsdos.gnu')
+        write(outfileindex, '(a)')"set encoding iso_8859_1"
+        write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
+        write(outfileindex, '(a)')"#set output 'arc_l_jsdos.eps'"
+        write(outfileindex, '(3a)')'#set terminal pngcairo truecolor enhanced', &
+           '  font ",50" size 1920, 1680'
+        write(outfileindex, '(3a)')'set terminal png truecolor enhanced', &
+           ' font ",50" size 1920, 1680'
+        write(outfileindex, '(a)')"set output 'arc_l_jsdos.png'"
+        write(outfileindex,'(2a)') 'set palette defined (0  "white", ', &
+           '6 "red", 20 "black" )'
+        write(outfileindex, '(a)')'#set palette rgbformulae 33,13,10'
+        write(outfileindex, '(a)')'unset ztics'
+        write(outfileindex, '(a)')'unset key'
+        write(outfileindex, '(a)')'set pm3d'
+        write(outfileindex, '(a)')'set border lw 6'
+        write(outfileindex, '(a)')'set size ratio -1'
+        write(outfileindex, '(a)')'set view map'
+        write(outfileindex, '(a)')'set xtics'
+        write(outfileindex, '(a)')'set ytics'
+        write(outfileindex, '(a)')'set xlabel "K_1 (1/{\305})"'
+        write(outfileindex, '(a)')'set ylabel "K_2 (1/{\305})"'
+        write(outfileindex, '(a)')'set ylabel offset 1, 0'
+        write(outfileindex, '(a)')'set colorbox'
+        write(outfileindex, '(a)')'unset cbtics'
+        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape, ':', k1max_shape, ']'
+        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape, ':', k2max_shape, ']'
+        write(outfileindex, '(a)')'set pm3d interpolate 2,2'
+        write(outfileindex, '(2a)')"splot 'arc.jsdat_l' u 1:2:(exp($3)) w pm3d"
+        close(outfileindex)
+     endif !> SOC>0
   
        !> write script for gnuplot
-       outfileindex= outfileindex+ 1
-       if (cpuid==0) then
-          open(unit=outfileindex, file='arc_r_jsdos.gnu')
-          write(outfileindex, '(a)')"set encoding iso_8859_1"
-          write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
-          write(outfileindex, '(a)')"#set output 'arc_r_jsdos.eps'"
-          write(outfileindex, '(3a)')'#set terminal pngcairo truecolor enhanced', &
-             '  font ",50" size 1920, 1680'
-          write(outfileindex, '(3a)')'set terminal png truecolor enhanced', &
-             ' font ",50" size 1920, 1680'
-          write(outfileindex, '(a)')"set output 'arc_r_jsdos.png'"
-          write(outfileindex,'(2a)') 'set palette defined (0  "white", ', &
-             '6 "red", 20 "black" )'
-          write(outfileindex, '(a)')'#set palette rgbformulae 33,13,10'
-          write(outfileindex, '(a)')'unset ztics'
-          write(outfileindex, '(a)')'unset key'
-          write(outfileindex, '(a)')'set pm3d'
-          write(outfileindex, '(a)')'set border lw 6'
-          write(outfileindex, '(a)')'set size ratio -1'
-          write(outfileindex, '(a)')'set view map'
-          write(outfileindex, '(a)')'set xtics'
-          write(outfileindex, '(a)')'set ytics'
-          write(outfileindex, '(a)')'set xlabel "K_1 (1/{\305})"'
-          write(outfileindex, '(a)')'set ylabel "K_2 (1/{\305})"'
-          write(outfileindex, '(a)')'set ylabel offset 1, 0'
-          write(outfileindex, '(a)')'set colorbox'
-          write(outfileindex, '(a)')'unset cbtics'
-          write(outfileindex, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape, ':', k1max_shape, ']'
-          write(outfileindex, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape, ':', k2max_shape, ']'
-          write(outfileindex, '(a)')'set pm3d interpolate 2,2'
-          write(outfileindex, '(2a)')"splot 'arc.jsdat_r' u 1:2:(exp($3)) w pm3d"
-          close(outfileindex)
-       endif
+     outfileindex= outfileindex+ 1
+     if (cpuid.eq.0.and.SOC>0.and.ArcQPI_calc)then
+        open(unit=outfileindex, file='arc_r_jsdos.gnu')
+        write(outfileindex, '(a)')"set encoding iso_8859_1"
+        write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
+        write(outfileindex, '(a)')"#set output 'arc_r_jsdos.eps'"
+        write(outfileindex, '(3a)')'#set terminal pngcairo truecolor enhanced', &
+           '  font ",50" size 1920, 1680'
+        write(outfileindex, '(3a)')'set terminal png truecolor enhanced', &
+           ' font ",50" size 1920, 1680'
+        write(outfileindex, '(a)')"set output 'arc_r_jsdos.png'"
+        write(outfileindex,'(2a)') 'set palette defined (0  "white", ', &
+           '6 "red", 20 "black" )'
+        write(outfileindex, '(a)')'#set palette rgbformulae 33,13,10'
+        write(outfileindex, '(a)')'unset ztics'
+        write(outfileindex, '(a)')'unset key'
+        write(outfileindex, '(a)')'set pm3d'
+        write(outfileindex, '(a)')'set border lw 6'
+        write(outfileindex, '(a)')'set size ratio -1'
+        write(outfileindex, '(a)')'set view map'
+        write(outfileindex, '(a)')'set xtics'
+        write(outfileindex, '(a)')'set ytics'
+        write(outfileindex, '(a)')'set xlabel "K_1 (1/{\305})"'
+        write(outfileindex, '(a)')'set ylabel "K_2 (1/{\305})"'
+        write(outfileindex, '(a)')'set ylabel offset 1, 0'
+        write(outfileindex, '(a)')'set colorbox'
+        write(outfileindex, '(a)')'unset cbtics'
+        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape, ':', k1max_shape, ']'
+        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape, ':', k2max_shape, ']'
+        write(outfileindex, '(a)')'set pm3d interpolate 2,2'
+        write(outfileindex, '(2a)')"splot 'arc.jsdat_r' u 1:2:(exp($3)) w pm3d"
+        close(outfileindex)
      endif !> SOC>0
 
 
 
      !> write script for gnuplot
      outfileindex= outfileindex+ 1
-     if (cpuid==0) then
+     if (cpuid.eq.0.and.SOC>0.and.ArcQPI_calc)then
         open(unit=outfileindex, file='arc_l_jdos.gnu')
         write(outfileindex, '(a)')"set encoding iso_8859_1"
         write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
@@ -700,7 +700,7 @@
 
      !> write script for gnuplot
      outfileindex= outfileindex+ 1
-     if (cpuid==0) then
+     if (cpuid.eq.0.and.SOC>0.and.ArcQPI_calc)then
         open(unit=outfileindex, file='arc_r_jdos.gnu')
         write(outfileindex, '(a)')"set encoding iso_8859_1"
         write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
@@ -732,8 +732,6 @@
         write(outfileindex, '(2a)')"splot 'arc.jdat_r' u 1:2:(exp($3)) w pm3d"
         close(outfileindex)
      endif
-
-     ENDIF ! ArcQPI_calc= T
 
      !> write script for gnuplot
      outfileindex= outfileindex+ 1
