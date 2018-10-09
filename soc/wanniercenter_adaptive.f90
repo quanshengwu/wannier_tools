@@ -1098,19 +1098,19 @@
    end subroutine largest_gap_find
 
    subroutine dis_phase(x, y, dis)
+      !> the distance between two phases
       use para, only : dp
       use wmpi
       real(dp), intent(in) :: x, y
       real(dp), intent(out) :: dis
 
       real(dp) :: a, b
-      a=x
-      b=y
+      dis = 0d0
 
-      a= dmod(a, 1d0)
-      b= dmod(b, 1d0)
+      a= dmod(x, 1d0)
+      b= dmod(y, 1d0)
 
-      dis= min( dmod(abs(1d0+ a- b), 1d0), dmod( abs(1d0- a+ b), 1d0))
+      dis= min( dmod(abs(1d0+ a- b), 1d0), dmod(abs(1d0- a+ b), 1d0))
 
       return
    end subroutine dis_phase

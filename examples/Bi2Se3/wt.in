@@ -33,17 +33,17 @@ SURFACE            ! Specify surface with two vectors, see doc
 
 !> bulk band structure calculation flag
 &CONTROL
-BulkBand_calc         = T
+BulkBand_calc         = F
 BulkBand_points_calc  = F
-DOS_calc              = T
+DOS_calc              = F
 BulkFS_calc           = F
 BulkGap_cube_calc     = F
 BulkGap_plane_calc    = F
-SlabBand_calc         = T
+SlabBand_calc         = F
 WireBand_calc         = F
-SlabSS_calc           = T
-SlabArc_calc          = T
-SlabQPI_calc          = T
+SlabSS_calc           = F
+SlabArc_calc          = F
+SlabQPI_calc          = F
 ArcQPI_calc          = T
 Z2_3D_calc            = T
 SlabSpintexture_calc  = T

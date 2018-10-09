@@ -345,9 +345,9 @@
            sz= 0d0
            do i= 1, Num_wann
               do j= 1, Num_wann
-                 sx= sx+ conjg(psi(i))* sigmax(i, j)* psi(j)
-                 sy= sy+ conjg(psi(i))* sigmay(i, j)* psi(j)
-                 sz= sz+ conjg(psi(i))* sigmaz(i, j)* psi(j)
+                 sx= sx+ real(conjg(psi(i))* sigmax(i, j)* psi(j))
+                 sy= sy+ real(conjg(psi(i))* sigmay(i, j)* psi(j))
+                 sz= sz+ real(conjg(psi(i))* sigmaz(i, j)* psi(j))
               enddo ! j
            enddo ! i
            spin(1, ib, ik)= sx

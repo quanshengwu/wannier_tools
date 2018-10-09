@@ -371,7 +371,7 @@
         endif
      enddo
 
-     outfileindex= outfileindex+ 1
+     outfileindex= outfileindex+ 100
      arclfile= outfileindex
      outfileindex= outfileindex+ 1
      arcrfile= outfileindex

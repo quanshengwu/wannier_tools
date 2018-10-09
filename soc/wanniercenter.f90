@@ -130,10 +130,10 @@
 
       do ik2=1, Nk2
          do ik1=1, Nk1
-            kpoints(:, ik1, ik2)= k0+k1*(ik1-1)/dble(nk1)+ k2*(ik2-1)/dble(nk2-1)
+            kpoints(:, ik1, ik2)= k0+k1*dble(ik1-1.d0)/dble(nk1)+ k2*(ik2-1)/dble(nk2-1d0)
          enddo
       enddo
-      b= k1/dble(nk1)
+      b= dble(k1)/dble(nk1)
       b= b(1)*kua+b(2)*kub+b(3)*kuc
 
 
@@ -574,7 +574,7 @@
 
       do ik2=1, Nk2
          do ik1=1, Nk1
-            kpoints(:, ik1, ik2)= k0+ k1*(ik1-1d0)/dble(Nk1)+ k2*(ik2-1d0)/dble(Nk2-1)
+            kpoints(:, ik1, ik2)= k0+ k1*(ik1-1d0)/dble(Nk1)+ k2*(ik2-1d0)/dble(Nk2-1d0)
          enddo
       enddo
       b= k1/dble(Nk1)
@@ -706,7 +706,7 @@
          open(unit=outfileindex, file='wcc.dat')
 
          do ik2=1, Nk2
-            write(outfileindex, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1)/2d0, &
+            write(outfileindex, '(10000f16.8)') dble(ik2-1d0)/dble(Nk2-1d0)/2d0, &
                largestgap_mpi(ik2), dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
                WannierCenterKy_mpi(:, ik2)
          enddo
@@ -915,7 +915,7 @@
 
       do ik2=1, Nk2
          do ik1=1, Nk1
-            kpoints(:, ik1, ik2)= k0+ k1*(ik1-1d0)/dble(Nk1)+ k2*(ik2-1d0)/dble(Nk2-1)
+            kpoints(:, ik1, ik2)= k0+ k1*(ik1-1d0)/dble(Nk1)+ k2*(ik2-1d0)/dble(Nk2-1d0)
          enddo
       enddo
       b= k1/dble(Nk1)
@@ -1208,7 +1208,7 @@
       do ik2=1, Nk2
          do ik1=1, Nk1
             kx= (ik1-1d0)/real(Nk1)
-            ky= (ik2-1d0)/real(Nk2-1)/2d0
+            ky= (ik2-1d0)/real(Nk2-1d0)/2d0
             kpoints(1, ik1, ik2)= kx
             kpoints(2, ik1, ik2)= ky
             b(1)= 1.d0/real(Nk1)

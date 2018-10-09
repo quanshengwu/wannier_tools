@@ -511,8 +511,9 @@ SUBROUTINE surfstat_jdos
 !            mpi version      4/21/2010
 !
 !            Quansheng Wu on Jan 30 2015 at ETH Zurich
+!> The jdos part in this subroutine was added by Jianzhou Zhao
 !
-! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
+! Licence : GPL v3
 
     USE wmpi
     USE para, ONLY: omeganum, omegamin, omegamax, ndim, knv2, k2_path, outfileindex, &
