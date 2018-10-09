@@ -9,10 +9,9 @@
 
      implicit none
 
-     integer :: ik, i, j, ib
+     integer :: ik, i, j
      integer :: knv3
      integer :: ierr
-     integer :: nwann
 
      integer :: nband_min
      integer :: nband_max
@@ -22,7 +21,6 @@
 
      real(Dp) :: k(3)
      real(Dp) :: W(Num_wann)
-     real(dp) :: kxmin, kxmax, kymin, kymax
      real(dp), allocatable :: kxy(:,:)
      real(dp), allocatable :: kxy_shape(:,:)
      real(dp), allocatable :: kxy_plane(:,:)
@@ -31,8 +29,6 @@
      complex(Dp) :: Hamk_bulk(Num_wann,Num_wann) 
 
      ! eigen value of H
-	  real(dp), allocatable :: gap(:)
-	  real(dp), allocatable :: gap_mpi(:)
 	  real(dp), allocatable :: eigv(:,:)
 	  real(dp), allocatable :: eigv_mpi(:,:)
 
@@ -178,7 +174,7 @@
 
      integer :: ik, i, j, ib
      integer :: nkx, nky
-	  integer :: knv3
+     integer :: knv3
      integer :: ierr
      integer :: nwann
      real(Dp) :: k(3)
@@ -186,7 +182,6 @@
      real(dp) :: sy
      real(dp) :: sz
      real(Dp) :: W(Num_wann)
-     real(dp) :: kxmin, kxmax, kymin, kymax
      real(dp), allocatable :: kxy(:,:)
      real(dp), allocatable :: kxy_shape(:,:)
      
@@ -336,14 +331,13 @@
 
      integer :: ik, i, j
      integer :: nkx, nky
-	  integer :: nwann
-	  integer :: knv3
+     integer :: nwann
+     integer :: knv3
      integer :: ierr
      real(Dp) :: k(3)
      real(Dp) :: k11(3), k12(3)
      real(Dp) :: k21(3), k22(3)
      real(Dp) :: W(Num_wann)
-     real(dp) :: kxmin, kxmax, kymin, kymax
      real(dp), allocatable :: kxy(:,:)
      real(dp), allocatable :: kxy_shape(:,:)
      

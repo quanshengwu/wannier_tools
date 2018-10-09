@@ -13,10 +13,6 @@
 ! wave vector 
      real(Dp)    :: k(2)
  
-! parameters for zheev
-     real(Dp)    :: rwork(5*Num_wann*nslab)
-     complex(Dp) :: work (5*Num_wann*nslab)
-      
 ! eigenvalue 
      real(Dp)    :: eigenvalue (nslab*Num_wann)
      

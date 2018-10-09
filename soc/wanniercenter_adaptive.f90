@@ -5,7 +5,7 @@
       use wmpi
       implicit none
 
-      integer :: ik2, i, j 
+      integer :: ik2, i
       integer :: Nk2_adaptive
 
       real(dp) :: kstart(3)
@@ -351,16 +351,7 @@
       use wmpi
       implicit none
 
-      integer :: i
-      integer :: j
-      integer :: l 
-      integer :: m 
-      integer :: ia
-      integer :: imax
-
-      integer :: ik
-      integer :: ik1
-      integer :: ik2
+      integer :: i, ik, ik2
 
       integer :: ierr
 
@@ -407,15 +398,8 @@
 
       logical :: converged, exceed
 
-      real(dp) :: g
-      real(dp) :: phi1
-      real(dp) :: phi2
-      real(dp) :: phi3
-      real(dp) :: zm
-      real(dp) :: zm1
-      real(dp) :: xnm1
-      real(dp) :: Deltam
-      real(dp) :: dis
+      real(dp) :: g, phi1, phi2, phi3
+      real(dp) :: zm, zm1, xnm1, Deltam, dis
       real(dp), allocatable :: xnm(:)
 
       allocate(xnm(Numoccupied))
@@ -656,21 +640,9 @@
       real(dp), intent(out) :: largestgap_pos_val
 
       logical :: not_in
-      integer :: i
-      integer :: j
-      integer :: l 
-      integer :: m 
-      integer :: ia
-      integer :: it
-      integer :: imax
+      integer :: i, j, m, it, imax, iter
 
-      integer :: ik1, ik
-      integer :: Nk_start
-      integer :: Nk_Max
-      integer :: Nk_adaptive
-
-      integer :: ierr
-      integer :: iter
+      integer :: ik1, ik, Nk_start, Nk_Max, Nk_adaptive
 
       real(dp) :: dis
       real(dp) :: max_diff

@@ -117,7 +117,7 @@
 
      ! index used to sign irvec     
      integer :: ia,ib,ic
-     integer  :: ii,jj,mm,nn,pp,qq,xx,yy,zz
+     integer  :: ii,jj,pp,qq
 
      ! new index used to sign irvec     
      real(dp) :: new_ia,new_ib,new_ic
@@ -150,9 +150,7 @@
      complex(Dp),allocatable :: nac_correction(:, :, :) 
 
      real(dp) :: temp1(2), temp2, knew(2)
-     real(dp) :: temp3(30),constant_t
-     real(dp) :: A_ii(3)=(/0.0,0.0,0.0/)
-     real(dp) :: A_jj(3)=(/0.0,0.0,0.0/)
+     real(dp) :: constant_t
      complex(dp), allocatable :: mat1(:, :)
      complex(dp), allocatable :: mat2(:, :)
  
@@ -405,7 +403,7 @@
 
      ! index used to sign irvec     
      integer :: ia,ib,ic
-     integer  :: ii,jj,mm,nn,pp,qq,xx,yy,zz
+     integer  :: ii,jj,pp,qq
 
      ! 
 
@@ -429,9 +427,7 @@
      complex(Dp),allocatable :: nac_correction(:, :, :) 
 
      real(dp) :: temp1(2), temp2, knew(2)
-     real(dp) :: temp3(30), constant_t
-     real(dp) :: A_ii(3)=(/0.0,0.0,0.0/)
-     real(dp) :: A_jj(3)=(/0.0,0.0,0.0/)
+     real(dp) :: constant_t
      complex(dp), allocatable :: mat1(:, :)
      complex(dp), allocatable :: mat2(:, :)
  

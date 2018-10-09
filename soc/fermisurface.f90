@@ -8,18 +8,11 @@
 
      implicit none
 
-     integer :: ik, i, j, l
-     integer :: knv3
-     integer :: ikx, iky, ikz
+     integer :: ik, i, knv3, ikx, iky, ikz, ierr
 
-     integer :: ierr
-     real(dp) :: kz
-     real(Dp) :: k(3)
+     integer :: nband_min, nband_max, nband_store
 
-     integer :: nband_min
-     integer :: nband_max
-     integer :: nband_store
-
+     real(dp) :: kz, k(3)
      real(dp) :: time_start, time_end
      
      ! Hamiltonian of bulk system
@@ -168,14 +161,7 @@
 
      implicit none
 
-     integer :: ia
-     integer :: ik, i, j, i1, i2
-     integer :: knv3
-     integer :: nkx
-     integer :: nky
-
-     integer :: ierr
-     real(dp) :: kz
+     integer :: ik, i, j, i1, i2, knv3, nkx, nky,  ierr
      real(Dp) :: k(3)
      
      real(Dp) :: dos_max
@@ -183,20 +169,14 @@
      complex(Dp), allocatable :: Hamk_bulk(:, :)
 
      real(dp) :: time_start, time_end
-     real(dp) :: kxmin, kxmax, kymin, kymax
      real(dp) :: zmin, zmax
      real(dp) :: kxmin_shape, kxmax_shape, kymin_shape, kymax_shape
 
-     real(dp), allocatable :: kxy(:,:)
-     real(dp), allocatable :: kxy_shape(:,:)
-     real(dp), allocatable :: kxy_plane(:,:)
+     real(dp), allocatable :: kxy(:,:), kxy_shape(:,:), kxy_plane(:,:)
     
      !> atomic and k resolved spectral function
-     real(dp), allocatable :: dos(:, :)
-     real(dp), allocatable :: dos_mpi(:, :)
-     real(dp), allocatable :: dos_total(:)
-     real(dp), allocatable :: dos_selected(:)
-     real(dp), allocatable :: dos_unselected(:)
+     real(dp), allocatable :: dos(:, :), dos_mpi(:, :), dos_total(:)
+     real(dp), allocatable :: dos_selected(:), dos_unselected(:)
 
      complex(dp), allocatable :: ones(:,:)
 
@@ -420,13 +400,12 @@
      integer :: ia, ik, i, j, i1, i2
      integer :: knv3, nkx, nky, ierr
 
-     real(dp) :: kz, k(3)
+     real(dp) ::k(3)
      
      ! Hamiltonian of bulk system
      complex(Dp), allocatable :: Hamk_bulk(:, :)
 
      real(dp) :: time_start, time_end
-     real(dp) :: kxmin, kxmax, kymin, kymax
      real(dp) :: zmin, zmax
      real(dp) :: kxmin_shape, kxmax_shape, kymin_shape, kymax_shape
 

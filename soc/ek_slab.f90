@@ -269,8 +269,6 @@
      ! wave vector 
      real(Dp) :: k(2)
 
-     real(dp) :: emin, emax
- 
      real(Dp), allocatable ::  rwork(:)
      complex(Dp), allocatable :: work(:)
       

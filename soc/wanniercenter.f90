@@ -13,7 +13,7 @@
       implicit none
 
 
-      integer :: i, j, l, m, ia, nfill, nfill_half, imax
+      integer :: i, j, l, m, ia, nfill, nfill_half
 
       integer :: i1, i2, ik1, ik2, ikp, ierr
 
@@ -66,9 +66,6 @@
 
       real(dp) :: k(3), b(3)
 
-      real(dp) :: maxgap, maxgap0
-
-      real(dp) :: g, phi1, phi2, phi3, zm, zm1, xnm1, Deltam
       real(dp), allocatable :: xnm(:)
       real(dp) :: k0(3), k1(3), k2(3)
 
@@ -459,18 +456,9 @@
       use wmpi
       implicit none
 
-      integer :: i
-      integer :: j
-      integer :: l 
-      integer :: m 
-      integer :: ia
-      integer :: nfill
-      integer :: imax
+      integer :: i, j, m, nfill, imax
 
-      integer :: ik1
-      integer :: ik2
-
-      integer :: ierr
+      integer :: ik1, ik2,  ierr
 
       !> k points in kx-ky plane
       real(dp), allocatable :: kpoints(:, :, :)
@@ -521,8 +509,7 @@
       !> exp(-i*b.R)
       complex(dp) :: ratio
 
-      real(dp) :: k(3)
-      real(dp) :: b(3)
+      real(dp) :: k(3), b(3)
 
       real(dp) :: maxgap
       real(dp) :: maxgap0
@@ -531,14 +518,8 @@
       integer :: Z2
       integer :: Delta
 
-      real(dp) :: g
-      real(dp) :: phi1
-      real(dp) :: phi2
-      real(dp) :: phi3
-      real(dp) :: zm
-      real(dp) :: zm1
-      real(dp) :: xnm1
-      real(dp) :: Deltam
+      real(dp) :: g, phi1, phi2, phi3
+      real(dp) :: zm, zm1, xnm1, Deltam
       real(dp), allocatable :: xnm(:)
       real(dp) :: k0(3), k1(3), k2(3)
 
@@ -803,17 +784,8 @@
       use wmpi
       implicit none
 
-      integer :: i
-      integer :: j
-      integer :: l 
-      integer :: m 
-      integer :: ia
-      integer :: imax
-
-      integer :: ik1
-      integer :: ik2
-
-      integer :: ierr
+      integer :: i, j, m , imax
+      integer :: ik1, ik2, ierr
 
       real(dp), intent(in) :: kstart(3)
       real(dp), intent(in) :: kvec1(3)  ! the integration direction
@@ -1117,18 +1089,9 @@
       use wmpi
       implicit none
 
-      integer :: i
-      integer :: j
-      integer :: l 
-      integer :: m 
-      integer :: ia
-      integer :: nfill
-      integer :: imax
+      integer :: i, j, m , nfill, imax
 
-      integer :: ik1
-      integer :: ik2
-
-      integer :: ierr
+      integer :: ik1, ik2, ierr
 
       !> k points in kx-ky plane
       real(dp), allocatable :: kpoints(:, :, :)
@@ -1767,20 +1730,8 @@
       use wmpi
       implicit none
 
-      integer :: i
-      integer :: j
-      integer :: l 
-      integer :: m 
-      integer :: ia
-      integer :: imax
-
-      integer :: ik1
-      integer :: ik2
-
-      integer :: ierr
-      real(dp) :: r_para
-      real(dp) :: theta1
-      real(dp) :: theta2
+      integer :: i, j, m , ik1, ik2, ierr
+      real(dp) :: r_para, theta1, theta2
 
       !> inout variables
       real(dp), intent(in) :: k0(3)
@@ -1835,19 +1786,8 @@
       !> exp(-i*b.R)
       complex(dp) :: ratio
 
-      real(dp) :: k(3)
-      real(dp) :: b(3)
-
+      real(dp) :: k(3), b(3)
       real(dp) :: gap_sum, gap_step
-
-      real(dp) :: g
-      real(dp) :: phi1
-      real(dp) :: phi2
-      real(dp) :: phi3
-      real(dp) :: zm
-      real(dp) :: zm1
-      real(dp) :: xnm1
-      real(dp) :: Deltam
       real(dp), allocatable :: xnm(:)
 
 
@@ -1871,20 +1811,11 @@
       allocate(WannierCenterKy_mpi(Numoccupied, Nk2))
       allocate(wcc_sum(Nk2))
       allocate(xnm(Numoccupied))
-      WannierCenterKy= 0d0
-      WannierCenterKy_mpi= 0d0
-      hamk=0d0
-      eigenvalue=0d0
-      Eigenvector=0d0
-      Mmnkb_full=0d0
-      Mmnkb=0d0
-      Mmnkb_com=0d0
-      Lambda =0d0
-      Lambda0=0d0
-      U= 0d0
-      Sigma= 0d0
-      VT= 0d0
-      wcc_sum= 0d0
+      WannierCenterKy= 0d0; WannierCenterKy_mpi= 0d0
+      hamk=0d0; eigenvalue=0d0; Eigenvector=0d0
+      Mmnkb_full=0d0; Mmnkb=0d0; Mmnkb_com=0d0
+      Lambda =0d0; Lambda0=0d0
+      U= 0d0; Sigma= 0d0; VT= 0d0; wcc_sum= 0d0
 
       !> set k plane
       !> the first dimension should be in one primitive cell, [0, 2*pi]
@@ -2030,12 +1961,9 @@
 
       integer :: ik2, i, j 
 
-      real(dp) :: kstart(3)
-      real(dp) :: kvec1(3)
-      real(dp) :: kvec2(3)
+      real(dp) :: kstart(3), kvec1(3), kvec2(3)
 
-      integer :: Chern
-      integer :: Chern_all(6)
+      integer :: Chern, Chern_all(6)
 
       !> wannier centers for each ky, bands
       real(dp), allocatable :: wcc(:, :)

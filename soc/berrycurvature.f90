@@ -20,7 +20,7 @@
      complex(dp), intent(out) :: Omega_y(Num_wann)
      complex(dp), intent(out) :: Omega_z(Num_wann)
 
-     integer :: iR, m, n, i, j
+     integer :: iR, m, n, i
      real(dp), allocatable :: W(:)
      real(dp) :: kdotr
      complex(dp), allocatable :: Amat(:, :), DHDk(:, :, :), DHDkdag(:, :, :)
@@ -136,7 +136,7 @@
      complex(dp), intent(out) :: Omega_y(Num_wann)
      complex(dp), intent(out) :: Omega_z(Num_wann)
 
-     integer :: iR, m, n, i, j
+     integer :: iR, m, n
      real(dp), allocatable :: W(:)
      real(dp) :: kdotr, Beta_fake
      complex(dp), allocatable :: Amat(:, :), DHDk(:, :, :), DHDkdag(:, :, :)
@@ -335,9 +335,8 @@
      real(dp), intent(in) :: k(2)
      complex(dp), intent(out) :: Omega_z(1)
 
-     integer :: iR, m, n, i, j, Mdim, i1, i2
+     integer :: m, n, Mdim, i1, i2
      real(dp), allocatable :: W(:)
-     real(dp) :: kdotr
      complex(dp), allocatable :: Amat(:, :), DHDk(:, :, :), DHDkdag(:, :, :)
      complex(dp), allocatable :: UU(:, :), UU_dag(:, :), Hamk_slab(:, :)
      complex(dp), allocatable :: vx(:, :), vy(:, :)
@@ -418,9 +417,8 @@
      complex(dp), intent(out) :: Omega_y
      complex(dp), intent(out) :: Omega_z
 
-     integer :: iR, m, n, i, j
+     integer :: m, n
      real(dp), allocatable :: W(:)
-     real(dp) :: kdotr
      complex(dp), allocatable :: Amat(:, :), DHDk(:, :, :), DHDkdag(:, :, :)
      complex(dp), allocatable :: UU(:, :), UU_dag(:, :), Hamk_bulk(:, :)
      complex(dp), allocatable :: vx(:, :), vy(:, :), vz(:, :)
@@ -496,9 +494,8 @@
      complex(dp), intent(out) :: Omega_y(Num_wann)
      complex(dp), intent(out) :: Omega_z(Num_wann)
 
-     integer :: iR, m, n, i, j
+     integer :: m, n
      real(dp), allocatable :: W(:)
-     real(dp) :: kdotr
      complex(dp), allocatable :: Amat(:, :), DHDk(:, :, :), DHDkdag(:, :, :)
      complex(dp), allocatable :: UU(:, :), UU_dag(:, :), Hamk_bulk(:, :)
      complex(dp), allocatable :: vx(:, :), vy(:, :), vz(:, :)
@@ -569,9 +566,9 @@
      use para
      implicit none
     
-     integer :: ik, m, n, i, j, ierr, Mdim
+     integer :: ik, i, j, ierr, Mdim
 
-     real(dp) :: kdotr, k(2), o1(3)
+     real(dp) :: k(2)
 
      !> k points slice
      real(dp), allocatable :: k12(:, :)

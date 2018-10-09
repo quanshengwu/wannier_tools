@@ -3,7 +3,7 @@ OBJ =  module.o aux.o symmetry.o readHmnR.o inverse.o proteus.o \
   		 ham_slab.o ek_slab.o ek_bulk_polar.o ek_bulk2D.o \
        readinput.o fermisurface.o surfgreen.o surfstat.o \
   		 mat_mul.o ham_ribbon.o ek_ribbon.o ham_bulk.o ek_bulk.o \
-       fermiarc.o spintexture.o berrycurvature.o \
+       fermiarc.o berrycurvature.o \
   		 wanniercenter.o dos.o  orbital_momenta.o \
   		 landau_level.o berry.o wanniercenter_adaptive.o \
   		 effective_mass.o findnodes.o sigma_AHC.o \
@@ -19,10 +19,14 @@ FFLAG = $(OFLAG) $(WFLAG)
 LFLAG = $(OFLAG)
 
 # blas and lapack libraries
+# static linking
 LIBS = -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a \
         ${MKLROOT}/lib/intel64/libmkl_sequential.a \
         ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl
 
+# dynamic linking
+# LIBS = -L/${MKLROOT}/lib/intel64 -lmkl_core -lmkl_sequential -lmkl_intel_lp64 -lpthread
+ 
 main : $(OBJ)
 	$(F90) $(LFLAG) $(OBJ) -o wt.x $(LIBS)
 	cp -f wt.x ../bin

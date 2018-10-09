@@ -7,28 +7,12 @@
 
      implicit none
 
-     integer :: ik, i, j, ia
-     integer :: nkx, nky
-	  integer :: knv3
-     integer :: ierr
-     integer :: nktheta
-     integer :: nkr
-     integer :: nwan
-     real(Dp) :: k (3)
-     real(Dp) :: k1(3)
-     real(Dp) :: k2(3)
-     real(dp) :: kx
-     real(dp) :: ky
-     real(dp) :: kz
-     real(dp) :: ktheta
-     real(dp) :: kr
+     integer :: ik, i, j, ia, knv3
+     integer :: ierr, nktheta, nkr, nwan
+     real(Dp) :: k (3), k1(3)
+     real(dp) :: kz, ktheta, kr, krmax, mingap
      real(Dp) :: W(Num_wann)
-     real(dp) :: krmax
-     real(dp), allocatable :: k12(:,:)
-     real(dp), allocatable :: k123(:,:)
-     real(dp), allocatable :: krtheta(:,:)
-
-     real(dp) :: mingap
+     real(dp), allocatable :: k12(:,:), k123(:,:), krtheta(:,:)
 
      !> center
      real(dp) :: center_direct(3)

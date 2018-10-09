@@ -8,7 +8,7 @@
 
      implicit none
 
-     integer :: ik, i, j, knv3, Nwann, ierr
+     integer :: ik, i, j, knv3, ierr
      real(dp) :: emin, emax, k(3)
      real(Dp), allocatable :: W(:)
      
@@ -178,8 +178,8 @@
 
      implicit none
 
-     integer :: ik, i, j, knv3, Nwann, ierr
-     real(dp) :: emin, emax, k(3)
+     integer :: ik, i, j, knv3, ierr
+     real(dp) :: k(3)
      real(Dp), allocatable :: W(:)
      
      ! Hamiltonian of bulk system
@@ -430,7 +430,6 @@
 
      integer :: ik1, ik2, ik3
      integer :: Nk_t
-     integer :: ierr
      real(Dp) :: k(3), k1, k2, k3
      real(Dp) :: W(Num_wann)
      
@@ -500,13 +499,9 @@
 
      implicit none
 
-     integer :: ik, i, j
-	  integer :: knv3
-     integer :: ierr
-     real(dp) :: emin
-     real(dp) :: emax
-     real(Dp) :: k(3)
-     real(Dp) :: W(Num_wann)
+     integer :: i, ik, knv3, ierr
+     real(dp) :: emin,  emax
+     real(Dp) :: k(3),  W(Num_wann)
      
      ! Hamiltonian of bulk system
      complex(Dp) :: Hamk_bulk(Num_wann,Num_wann) 

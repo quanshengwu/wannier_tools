@@ -425,7 +425,7 @@
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the surface arc'
         call now(time_start)
-        call fermiarc
+        call SurfaceDOSkk
         call now(time_end)
         call print_time_cost(time_start, time_end, 'SlabArc')
         if(cpuid.eq.0)write(stdout, *)'End of calculating the surface arc'
@@ -447,7 +447,7 @@
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the fermi arc QPI'
         call now(time_start)
-        call fermiarc_jdos
+        call SurfaceDOSkk
         call now(time_end)
         call print_time_cost(time_start, time_end, 'SlabQPI')
         if(cpuid.eq.0)write(stdout, *)'End of calculating the surface QPI'
@@ -458,7 +458,8 @@
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the spin texture for surface'
         call now(time_start)
-        call spintext
+       !call spintext
+        call SurfaceDOSkk
         call now(time_end)
         call print_time_cost(time_start, time_end, 'SlabSpintexture')
         if(cpuid.eq.0)write(stdout, *)'End of calculating the spin texture for surface'

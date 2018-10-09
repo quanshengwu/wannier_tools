@@ -8,7 +8,7 @@ subroutine dos_sub
    implicit none
 
    !> the integration k space
-   real(dp) :: kxmin, kxmax, kymin, kymax, kzmin, kzmax, emin, emax
+   real(dp) :: emin, emax
 
    real(dp) :: eta_brodening
 
@@ -18,7 +18,7 @@ subroutine dos_sub
    integer :: iband_low, iband_high, iband_tot
 
    real(dp) :: x, dk3, k(3)
-   real(dp) :: time_start, time_end, time_init
+   real(dp) :: time_start, time_end
 
    real(dp), allocatable :: eigval(:)
    real(dp), allocatable :: W(:)
@@ -157,42 +157,20 @@ subroutine joint_dos
    implicit none
 
    !> the integration k space
-   real(dp) :: kxmin
-   real(dp) :: kxmax
-   real(dp) :: kymin
-   real(dp) :: kymax
-   real(dp) :: kzmin
-   real(dp) :: kzmax
-   real(dp) :: emin
-   real(dp) :: emax
+   real(dp) :: emin, emax
 
-   integer :: ik
-   integer :: ie
-   integer :: ib, ib1, ib2
-   integer :: ikx
-   integer :: iky
-   integer :: ikz
-   integer :: knv3
-   integer :: NE
-   integer :: ierr
+   integer :: ik, ie, ib, ib1, ib2
+   integer :: ikx, iky, ikz, knv3, NE, ierr
 
    !> integration for band
-   integer :: iband_low
-   integer :: iband_high
-   integer :: iband_tot
+   integer :: iband_low, iband_high, iband_tot
 
-   real(dp) :: x
-   real(dp) :: dk3
+   real(dp) :: x, dk3
 
    real(dp) :: k(3)
 
-   real(dp), allocatable :: kpoints(:, :)
-   real(dp), allocatable :: eigval(:, :)
-   real(dp), allocatable :: eigval_mpi(:, :)
-   real(dp), allocatable :: W(:)
-   real(dp), allocatable :: omega(:)
-   real(dp), allocatable :: jdos(:)
-   real(dp), allocatable :: jdos_mpi(:)
+   real(dp), allocatable :: kpoints(:, :), eigval(:, :), eigval_mpi(:, :)
+   real(dp), allocatable :: W(:), omega(:), jdos(:), jdos_mpi(:)
    complex(dp), allocatable :: Hk(:, :)
 
    !> fermi distribution
@@ -334,47 +312,19 @@ subroutine dos_joint_dos
    implicit none
 
    !> the integration k space
-   real(dp) :: kxmin
-   real(dp) :: kxmax
-   real(dp) :: kymin
-   real(dp) :: kymax
-   real(dp) :: kzmin
-   real(dp) :: kzmax
-   real(dp) :: emin
-   real(dp) :: emax
+   real(dp) :: emin, emax
 
-   integer :: ik
-   integer :: ik_start
-   integer :: ik_end
-   integer :: Nk_local
-
-   integer :: ie
-   integer :: ib, ib1, ib2
-   integer :: ikx
-   integer :: iky
-   integer :: ikz
-   integer :: knv3
-   integer :: NE
-   integer :: ierr
+   integer :: ik, ie, ib, ib1, ib2
+   integer :: ikx, iky, ikz, knv3, NE, ierr
 
    !> integration for band
-   integer :: iband_low
-   integer :: iband_high
-   integer :: iband_tot
+   integer :: iband_low, iband_high, iband_tot
 
-   real(dp) :: x
-   real(dp) :: dk3
+   real(dp) :: x, dk3
 
    real(dp) :: k(3)
-
-   real(dp), allocatable :: W(:)
-   real(dp), allocatable :: omega_dos(:)
-   real(dp), allocatable :: omega_jdos(:)
-   real(dp), allocatable :: dos(:)
-   real(dp), allocatable :: dos_mpi(:)
-   real(dp), allocatable :: jdos(:)
-   real(dp), allocatable :: jdos_mpi(:)
-   complex(dp), allocatable :: Hk(:, :)
+   real(dp), allocatable :: W(:), omega_dos(:), omega_jdos(:)
+   real(dp), allocatable :: dos(:), dos_mpi(:), jdos(:), jdos_mpi(:), Hk(:, :)
 
    !> fermi distribution
    real(dp), allocatable :: fermi_dis(:)

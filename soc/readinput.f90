@@ -18,10 +18,9 @@ subroutine readinput
    real(dp) :: cell_volume2
 
    integer  :: stat
-   integer  :: i, ia, n, ik, ik1, ik2, ik3
+   integer  :: i, ia, ik
    integer  :: j, io, it
    integer  :: NN
-   integer  :: knv3, knv3_mod
    integer :: nwann
 
    integer, allocatable :: iarray_temp(:)
@@ -2363,8 +2362,8 @@ end subroutine direct_cart_rec
 subroutine MillerIndicestoumatrix()
    use para
    implicit none
-   integer :: i1, i2, i3, j1, j2, j3, h, k, l, it
-   real(dp) :: R(3), R1(3), R2(3), R3(3), Rhkl(3), dot
+   integer :: i1, i2, i3, h, k, l, it
+   real(dp) :: R1(3), R2(3), R3(3), Rhkl(3), dot
 
    integer, allocatable :: vector_on_hkl_surface(:, :)
    integer :: Nvectors_on_hkl_surface
@@ -2584,15 +2583,15 @@ end subroutine MillerIndicestoumatrix
 subroutine FindTheThirdLatticeVector()
    use para
    implicit none
-   integer :: i1, i2, i3, j1, j2, j3, h, k, l, it
-   real(dp) :: R(3), R1(3), R2(3), R3(3), cross(3), dot
+   integer :: i1, i2, i3, it
+   real(dp) :: R1(3), R2(3), R3(3), cross(3), dot
 
    integer, allocatable :: vectors_parallel_umatrix1(:, :)
    integer, allocatable :: vectors_parallel_umatrix2(:, :)
    integer :: Nvectors_parallel_umatrix1, Nvectors_parallel_umatrix2
    real(dp) :: smallest_volume, cell_volume
    real(dp) :: smallest_length
-   real(dp) :: norm_1, norm_2, norm_3
+   real(dp) :: norm_3
 
    integer :: iRmax
    iRmax= 6

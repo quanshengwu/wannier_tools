@@ -238,7 +238,7 @@
      implicit none
     
      integer :: iR, ik, ikx, iky, ikz
-     integer :: m, n, i, j, ie
+     integer :: m, n, ie
      integer :: ierr, knv3
 
      real(dp) :: kdotr, mu, Beta_fake
@@ -259,7 +259,6 @@
      !> Berry curvature
      complex(dp), allocatable :: Omega_x(:), Omega_y(:), Omega_z(:)
      complex(dp), allocatable :: Omega_x_t(:), Omega_y_t(:), Omega_z_t(:)
-     complex(dp) :: ratio
 
      !> conductivity  dim= OmegaNum
      real(dp), allocatable :: energy(:)
