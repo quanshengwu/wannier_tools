@@ -2002,9 +2002,13 @@ subroutine readinput
 221 continue
 
    if (lfound) then
-      read(1001,*)Num_atom_type
+      read(1001,*)it
+      if (it/=Num_atom_type) then
+         write(*, '(a)')"ERROR: Number of atom's type in ATOM_MASS card should be consistent with the atomic_position card"
+         stop
+      endif
       if(cpuid==0)write(stdout,'(a,i10,a)')'There are', Num_atom_type, 'kind of atoms'
-      allocate(Num_atoms_eachtype(Num_atom_type))
+      if (.not.allocated(Num_atoms_eachtype))allocate(Num_atoms_eachtype(Num_atom_type))
       allocate(mass_temp(Num_atom_type))
       allocate(ATOM_MASS(Num_atoms))
       read(1001,*)Num_atoms_eachtype(1:Num_atom_type)
