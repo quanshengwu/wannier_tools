@@ -324,7 +324,8 @@ subroutine dos_joint_dos
 
    real(dp) :: k(3)
    real(dp), allocatable :: W(:), omega_dos(:), omega_jdos(:)
-   real(dp), allocatable :: dos(:), dos_mpi(:), jdos(:), jdos_mpi(:), Hk(:, :)
+   real(dp), allocatable :: dos(:), dos_mpi(:), jdos(:), jdos_mpi(:)
+   complex(dp), allocatable :: Hk(:, :)
 
    !> fermi distribution
    real(dp), allocatable :: fermi_dis(:)
