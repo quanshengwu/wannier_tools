@@ -14,7 +14,7 @@ F90  = mpiifort -fpp -DMPI
 
 INCLUDE = -I${MKLROOT}/include
 WFLAG = -warn all
-OFLAG = -g -traceback -static-intel
+OFLAG = -O3 -g -traceback -static-intel
 FFLAG = $(OFLAG) $(WFLAG)
 LFLAG = $(OFLAG)
 

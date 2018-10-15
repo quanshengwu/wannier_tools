@@ -1,0 +1,31 @@
+WannierTools is written in Fortran90. Eventually, Fortran compiler is required to install it. At present,
+we only support the installation on Mac or Linux or other Unix like systems.
+
+1. Download the package
+a. You can download the latest develop branch by using "git clone"
+git clone https://github.com/quanshengwu/wannier_tools.git
+b. You could also download the release version on page
+https://github.com/quanshengwu/wannier_tools/releases
+
+2. After the download, uncompress it if necessary. The source file is included in the soc/ folder.
+The executable binary will be copied to bin/ folder after compilation. There are several examples
+in the examples/ folder. The symmetrization module is in the wannhr_symm/ folder which is an
+independent python package.
+
+3. Go into the folder soc/ for the compilation. We prepared several Makefiles for different usage.
+Please copy the one that you need into Makefile like
+
+cp Makefile.intel-mpi Makefile
+
+
+4. Modify Makefile 
+a. Choose the lapack and Blas library by setting LIBS.
+b. if you want to use mpi, please add -DMPI as an option of compiler F90.
+
+5. Make it by typing
+
+make
+
+6. After the compilation, binary wt.x will be generated and copied to ../bin/ folder.
+
+7. About the usage, please visit website www.wanniertools.com
