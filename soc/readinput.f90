@@ -89,6 +89,7 @@ subroutine readinput
    BulkGap_cube_calc     = .FALSE.
    BulkGap_plane_calc    = .FALSE.
    SlabBand_calc         = .FALSE.
+   SlabBand_plane_calc   = .FALSE.
    WireBand_calc         = .FALSE.
    SlabSS_calc           = .FALSE.
    SlabArc_calc          = .FALSE.
@@ -134,7 +135,8 @@ subroutine readinput
       write(*, *)"And please make sure that the spelling are correct."
       write(*, *)"BulkBand_calc, BulkBand_plane_calc, BulkFS_calc"
       write(*, *)"BulkGap_cube_calc,BulkGap_plane_calc"
-      write(*, *)"SlabBand_calc,WireBand_calc,SlabSS_calc,SlabArc_calc "
+      write(*, *)"SlabBand_calc,WireBand_calc,SlabSS_calc "
+      write(*, *)"SlabBand_plane_calc,SlabArc_calc "
       write(*, *)"SlabSpintexture,wanniercenter_calc"
       write(*, *)"BerryPhase_calc,BerryCurvature_calc"
       write(*, *)"BerryCurvature_slab_calc"
@@ -176,6 +178,7 @@ subroutine readinput
       write(stdout, *) "BulkGap_cube_calc   : ",  BulkGap_cube_calc
       write(stdout, *) "BulkGap_plane_calc  : ",  BulkGap_plane_calc
       write(stdout, *) "SlabBand_calc       : ",  SlabBand_calc
+      write(stdout, *) "SlabBand_plane_calc : ",  SlabBand_plane_calc
       write(stdout, *) "SlabSS_calc         : ",  SlabSS_calc
       write(stdout, *) "SlabArc_calc        : ",  SlabArc_calc
       write(stdout, *) "SlabSpintexture_calc: ",  SlabSpintexture_calc

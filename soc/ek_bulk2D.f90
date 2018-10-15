@@ -125,6 +125,9 @@
         close(outfileindex)
      endif
 
+#if defined (MPI)
+     call mpi_barrier(mpi_cmw, ierr)
+#endif
      !> write out a script that can be used for gnuplot
      outfileindex= outfileindex+ 1
      if (cpuid==0)then

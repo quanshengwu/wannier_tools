@@ -252,7 +252,7 @@
   return
   end subroutine ek_slab
 
-  subroutine ek_slab_2d
+  subroutine ek_slab_kplane
      !> This subroutine is used for calculating energy 
      !> dispersion with wannier functions for 2D slab system
      !
@@ -264,23 +264,21 @@
 
 
      ! loop index
-     integer :: i, j, l, lwork, ierr, knxy, ik, istart, iend
+     integer :: i, j, l, lwork, ierr, kn12, ik, istart, iend
 
      ! wave vector 
      real(Dp) :: k(2)
 
-     real(Dp), allocatable ::  rwork(:)
-     complex(Dp), allocatable :: work(:)
-      
+     real(Dp) :: time_start, time_end
+
      real(Dp), allocatable :: eigenvalue(:)
    
      ! energy dispersion
      real(Dp),allocatable :: ekslab(:,:)
      real(Dp),allocatable :: ekslab_mpi(:,:)
 
-     real(dp), allocatable :: kxy(:,:)
-     real(dp), allocatable :: kxy_shape(:,:)
-     real(dp), allocatable :: kxy_plane(:,:)
+     real(dp), allocatable :: k12(:,:)
+     real(dp), allocatable :: k12_shape(:,:)
 
      !> color for plot, surface state weight
      real(dp), allocatable :: surf_weight(:, :)
@@ -288,21 +286,18 @@
 
      complex(Dp),allocatable ::CHamk(:,:)
 
-     knxy= nk1*nk2
+     kn12= nk1*nk2
      lwork= 16*Nslab*Num_wann
      ierr = 0
 
      allocate(eigenvalue(nslab*Num_wann))
-     allocate( surf_weight (Nslab* Num_wann, knxy))
-     allocate( surf_weight_mpi (Nslab* Num_wann, knxy))
-     allocate(ekslab(Nslab*Num_wann,knxy))
-     allocate(ekslab_mpi(Nslab*Num_wann,knxy))
+     allocate( surf_weight (Nslab* Num_wann, kn12))
+     allocate( surf_weight_mpi (Nslab* Num_wann, kn12))
+     allocate(ekslab(Nslab*Num_wann,kn12))
+     allocate(ekslab_mpi(Nslab*Num_wann,kn12))
      allocate(CHamk(nslab*Num_wann,nslab*Num_wann))
-     allocate(work(lwork))
-     allocate(rwork(lwork))
-     allocate(kxy(2,knxy))
-     allocate(kxy_shape(2,knxy))
-     allocate(kxy_plane(2,knxy))
+     allocate(k12(2,kn12))
+     allocate(k12_shape(2,kn12))
  
      surf_weight= 0d0
      surf_weight_mpi= 0d0
@@ -312,18 +307,24 @@
      do i= 1, nk1
         do j= 1, nk2
            ik =ik +1
-           kxy(1, ik)= (i-1)/dble(Nk1-1)
-           kxy(2, ik)= (j-1)/dble(Nk2-1)
-           kxy_shape(:, ik)= kxy(1, ik)* Ka2+ kxy(2, ik)*Kb2
+           k12(:, ik)=K2D_start+ (i-1)*K2D_vec1/dble(nk1-1) &
+                      + (j-1)*K2D_vec2/dble(nk2-1)
+           k12_shape(:, ik)= k12(1, ik)* Ka2+ k12(2, ik)* Kb2
         enddo
      enddo
 
      ! sweep k
      ekslab=0.0d0
      ekslab_mpi=0.0d0
-     do i=1+cpuid, knxy, num_cpu
-        if (cpuid==0) write(stdout, *)'SlabEk, ik ',  i, knxy
-        k= kxy(:, i)
+     time_start= 0d0
+     time_end= 0d0
+     do i=1+cpuid, kn12, num_cpu
+        if (cpuid==0.and. mod(i/num_cpu, 100)==0) &
+           write(stdout, *) 'SlabBand_plane, ik ', i, 'Nk',nk1*nk2, 'time left', &
+           (nk1*nk2-i)*(time_end- time_start)/num_cpu, ' s'
+        call now(time_start)
+        
+        k= k12(:, i)
         chamk=0.0d0 
 
         call ham_slab(k,Chamk)
@@ -343,8 +344,9 @@
                 !+ abs(CHamk(Num_wann+ l, j))**2 & ! the second slab
                 !+ abs(CHamk(Num_wann*(Nslab-1)- l, j))**2 ! last second slab
            enddo ! l
-           surf_weight(j, i)= (surf_weight(j, i))
+          !surf_weight(j, i)= (surf_weight(j, i))
         enddo ! j 
+        call now(time_end)
      enddo ! i
 
 #if defined (MPI)
@@ -360,7 +362,7 @@
  
      !> deal with phonon system
      if (index(Particle,'phonon')/=0) then
-        do i=1, knxy
+        do i=1, kn12
            do j=1, Num_wann*Nslab
               ekslab_mpi(j, i)= sqrt(abs(ekslab_mpi(j, i)))*sign(1d0, ekslab_mpi(j, i))
            enddo
@@ -372,15 +374,15 @@
      surf_weight= surf_weight_mpi/ maxval(surf_weight_mpi)
      
 
-     outfileindex= outfileindex+ 1
      istart= Numoccupied*Nslab-1
      iend= Numoccupied*Nslab+2
+     outfileindex= outfileindex+ 1
      if (cpuid==0) then
-        open(unit=outfileindex, file='slabek2d.dat')
+        open(unit=outfileindex, file='slabek_plane.dat')
         write(outfileindex, '(4a16, a)')'# kx', ' ky', ' k1', ' k2', ' (E(ib), dos(ib)), ib=1, NumberofSelectedOrbitals'
         write(outfileindex, '(a, 2i10)')'# Nk1, Nk2=', Nk1, Nk2
-        do i=1, knxy
-           write(outfileindex,'(2000f16.7)')kxy_shape(:,i), kxy(:,i), &
+        do i=1, kn12
+           write(outfileindex,'(2000f16.7)')k12_shape(:,i), k12(:,i), &
               (ekslab(j,i), (255-surf_weight(j, i)*255d0), j=istart, iend)
            if (mod(i, nk1)==0) write (outfileindex, *)' '
         enddo
@@ -388,19 +390,67 @@
         write(stdout,*) 'calculate energy band  done'
      endif
 
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+        open(unit=outfileindex, file='slabek_plane-matlab.dat')
+        write(outfileindex, '(4a16, a)')'% kx', ' ky', ' k1', ' k2', ' (E(ib), dos(ib)), ib=1, NumberofSelectedOrbitals'
+        write(outfileindex, '(a, 2i10)')'% Nk1, Nk2=', Nk1, Nk2
+        do i=1, kn12
+           write(outfileindex,'(2000f16.7)')k12_shape(:,i), k12(:,i), &
+              (ekslab(j,i), (255-surf_weight(j, i)*255d0), j=istart, iend)
+        enddo
+        close(outfileindex)
+     endif
+
+
+     !> write out a script that can be used for gnuplot
+     outfileindex= outfileindex+ 1
+     if (cpuid==0)then
+        open(unit=outfileindex, file='slabek_plane.gnu')
+        write(outfileindex, '(a)')"set encoding iso_8859_1"
+        write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
+        write(outfileindex, '(a)')"#set output 'slabek_plane.eps'"
+        write(outfileindex, '(3a)')'set terminal  png truecolor enhanced', &
+           ' size 1920, 1680 font ",36"'
+        write(outfileindex, '(a)')"set output 'slabek_plane.png'"
+        write(outfileindex, '(a)')'set palette rgbformulae 33,13,10'
+        write(outfileindex, '(a)')'unset key'
+        write(outfileindex, '(a)')'set pm3d'
+        write(outfileindex, '(a)')'set origin 0.2, 0'
+        write(outfileindex, '(a)')'set size 0.8, 1'
+        write(outfileindex, '(a)')'set border lw 3'
+        write(outfileindex, '(a)')'#set xtics font ",24"'
+        write(outfileindex, '(a)')'#set ytics font ",24"'
+        write(outfileindex, '(a)')'set size ratio -1'
+        write(outfileindex, '(a)')'set xtics'
+        write(outfileindex, '(a)')'set ytics'
+        write(outfileindex, '(a)')'set view 80,60'
+        write(outfileindex, '(a)')'set xlabel "k_1"'
+        write(outfileindex, '(a)')'set ylabel "k_2"'
+        write(outfileindex, '(a)')'set zlabel "Energy (eV)" rotate by 90'
+        write(outfileindex, '(a)')'unset colorbox'
+        write(outfileindex, '(a)')'set autoscale fix'
+        write(outfileindex, '(a)')'set pm3d interpolate 4,4'
+        write(outfileindex, '(2a)')"splot 'slabek_plane.dat' u 1:2:7 w pm3d, \"
+        write(outfileindex, '(2a)')"      'slabek_plane.dat' u 1:2:9 w pm3d"
+
+        close(outfileindex)
+
+     endif ! cpuid
+
+#if defined (MPI)
+     call mpi_barrier(mpi_cmw, ierr)
+#endif
+
      deallocate(eigenvalue)
      deallocate( surf_weight )
      deallocate( surf_weight_mpi )
      deallocate(ekslab)
      deallocate(ekslab_mpi)
      deallocate(CHamk)
-     deallocate(work)
-     deallocate(rwork)
    
-  return
-  end subroutine ek_slab_2d
-
-
+     return
+  end subroutine ek_slab_kplane
 
   subroutine ek_slab_b
   !> This subroutine is used for calculating energy dispersion

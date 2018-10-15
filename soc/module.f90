@@ -366,6 +366,7 @@
      logical :: BulkGap_cube_calc  ! Flag for Gap_cube calculation
      logical :: BulkGap_plane_calc ! Flag for Gap_plane calculation
      logical :: SlabBand_calc  ! Flag for 2D slab energy band calculation
+     logical :: SlabBand_plane_calc  ! Flag for 2D slab energy band calculation
      logical :: WireBand_calc  ! Flag for 1D wire energy band calculation
      logical :: SlabSS_calc    ! Flag for surface state ARPES spectrum calculation
      logical :: Dos_calc       ! Flag for density of state calculation
@@ -411,7 +412,7 @@
      logical :: landau_chern_calc = .false.
 
      namelist / Control / BulkBand_calc,BulkFS_calc,  BulkFS_Plane_calc, BulkGap_plane_calc, &
-                          BulkBand_points_calc, &
+                          BulkBand_points_calc, SlabBand_plane_calc, &
                           BulkGap_cube_calc, SlabBand_calc, WireBand_calc, &
                           SlabSS_calc, SlabArc_calc, SlabSpintexture_calc, &
                           WannierCenter_calc,BerryPhase_calc,BerryCurvature_calc, &

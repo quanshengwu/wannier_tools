@@ -288,6 +288,18 @@
      endif
 
      !> slab band
+     if (SlabBand_plane_calc)then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the slab band structure in k plane mode'
+        call now(time_start)
+        call ek_slab_kplane
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'SlabBand_plane')
+        if(cpuid.eq.0)write(stdout, *)'<< End of calculating the slab band structure in k plane mode'
+     endif
+
+
+     !> slab band
      if (SlabBand_calc)then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the slab band structure'
