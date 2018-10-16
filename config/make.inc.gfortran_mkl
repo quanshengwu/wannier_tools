@@ -1,0 +1,16 @@
+
+MAKE    = make
+F90     = gfortran
+CPP     = cpp
+
+CPPFLAG = -P -traditional
+IFLAG   = -I$(MKLROOT)/include
+WFLAG   = -Wall -Wextra -Warray-temporaries -Wconversion
+OFLAG   = -g
+FFLAG   = $(OFLAG) $(WFLAG)
+LFLAG   = $(FFLAG)
+
+# blas and lapack libraries
+LIBS    = -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_gf_lp64.a \
+                            ${MKLROOT}/lib/intel64/libmkl_sequential.a \
+                            ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl

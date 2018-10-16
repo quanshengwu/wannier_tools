@@ -1,0 +1,16 @@
+
+MAKE    = make
+F90     = mpiifort
+CPP     = cpp
+
+CPPFLAG = -P --traditional -DMPI
+IFLAG   = -I$(MKLROOT)/include
+WFLAG   = -warn all
+OFLAG   = -g -traceback -fp-model=strict
+FFLAG   = -static-intel -nogen-interface $(OFLAG) $(WFLAG)
+LFLAG   = $(FFLAG)
+
+# blas and lapack libraries
+LIBS    = -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a \
+                            ${MKLROOT}/lib/intel64/libmkl_sequential.a \
+                            ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl

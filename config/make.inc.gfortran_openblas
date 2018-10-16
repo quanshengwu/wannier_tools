@@ -1,0 +1,16 @@
+
+MAKE    = make
+F90     = gfortran-mp-7
+CPP     = cpp
+
+CPPFLAG = -P -traditional
+IFLAG   = -I/opt/local/include
+WFLAG   = -Wall -Wextra -Warray-temporaries -Wconversion \
+          -fimplicit-none -fbacktrace -ffree-line-length-0 \
+          -fcheck=all -finit-real=nan -ffpe-trap=zero,overflow,underflow
+OFLAG   = -g
+FFLAG   = $(OFLAG) $(WFLAG)
+LFLAG   = $(FFLAG)
+
+# blas and lapack libraries
+LIBS    = /opt/local/lib/libopenblas.a

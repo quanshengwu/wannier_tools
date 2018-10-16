@@ -1,0 +1,16 @@
+
+MAKE    = make
+F90     = ifort
+CPP     = cpp
+
+CPPFLAG = -P --traditional
+IFLAG   = -I$(MKLROOT)/include
+WFLAG   = # -warn all
+OFLAG   = -g -traceback -fp-model=strict
+FFLAG   = -static-intel $(OFLAG) $(WFLAG)
+LFLAG   = $(FFLAG)
+
+# blas and lapack libraries
+LIBS    = ${MKLROOT}/lib/libmkl_intel_ilp64.a \
+          ${MKLROOT}/lib/libmkl_sequential.a \
+          ${MKLROOT}/lib/libmkl_core.a -lpthread -lm -ldl
