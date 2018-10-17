@@ -13,7 +13,7 @@ OBJ =  module.o aux.o symmetry.o readHmnR.o inverse.o proteus.o \
 F90  = mpiifort -fpp -DMPI
 
 INCLUDE = -I${MKLROOT}/include
-WFLAG = -warn all
+WFLAG = -warn all -nogen-interface
 OFLAG = -O3 -g -traceback -static-intel
 FFLAG = $(OFLAG) $(WFLAG)
 LFLAG = $(OFLAG)
