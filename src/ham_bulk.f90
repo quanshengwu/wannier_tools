@@ -15,14 +15,14 @@ subroutine ham_bulk(k,Hamk_bulk)
    complex(Dp),intent(out) ::Hamk_bulk(Num_wann, Num_wann)
 
    ! temporary integers
-   integer :: i1,i2,ia,ib,ic,iR, ia1, ia2, nwann
+   integer :: i1,i2,iR, ia1, ia2, nwann
 
-   real(dp) :: kdotr, R(3)
+   real(dp) :: kdotr
 
    !> row start; row end; column start; column end
    integer :: rs, re, cs, ce
 
-   real(dp) :: pos(3), pos1(3), pos2(3), pos_cart(3), pos_direct(3)
+   real(dp) :: pos1(3), pos2(3), pos_cart(3), pos_direct(3)
 
    !> distance between two atoms
    real(dp) :: dis
@@ -131,7 +131,7 @@ end subroutine ham_bulk
 
 
 subroutine dHdk_atomicgauge(k, vx, vy, vz)
-   use para, only : Nrpts, irvec, crvec, Atom_position, HmnR, ndegen, &
+   use para, only : Nrpts, irvec, HmnR, ndegen, &
       Atom_position_direct, Num_wann, dp, Rcut, pi2zi, index_start, index_end, &
       zi, soc, Num_atoms
    implicit none
@@ -148,7 +148,7 @@ subroutine dHdk_atomicgauge(k, vx, vy, vz)
 
    integer :: iR, ia1, ia2, rs, re, cs, ce, nwann
 
-   real(dp) :: pos(3), pos1(3), pos2(3), pos_cart(3), pos_direct(3)
+   real(dp) :: pos1(3), pos2(3), pos_cart(3), pos_direct(3)
    real(dp) :: kdotr, dis
    complex(dp) :: ratio
    real(dp), external :: norm
@@ -276,7 +276,7 @@ end subroutine dHdk_atomicgauge
 
 
 subroutine dHdk_latticegauge(k, vx, vy, vz)
-   use para, only : Nrpts, irvec, crvec, Atom_position, &
+   use para, only : Nrpts, irvec, crvec, &
       HmnR, ndegen, Num_wann, zi, pi2zi, dp
    implicit none
 
@@ -320,7 +320,7 @@ end subroutine dHdk_latticegauge
 
 ! loop index
      integer :: i1,i2,ia,ib,ic,iR
-     integer :: nwann
+     ! integer :: nwann
 
      real(dp) :: kdotr
 
@@ -328,7 +328,7 @@ end subroutine dHdk_latticegauge
      real(Dp) :: k(3)
 
      ! coordinates of R vector
-     real(Dp) :: R(3), R1(3), R2(3)
+     real(Dp) :: R(3)
 
      complex(dp) :: factor
 
@@ -390,8 +390,8 @@ end subroutine dHdk_latticegauge
      implicit none
 
      ! loop index
-     integer :: i1,i2,ia,ib,ic,iR
-     integer  :: ii,jj,mm,nn,pp,qq,xx,yy,zz
+     integer :: i1,i2,iR
+     integer  :: ii,jj,pp,qq
 
      real(dp) :: kdotr
 
@@ -399,7 +399,7 @@ end subroutine dHdk_latticegauge
      real(Dp) :: k(3)
 
      ! coordinates of R vector
-     real(Dp) :: R(3), R1(3), R2(3)
+     real(Dp) :: R(3)
 
      ! Hamiltonian of bulk system
      complex(Dp),intent(out) ::Hamk_bulk(Num_wann, Num_wann)
@@ -411,9 +411,9 @@ end subroutine dHdk_latticegauge
      complex(dp), allocatable :: mat2(:, :)
      real(dp) :: temp1(3)=(/0.0,0.0,0.0/)
      real(dp) :: temp2=0.0
-     real(dp) :: temp3(30),constant_t
-     real(dp) ::A_ii(3)=(/0.0,0.0,0.0/)
-     real(dp) ::A_jj(3)=(/0.0,0.0,0.0/)
+     real(dp) :: constant_t
+     ! real(dp) ::A_ii(3)=(/0.0,0.0,0.0/)
+     ! real(dp) ::A_jj(3)=(/0.0,0.0,0.0/)
 
      !> k times Born charge
      real(dp), allocatable :: kBorn(:, :)
@@ -505,12 +505,12 @@ end subroutine dHdk_latticegauge
      use para
      implicit none
 
-     integer :: i1,i2,ia,ib,ic,iR, nwann
+     integer :: i1,i2
 
      ! coordinates of R vector
-     real(Dp) :: R(3), R1(3), R2(3), kdotr, kx, ky, kz, m, shift
+     real(Dp) :: kx, ky, kz, m, shift
 
-     complex(dp) :: factor
+     ! complex(dp) :: factor
 
      real(dp), intent(in) :: k(3)
 

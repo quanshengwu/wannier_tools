@@ -4,7 +4,7 @@
    !> this suboutine is used for wannier center calculation for 3D system
    !> only for one plane, calculate mirror chern number. only choose the bands
    !> which have the same mirror eigenvalue
-   !> when calling this, please make sure that the mirror operator matrix is 
+   !> when calling this, please make sure that the mirror operator matrix is
    !> properly set in the symmetry.f90.
    !> You can check it with ek_bulk_mirror_z subroutine in ek_bulk.f90
    subroutine  wannier_center3D_plane_mirror
@@ -13,7 +13,7 @@
       implicit none
 
 
-      integer :: i, j, l, m, ia, nfill, nfill_half, imax
+      integer :: i, j, l, m, ia, nfill, nfill_half
 
       integer :: i1, i2, ik1, ik2, ikp, ierr
 
@@ -35,12 +35,12 @@
 
       complex(dp), allocatable :: Lambda_eig(:), Lambda(:, :), Lambda0(:, :)
 
-      !> three matrix for SVD 
+      !> three matrix for SVD
       !> M= U.Sigma.V^\dag
       !> VT= V^\dag
       complex(dp), allocatable :: U(:, :), VT(:, :)
       real   (dp), allocatable :: Sigma(:, :)
-   
+
       !> wannier centers for each ky, bands
       real(dp), allocatable :: WannierCenterKy_minus(:, :),WannierCenterKy_minus_mpi(:, :)
       real(dp), allocatable :: WannierCenterKy_plus(:, :),WannierCenterKy_plus_mpi(:, :)
@@ -66,9 +66,9 @@
 
       real(dp) :: k(3), b(3)
 
-      real(dp) :: maxgap, maxgap0
+      ! real(dp) :: maxgap, maxgap0
 
-      real(dp) :: g, phi1, phi2, phi3, zm, zm1, xnm1, Deltam
+      ! real(dp) :: zm, zm1, xnm1
       real(dp), allocatable :: xnm(:)
       real(dp) :: k0(3), k1(3), k2(3)
 
@@ -127,9 +127,9 @@
 
       !> set k plane
       !> the first dimension should be in one primitive cell, [0, 2*pi]
-      k0= K3D_start 
-      k1= K3D_vec1  
-      k2= K3D_vec2   
+      k0= K3D_start
+      k1= K3D_vec1
+      k2= K3D_vec2
 
       do ik2=1, Nk2
          do ik1=1, Nk1
@@ -210,7 +210,7 @@
             !> calculate mirror eigenvalue
             call mat_mul(Num_wann, mat2, mirror_z, mat1)
             call mat_mul(Num_wann, mat1, hamk, mat2)
-            
+
             !> get mirror_plus and mirror_minus
             do i=1, nfill
                if (abs(real(mat2(i, i))-1d0)< 1e-3) then
@@ -247,7 +247,7 @@
                    b(2)*wannier_centers_cart(2, m )+ &
                    b(3)*wannier_centers_cart(3, m )
                ratio= cos(br)- zi* sin(br)
-        
+
                i1= 0
                do j=1, nfill
                   if (mirror_minus(j, ikp)) cycle
@@ -274,11 +274,11 @@
             Lambda0 = Lambda
          enddo  !< ik1
 
-         !> diagonalize Lambda to get the eigenvalue 
+         !> diagonalize Lambda to get the eigenvalue
          call zgeev_pack(nfill_half, Lambda, Lambda_eig)
          do i=1, nfill_half
             WannierCenterKy_plus(i, ik2)= aimag(log(Lambda_eig(i)))/2d0/pi
-            WannierCenterKy_plus(i, ik2)= mod(WannierCenterKy_plus(i, ik2)+10d0, 1d0) 
+            WannierCenterKy_plus(i, ik2)= mod(WannierCenterKy_plus(i, ik2)+10d0, 1d0)
          enddo
 
          call sortheap(nfill_half, WannierCenterKy_plus(:, ik2))
@@ -309,7 +309,7 @@
                    b(2)*wannier_centers_cart(2, m )+ &
                    b(3)*wannier_centers_cart(3, m )
                ratio= cos(br)- zi* sin(br)
-        
+
                i1= 0
                do j=1, nfill
                   if (mirror_plus(j, ikp)) cycle
@@ -336,11 +336,11 @@
             Lambda0 = Lambda
          enddo  !< ik1
 
-         !> diagonalize Lambda to get the eigenvalue 
+         !> diagonalize Lambda to get the eigenvalue
          call zgeev_pack(nfill_half, Lambda, Lambda_eig)
          do i=1, nfill_half
             WannierCenterKy_minus(i, ik2)= aimag(log(Lambda_eig(i)))/2d0/pi
-            WannierCenterKy_minus(i, ik2)= mod(WannierCenterKy_minus(i, ik2)+10d0, 1d0) 
+            WannierCenterKy_minus(i, ik2)= mod(WannierCenterKy_minus(i, ik2)+10d0, 1d0)
          enddo
 
          call sortheap(nfill_half, WannierCenterKy_minus(:, ik2))
@@ -364,10 +364,10 @@
          open(unit=outfileindex, file='wcc-mirrorplus.dat')
 
          write(outfileindex, '(10000A16)')'#      k',  'sum(wcc(:,ik))', &
-                                          'wcc(:, ik)' 
+                                          'wcc(:, ik)'
          do ik2=1, Nk2
             write(outfileindex, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1), &
-               dmod(sum(WannierCenterKy_plus_mpi(:, ik2)), 1d0), & 
+               dmod(sum(WannierCenterKy_plus_mpi(:, ik2)), 1d0), &
                WannierCenterKy_plus_mpi(:, ik2)
          enddo
          close(outfileindex)
@@ -378,10 +378,10 @@
          open(unit=outfileindex, file='wcc-mirrorminus.dat')
 
          write(outfileindex, '(10000A16)')'#      k',  'sum(wcc(:,ik))', &
-                                          'wcc(:, ik)' 
+                                          'wcc(:, ik)'
          do ik2=1, Nk2
             write(outfileindex, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1), &
-               dmod(sum(WannierCenterKy_minus_mpi(:, ik2)), 1d0), & 
+               dmod(sum(WannierCenterKy_minus_mpi(:, ik2)), 1d0), &
                WannierCenterKy_minus_mpi(:, ik2)
          enddo
          close(outfileindex)
@@ -407,14 +407,14 @@
          write(outfileindex, '(a)')'set ylabel "WCC"'
          write(outfileindex, '(a)')'set xrange [0: 1]'
          write(outfileindex, '(a)')'set yrange [0:1]'
-         write(outfileindex, '(a)')"plot 'wcc-mirrorminus.dat' u 1:2 w p pt 7 ps 2  lc 'blue' title 'M=-i', \"   
-         write(outfileindex, '(a)')"     'wcc-mirrorplus.dat'  u 1:2 w p pt 7 ps 2  lc 'red'  title 'M=+i'"   
+         write(outfileindex, '(a)')"plot 'wcc-mirrorminus.dat' u 1:2 w p pt 7 ps 2  lc 'blue' title 'M=-i', \"
+         write(outfileindex, '(a)')"     'wcc-mirrorplus.dat'  u 1:2 w p pt 7 ps 2  lc 'red'  title 'M=+i'"
          write(outfileindex, '(a)')'#unset key '
-         write(outfileindex, '(a)')"#plot  \"   
+         write(outfileindex, '(a)')"#plot  \"
          write(outfileindex, '(a, i5, a)')"# for [i=3: ", Numoccupied/2+2, &
-            "]  'wcc-mirrorplus.dat' u 1:i w p  pt 7  ps 1.1 lc 'red', \"  
+            "]  'wcc-mirrorplus.dat' u 1:i w p  pt 7  ps 1.1 lc 'red', \"
          write(outfileindex, '(a, i5, a)')"# for [i=3: ", Numoccupied/2+2, &
-            "]  'wcc-mirrorminus.dat' u 1:i w p  pt 7  ps 1.1 lc 'blue'"  
+            "]  'wcc-mirrorminus.dat' u 1:i w p  pt 7  ps 1.1 lc 'blue'"
          close(outfileindex)
       endif
 
@@ -461,9 +461,9 @@
 
       integer :: i
       integer :: j
-      integer :: l 
-      integer :: m 
-      integer :: ia
+      ! integer :: l
+      integer :: m
+      ! integer :: ia
       integer :: nfill
       integer :: imax
 
@@ -489,18 +489,18 @@
       complex(dp), allocatable :: Mmnkb_com(:, :)
       complex(dp), allocatable :: Mmnkb_full(:, :)
 
-      !> 
+      !>
       complex(dp), allocatable :: Lambda_eig(:)
       complex(dp), allocatable :: Lambda(:, :)
       complex(dp), allocatable :: Lambda0(:, :)
 
-      !> three matrix for SVD 
+      !> three matrix for SVD
       !> M= U.Sigma.V^\dag
       !> VT= V^\dag
       complex(dp), allocatable :: U(:, :)
       real   (dp), allocatable :: Sigma(:, :)
       complex(dp), allocatable :: VT(:, :)
-   
+
       !> wannier centers for each ky, bands
       real(dp), allocatable :: WannierCenterKy(:, :)
       real(dp), allocatable :: WannierCenterKy_mpi(:, :)
@@ -587,9 +587,9 @@
       !> the first dimension should be in one primitive cell, [0, 2*pi]
       !> the first dimension is the integration direction
       !> the WCCs are calculated along the second k line
-      k0= K3D_start ! 
-      k1= K3D_vec1   !  
-      k2= K3D_vec2   ! 
+      k0= K3D_start !
+      k1= K3D_vec1   !
+      k2= K3D_vec2   !
 
       do ik2=1, Nk2
          do ik1=1, Nk1
@@ -649,7 +649,7 @@
                    b(2)*wannier_centers_cart(2, m)+ &
                    b(3)*wannier_centers_cart(3, m)
                ratio= cos(br)- zi* sin(br)
-         
+
                do j=1, nfill
                   do i=1, nfill
                      Mmnkb(i, j)=  Mmnkb(i, j)+ &
@@ -670,11 +670,11 @@
             Lambda0 = Lambda
          enddo  !< ik1
 
-         !> diagonalize Lambda to get the eigenvalue 
+         !> diagonalize Lambda to get the eigenvalue
          call zgeev_pack(nfill, Lambda, Lambda_eig)
          do i=1, nfill
             WannierCenterKy(i, ik2)= aimag(log(Lambda_eig(i)))/2d0/pi
-            WannierCenterKy(i, ik2)= mod(WannierCenterKy(i, ik2)+10d0, 1d0) 
+            WannierCenterKy(i, ik2)= mod(WannierCenterKy(i, ik2)+10d0, 1d0)
          enddo
 
          call sortheap(nfill, WannierCenterKy(:, ik2))
@@ -726,7 +726,7 @@
 
          do ik2=1, Nk2
             write(outfileindex, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1)/2d0, &
-               largestgap_mpi(ik2), dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
+               largestgap_mpi(ik2), dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), &
                WannierCenterKy_mpi(:, ik2)
          enddo
          close(outfileindex)
@@ -737,7 +737,7 @@
       Delta= 0
       !> for each iky, we get a Deltam
       do ik2=1, nk2-1
-      
+
          !> largestgap position
          zm= largestgap_mpi(ik2)
         !if (ik2==nk2) then
@@ -753,10 +753,10 @@
             phi1= 2d0*pi*zm
             phi2= 2d0*pi*zm1
             phi3= 2d0*pi*xnm1
-            
-            g= sin(phi2-phi1)+ sin(phi3-phi2)+  sin(phi1-phi3) 
+
+            g= sin(phi2-phi1)+ sin(phi3-phi2)+  sin(phi1-phi3)
             Deltam= Deltam* sign(1d0, g)
-         enddo !i 
+         enddo !i
          if (Deltam<0) then
             Delta= Delta+ 1
          endif
@@ -786,7 +786,7 @@
          write(outfileindex, '(a)')'set ylabel offset 2, 0.0 '
          write(outfileindex, '(a)')'set xrange [0: 0.5]'
          write(outfileindex, '(a)')'set yrange [0:1]'
-         write(outfileindex, '(a)')"plot 'wcc.dat' u 1:2 w l lw 2  lc 'blue', \"   
+         write(outfileindex, '(a)')"plot 'wcc.dat' u 1:2 w l lw 2  lc 'blue', \"
          write(outfileindex, '(a, i5, a)')" for [i=4: ", nfill+3, "] 'wcc.dat' u 1:i w p  pt 7  ps 1.1 lc 'red'"
          close(outfileindex)
       endif
@@ -805,9 +805,9 @@
 
       integer :: i
       integer :: j
-      integer :: l 
-      integer :: m 
-      integer :: ia
+      ! integer :: l
+      integer :: m
+      ! integer :: ia
       integer :: imax
 
       integer :: ik1
@@ -838,18 +838,18 @@
       complex(dp), allocatable :: Mmnkb_com(:, :)
       complex(dp), allocatable :: Mmnkb_full(:, :)
 
-      !> 
+      !>
       complex(dp), allocatable :: Lambda_eig(:)
       complex(dp), allocatable :: Lambda(:, :)
       complex(dp), allocatable :: Lambda0(:, :)
 
-      !> three matrix for SVD 
+      !> three matrix for SVD
       !> M= U.Sigma.V^\dag
       !> VT= V^\dag
       complex(dp), allocatable :: U(:, :)
       real   (dp), allocatable :: Sigma(:, :)
       complex(dp), allocatable :: VT(:, :)
-   
+
       !> wannier centers for each ky, bands
       real(dp), allocatable :: WannierCenterKy(:, :)
       real(dp), allocatable :: WannierCenterKy_mpi(:, :)
@@ -929,17 +929,17 @@
       VT= 0d0
 
       !> set k plane
-      !> the first dimension should be in one primitive cell, [0, 1] 
+      !> the first dimension should be in one primitive cell, [0, 1]
       !> the first dimension is the integration direction
       !> the WCCs are calculated along the second k line
       !> For chern number calculation, the second k line should be in one primitive
-      !> vector. 
-      !> For  Z2 number clculation, the second k line should 
+      !> vector.
+      !> For  Z2 number clculation, the second k line should
       !> from one TRIM to another TRIM, usually, we study half of the
       !> reciprocal lattice vector
-      k0= kstart ! 
-      k1= kvec1   !  
-      k2= kvec2   ! 
+      k0= kstart !
+      k1= kvec1   !
+      k2= kvec2   !
 
       do ik2=1, Nk2
          do ik1=1, Nk1
@@ -1000,7 +1000,7 @@
                    b(2)*wannier_centers_cart(2, m)+ &
                    b(3)*wannier_centers_cart(3, m)
                ratio= cos(br)- zi* sin(br)
-         
+
                do j=1, Numoccupied
                   do i=1, Numoccupied
                      Mmnkb(i, j)=  Mmnkb(i, j)+ &
@@ -1021,11 +1021,11 @@
             Lambda0 = Lambda
          enddo  !< ik1
 
-         !> diagonalize Lambda to get the eigenvalue 
+         !> diagonalize Lambda to get the eigenvalue
          call zgeev_pack(Numoccupied, Lambda, Lambda_eig)
          do i=1, Numoccupied
             WannierCenterKy(i, ik2)= aimag(log(Lambda_eig(i)))/2d0/pi
-            WannierCenterKy(i, ik2)= mod(WannierCenterKy(i, ik2)+10d0, 1d0) 
+            WannierCenterKy(i, ik2)= mod(WannierCenterKy(i, ik2)+10d0, 1d0)
          enddo
 
          call sortheap(Numoccupied, WannierCenterKy(:, ik2))
@@ -1075,7 +1075,7 @@
       Delta= 0
       !> for each iky, we get a Deltam
       do ik2=1, nk2-1
-      
+
          !> largestgap position
          zm= largestgap_mpi(ik2)
         !if (ik2==nk2) then
@@ -1091,10 +1091,10 @@
             phi1= 2d0*pi*zm
             phi2= 2d0*pi*zm1
             phi3= 2d0*pi*xnm1
-            
-            g= sin(phi2-phi1)+ sin(phi3-phi2)+  sin(phi1-phi3) 
+
+            g= sin(phi2-phi1)+ sin(phi3-phi2)+  sin(phi1-phi3)
             Deltam= Deltam* sign(1d0, g)
-         enddo !i 
+         enddo !i
          if (Deltam<0) then
             Delta= Delta+ 1
          endif
@@ -1119,9 +1119,9 @@
 
       integer :: i
       integer :: j
-      integer :: l 
-      integer :: m 
-      integer :: ia
+      ! integer :: l
+      integer :: m
+      ! integer :: ia
       integer :: nfill
       integer :: imax
 
@@ -1147,18 +1147,18 @@
       complex(dp), allocatable :: Mmnkb_com(:, :)
       complex(dp), allocatable :: Mmnkb_full(:, :)
 
-      !> 
+      !>
       complex(dp), allocatable :: Lambda_eig(:)
       complex(dp), allocatable :: Lambda(:, :)
       complex(dp), allocatable :: Lambda0(:, :)
 
-      !> three matrix for SVD 
+      !> three matrix for SVD
       !> M= U.Sigma.V^\dag
       !> VT= V^\dag
       complex(dp), allocatable :: U(:, :)
       real   (dp), allocatable :: Sigma(:, :)
       complex(dp), allocatable :: VT(:, :)
-   
+
       !> wannier centers for each ky, bands
       real(dp), allocatable :: WannierCenterKy(:, :)
       real(dp), allocatable :: WannierCenterKy_mpi(:, :)
@@ -1309,7 +1309,7 @@
                    b(2)*wannier_centers_cart(2, m )+ &
                    b(3)*wannier_centers_cart(3, m )
                ratio= cos(br)- zi* sin(br)
-         
+
                do j=1, nfill
                   do i=1, nfill
                      Mmnkb(i, j)=  Mmnkb(i, j)+ &
@@ -1330,11 +1330,11 @@
             Lambda0 = Lambda
          enddo  !< ik1
 
-         !> diagonalize Lambda to get the eigenvalue 
+         !> diagonalize Lambda to get the eigenvalue
          call zgeev_pack(nfill, Lambda, Lambda_eig)
          do i=1, nfill
             WannierCenterKy(i, ik2)= aimag(log(Lambda_eig(i)))/2d0/pi
-            WannierCenterKy(i, ik2)= mod(WannierCenterKy(i, ik2)+10d0, 1d0) 
+            WannierCenterKy(i, ik2)= mod(WannierCenterKy(i, ik2)+10d0, 1d0)
          enddo
 
          call sortheap(nfill, WannierCenterKy(:, ik2))
@@ -1386,7 +1386,7 @@
 
          do ik2=1, Nk2
             write(outfileindex, '(10000f16.8)') kpoints(2, 1, ik2), &
-               largestgap_mpi(ik2), dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
+               largestgap_mpi(ik2), dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), &
                WannierCenterKy_mpi(:, ik2)
          enddo
          close(outfileindex)
@@ -1398,7 +1398,7 @@
       Delta= 0
       !> for each iky, we get a Deltam
       do ik2=1, nk2-1
-      
+
          !> largestgap position
          zm= largestgap_mpi(ik2)
         !if (ik2==nk2) then
@@ -1414,10 +1414,10 @@
             phi1= 2d0*pi*zm
             phi2= 2d0*pi*zm1
             phi3= 2d0*pi*xnm1
-            
-            g= sin(phi2-phi1)+ sin(phi3-phi2)+  sin(phi1-phi3) 
+
+            g= sin(phi2-phi1)+ sin(phi3-phi2)+  sin(phi1-phi3)
             Deltam= Deltam* sign(1d0, g)
-         enddo !i 
+         enddo !i
          if (Deltam<0) then
             Delta= Delta+ 1
          endif
@@ -1477,7 +1477,7 @@
                    b(2)*wannier_centers_cart(2, m )+ &
                    b(3)*wannier_centers_cart(3, m )
                ratio= cos(br)- zi* sin(br)
-         
+
                do j=1, nfill
                   do i=1, nfill
                      Mmnkb(i, j)=  Mmnkb(i, j)+ &
@@ -1498,11 +1498,11 @@
             Lambda0 = Lambda
          enddo  !< ik1
 
-         !> diagonalize Lambda to get the eigenvalue 
+         !> diagonalize Lambda to get the eigenvalue
          call zgeev_pack(nfill, Lambda, Lambda_eig)
          do i=1, nfill
             WannierCenterKy(i, ik2)= aimag(log(Lambda_eig(i)))/2d0/pi
-            WannierCenterKy(i, ik2)= mod(WannierCenterKy(i, ik2)+10d0, 1d0) 
+            WannierCenterKy(i, ik2)= mod(WannierCenterKy(i, ik2)+10d0, 1d0)
          enddo
 
          call sortheap(nfill, WannierCenterKy(:, ik2))
@@ -1554,7 +1554,7 @@
          do ik2=1, Nk2
             write(outfileindex, '(10000f16.8)') kpoints(2, 1, ik2), &
                largestgap_mpi(ik2), &
-               dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), & 
+               dmod(sum(WannierCenterKy_mpi(:, ik2)), 1d0), &
                WannierCenterKy_mpi(:, ik2)
          enddo
          close(outfileindex)
@@ -1566,7 +1566,7 @@
       Delta= 0
       !> for each iky, we get a Deltam
       do ik2=1, nk2- 1
-      
+
          !> largestgap position
          zm= largestgap_mpi(ik2)
          zm1= largestgap_mpi(ik2+1)
@@ -1577,10 +1577,10 @@
             phi1= 2*pi*zm
             phi2= 2*pi*zm1
             phi3= 2*pi*xnm1
-            
-            g= sin(phi2-phi1)+ sin(phi3-phi2)+  sin(phi1-phi3) 
+
+            g= sin(phi2-phi1)+ sin(phi3-phi2)+  sin(phi1-phi3)
             Deltam= Deltam* sign(1d0, g)
-         enddo !i 
+         enddo !i
          if (Deltam<0) then
             Delta= Delta+ 1
          endif
@@ -1664,7 +1664,7 @@
       real(dp), allocatable :: wcc_all(:, :, :)
       real(dp), allocatable :: wcc_sum_all(:, :)
 
-   
+
       allocate(chirality_all(Num_Weyls))
       allocate(wcc(Numoccupied, nk2))
       allocate(wcc_all(Numoccupied, nk2, Num_Weyls))
@@ -1749,7 +1749,7 @@
          write(outfileindex, '(a)')'set xrange [0: 1.0]'
          write(outfileindex, '(a)')'set yrange [0:1]'
          write(outfileindex, '(a,i5,a)')"plot 'wanniercenter3D_Weyl.dat' u 1:",i+1, &
-            " w p ps 1.5 pt 7 lc rgb '#696969'"   
+            " w p ps 1.5 pt 7 lc rgb '#696969'"
          close(outfileindex)
       endif
       enddo
@@ -1769,10 +1769,10 @@
 
       integer :: i
       integer :: j
-      integer :: l 
-      integer :: m 
-      integer :: ia
-      integer :: imax
+      ! integer :: l
+      integer :: m
+      ! integer :: ia
+      ! integer :: imax
 
       integer :: ik1
       integer :: ik2
@@ -1805,18 +1805,18 @@
       complex(dp), allocatable :: Mmnkb_com(:, :)
       complex(dp), allocatable :: Mmnkb_full(:, :)
 
-      !> 
+      !>
       complex(dp), allocatable :: Lambda_eig(:)
       complex(dp), allocatable :: Lambda(:, :)
       complex(dp), allocatable :: Lambda0(:, :)
 
-      !> three matrix for SVD 
+      !> three matrix for SVD
       !> M= U.Sigma.V^\dag
       !> VT= V^\dag
       complex(dp), allocatable :: U(:, :)
       real   (dp), allocatable :: Sigma(:, :)
       complex(dp), allocatable :: VT(:, :)
-   
+
       !> wannier centers for each ky, bands
       real(dp), allocatable :: WannierCenterKy(:, :)
       real(dp), allocatable :: WannierCenterKy_mpi(:, :)
@@ -1840,14 +1840,14 @@
 
       real(dp) :: gap_sum, gap_step
 
-      real(dp) :: g
-      real(dp) :: phi1
-      real(dp) :: phi2
-      real(dp) :: phi3
-      real(dp) :: zm
-      real(dp) :: zm1
-      real(dp) :: xnm1
-      real(dp) :: Deltam
+      ! real(dp) :: g
+      ! real(dp) :: phi1
+      ! real(dp) :: phi2
+      ! real(dp) :: phi3
+      ! real(dp) :: zm
+      ! real(dp) :: zm1
+      ! real(dp) :: xnm1
+      ! real(dp) :: Deltam
       real(dp), allocatable :: xnm(:)
 
 
@@ -1960,7 +1960,7 @@
                    b(2)*wannier_centers_cart(2, m)+ &
                    b(3)*wannier_centers_cart(3, m)
                ratio= cos(br)- zi* sin(br)
-         
+
                do j=1, Numoccupied
                   do i=1, Numoccupied
                      Mmnkb(i, j)=  Mmnkb(i, j)+ &
@@ -1981,11 +1981,11 @@
             Lambda0 = Lambda
          enddo  !< ik1
 
-         !> diagonalize Lambda to get the eigenvalue 
+         !> diagonalize Lambda to get the eigenvalue
          call zgeev_pack(Numoccupied, Lambda, Lambda_eig)
          do i=1, Numoccupied
             WannierCenterKy(i, ik2)= aimag(log(Lambda_eig(i)))/2d0/pi
-            WannierCenterKy(i, ik2)= mod(WannierCenterKy(i, ik2)+10d0, 1d0) 
+            WannierCenterKy(i, ik2)= mod(WannierCenterKy(i, ik2)+10d0, 1d0)
          enddo
 
          call sortheap(Numoccupied, WannierCenterKy(:, ik2))
@@ -2015,7 +2015,7 @@
          endif
          gap_sum= gap_sum+ gap_step
       enddo
-      
+
       chirality= nint(gap_sum)
 
       return
@@ -2028,7 +2028,7 @@
       use wmpi
       implicit none
 
-      integer :: ik2, i, j 
+      integer :: ik2, i, j
 
       real(dp) :: kstart(3)
       real(dp) :: kvec1(3)
@@ -2081,9 +2081,9 @@
          endif
          gap_sum= gap_sum+ gap_step
       enddo
-      
+
       Chern= nint(gap_sum)
-      
+
       Chern_all(1)= Chern
 
       wcc_all(:, :, 1)= wcc
@@ -2110,9 +2110,9 @@
          endif
          gap_sum= gap_sum+ gap_step
       enddo
-      
+
       Chern= nint(gap_sum)
-      
+
 
       Chern_all(2)= Chern
       wcc_all(:, :, 2)= wcc
@@ -2140,9 +2140,9 @@
          endif
          gap_sum= gap_sum+ gap_step
       enddo
-      
+
       Chern= nint(gap_sum)
-      
+
       Chern_all(3)= Chern
       wcc_all(:, :, 3)= wcc
       largestgap_all(:, 3)= largestgap
@@ -2168,9 +2168,9 @@
          endif
          gap_sum= gap_sum+ gap_step
       enddo
-      
+
       Chern= nint(gap_sum)
-      
+
       Chern_all(4)= Chern
       wcc_all(:, :, 4)= wcc
       largestgap_all(:, 4)= largestgap
@@ -2196,9 +2196,9 @@
          endif
          gap_sum= gap_sum+ gap_step
       enddo
-      
+
       Chern= nint(gap_sum)
-      
+
       Chern_all(5)= Chern
       wcc_all(:, :, 5)= wcc
       largestgap_all(:, 5)= largestgap
@@ -2224,9 +2224,9 @@
          endif
          gap_sum= gap_sum+ gap_step
       enddo
-      
+
       Chern= nint(gap_sum)
-      
+
       Chern_all(6)= Chern
       wcc_all(:, :, 6)= wcc
       largestgap_all(:, 6)= largestgap
@@ -2322,7 +2322,7 @@
          write(outfileindex,'(a)')' set label 1 "(f)" @POS2 front'
          write(outfileindex,'(a)')' set xlabel "k_2" offset 0,1.6'
          write(outfileindex,'(a)')' plot "wanniercenter3D_Chern.dat" u 1:7 w p  pt 7  ps 0.6 lc @LCOLOR'
- 
+
          close(outfileindex)
       endif
 

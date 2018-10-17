@@ -5,7 +5,7 @@
       use wmpi
       implicit none
 
-      integer :: ik2, i, j
+      integer :: ik2, i
       integer :: Nk2_adaptive
 
       real(dp) :: kstart(3)
@@ -352,14 +352,14 @@
       implicit none
 
       integer :: i
-      integer :: j
-      integer :: l
-      integer :: m
-      integer :: ia
-      integer :: imax
+      ! integer :: j
+      ! integer :: l
+      ! integer :: m
+      ! integer :: ia
+      ! integer :: imax
 
       integer :: ik
-      integer :: ik1
+      ! integer :: ik1
       integer :: ik2
 
       integer :: ierr
@@ -656,11 +656,9 @@
       real(dp), intent(out) :: largestgap_pos_val
 
       logical :: not_in
-      integer :: i
-      integer :: j
-      integer :: l
-      integer :: m
-      integer :: ia
+      integer :: i, j, m
+      ! integer :: l
+      ! integer :: ia
       integer :: it
       integer :: imax
 
@@ -669,7 +667,7 @@
       integer :: Nk_Max
       integer :: Nk_adaptive
 
-      integer :: ierr
+      ! integer :: ierr
       integer :: iter
 
       real(dp) :: dis

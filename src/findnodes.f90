@@ -402,7 +402,7 @@
       use para, only : dp, Kua, Kub, Kuc
       implicit none
 
-      integer :: ik, l, m, n, ik0
+      integer  :: l, m, n, ik0
       real(dp) :: k0(3)
       real(dp) :: klen
       real(dp), intent(inout) :: k(3)
@@ -457,7 +457,7 @@
       use para, only : dp, eps6
       implicit none
 
-      integer :: i
+      ! integer :: i
       logical :: if_in_the_WS
       real(dp), intent(in) :: kin(3)
       real(dp) :: k(3)

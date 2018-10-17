@@ -409,7 +409,7 @@
 
      integer :: ierr
 
-     integer :: arclfile, arcrfile, arcbulkfile
+     integer :: arclfile, arcrfile
      integer :: arcljfile, arcrjfile
      integer :: arcljsfile, arcrjsfile
      integer :: spindosrfile, spindoslfile
@@ -422,7 +422,7 @@
      integer :: ikp, ik1, ik2, iq, Nk1_half, Nk2_half
      integer :: imin1, imax1, imin2, imax2, iq1, iq2
 
-     real(dp) :: k(2), dis
+     real(dp) :: k(2)
 
      real(dp) :: omega
      real(dp) :: k1min_shape, k1max_shape, k2min_shape, k2max_shape

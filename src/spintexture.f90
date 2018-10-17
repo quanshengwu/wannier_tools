@@ -1,13 +1,13 @@
 ! this subroutine is used to calculate spin texture of
-! the surface state 
-! 
+! the surface state
+!
 ! constructed by QS.Wu on July/20/2010  10:26:13
 ! constructed by QS.Wu on July/20/2010  10:26:13
-!> modified by QS.Wu on June/4/2016 in Jouvence Montreal Canada 
+!> modified by QS.Wu on June/4/2016 in Jouvence Montreal Canada
 !> modified by Changming Yue on 12/4/2017 in IOP Beijing
 
   subroutine spintext
-     
+
     use para
     use wmpi
 
@@ -22,11 +22,11 @@
 
     real(Dp)   :: k(2)
     real(Dp)   :: s0(3), s1(3)
-   
-    real(Dp), allocatable   :: k12(:,:) 
-    real(Dp), allocatable   :: k12_shape(:,:) 
-    
-	 real(dp) :: omega
+
+    real(Dp), allocatable   :: k12(:,:)
+    real(Dp), allocatable   :: k12_shape(:,:)
+
+     real(dp) :: omega
     real(dp) :: dos_l_max, dos_r_max
 
     real(Dp), allocatable   :: sx_l(:)
@@ -50,9 +50,9 @@
     real(Dp), allocatable   :: dos_r_mpi(:)
 
     ! spin operator matrix sigma_x,sigma_y in sigma_z representation
-    complex(Dp),allocatable :: sigma_x(:,:) 
-    complex(Dp),allocatable :: sigma_y(:,:) 
-    complex(Dp),allocatable :: sigma_z(:,:) 
+    complex(Dp),allocatable :: sigma_x(:,:)
+    complex(Dp),allocatable :: sigma_y(:,:)
+    complex(Dp),allocatable :: sigma_z(:,:)
 
     ! surface green function
     complex(Dp),allocatable :: GLL(:,:)
@@ -74,7 +74,7 @@
     sigma_z   =0.0d0
     GLL =0.0d0
     ctemp     =0.0d0
-    
+
 
     allocate( k12(2, nk1*nk2))
     allocate( k12_shape(2, nk1*nk2))
@@ -119,7 +119,7 @@
     do i=1,Ndim
        ones(i,i)=1.0d0
     enddo
-    
+
     ikp=0
     do i= 1, nk1
        do j= 1, nk2
@@ -138,7 +138,7 @@
     Nband= Num_wann/2
 
     !> spin operator matrix
-    !> this part is package dependent. 
+    !> this part is package dependent.
     if (index( Package, 'VASP')/=0.or. index( Package, 'Wien2k')/=0 &
        .or. index( Package, 'Abinit')/=0.or. index( Package, 'openmx')/=0) then
        do i=1, Np
@@ -172,30 +172,30 @@
 
    !if (cpuid.eq.0)write(stdout,*)'sigma_x'
     do i=1, ndim
-      !if (cpuid.eq.0)write(stdout,'(240f3.0)')real(sigma_x(i,:)) 
+      !if (cpuid.eq.0)write(stdout,'(240f3.0)')real(sigma_x(i,:))
     enddo
 
    !if (cpuid.eq.0)write(stdout,*)'sigma_y'
     do i=1, ndim
-      !if (cpuid.eq.0)write(stdout,'(240f3.0)')aimag(sigma_y(i,:)) 
+      !if (cpuid.eq.0)write(stdout,'(240f3.0)')aimag(sigma_y(i,:))
     enddo
 
    !if (cpuid.eq.0)write(stdout,*)'sigma_z'
     do i=1, ndim
-      !if (cpuid.eq.0)write(stdout,'(240f3.0)')real(sigma_z(i,:)) 
+      !if (cpuid.eq.0)write(stdout,'(240f3.0)')real(sigma_z(i,:))
     enddo
 
     omega = E_arc
     eta= eta_arc
 
-    do ikp=1+cpuid,nk1*nk2,num_cpu 
+    do ikp=1+cpuid,nk1*nk2,num_cpu
        if (cpuid==0) write(stdout, *)'spintexture, ik, Nk1*Nk2 ',ikp, nk1*nk2
 
-       k=k12(:,ikp) 
+       k=k12(:,ikp)
 
        !> get the hopping matrix between two principle layers
-       call ham_qlayer2qlayer(k,H00,H01) 
-      
+       call ham_qlayer2qlayer(k,H00,H01)
+
        ! calculate surface green function
        call surfgreen_1985(omega,GLL,GRR,GB,H00,H01,ones)
 
@@ -206,21 +206,21 @@
           dos_bulk(ikp)=dos_bulk(ikp)-Aimag(GB(j,j))
        enddo
 
-       !ctemp=matmul(GLL,sigma_x)       
-       call mat_mul(ndim,GLL,sigma_x,ctemp)       
-       do j=1,ndim 
+       !ctemp=matmul(GLL,sigma_x)
+       call mat_mul(ndim,GLL,sigma_x,ctemp)
+       do j=1,ndim
           sx_l(ikp)=sx_l(ikp)-Aimag(ctemp(j,j))
        enddo
 
-       !ctemp=matmul(GLL,sigma_y)       
-       call mat_mul(ndim,GLL,sigma_y,ctemp)       
-       do j=1,ndim 
+       !ctemp=matmul(GLL,sigma_y)
+       call mat_mul(ndim,GLL,sigma_y,ctemp)
+       do j=1,ndim
           sy_l(ikp)=sy_l(ikp)-Aimag(ctemp(j,j))
        enddo
 
-       !ctemp=matmul(GLL,sigma_z)       
-       call mat_mul(ndim,GLL,sigma_z,ctemp)       
-       do j=1,ndim 
+       !ctemp=matmul(GLL,sigma_z)
+       call mat_mul(ndim,GLL,sigma_z,ctemp)
+       do j=1,ndim
           sz_l(ikp)=sz_l(ikp)-Aimag(ctemp(j,j))
        enddo
        sx_l(ikp)= sx_l(ikp)/dos_l(ikp)
@@ -228,21 +228,21 @@
        sz_l(ikp)= sz_l(ikp)/dos_l(ikp)
 
 
-       !ctemp=matmul(GRR,sigma_x)       
-       call mat_mul(ndim,GRR,sigma_x,ctemp)       
-       do j=1,ndim 
+       !ctemp=matmul(GRR,sigma_x)
+       call mat_mul(ndim,GRR,sigma_x,ctemp)
+       do j=1,ndim
           sx_r(ikp)=sx_r(ikp)-Aimag(ctemp(j,j))
        enddo
 
-       !ctemp=matmul(GRR,sigma_y)       
-       call mat_mul(ndim,GRR,sigma_y,ctemp)       
-       do j=1,ndim 
+       !ctemp=matmul(GRR,sigma_y)
+       call mat_mul(ndim,GRR,sigma_y,ctemp)
+       do j=1,ndim
           sy_r(ikp)=sy_r(ikp)-Aimag(ctemp(j,j))
        enddo
 
-       !ctemp=matmul(GRR,sigma_z)       
-       call mat_mul(ndim,GRR,sigma_z,ctemp)       
-       do j=1,ndim 
+       !ctemp=matmul(GRR,sigma_z)
+       call mat_mul(ndim,GRR,sigma_z,ctemp)
+       do j=1,ndim
           sz_r(ikp)=sz_r(ikp)-Aimag(ctemp(j,j))
        enddo
        sx_r(ikp)= sx_r(ikp)/dos_r(ikp)
@@ -250,7 +250,7 @@
        sz_r(ikp)= sz_r(ikp)/dos_r(ikp)
 
     enddo  ! ikp  kpoint
-    
+
 #if defined (MPI)
     call mpi_allreduce(sx_l,sx_l_mpi,size(sx_l),mpi_double_precision, &
                   mpi_sum , mpi_comm_world, ierr)
@@ -314,12 +314,12 @@
       !      ikp=ikp+1
       !      k=k12_shape(:, ikp)
       !      write(spindosfile,'(60f16.8)')k, (log(dos_l(ikp))), &
-      !         real(sx_l(ikp)), real(sy_l(ikp)), real(sz_l(ikp))                 
+      !         real(sx_l(ikp)), real(sy_l(ikp)), real(sz_l(ikp))
       !      if (ikp>1 .and. ikp< (NK1*Nk2-1)) then
       !         if(dos_l(ikp)>dos_l(ikp+1).and.dos_l(ikp)>dos_l(ikp-1).and. &
-      !         real(log(dos_l(ikp)))>0.5d0) & 
+      !         real(log(dos_l(ikp)))>0.5d0) &
       !         write(spintexturefile,'(60f16.8)')k, (log(dos_l(ikp))), &
-      !            real(sx_l(ikp)),real(sy_l(ikp)),real(sz_l(ikp))                 
+      !            real(sx_l(ikp)),real(sy_l(ikp)),real(sz_l(ikp))
       !      endif
       !   enddo
       !   write(spindosfile, *)' '
@@ -339,7 +339,7 @@
                 real(sx_l(ikp)), real(sy_l(ikp)), real(sz_l(ikp)), s1
              if (dos_l_only(ikp)>dos_l_max)then
                 write(spintexturefile,'(60f16.8)')k, (log(dos_l(ikp))), &
-                   real(sx_l(ikp)),real(sy_l(ikp)),real(sz_l(ikp)), s1                 
+                   real(sx_l(ikp)),real(sy_l(ikp)),real(sz_l(ikp)), s1
              endif
           enddo
           write(spindosfile, *)' '
@@ -367,12 +367,12 @@
       !      ikp=ikp+1
       !      k=k12_shape(:, ikp)
       !      write(spindosfile,'(60f16.8)')k, (log(dos_r(ikp))), &
-      !         real(sx_r(ikp)), real(sy_r(ikp)), real(sz_r(ikp))                 
+      !         real(sx_r(ikp)), real(sy_r(ikp)), real(sz_r(ikp))
       !      if (ikp>1 .and. ikp< (NK1*Nk2-1)) then
       !         if(dos_r(ikp)>dos_r(ikp+1).and.dos_r(ikp)>dos_r(ikp-1).and. &
-      !         real(log(dos_r(ikp)))>0.5d0) & 
+      !         real(log(dos_r(ikp)))>0.5d0) &
       !         write(spintexturefile,'(60f16.8)')k, (log(dos_r(ikp))), &
-      !            real(sx_r(ikp)),real(sy_r(ikp)),real(sz_r(ikp))                 
+      !            real(sx_r(ikp)),real(sy_r(ikp)),real(sz_r(ikp))
       !      endif
       !   enddo
       !   write(spindosfile, *)' '
@@ -438,7 +438,7 @@
 
        close(outfileindex)
     endif
-  
+
     !> generate gnuplot scripts for plotting the spin texture
     outfileindex= outfileindex+ 1
     if (cpuid.eq.0) then
@@ -473,8 +473,8 @@
 
        close(outfileindex)
     endif
-  
-    if (cpuid.eq.0)write(stdout,*)'calculate spintexture successfully' 
- 
+
+    if (cpuid.eq.0)write(stdout,*)'calculate spintexture successfully'
+
     return
   end subroutine spintext

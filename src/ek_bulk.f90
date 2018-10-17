@@ -8,18 +8,18 @@
 
      implicit none
 
-     integer :: ik, i, j, knv3, Nwann, ierr
+     integer :: ik, i, j, knv3, ierr
      real(dp) :: emin, emax, k(3)
      real(Dp), allocatable :: W(:)
-     
+
      ! Hamiltonian of bulk system
      complex(Dp), allocatable :: Hamk_bulk(:, :)
 
      ! eigen value of H
-	  real(dp), allocatable :: eigv(:,:)
-	  real(dp), allocatable :: eigv_mpi(:,:)
-	  real(dp), allocatable :: weight(:,:,:)
-	  real(dp), allocatable :: weight_mpi(:,:,:)
+      real(dp), allocatable :: eigv(:,:)
+      real(dp), allocatable :: eigv_mpi(:,:)
+      real(dp), allocatable :: weight(:,:,:)
+      real(dp), allocatable :: weight_mpi(:,:,:)
 
      knv3= nk3_band
      allocate( W(Num_wann))
@@ -61,7 +61,7 @@
         if (sum(abs(k))<1e-5) call  orbital_momenta(k, Hamk_bulk)
 
         eigv(:, ik)= W
-        do i=1, Num_wann  !> band 
+        do i=1, Num_wann  !> band
            if (SOC==0) then
               do j=1, Num_wann  !> projector
                  weight(j, i, ik)= (abs(Hamk_bulk(j, i))**2)
@@ -73,7 +73,7 @@
               enddo ! j
            endif
         enddo ! i
- 
+
      enddo ! ik
 
 #if defined (MPI)
@@ -105,7 +105,7 @@
      outfileindex= outfileindex+ 1
      if (cpuid==0)then
         open(unit=outfileindex, file='bulkek.dat')
-   
+
         do i=1, Num_wann
            do ik=1, knv3
               write(outfileindex, '(2f19.9, 1000i5)')k3len(ik),eigv_mpi(i, ik), &
@@ -165,7 +165,7 @@
      202 format('set xtics (',20('"',A4,'" ',F10.5,','))
      203 format(A3,'" ',F10.5,')')
      204 format('set arrow from ',F10.5,',',F10.5,' to ',F10.5,',',F10.5, ' nohead')
-     
+
    return
    end subroutine ek_bulk
 
@@ -178,18 +178,18 @@
 
      implicit none
 
-     integer :: ik, i, j, knv3, Nwann, ierr
-     real(dp) :: emin, emax, k(3)
+     integer :: ik, i, j, knv3, ierr
+     real(dp) :: k(3)
      real(Dp), allocatable :: W(:)
-     
+
      ! Hamiltonian of bulk system
      complex(Dp), allocatable :: Hamk_bulk(:, :)
 
      ! eigen value of H
-	  real(dp), allocatable :: eigv(:,:)
-	  real(dp), allocatable :: eigv_mpi(:,:)
-	  real(dp), allocatable :: weight(:,:,:)
-	  real(dp), allocatable :: weight_mpi(:,:,:)
+      real(dp), allocatable :: eigv(:,:)
+      real(dp), allocatable :: eigv_mpi(:,:)
+      real(dp), allocatable :: weight(:,:,:)
+      real(dp), allocatable :: weight_mpi(:,:,:)
 
      knv3= Nk3_point_mode
      allocate( W(Num_wann))
@@ -218,18 +218,18 @@
         call eigensystem_c( 'V', 'U', Num_wann ,Hamk_bulk, W)
 
         eigv(:, ik)= W
-        do i=1, Num_wann  !> band 
+        do i=1, Num_wann  !> band
            if (SOC==0) then
               do j=1, Num_wann  !> projector
                  weight(j, i, ik)= (abs(Hamk_bulk(j, i))**2)
               enddo ! j
            else
               do j=1, Num_wann  !> projector
-                 weight(j, i, ik)= abs(Hamk_bulk(j, i))**2     
+                 weight(j, i, ik)= abs(Hamk_bulk(j, i))**2
               enddo ! j
            endif
         enddo ! i
- 
+
      enddo ! ik
 
 #if defined (MPI)
@@ -247,10 +247,10 @@
      outfileindex= outfileindex+ 1
      if (cpuid==0)then
         open(unit=outfileindex, file='bulkek-pointsmode.dat')
-   
+
         do ik=1, Nk3_point_mode
            write(outfileindex, '(a, i10)')'# No. of k point', ik
-           write(outfileindex, '("#",a9,100a10)')'k1', 'k2', 'k3', 'kx', 'ky', 'kz'  
+           write(outfileindex, '("#",a9,100a10)')'k1', 'k2', 'k3', 'kx', 'ky', 'kz'
            write(outfileindex, '(100f10.6)')k3points_pointmode_direct(:, ik), k3points_pointmode_cart(:, ik)
            write(outfileindex, '("#", a11, a19, a)')'band index', 'Eigenvalue', '     orbital weights (0-255)'
            do i=1, Num_wann
@@ -277,19 +277,19 @@
 
      integer :: ik, i, j, ib, knv3, ierr, nwann
      real(dp) :: sx, sy, sz, emin, emax, k(3), W(Num_wann)
-     
+
      ! Hamiltonian of bulk system
-     complex(dp), allocatable :: Hamk_bulk(:, :) 
+     complex(dp), allocatable :: Hamk_bulk(:, :)
      complex(dp), allocatable :: sigmax(:, :)
      complex(dp), allocatable :: sigmay(:, :)
      complex(dp), allocatable :: sigmaz(:, :)
      complex(dp), allocatable :: psi(:)
 
      ! eigen value of H
-	  real(dp), allocatable :: eigv(:,:)
-	  real(dp), allocatable :: eigv_mpi(:,:)
-	  real(dp), allocatable :: spin(:, :, :)
-	  real(dp), allocatable :: spin_mpi(:, :, :)
+      real(dp), allocatable :: eigv(:,:)
+      real(dp), allocatable :: eigv_mpi(:,:)
+      real(dp), allocatable :: spin(:, :, :)
+      real(dp), allocatable :: spin_mpi(:, :, :)
 
      knv3= nk3_band
      allocate( psi( Num_wann))
@@ -302,8 +302,8 @@
      allocate( spin    (3, Num_wann, knv3))
      allocate( spin_mpi(3, Num_wann, knv3))
      psi = 0d0
-	  eigv = 0d0
-	  eigv_mpi= 0d0
+      eigv = 0d0
+      eigv_mpi= 0d0
      spin= 0d0
      spin_mpi= 0d0
      sigmax= 0d0
@@ -345,9 +345,9 @@
            sz= 0d0
            do i= 1, Num_wann
               do j= 1, Num_wann
-                 sx= sx+ conjg(psi(i))* sigmax(i, j)* psi(j)
-                 sy= sy+ conjg(psi(i))* sigmay(i, j)* psi(j)
-                 sz= sz+ conjg(psi(i))* sigmaz(i, j)* psi(j)
+                 sx= sx+ real(conjg(psi(i))* sigmax(i, j)* psi(j),dp)
+                 sy= sy+ real(conjg(psi(i))* sigmay(i, j)* psi(j),dp)
+                 sz= sz+ real(conjg(psi(i))* sigmaz(i, j)* psi(j),dp)
               enddo ! j
            enddo ! i
            spin(1, ib, ik)= sx
@@ -371,7 +371,7 @@
      outfileindex= outfileindex+ 1
      if (cpuid==0)then
         open(unit=outfileindex, file='bulkek.dat')
-   
+
         do i=1, Num_wann
            do ik=1, knv3
               write(outfileindex, '(1000f19.9)')k3len(ik),eigv_mpi(i, ik), spin(:, i, ik)
@@ -417,7 +417,7 @@
      202 format('set xtics (',20('"',A3,'" ',F10.5,','))
      203 format(A3,'" ',F10.5,')')
      204 format('set arrow from ',F10.5,',',F10.5,' to ',F10.5,',',F10.5, ' nohead')
-     
+
    return
    end subroutine ek_bulk_spin
 
@@ -430,12 +430,12 @@
 
      integer :: ik1, ik2, ik3
      integer :: Nk_t
-     integer :: ierr
+     ! integer :: ierr
      real(Dp) :: k(3), k1, k2, k3
      real(Dp) :: W(Num_wann)
-     
+
      ! Hamiltonian of bulk system
-     complex(Dp) :: Hamk_bulk(Num_wann,Num_wann) 
+     complex(Dp) :: Hamk_bulk(Num_wann,Num_wann)
 
      if (cpuid==0)then
         open(unit=14, file='bulkek-fortomas.dat')
@@ -488,7 +488,7 @@
      enddo !ik1
      if (cpuid==0) write (15, '(A)', ADVANCE="NO")'}'
      if (cpuid==0) close(14)
-   
+
    return
    end subroutine ek_bulk_fortomas
 
@@ -500,23 +500,23 @@
 
      implicit none
 
-     integer :: ik, i, j
-	  integer :: knv3
+     integer :: ik, i
+      integer :: knv3
      integer :: ierr
      real(dp) :: emin
      real(dp) :: emax
      real(Dp) :: k(3)
      real(Dp) :: W(Num_wann)
-     
+
      ! Hamiltonian of bulk system
-     complex(Dp) :: Hamk_bulk(Num_wann,Num_wann) 
-     complex(Dp) :: Hamk     (Num_wann,Num_wann) 
-     complex(Dp) :: mat1     (Num_wann,Num_wann) 
-     complex(Dp) :: mat2     (Num_wann,Num_wann) 
+     complex(Dp) :: Hamk_bulk(Num_wann,Num_wann)
+     complex(Dp) :: Hamk     (Num_wann,Num_wann)
+     complex(Dp) :: mat1     (Num_wann,Num_wann)
+     complex(Dp) :: mat2     (Num_wann,Num_wann)
 
      ! eigen value of H
-	  real(dp), allocatable :: eigv(:,:)
-	  real(dp), allocatable :: eigv_mpi(:,:)
+      real(dp), allocatable :: eigv(:,:)
+      real(dp), allocatable :: eigv_mpi(:,:)
      logical, allocatable :: mirror_plus(:, :)
      logical, allocatable :: mirror_minus(:, :)
 
@@ -557,7 +557,7 @@
         !> calculate mirror eigenvalue
         call mat_mul(Num_wann, mat2, mirror_z, mat1)
         call mat_mul(Num_wann, mat1, hamk, mat2)
-            
+
         !> get mirror_plus and mirror_minus
         do i=1, Num_wann
            if (abs(real(mat2(i, i))-1d0)< 1e-3) then
@@ -568,7 +568,7 @@
         enddo
 
        !if (cpuid.eq.0)write(*, *)ik,&
-       !   (mirror_plus(i, ik), i=1, Num_wann) 
+       !   (mirror_plus(i, ik), i=1, Num_wann)
         eigv(:, ik)= W
 
      enddo  ! ik
@@ -606,7 +606,7 @@
         enddo
         close(15)
         close(16)
- 
+
 
      endif
 
@@ -647,7 +647,7 @@
      202 format('set xtics (',20('"',A3,'" ',F10.5,','))
      203 format(A3,'" ',F10.5,')')
      204 format('set arrow from ',F10.5,',',F10.5,' to ',F10.5,',',F10.5, ' nohead')
-     
+
    return
    end subroutine ek_bulk_mirror_z
 
@@ -662,24 +662,24 @@
 
      implicit none
 
-     integer :: ik, i, j
+     integer :: ik, i
      integer :: knv3
      integer :: ierr
      real(dp) :: emin
      real(dp) :: emax
      real(Dp) :: k(3)
      real(Dp) :: W(Num_wann)
-     
+
      ! Hamiltonian of bulk system
-     complex(Dp) :: Hamk_bulk(Num_wann,Num_wann) 
-     complex(Dp) :: Hamk     (Num_wann,Num_wann) 
-     complex(Dp) :: mat1     (Num_wann,Num_wann) 
-     complex(Dp) :: mat2     (Num_wann,Num_wann) 
+     complex(Dp) :: Hamk_bulk(Num_wann,Num_wann)
+     complex(Dp) :: Hamk     (Num_wann,Num_wann)
+     complex(Dp) :: mat1     (Num_wann,Num_wann)
+     complex(Dp) :: mat2     (Num_wann,Num_wann)
      complex(dp) :: inv_mirror_x(Num_wann, Num_wann)
 
      ! eigen value of H
-	  real(dp), allocatable :: eigv(:,:)
-	  real(dp), allocatable :: eigv_mpi(:,:)
+      real(dp), allocatable :: eigv(:,:)
+      real(dp), allocatable :: eigv_mpi(:,:)
      logical, allocatable :: mirror_plus(:, :)
      logical, allocatable :: mirror_minus(:, :)
 
@@ -730,7 +730,7 @@
         !> calculate mirror eigenvalue
         call mat_mul(Num_wann, mat2, mirror_x, mat1)
         call mat_mul(Num_wann, mat1, hamk, mat2)
-            
+
         !> get mirror_plus and mirror_minus
         do i=1, Num_wann
            if (abs(real(mat2(i, i))-1d0)< 1e-3) then
@@ -741,7 +741,7 @@
         enddo
 
        !if (cpuid.eq.0)write(*, *)ik,&
-       !   (mirror_plus(i, ik), i=1, Num_wann) 
+       !   (mirror_plus(i, ik), i=1, Num_wann)
         eigv(:, ik)= W
 
      enddo  ! ik
@@ -778,7 +778,7 @@
         enddo
         close(15)
         close(16)
- 
+
 
      endif
 
@@ -819,7 +819,7 @@
      202 format('set xtics (',20('"',A3,'" ',F10.5,','))
      203 format(A3,'" ',F10.5,')')
      204 format('set arrow from ',F10.5,',',F10.5,' to ',F10.5,',',F10.5, ' nohead')
-     
+
    return
    end subroutine ek_bulk_mirror_x
 

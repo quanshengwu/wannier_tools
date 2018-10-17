@@ -9,10 +9,10 @@
 
      implicit none
 
-     integer :: ik, i, j, ib
+     integer :: ik, i, j
      integer :: knv3
      integer :: ierr
-     integer :: nwann
+     ! integer :: nwann
 
      integer :: nband_min
      integer :: nband_max
@@ -22,19 +22,19 @@
 
      real(Dp) :: k(3)
      real(Dp) :: W(Num_wann)
-     real(dp) :: kxmin, kxmax, kymin, kymax
+     ! real(dp) :: kxmin, kxmax, kymin, kymax
      real(dp), allocatable :: kxy(:,:)
      real(dp), allocatable :: kxy_shape(:,:)
      real(dp), allocatable :: kxy_plane(:,:)
-     
+
      ! Hamiltonian of bulk system
-     complex(Dp) :: Hamk_bulk(Num_wann,Num_wann) 
+     complex(Dp) :: Hamk_bulk(Num_wann,Num_wann)
 
      ! eigen value of H
-	  real(dp), allocatable :: gap(:)
-	  real(dp), allocatable :: gap_mpi(:)
-	  real(dp), allocatable :: eigv(:,:)
-	  real(dp), allocatable :: eigv_mpi(:,:)
+      ! real(dp), allocatable :: gap(:)
+      ! real(dp), allocatable :: gap_mpi(:)
+      real(dp), allocatable :: eigv(:,:)
+      real(dp), allocatable :: eigv_mpi(:,:)
 
      nband_min= Numoccupied- 1
      nband_max= Numoccupied+ 2
@@ -47,7 +47,7 @@
      allocate( kxy(3, nk1*Nk2))
      allocate( kxy_shape(3, nk1*Nk2))
      allocate( kxy_plane(3, nk1*Nk2))
- 
+
      allocate( eigv    (nband_store, knv3))
      allocate( eigv_mpi(nband_store, knv3))
      eigv    = 0d0
@@ -56,17 +56,17 @@
      kxy=0d0
      kxy_shape=0d0
      kxy_plane=0d0
-    
-     if (Nk1<2 .or. Nk2<2) stop 'ERROR: I refuse to do this job because you give me so small Nk1 and Nk2'      
+
+     if (Nk1<2 .or. Nk2<2) stop 'ERROR: I refuse to do this job because you give me so small Nk1 and Nk2'
      if (Numoccupied> Num_wann) stop 'ERROR: please set correct Numoccupied, it should be small than num_wann'
-     
+
      ik =0
      do i= 1, Nk1
         do j= 1, Nk2
            ik =ik +1
            kxy(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(Nk1-1)+ K3D_vec2*(j-1)/dble(Nk2-1) &
               -(K3D_vec1+K3D_vec2)/2d0
-           kxy_shape(:, ik)= kxy(1, ik)* Kua+ kxy(2, ik)* Kub+ kxy(3, ik)* Kuc 
+           kxy_shape(:, ik)= kxy(1, ik)* Kua+ kxy(2, ik)* Kub+ kxy(3, ik)* Kuc
            call rotate_k3_to_kplane(kxy_shape(:, ik), kxy_plane(:, ik))
         enddo
      enddo
@@ -110,7 +110,7 @@
            'E(Numoccupied-1)', 'E(Numoccupied)' , 'E(Numoccupied+1)', 'E(Numoccupied+2)'
         do ik=1, knv3
            write(outfileindex, '(1000f19.9)')kxy_shape(:, ik), &
-              kxy_plane(:, ik), eigv_mpi(:, ik)  
+              kxy_plane(:, ik), eigv_mpi(:, ik)
            if (mod(ik, nk2)==0) write(outfileindex, *)' '
         enddo
         close(outfileindex)
@@ -124,7 +124,7 @@
            'E(Numoccupied-1)', 'E(Numoccupied)' , 'E(Numoccupied+1)', 'E(Numoccupied+2)'
         do ik=1, knv3
            write(outfileindex, '(1000f19.9)')kxy_shape(:, ik), &
-              kxy_plane(:, ik), eigv_mpi(:, ik)  
+              kxy_plane(:, ik), eigv_mpi(:, ik)
         enddo
         close(outfileindex)
      endif
@@ -178,7 +178,7 @@
 
      integer :: ik, i, j, ib
      integer :: nkx, nky
-	  integer :: knv3
+      integer :: knv3
      integer :: ierr
      integer :: nwann
      real(Dp) :: k(3)
@@ -186,20 +186,20 @@
      real(dp) :: sy
      real(dp) :: sz
      real(Dp) :: W(Num_wann)
-     real(dp) :: kxmin, kxmax, kymin, kymax
+     ! real(dp) :: kxmin, kxmax, kymin, kymax
      real(dp), allocatable :: kxy(:,:)
      real(dp), allocatable :: kxy_shape(:,:)
-     
+
      ! Hamiltonian of bulk system
-     complex(Dp) :: Hamk_bulk(Num_wann,Num_wann) 
+     complex(Dp) :: Hamk_bulk(Num_wann,Num_wann)
 
      ! eigen value of H
-	  real(dp), allocatable :: gap(:)
-	  real(dp), allocatable :: gap_mpi(:)
-	  real(dp), allocatable :: eigv(:,:)
-	  real(dp), allocatable :: eigv_mpi(:,:)
-	  real(dp), allocatable :: spin(:, :, :)
-	  real(dp), allocatable :: spin_mpi(:, :, :)
+      real(dp), allocatable :: gap(:)
+      real(dp), allocatable :: gap_mpi(:)
+      real(dp), allocatable :: eigv(:,:)
+      real(dp), allocatable :: eigv_mpi(:,:)
+      real(dp), allocatable :: spin(:, :, :)
+      real(dp), allocatable :: spin_mpi(:, :, :)
 
 
      complex(dp), allocatable :: sigmax(:, :)
@@ -221,7 +221,7 @@
      sigmax= 0d0
      sigmay= 0d0
      sigmaz= 0d0
- 
+
      allocate( kxy(3, knv3))
      allocate( kxy_shape(3, knv3))
      allocate( gap     (   knv3))
@@ -231,8 +231,8 @@
      kxy = 0d0
      gap    = 0d0
      gap_mpi= 0d0
-	  eigv    = 0d0
-	  eigv_mpi= 0d0
+      eigv    = 0d0
+      eigv_mpi= 0d0
 
      nwann= Num_wann
      if (soc>0) nwann= Num_wann/2
@@ -254,7 +254,7 @@
      do j= 1, nky
         ik =ik +1
         kxy(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(nkx-1)+ K3D_vec2*(j-1)/dble(nky-1)
-        kxy_shape(:, ik)= kxy(1, ik)* Kua+ kxy(2, ik)* Kub+ kxy(3, ik)* Kuc 
+        kxy_shape(:, ik)= kxy(1, ik)* Kua+ kxy(2, ik)* Kub+ kxy(3, ik)* Kuc
      enddo
      enddo
 
@@ -279,9 +279,9 @@
            sz= 0d0
            do i= 1, Num_wann
               do j= 1, Num_wann
-                 sx= sx+ conjg(psi(i))* sigmax(i, j)* psi(j)
-                 sy= sy+ conjg(psi(i))* sigmay(i, j)* psi(j)
-                 sz= sz+ conjg(psi(i))* sigmaz(i, j)* psi(j)
+                 sx= sx+ real(conjg(psi(i))* sigmax(i, j)* psi(j), dp)
+                 sy= sy+ real(conjg(psi(i))* sigmay(i, j)* psi(j), dp)
+                 sz= sz+ real(conjg(psi(i))* sigmaz(i, j)* psi(j), dp)
               enddo ! j
            enddo ! i
            spin(1, ib, ik)= sx
@@ -336,29 +336,28 @@
 
      integer :: ik, i, j
      integer :: nkx, nky
-	  integer :: nwann
-	  integer :: knv3
+      integer :: nwann
+      integer :: knv3
      integer :: ierr
      real(Dp) :: k(3)
      real(Dp) :: k11(3), k12(3)
      real(Dp) :: k21(3), k22(3)
      real(Dp) :: W(Num_wann)
-     real(dp) :: kxmin, kxmax, kymin, kymax
      real(dp), allocatable :: kxy(:,:)
      real(dp), allocatable :: kxy_shape(:,:)
-     
+
      ! Hamiltonian of bulk system
-     complex(Dp) :: Hamk_bulk(Num_wann,Num_wann) 
+     complex(Dp) :: Hamk_bulk(Num_wann,Num_wann)
 
      ! eigen value of H
-	  real(dp), allocatable :: gap(:)
-	  real(dp), allocatable :: gap_mpi(:)
-	  real(dp), allocatable :: eigv(:,:)
-	  real(dp), allocatable :: eigv_mpi(:,:)
+      real(dp), allocatable :: gap(:)
+      real(dp), allocatable :: gap_mpi(:)
+      real(dp), allocatable :: eigv(:,:)
+      real(dp), allocatable :: eigv_mpi(:,:)
      real(dp), allocatable :: dos(:)
      real(dp), allocatable :: dos_mpi(:)
-	  real(dp), allocatable :: spin(:, :)
-	  real(dp), allocatable :: spin_mpi(:, :)
+      real(dp), allocatable :: spin(:, :)
+      real(dp), allocatable :: spin_mpi(:, :)
 
 
      complex(dp), allocatable :: sigmax(:, :)
@@ -379,7 +378,7 @@
      allocate( dos_mpi (knv3))
      allocate( spin    (3, knv3))
      allocate( spin_mpi(3, knv3))
- 
+
      allocate( kxy(3, knv3))
      allocate( kxy_shape(3, knv3))
      allocate( gap     (   knv3))
@@ -389,8 +388,8 @@
      kxy     = 0d0
      gap     = 0d0
      gap_mpi = 0d0
-	  eigv    = 0d0
-	  eigv_mpi= 0d0
+      eigv    = 0d0
+      eigv_mpi= 0d0
      spin    = 0d0
      spin_mpi= 0d0
      dos    = 0d0
@@ -413,9 +412,9 @@
      enddo
 
 
-     k11=(/-0.0d0,  0.0d0, -0.0d0/) ! 
+     k11=(/-0.0d0,  0.0d0, -0.0d0/) !
      k12=(/ 1.0d0,  0.0d0,  1.0d0/) ! X
-     k21=(/ 0.0d0,  0.0d0,  0.0d0/) ! 
+     k21=(/ 0.0d0,  0.0d0,  0.0d0/) !
      k22=(/ 1.0d0,  1.0d0,  0.0d0/) ! Z
 
 
@@ -424,12 +423,12 @@
      do j= 1, nky
         ik =ik +1
         kxy(:, ik)= k11+(k12-k11)*(i-1)/dble(nkx-1)+  k21+ (k22-k21)*(j-1)/dble(nky-1)
-        kxy_shape(:, ik)= kxy(1, ik)* Kua+ kxy(2, ik)* Kub+ kxy(3, ik)* Kuc 
+        kxy_shape(:, ik)= kxy(1, ik)* Kua+ kxy(2, ik)* Kub+ kxy(3, ik)* Kuc
      enddo
      enddo
 
      do ik= 1+cpuid, nkx*nky, num_cpu
-	     if (cpuid==0) print * , ik
+         if (cpuid==0) print * , ik
 
         k = kxy(:, ik)
 
@@ -486,7 +485,7 @@
      if (cpuid==0)then
         open(unit=14, file='bulkek2D.dat')
         do ik=1, knv3
-           write(14, '(1000f20.6)')kxy_shape(:, ik), eigv_mpi(:, ik) 
+           write(14, '(1000f20.6)')kxy_shape(:, ik), eigv_mpi(:, ik)
         enddo
         close(14)
 
@@ -505,7 +504,7 @@
               if (ik==1 .or. ik==knv3.or. dos_mpi(ik)<4d0) cycle
               if ((dos_mpi(ik)> dos_mpi(ik-1)) .and. (dos_mpi(ik)> dos_mpi(ik+1))) then
                 !print *, ik, dos_mpi(ik)
-                 write(16, '(10000f20.5)')kxy_shape(:, ik), dos_mpi(ik) , spin_mpi(:, ik) 
+                 write(16, '(10000f20.5)')kxy_shape(:, ik), dos_mpi(ik) , spin_mpi(:, ik)
 
               endif
            enddo

@@ -1,4 +1,4 @@
-  
+
 
   subroutine sigma_AHC_old
      !> Calculate anomalous hall conductivity AHC
@@ -14,7 +14,7 @@
      use wmpi
      use para
      implicit none
-    
+
      integer :: iR, ik, ikx, iky, ikz
      integer :: m, n, i, j, ie
      integer :: ierr, knv3
@@ -25,7 +25,7 @@
      real(dp) :: time_start, time_end
 
      ! eigen value of H
-	  real(dp), allocatable :: W(:)
+      real(dp), allocatable :: W(:)
      complex(dp), allocatable :: Hamk_bulk(:, :)
      complex(dp), allocatable :: Amat(:, :)
      complex(dp), allocatable :: UU(:, :)
@@ -37,7 +37,7 @@
      complex(dp), allocatable :: vz(:, :)
      complex(dp), allocatable :: DHDk(:, :, :)
      complex(dp), allocatable :: DHDkdag(:, :, :)
-    
+
      !> Berry curvature
      complex(dp) :: Omega
      complex(dp) :: ratio
@@ -72,7 +72,7 @@
      UU= 0d0
      DHDk= 0d0
      DHDkdag= 0d0
-     
+
      !> energy
      do ie=1, OmegaNum
         if (OmegaNum>1) then
@@ -84,10 +84,10 @@
 
      knv3= Nk1*Nk2*Nk3
 
-     call now(time_start) 
+     call now(time_start)
      do ik= 1+ cpuid, knv3, num_cpu
         if (cpuid.eq.0.and. mod(ik/num_cpu, 100).eq.0) then
-           call now(time_end) 
+           call now(time_end)
            write(stdout, '(a, i18, "/", i18, a, f10.2, "s")') 'ik/knv3', &
            ik, knv3, '  time left', (knv3-ik)*(time_end-time_start)/num_cpu/100d0
            time_start= time_end
@@ -124,16 +124,16 @@
         enddo ! iR
 
         !> unitility rotate velocity
-        call mat_mul(Num_wann, vx, UU, Amat) 
-        call mat_mul(Num_wann, UU_dag, Amat, vx) 
-        call mat_mul(Num_wann, vy, UU, Amat) 
-        call mat_mul(Num_wann, UU_dag, Amat, vy) 
-        call mat_mul(Num_wann, vz, UU, Amat) 
-        call mat_mul(Num_wann, UU_dag, Amat, vz) 
+        call mat_mul(Num_wann, vx, UU, Amat)
+        call mat_mul(Num_wann, UU_dag, Amat, vx)
+        call mat_mul(Num_wann, vy, UU, Amat)
+        call mat_mul(Num_wann, UU_dag, Amat, vy)
+        call mat_mul(Num_wann, vz, UU, Amat)
+        call mat_mul(Num_wann, UU_dag, Amat, vz)
 
         !> calculate conductivity for each chemical potential
         do ie= 1, OmegaNum
-           mu= energy(ie) 
+           mu= energy(ie)
 
            DHDk= 0d0
            DHDkdag= 0d0
@@ -151,7 +151,7 @@
                  endif
               enddo ! m
            enddo ! n
-   
+
            do m= 1, Num_wann
               do n= 1, Num_wann
                  if (W(m)> mu .and. W(n)< mu) then
@@ -159,30 +159,30 @@
                     DHDkdag(n, m, 1)= zi*vx(n, m)/(W(m)-W(n))
                     DHDkdag(n, m, 2)= zi*vy(n, m)/(W(m)-W(n))
                     DHDkdag(n, m, 3)= zi*vz(n, m)/(W(m)-W(n))
-                 else              
+                 else
                     DHDkdag(n, m, 1)= 0d0
                     DHDkdag(n, m, 2)= 0d0
                     DHDkdag(n, m, 3)= 0d0
                  endif
               enddo ! m
            enddo ! n
-   
+
            !> rotate DHDk and DHDkdag to diagonal basis
            do i=1, 3
-              call mat_mul(Num_wann, DHDk(:, :, i), UU_dag, Amat) 
-              call mat_mul(Num_wann, UU, Amat, DHDk(:, :, i)) 
-              call mat_mul(Num_wann, DHDkdag(:, :, i), UU_dag, Amat) 
-              call mat_mul(Num_wann, UU, Amat, DHDkdag(:, :, i)) 
+              call mat_mul(Num_wann, DHDk(:, :, i), UU_dag, Amat)
+              call mat_mul(Num_wann, UU, Amat, DHDk(:, :, i))
+              call mat_mul(Num_wann, DHDkdag(:, :, i), UU_dag, Amat)
+              call mat_mul(Num_wann, UU, Amat, DHDkdag(:, :, i))
            enddo
-   
+
            do i=1, 3
               do j=1, 3
                  call mat_mul(Num_wann, DHDk(:, :, i), DHDkdag(:, :, j), Amat)
                  call Im_trace(Num_wann, Amat, Omega)
-                 sigma_tensor_ahc_mpi(i, j, ie)= sigma_tensor_ahc_mpi(i, j, ie)+ Omega
+                 sigma_tensor_ahc_mpi(i, j, ie)= sigma_tensor_ahc_mpi(i, j, ie)+ real(Omega,dp)
               enddo ! j
            enddo ! i
-   
+
         enddo ! ie
      enddo ! ik
 
@@ -217,7 +217,7 @@
      deallocate( energy)
      deallocate( sigma_tensor_ahc    )
      deallocate( sigma_tensor_ahc_mpi)
- 
+
      return
   end subroutine sigma_AHC_old
 
@@ -236,9 +236,9 @@
      use wmpi
      use para
      implicit none
-    
+
      integer :: iR, ik, ikx, iky, ikz
-     integer :: m, n, i, j, ie
+     integer :: m, n, ie
      integer :: ierr, knv3
 
      real(dp) :: kdotr, mu, Beta_fake
@@ -247,7 +247,7 @@
      real(dp) :: time_start, time_end
 
      ! eigen value of H
-	  real(dp), allocatable :: W(:)
+      real(dp), allocatable :: W(:)
      complex(dp), allocatable :: Hamk_bulk(:, :)
      complex(dp), allocatable :: Amat(:, :)
      complex(dp), allocatable :: UU(:, :)
@@ -255,17 +255,17 @@
 
      !> velocities
      complex(dp), allocatable :: vx(:, :), vy(:, :), vz(:, :)
-    
+
      !> Berry curvature
      complex(dp), allocatable :: Omega_x(:), Omega_y(:), Omega_z(:)
      complex(dp), allocatable :: Omega_x_t(:), Omega_y_t(:), Omega_z_t(:)
-     complex(dp) :: ratio
+     ! complex(dp) :: ratio
 
      !> conductivity  dim= OmegaNum
      real(dp), allocatable :: energy(:)
      real(dp), allocatable :: sigma_tensor_ahc(:, :)
      real(dp), allocatable :: sigma_tensor_ahc_mpi(:, :)
-     
+
      !> Fermi-Dirac distribution
      real(dp), external :: fermi
 
@@ -290,7 +290,7 @@
      Amat= 0d0
      UU_dag=0d0
      UU= 0d0
-     
+
      !> energy
      do ie=1, OmegaNum
         if (OmegaNum>1) then
@@ -302,10 +302,10 @@
 
      knv3= Nk1*Nk2*Nk3
 
-     call now(time_start) 
+     call now(time_start)
      do ik= 1+ cpuid, knv3, num_cpu
         if (cpuid.eq.0.and. mod(ik/num_cpu, 100).eq.0) then
-           call now(time_end) 
+           call now(time_end)
            write(stdout, '(a, i18, "/", i18, a, f10.2, "s")') 'ik/knv3', &
            ik, knv3, '  time left', (knv3-ik)*(time_end-time_start)/num_cpu/100d0
            time_start= time_end
@@ -320,12 +320,12 @@
 
         ! calculation bulk hamiltonian by a direct Fourier transformation of HmnR
         call ham_bulk_latticegauge(k, Hamk_bulk)
-   
+
         !> diagonalization by call zheev in lapack
         UU=Hamk_bulk
         call eigensystem_c( 'V', 'U', Num_wann, UU, W)
        !call zhpevx_pack(hamk_bulk,Num_wann, W, UU)
-  
+
         vx= 0d0; vy= 0d0; vz= 0d0
         UU_dag= conjg(transpose(UU))
         do iR= 1, Nrpts
@@ -334,15 +334,15 @@
            vy= vy+ zi*crvec(2, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
            vz= vz+ zi*crvec(3, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
         enddo ! iR
-   
+
         !> unitility rotate velocity
-        call mat_mul(Num_wann, vx, UU, Amat) 
-        call mat_mul(Num_wann, UU_dag, Amat, vx) 
-        call mat_mul(Num_wann, vy, UU, Amat) 
-        call mat_mul(Num_wann, UU_dag, Amat, vy) 
-        call mat_mul(Num_wann, vz, UU, Amat) 
-        call mat_mul(Num_wann, UU_dag, Amat, vz) 
-   
+        call mat_mul(Num_wann, vx, UU, Amat)
+        call mat_mul(Num_wann, UU_dag, Amat, vx)
+        call mat_mul(Num_wann, vy, UU, Amat)
+        call mat_mul(Num_wann, UU_dag, Amat, vy)
+        call mat_mul(Num_wann, vz, UU, Amat)
+        call mat_mul(Num_wann, UU_dag, Amat, vz)
+
         Omega_x=0d0;Omega_y=0d0; Omega_z=0d0
         do m= 1, Num_wann
            do n= 1, Num_wann
@@ -352,11 +352,11 @@
               Omega_z(m)= Omega_z(m)+ vx(n, m)*vy(m, n)/((W(m)-W(n))**2)
            enddo ! m
         enddo ! n
-   
+
         Omega_x= -Omega_x*2d0*zi
         Omega_y= -Omega_y*2d0*zi
         Omega_z= -Omega_z*2d0*zi
-   
+
         !> consider the Fermi-distribution according to the brodening Earc_eta
         Beta_fake= 1d0/Eta_Arc
 
@@ -397,6 +397,6 @@
 
      deallocate( W , vx, vy, vz, Hamk_bulk, Amat, UU, UU_dag, energy)
      deallocate( sigma_tensor_ahc, sigma_tensor_ahc_mpi)
- 
+
      return
   end subroutine sigma_AHC

@@ -6,7 +6,7 @@
      !> eqn (34)
      !
      !> Jun. 11 2018 by Quansheng Wu @ ETHZ
-     !> Try to write some simple subroutines. 
+     !> Try to write some simple subroutines.
      !> on the output, only the real part is meaningfull.
      ! Copyright (c) 2018 QuanSheng Wu. All rights reserved.
 
@@ -20,7 +20,7 @@
      complex(dp), intent(out) :: Omega_y(Num_wann)
      complex(dp), intent(out) :: Omega_z(Num_wann)
 
-     integer :: iR, m, n, i, j
+     integer :: iR, m, n, i
      real(dp), allocatable :: W(:)
      real(dp) :: kdotr
      complex(dp), allocatable :: Amat(:, :), DHDk(:, :, :), DHDkdag(:, :, :)
@@ -50,12 +50,12 @@
      enddo ! iR
 
      !> unitility rotate velocity
-     call mat_mul(Num_wann, vx, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vx) 
-     call mat_mul(Num_wann, vy, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vy) 
-     call mat_mul(Num_wann, vz, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vz) 
+     call mat_mul(Num_wann, vx, UU, Amat)
+     call mat_mul(Num_wann, UU_dag, Amat, vx)
+     call mat_mul(Num_wann, vy, UU, Amat)
+     call mat_mul(Num_wann, UU_dag, Amat, vy)
+     call mat_mul(Num_wann, vz, UU, Amat)
+     call mat_mul(Num_wann, UU_dag, Amat, vz)
 
      DHDk= 0d0
      DHDkdag= 0d0
@@ -79,7 +79,7 @@
               DHDkdag(n, m, 1)= zi*vx(n, m)/(W(m)-W(n))
               DHDkdag(n, m, 2)= zi*vy(n, m)/(W(m)-W(n))
               DHDkdag(n, m, 3)= zi*vz(n, m)/(W(m)-W(n))
-           else              
+           else
               DHDkdag(n, m, 1)= 0d0
               DHDkdag(n, m, 2)= 0d0
               DHDkdag(n, m, 3)= 0d0
@@ -89,10 +89,10 @@
 
      !> rotate DHDk and DHDkdag to diagonal basis
      do i=1, 3
-        call mat_mul(Num_wann, DHDk(:, :, i), UU_dag, Amat) 
-        call mat_mul(Num_wann, UU, Amat, DHDk(:, :, i)) 
-        call mat_mul(Num_wann, DHDkdag(:, :, i), UU_dag, Amat) 
-        call mat_mul(Num_wann, UU, Amat, DHDkdag(:, :, i)) 
+        call mat_mul(Num_wann, DHDk(:, :, i), UU_dag, Amat)
+        call mat_mul(Num_wann, UU, Amat, DHDk(:, :, i))
+        call mat_mul(Num_wann, DHDkdag(:, :, i), UU_dag, Amat)
+        call mat_mul(Num_wann, UU, Amat, DHDkdag(:, :, i))
      enddo
 
      call mat_mul(Num_wann, DHDk(:, :, 1), DHDkdag(:, :, 2), vz)
@@ -121,7 +121,7 @@
      !> eqn (34)
      !
      !> Jun. 11 2018 by Quansheng Wu @ ETHZ
-     !> Try to write some simple subroutines. 
+     !> Try to write some simple subroutines.
      !> on the output, only the real part is meaningfull.
      ! Copyright (c) 2018 QuanSheng Wu. All rights reserved.
 
@@ -136,7 +136,7 @@
      complex(dp), intent(out) :: Omega_y(Num_wann)
      complex(dp), intent(out) :: Omega_z(Num_wann)
 
-     integer :: iR, m, n, i, j
+     integer :: iR, m, n
      real(dp), allocatable :: W(:)
      real(dp) :: kdotr, Beta_fake
      complex(dp), allocatable :: Amat(:, :), DHDk(:, :, :), DHDkdag(:, :, :)
@@ -169,12 +169,12 @@
      enddo ! iR
 
      !> unitility rotate velocity
-     call mat_mul(Num_wann, vx, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vx) 
-     call mat_mul(Num_wann, vy, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vy) 
-     call mat_mul(Num_wann, vz, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vz) 
+     call mat_mul(Num_wann, vx, UU, Amat)
+     call mat_mul(Num_wann, UU_dag, Amat, vx)
+     call mat_mul(Num_wann, vy, UU, Amat)
+     call mat_mul(Num_wann, UU_dag, Amat, vy)
+     call mat_mul(Num_wann, vz, UU, Amat)
+     call mat_mul(Num_wann, UU_dag, Amat, vz)
 
      Omega_x=0d0;Omega_y=0d0; Omega_z=0d0
      do m= 1, Num_wann
@@ -211,7 +211,7 @@
      !> eqn (34)
      !
      !> Jun. 11 2018 by Quansheng Wu @ ETHZ
-     !> Try to write some simple subroutines. 
+     !> Try to write some simple subroutines.
      ! Copyright (c) 2018 QuanSheng Wu. All rights reserved.
 
      use wmpi
@@ -224,7 +224,7 @@
      complex(dp), intent(out) :: Omega_y(Num_wann)
      complex(dp), intent(out) :: Omega_z(Num_wann)
 
-     integer :: iR, m, n, i, j
+     integer :: iR, m, n, i
      real(dp), allocatable :: W(:)
      real(dp) :: kdotr
      complex(dp), allocatable :: Amat(:, :), DHDk(:, :, :), DHDkdag(:, :, :)
@@ -254,18 +254,18 @@
      enddo ! iR
 
      !> unitility rotate velocity
-     call mat_mul(Num_wann, vx, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vx) 
-     call mat_mul(Num_wann, vy, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vy) 
-     call mat_mul(Num_wann, vz, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vz) 
+     call mat_mul(Num_wann, vx, UU, Amat)
+     call mat_mul(Num_wann, UU_dag, Amat, vx)
+     call mat_mul(Num_wann, vy, UU, Amat)
+     call mat_mul(Num_wann, UU_dag, Amat, vy)
+     call mat_mul(Num_wann, vz, UU, Amat)
+     call mat_mul(Num_wann, UU_dag, Amat, vz)
 
      DHDk= 0d0
      DHDkdag= 0d0
      do m= 1, Num_wann
         do n= 1, Num_wann
-           if (n> Numoccupied .and. m<= Numoccupied) then 
+           if (n> Numoccupied .and. m<= Numoccupied) then
               DHDk(n, m, 1)= zi*vx(n, m)/(W(m)-W(n))
               DHDk(n, m, 2)= zi*vy(n, m)/(W(m)-W(n))
               DHDk(n, m, 3)= zi*vz(n, m)/(W(m)-W(n))
@@ -283,7 +283,7 @@
               DHDkdag(n, m, 1)= zi*vx(n, m)/(W(m)-W(n))
               DHDkdag(n, m, 2)= zi*vy(n, m)/(W(m)-W(n))
               DHDkdag(n, m, 3)= zi*vz(n, m)/(W(m)-W(n))
-           else              
+           else
               DHDkdag(n, m, 1)= 0d0
               DHDkdag(n, m, 2)= 0d0
               DHDkdag(n, m, 3)= 0d0
@@ -293,10 +293,10 @@
 
      !> rotate DHDk and DHDkdag to diagonal basis
      do i=1, 3
-        call mat_mul(Num_wann, DHDk(:, :, i), UU_dag, Amat) 
-        call mat_mul(Num_wann, UU, Amat, DHDk(:, :, i)) 
-        call mat_mul(Num_wann, DHDkdag(:, :, i), UU_dag, Amat) 
-        call mat_mul(Num_wann, UU, Amat, DHDkdag(:, :, i)) 
+        call mat_mul(Num_wann, DHDk(:, :, i), UU_dag, Amat)
+        call mat_mul(Num_wann, UU, Amat, DHDk(:, :, i))
+        call mat_mul(Num_wann, DHDkdag(:, :, i), UU_dag, Amat)
+        call mat_mul(Num_wann, UU, Amat, DHDkdag(:, :, i))
      enddo
 
      call mat_mul(Num_wann, DHDk(:, :, 1), DHDkdag(:, :, 2), vz)
@@ -323,8 +323,8 @@
      !
      !> eqn (11), we only calculate xy
      !
-     !> Aug. 06 2018 by Quansheng Wu 
-     !> Try to write some simple subroutines. 
+     !> Aug. 06 2018 by Quansheng Wu
+     !> Try to write some simple subroutines.
      ! Copyright (c) 2018 QuanSheng Wu. All rights reserved.
 
      use wmpi
@@ -335,9 +335,9 @@
      real(dp), intent(in) :: k(2)
      complex(dp), intent(out) :: Omega_z(1)
 
-     integer :: iR, m, n, i, j, Mdim, i1, i2
+     integer :: m, n, Mdim, i1, i2
      real(dp), allocatable :: W(:)
-     real(dp) :: kdotr
+     ! real(dp) :: kdotr
      complex(dp), allocatable :: Amat(:, :), DHDk(:, :, :), DHDkdag(:, :, :)
      complex(dp), allocatable :: UU(:, :), UU_dag(:, :), Hamk_slab(:, :)
      complex(dp), allocatable :: vx(:, :), vy(:, :)
@@ -354,7 +354,7 @@
      allocate(Vij_y(-ijmax:ijmax, Num_wann, Num_wann))
      W=0d0; vx= 0d0; vy= 0d0; UU= 0d0; UU_dag= 0d0
 
-     call ham_qlayer2qlayer_velocity(k, Vij_x, Vij_y) 
+     call ham_qlayer2qlayer_velocity(k, Vij_x, Vij_y)
      do i1=1, nslab
         ! i2 row index
         do i2=1, nslab
@@ -365,7 +365,7 @@
             vy((i2-1)*Num_wann+1:(i2-1)*Num_wann+Num_wann,&
                       (i1-1)*Num_wann+1:(i1-1)*Num_wann+Num_wann )&
             = Vij_y(i2-i1,1:Num_wann,1:Num_wann)
-          endif 
+          endif
         enddo ! i2
      enddo ! i1
 
@@ -378,12 +378,12 @@
     !call zhpevx_pack(hamk_slab,Mdim, W, UU)
 
      UU_dag= conjg(transpose(UU))
- 
+
      !> unitility rotate velocity
-     call mat_mul(Mdim, vx, UU, Amat) 
-     call mat_mul(Mdim, UU_dag, Amat, vx) 
-     call mat_mul(Mdim, vy, UU, Amat) 
-     call mat_mul(Mdim, UU_dag, Amat, vy) 
+     call mat_mul(Mdim, vx, UU, Amat)
+     call mat_mul(Mdim, UU_dag, Amat, vx)
+     call mat_mul(Mdim, vy, UU, Amat)
+     call mat_mul(Mdim, UU_dag, Amat, vy)
 
      Omega_z=0d0
      do m= 1, NumOccupied*Nslab
@@ -405,7 +405,7 @@
      !> eqn (11), we only calculate yz, zx, xy
      !
      !> Jun. 25 2018 by Quansheng Wu @ airplane CA781 from Beijing to Zurich
-     !> Try to write some simple subroutines. 
+     !> Try to write some simple subroutines.
      ! Copyright (c) 2018 QuanSheng Wu. All rights reserved.
 
      use wmpi
@@ -418,9 +418,9 @@
      complex(dp), intent(out) :: Omega_y
      complex(dp), intent(out) :: Omega_z
 
-     integer :: iR, m, n, i, j
+     integer :: m, n
      real(dp), allocatable :: W(:)
-     real(dp) :: kdotr
+     ! real(dp) :: kdotr
      complex(dp), allocatable :: Amat(:, :), DHDk(:, :, :), DHDkdag(:, :, :)
      complex(dp), allocatable :: UU(:, :), UU_dag(:, :), Hamk_bulk(:, :)
      complex(dp), allocatable :: vx(:, :), vy(:, :), vz(:, :)
@@ -452,12 +452,12 @@
      call dHdk_atomicgauge(k, vx, vy, vz)
 
      !> unitility rotate velocity
-     call mat_mul(Num_wann, vx, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vx) 
-     call mat_mul(Num_wann, vy, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vy) 
-     call mat_mul(Num_wann, vz, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vz) 
+     call mat_mul(Num_wann, vx, UU, Amat)
+     call mat_mul(Num_wann, UU_dag, Amat, vx)
+     call mat_mul(Num_wann, vy, UU, Amat)
+     call mat_mul(Num_wann, UU_dag, Amat, vy)
+     call mat_mul(Num_wann, vz, UU, Amat)
+     call mat_mul(Num_wann, UU_dag, Amat, vz)
 
      Omega_x=0d0; Omega_y=0d0; Omega_z=0d0
      do m= 1, NumOccupied !> sum over valence band
@@ -468,9 +468,9 @@
         enddo ! m
      enddo ! n
 
-     Omega_x= -aimag(Omega_x*2d0)  
-     Omega_y= -aimag(Omega_y*2d0)  
-     Omega_z= -aimag(Omega_z*2d0)  
+     Omega_x= -aimag(Omega_x*2d0)
+     Omega_y= -aimag(Omega_y*2d0)
+     Omega_z= -aimag(Omega_z*2d0)
 
      return
   end subroutine berry_curvarture_singlek_numoccupied_total
@@ -483,7 +483,7 @@
      !> eqn (30), we only calculate yz, zx, xy
      !
      !> Jun. 25 2018 by Quansheng Wu @ airplane CA781 from Beijing to Zurich
-     !> Try to write some simple subroutines. 
+     !> Try to write some simple subroutines.
      ! Copyright (c) 2018 QuanSheng Wu. All rights reserved.
 
      use wmpi
@@ -496,9 +496,9 @@
      complex(dp), intent(out) :: Omega_y(Num_wann)
      complex(dp), intent(out) :: Omega_z(Num_wann)
 
-     integer :: iR, m, n, i, j
+     integer :: m, n
      real(dp), allocatable :: W(:)
-     real(dp) :: kdotr
+     ! real(dp) :: kdotr
      complex(dp), allocatable :: Amat(:, :), DHDk(:, :, :), DHDkdag(:, :, :)
      complex(dp), allocatable :: UU(:, :), UU_dag(:, :), Hamk_bulk(:, :)
      complex(dp), allocatable :: vx(:, :), vy(:, :), vz(:, :)
@@ -530,12 +530,12 @@
      call dHdk_atomicgauge(k, vx, vy, vz)
 
      !> unitility rotate velocity
-     call mat_mul(Num_wann, vx, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vx) 
-     call mat_mul(Num_wann, vy, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vy) 
-     call mat_mul(Num_wann, vz, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vz) 
+     call mat_mul(Num_wann, vx, UU, Amat)
+     call mat_mul(Num_wann, UU_dag, Amat, vx)
+     call mat_mul(Num_wann, vy, UU, Amat)
+     call mat_mul(Num_wann, UU_dag, Amat, vy)
+     call mat_mul(Num_wann, vz, UU, Amat)
+     call mat_mul(Num_wann, UU_dag, Amat, vz)
 
      Omega_x=0d0;Omega_y=0d0; Omega_z=0d0
      do m= NumOccupied, NumOccupied
@@ -557,7 +557,7 @@
   end subroutine berry_curvarture_singlek_numoccupied
 
   subroutine berry_curvarture_slab
-     !> Calculate Berry curvature 
+     !> Calculate Berry curvature
      !
      !> ref : Physical Review B 74, 195118(2006)
      !
@@ -568,15 +568,15 @@
      use wmpi
      use para
      implicit none
-    
-     integer :: ik, m, n, i, j, ierr, Mdim
 
-     real(dp) :: kdotr, k(2), o1(3)
+     integer :: ik, i, j, ierr, Mdim
+
+     real(dp) :: k(2)
 
      !> k points slice
      real(dp), allocatable :: k12(:, :)
      real(dp), allocatable :: k12_shape(:, :)
-   
+
      real(dp), external :: norm
 
      !> Berry curvature  (k)
@@ -595,7 +595,7 @@
      k12_shape=0d0
      omega= 0d0
      omega_mpi= 0d0
-    
+
      !> k12 is centered at K2d_start
      ik=0
      do i= 1, nk1
@@ -690,14 +690,14 @@
      deallocate( k12_shape)
      deallocate( Omega_z)
      deallocate( Omega, Omega_mpi)
- 
+
      return
 
   end subroutine berry_curvarture_slab
 
 
   subroutine berry_curvarture
-     !> Calculate Berry curvature 
+     !> Calculate Berry curvature
      !
      !> ref : Physical Review B 74, 195118(2006)
      !
@@ -710,21 +710,21 @@
      use wmpi
      use para
      implicit none
-    
-     integer :: ik, m, n, i, j, ierr
 
-     real(dp) :: kdotr, k(3), o1(3), vmin, vmax
+     integer :: ik, i, j, ierr
+
+     real(dp) :: k(3), o1(3), vmin, vmax
 
      real(dp) :: time_start, time_end, time_start0
 
      !> k points slice
      real(dp), allocatable :: kslice(:, :), kslice_shape(:, :)
-   
+
      real(dp), external :: norm
 
      !> velocities
      real(dp), allocatable :: vx(:), vy(:), vz(:)
-    
+
      !> Berry curvature  (3, bands, k)
      complex(dp), allocatable :: Omega_x(:), Omega_y(:), Omega_z(:)
      complex(dp), allocatable :: Omega(:, :), Omega_mpi(:, :)
@@ -746,7 +746,7 @@
      vx=0d0
      vy=0d0
      vz=0d0
-    
+
      !> kslice is centered at K3d_start
      ik =0
      do i= 1, nk1
@@ -754,7 +754,7 @@
            ik =ik +1
            kslice(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(nk1-1)  &
                      + K3D_vec2*(j-1)/dble(nk2-1) - (K3D_vec1+ K3D_vec2)/2d0
-           kslice_shape(:, ik)= kslice(1, ik)* Kua+ kslice(2, ik)* Kub+ kslice(3, ik)* Kuc 
+           kslice_shape(:, ik)= kslice(1, ik)* Kua+ kslice(2, ik)* Kub+ kslice(3, ik)* Kuc
         enddo
      enddo
 
@@ -768,7 +768,7 @@
            write(stdout, '(a, i9, "  /", i10, a, f10.1, "s", a, f10.1, "s")') &
            ' Berry curvature: ik', ik, Nk1*Nk2, ' time left', &
            (nk1*nk2-ik)*(time_end- time_start)/num_cpu, &
-           ' time elapsed: ', time_end-time_start0 
+           ' time elapsed: ', time_end-time_start0
 
         call now(time_start)
         !> diagonalize hamiltonian
@@ -806,7 +806,7 @@
         open(unit=outfileindex, file='Berrycurvature.dat')
         write(outfileindex, '(20a28)')'# Please take the real part for your use'
         write(outfileindex, '(20a28)')'# kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
-           'real(Omega_x)', 'real(Omega_y)', 'real(Omega_z)' 
+           'real(Omega_x)', 'real(Omega_y)', 'real(Omega_z)'
 
         ik= 0
         do i= 1, nk1
@@ -886,7 +886,7 @@
         write(outfileindex, '(a)')"set title 'Berry Curvature {/Symbol W}_z'"
         write(outfileindex, '(a)')"set colorbox"
         write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:6 w pm3d"
- 
+
         close(outfileindex)
      endif
 
@@ -925,7 +925,7 @@
      deallocate( kslice_shape)
      deallocate( Omega_x, Omega_y, Omega_z)
      deallocate( Omega, Omega_mpi)
- 
+
      return
 
   end subroutine berry_curvarture
@@ -993,13 +993,13 @@
      !> QuanSheng Wu at EPFL June 12 2018
      !> wuquansheng@gmail.com
      !> The sphere is defined by a center k0 and a radius in WEYL_CHIRALITY
-     !> C= \int d\theta d\phi 
+     !> C= \int d\theta d\phi
      !> k0 must be in Cartesian coordinates
 
      use wmpi
      use para
      implicit none
-     
+
      !> inout variables
      real(dp), intent(in) :: k0(3)
      real(dp), intent(in) :: r0
@@ -1074,7 +1074,7 @@
      call mpi_allreduce(Chern_mpi, Chern, 1, &
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
 #else
-     Chern= Chern_mpi 
+     Chern= Chern_mpi
 #endif
 
 

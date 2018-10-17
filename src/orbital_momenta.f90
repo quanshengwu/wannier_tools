@@ -1,6 +1,6 @@
   subroutine orbital_momenta(k, eigvec)
      ! Calculate the orbital momenta for each band at Gamma point
-     ! 
+     !
      ! 2016 by QuanSheng Wu @ ETHZ
      !
      ! wuquansheng@gmail.com
@@ -25,7 +25,7 @@
      complex(dp), allocatable :: sub(:, :)
      real(dp), allocatable :: eig2(:)
 
-     integer :: i, j
+     integer :: i
      integer :: nwann
 
      return
@@ -167,7 +167,7 @@
      call mat_mul(Num_wann, jx, eigvec, jtemp)
      call mat_mul(Num_wann, eigvec_dag, jtemp, jx)
 
-     !> due to the degeneracy of the bands, so we need to diagonalize the block matrix 
+     !> due to the degeneracy of the bands, so we need to diagonalize the block matrix
      !> for each degenerate bands
      do i=1, Num_wann/2
         sub(1, 1)= jx(2*i-1, 2*i-1)
@@ -192,7 +192,7 @@
         jy(2*i-1, 2*i-1)= eig2(1)
         jy(2*i, 2*i)= eig2(2)
      enddo
-  
+
      call mat_mul(Num_wann, jz, eigvec, jtemp)
      call mat_mul(Num_wann, eigvec_dag, jtemp, jz)
 
@@ -215,7 +215,7 @@
         jz(2*i, 2*i)= eig2(2)
       enddo
 
- 
+
      call mat_mul(Num_wann, j_tot, eigvec, jtemp)
      call mat_mul(Num_wann, eigvec_dag, jtemp, j_tot)
 

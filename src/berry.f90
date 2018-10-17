@@ -3,7 +3,7 @@
       !
       ! Comments:
       !
-      !          At present, you have to define the k path that you want 
+      !          At present, you have to define the k path that you want
       !          in kpoints
       !
       ! Author : QuanSheng Wu (wuquansheng@gmail.com)
@@ -43,31 +43,31 @@
       complex(dp), allocatable :: Mmnkb_com(:, :)
       complex(dp), allocatable :: Mmnkb_full(:, :)
 
-      !> 
+      !>
       complex(dp), allocatable :: Lambda_eig(:)
       complex(dp), allocatable :: Lambda(:, :)
       complex(dp), allocatable :: Lambda0(:, :)
 
-      !> three matrix for SVD 
+      !> three matrix for SVD
       !> M= U.Sigma.V^\dag
       !> VT= V^\dag
       complex(dp), allocatable :: U(:, :)
       real   (dp), allocatable :: Sigma(:, :)
       complex(dp), allocatable :: VT(:, :)
-   
+
       complex(dp), allocatable :: phase(:)
       !> eigenvalue
       real(dp), allocatable :: eigenvalue(:)
 
       complex(dp), allocatable :: mat1(:, :)
       complex(dp), allocatable :: mat2(:, :)
-      real(dp) :: kx
-      real(dp) :: ky
-      real(dp) :: kz
+      ! real(dp) :: kx
+      ! real(dp) :: ky
+      ! real(dp) :: kz
       real(dp) :: r1, r2
       real(dp) :: k(3), b(3)
-      real(dp) :: k1(3)
-      real(dp) :: phi
+      ! real(dp) :: k1(3)
+      ! real(dp) :: phi
       real(dp) :: br
       complex(dp) :: overlap
       complex(dp) :: ratio
@@ -78,7 +78,7 @@
       Nk_seg= Nk
 
       ! total number of k points in the loop for Berry phase calculation
-      NK_Berry_tot= (NK_Berry-1)*Nk_seg 
+      NK_Berry_tot= (NK_Berry-1)*Nk_seg
 
 
       allocate(kpoints(3, NK_Berry_tot))
@@ -140,7 +140,7 @@
      !   kpoints(3, ik)= kz
      !enddo
 
-     
+
       !> set k path for berry phase calculation
       it = 0
       do ik=1, NK_Berry- 1
@@ -167,7 +167,7 @@
         !k(3)= -k(3)
         !Hamk= 0d0
          call ham_bulk_latticegauge(k, Hamk)
-        
+
          !> symmetrization
         !call mat_mul(Num_wann, mirror_z, hamk, mat1)
         !call mat_mul(Num_wann, mat1, mirror_z, mat2)

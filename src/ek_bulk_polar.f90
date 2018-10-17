@@ -8,17 +8,13 @@
      implicit none
 
      integer :: ik, i, j, ia
-     integer :: nkx, nky
-	  integer :: knv3
+     integer :: knv3
      integer :: ierr
      integer :: nktheta
      integer :: nkr
      integer :: nwan
      real(Dp) :: k (3)
      real(Dp) :: k1(3)
-     real(Dp) :: k2(3)
-     real(dp) :: kx
-     real(dp) :: ky
      real(dp) :: kz
      real(dp) :: ktheta
      real(dp) :: kr
@@ -33,14 +29,14 @@
      !> center
      real(dp) :: center_direct(3)
      real(dp) :: center_cart(3)
-     
+
      ! Hamiltonian of bulk system
-     complex(Dp) :: Hamk_bulk(Num_wann,Num_wann) 
+     complex(Dp) :: Hamk_bulk(Num_wann,Num_wann)
 
      ! eigen value of H
-	  real(dp), allocatable :: gap(:,:)
-	  real(dp), allocatable :: eigv(:,:)
-	  real(dp), allocatable :: eigv_mpi(:,:)
+     real(dp), allocatable :: gap(:,:)
+     real(dp), allocatable :: eigv(:,:)
+     real(dp), allocatable :: eigv_mpi(:,:)
 
      !> pauli matrix in basis
      complex(dp), allocatable :: sigmax(:, :)
@@ -55,7 +51,7 @@
      real(dp), allocatable :: sz(:, :)
 
 
-     nktheta= 100 
+     nktheta= 100
      nkr= Nk
      knv3= nktheta*nkr
      allocate( k12(2, knv3))
@@ -258,7 +254,7 @@
      if (Numoccupied> Num_wann ) stop ' Numoccupied should less than Num_wann'
 
      do ik= 1+cpuid, knv3, num_cpu
-	     if (cpuid==0) print * , 'ik' , ik
+        if (cpuid==0) print * , 'ik' , ik
 
         k1= k123(:, ik)
         !> from cartisen coordinate to direct coordinate
@@ -285,9 +281,9 @@
         call mat_mul(Num_wann,mat1, Hamk_bulk, sigmaz)
 
         do i=1, Num_wann
-           sx(i, ik)= sigmax(i, i)
-           sy(i, ik)= sigmay(i, i)
-           sz(i, ik)= sigmaz(i, i)
+           sx(i, ik)= real(sigmax(i, i),dp)
+           sy(i, ik)= real(sigmay(i, i),dp)
+           sz(i, ik)= real(sigmaz(i, i),dp)
         enddo
      enddo ! ik
 

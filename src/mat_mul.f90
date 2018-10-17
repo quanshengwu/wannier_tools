@@ -1,23 +1,23 @@
 ! performs matrix-matrix multiply
 ! C=A*B
   subroutine mat_mul(nmatdim,A,B,C)
-     
+
      use para, only : Dp
       implicit none
 
 
-     integer,intent(in) :: nmatdim    
+     integer,intent(in) :: nmatdim
 
      complex(Dp) :: ALPHA
-     complex(Dp) :: BETA 
- 
+     complex(Dp) :: BETA
+
 
      complex(Dp), intent(in)  :: A(nmatdim ,nmatdim)
      complex(Dp), intent(in)  :: B(nmatdim ,nmatdim)
      !complex(Dp) :: mat_mul(nmatdim,nmatdim)
      complex(Dp), intent(out) :: C(nmatdim,nmatdim)
 
-     ALPHA=1.0d0 
+     ALPHA=1.0d0
      BETA=0.0D0
 
      C(:,:)=(0.0d0,0.0d0)
@@ -29,7 +29,7 @@
   end subroutine mat_mul
 
   !> ZGESVD computes the singular value decomposition (SVD) for GE matrices
-  !> In this pack, we assume the matrix A is a square matrix, the dimension 
+  !> In this pack, we assume the matrix A is a square matrix, the dimension
   !> of row and column are the same
   !> A = U * SIGMA * conjugate-transpose(V)
   !> VT= conjugate-transpose(V)
@@ -70,7 +70,7 @@
      call zgesvd (JOBU, JOBVT, M, N, A, LDA, S, U, LDU, &
         VT, LDVT, WORK, LWORK, RWORK, INFO)
      if (INFO==0 .and. real(WORK(1))>0 )then
-        LWORK= WORK(1)
+        LWORK= nint(real(WORK(1)))
         deallocate(work)
         allocate(WORK(LWORK))
      else
@@ -130,4 +130,4 @@
     return
   end subroutine zhpevx_pack
 
- 
+

@@ -10,8 +10,8 @@
      implicit none
 
      ! loop index
-     integer :: i1, i2, i, j
-     integer :: ir
+     integer :: i1, i2
+     ! integer :: ir
 
      ! wave vector in 2d
      real(Dp), intent(in) :: k(2)
@@ -76,7 +76,7 @@
      implicit none
 
      ! loop index
-     integer :: i1, i2, i, j
+     integer :: i1, i2
 
      ! wave vector in 2d
      real(Dp), intent(inout) :: k(2)
@@ -107,7 +107,7 @@
      complex(dp) :: ratio
      complex(dp) :: fac
 
-     real(dp) :: R(3)
+     ! real(dp) :: R(3)
      real(dp) :: Rp1(3)
      real(dp) :: Rp2(3)
      real(dp) :: R1(3)

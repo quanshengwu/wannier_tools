@@ -11,15 +11,15 @@
      ! loop index
      integer :: i,j,iR
 
-     ! index used to sign irvec     
+     ! index used to sign irvec
      integer :: ia,ib,ic
 
-     ! new index used to sign irvec     
+     ! new index used to sign irvec
      real(dp) :: new_ia,new_ib,new_ic
      integer :: inew_ic
 
-     ! wave vector k times lattice vector R  
-     real(Dp) :: kdotr  
+     ! wave vector k times lattice vector R
+     real(Dp) :: kdotr
 
      ! input wave vector k's cooridinates
      real(Dp),intent(in) :: k(2)
@@ -50,7 +50,7 @@
         ic=irvec(3,iR)
 
         call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
-       
+
         inew_ic= int(new_ic)
         if (abs(new_ic).le.ijmax)then
            kdotr=k(1)*new_ia+ k(2)*new_ib
@@ -66,7 +66,7 @@
      H00new=0.0d0
      H01new=0.0d0
 
-     ! nslab's principle layer 
+     ! nslab's principle layer
      ! H00new
      do i=1,Np
      do j=1,Np
@@ -115,16 +115,16 @@
      ! loop index
      integer :: i,j,iR
 
-     ! index used to sign irvec     
+     ! index used to sign irvec
      integer :: ia,ib,ic
-     integer  :: ii,jj,mm,nn,pp,qq,xx,yy,zz
+     integer  :: ii,jj,pp,qq
 
-     ! new index used to sign irvec     
+     ! new index used to sign irvec
      real(dp) :: new_ia,new_ib,new_ic
      integer :: inew_ic
 
-     ! wave vector k times lattice vector R  
-     real(Dp) :: kdotr  
+     ! wave vector k times lattice vector R
+     real(Dp) :: kdotr
 
      ! input wave vector k's cooridinates
      real(Dp),intent(in) :: k(2)
@@ -147,21 +147,21 @@
      complex(Dp),intent(out) :: H01new(Ndim,Ndim)
 
      !> see eqn. (3) in J. Phys.: Condens. Matter 22 (2010) 202201
-     complex(Dp),allocatable :: nac_correction(:, :, :) 
+     complex(Dp),allocatable :: nac_correction(:, :, :)
 
      real(dp) :: temp1(2), temp2, knew(2)
-     real(dp) :: temp3(30),constant_t
-     real(dp) :: A_ii(3)=(/0.0,0.0,0.0/)
-     real(dp) :: A_jj(3)=(/0.0,0.0,0.0/)
+     real(dp) :: constant_t
+     ! real(dp) :: A_ii(3)=(/0.0,0.0,0.0/)
+     ! real(dp) :: A_jj(3)=(/0.0,0.0,0.0/)
      complex(dp), allocatable :: mat1(:, :)
      complex(dp), allocatable :: mat2(:, :)
- 
+
      !> k times Born charge
      real(dp), allocatable :: kBorn(:, :)
 
      real(dp) :: nac_q
 
-    
+
      allocate(kBorn(Num_atoms, 3))
      allocate(mat1(Num_wann, Num_wann))
      allocate(mat2(Num_wann, Num_wann))
@@ -171,7 +171,7 @@
      mat2 = 0d0
      nac_correction= 0d0
 
-     knew= k 
+     knew= k
 
      !>  add loto splitting term
      temp1(1:2)= (/0.0,0.0/)
@@ -183,7 +183,7 @@
 
      !> see eqn. (3) in J. Phys.: Condens. Matter 22 (2010) 202201
      do qq= 1, 2
-        temp1(qq)= knew(1)*Diele_Tensor(qq, 1)+knew(2)*Diele_Tensor(qq, 2) 
+        temp1(qq)= knew(1)*Diele_Tensor(qq, 1)+knew(2)*Diele_Tensor(qq, 2)
      enddo
      temp2= knew(1)*temp1(1)+ knew(2)*temp1(2)
      constant_t= 4d0*3.1415926d0/(temp2*CellVolume)*VASPToTHZ/0.529177
@@ -193,9 +193,9 @@
            kBorn(ii, pp)=  knew(1)*Born_Charge(ii,1,pp)+knew(2)*Born_Charge(ii,2,pp)
         enddo
      enddo
-     
+
      nac_correction= 0d0
- 
+
      Hij=0.0d0
      do iR=1,Nrpts
         ia=irvec(1,iR)
@@ -230,7 +230,7 @@
      H00new=0.0d0
      H01new=0.0d0
 
-     ! nslab's principle layer 
+     ! nslab's principle layer
      ! H00new
      do i=1,Np
      do j=1,Np
@@ -273,7 +273,7 @@
 
   subroutine ham_qlayer2qlayer2(k,Hij)
      ! This subroutine caculates Hamiltonian between
-     ! slabs  
+     ! slabs
      ! 4/23/2010 by QS Wu
      ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 
@@ -284,17 +284,17 @@
      ! loop index
      integer :: iR
 
-     ! index used to sign irvec     
+     ! index used to sign irvec
      integer :: ia,ib,ic
 
-     ! 
+     !
 
-     ! new index used to sign irvec     
+     ! new index used to sign irvec
      real(dp) :: new_ia,new_ib,new_ic
      integer :: inew_ic
 
-     ! wave vector k times lattice vector R  
-     real(Dp) :: kdotr  
+     ! wave vector k times lattice vector R
+     real(Dp) :: kdotr
 
      ! input wave vector k's cooridinates
      real(Dp),intent(in) :: k(2)
@@ -333,7 +333,7 @@
 
   subroutine ham_qlayer2qlayer_velocity(k,Vij_x,Vij_y)
      ! This subroutine caculates velocity matrix between
-     ! slabs  
+     ! slabs
      ! 06/Aug/2018 by QS Wu
      ! Copyright (c) 2018 QuanSheng Wu. All rights reserved.
 
@@ -343,10 +343,10 @@
      ! loop index
      integer :: iR, ia, ib, ic, inew_ic
 
-     ! new index used to sign irvec     
+     ! new index used to sign irvec
      real(dp) :: new_ia,new_ib,new_ic
 
-     ! wave vector k times lattice vector R  
+     ! wave vector k times lattice vector R
      real(Dp) :: kdotr, r0(3), r1(3)
 
      ! input wave vector k's cooridinates
@@ -403,22 +403,20 @@
      ! loop index
      integer :: iR
 
-     ! index used to sign irvec     
+     ! index used to sign irvec
      integer :: ia,ib,ic
-     integer  :: ii,jj,mm,nn,pp,qq,xx,yy,zz
+     integer  :: ii,jj,pp,qq
 
-     ! 
-
-     ! new index used to sign irvec     
+     ! new index used to sign irvec
      integer  :: inew_ic
      real(dp) :: new_ia,new_ib,new_ic
 
-     ! wave vector k times lattice vector R  
-     real(dp) :: kdotr  
+     ! wave vector k times lattice vector R
+     real(dp) :: kdotr
 
      ! input wave vector k's cooridinates
      real(dp),intent(in) :: k(2)
-    
+
      complex(dp) :: ratio
 
      ! H00 Hamiltonian between nearest neighbour-quintuple-layers
@@ -426,15 +424,15 @@
      complex(dp), intent(out) :: Hij(-ijmax:ijmax,Num_wann,Num_wann)
 
      !> see eqn. (3) in J. Phys.: Condens. Matter 22 (2010) 202201
-     complex(Dp),allocatable :: nac_correction(:, :, :) 
+     complex(Dp),allocatable :: nac_correction(:, :, :)
 
      real(dp) :: temp1(2), temp2, knew(2)
-     real(dp) :: temp3(30), constant_t
-     real(dp) :: A_ii(3)=(/0.0,0.0,0.0/)
-     real(dp) :: A_jj(3)=(/0.0,0.0,0.0/)
+     real(dp) :: constant_t
+     ! real(dp) :: A_ii(3)=(/0.0,0.0,0.0/)
+     ! real(dp) :: A_jj(3)=(/0.0,0.0,0.0/)
      complex(dp), allocatable :: mat1(:, :)
      complex(dp), allocatable :: mat2(:, :)
- 
+
      !> k times Born charge
      real(dp), allocatable :: kBorn(:, :)
 
@@ -448,7 +446,7 @@
      mat2 = 0d0
      nac_correction= 0d0
 
-     knew= k 
+     knew= k
 
      !>  add loto splitting term
      temp1(1:2)= (/0.0,0.0/)
@@ -460,7 +458,7 @@
 
      !> see eqn. (3) in J. Phys.: Condens. Matter 22 (2010) 202201
      do qq= 1, 2
-        temp1(qq)= knew(1)*Diele_Tensor(qq, 1)+knew(2)*Diele_Tensor(qq, 2) 
+        temp1(qq)= knew(1)*Diele_Tensor(qq, 1)+knew(2)*Diele_Tensor(qq, 2)
      enddo
      temp2= knew(1)*temp1(1)+ knew(2)*temp1(2)
      constant_t= 4d0*3.1415926d0/(temp2*CellVolume)*VASPToTHZ/0.529177
@@ -470,9 +468,9 @@
            kBorn(ii, pp)=  knew(1)*Born_Charge(ii,1,pp)+knew(2)*Born_Charge(ii,2,pp)
         enddo
      enddo
-     
+
      nac_correction= 0d0
- 
+
      Hij=0.0d0
      do iR=1,Nrpts
         ia=irvec(1,iR)
@@ -524,14 +522,14 @@
      ! loop index
      integer :: iR
 
-     ! index used to sign irvec     
+     ! index used to sign irvec
      integer :: ia,ib,ic
 
-     ! new index used to sign irvec     
+     ! new index used to sign irvec
      real(dp) :: new_ia,new_ib,new_ic
      integer :: inew_ia,inew_ib
 
-     ! wave vector k times lattice vector R  
+     ! wave vector k times lattice vector R
      real(Dp) :: kdotr
 
      ! input wave vector k's cooridinates

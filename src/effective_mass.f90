@@ -3,7 +3,7 @@
 !> specified  band index in the framework of Wannier tight binding
 !> QuanSheng Wu (wuquansheng@gmail.com)
 !> Aug 30 2016 @ ETH Zurich
-!> refs: 
+!> refs:
 !> The effective mass calculation with VASP has been done with Alexandr Fonari
 !> see https://afonari.com/emc.html
 !> Abramowitz, M.; Stegun, I. Handbook of Mathematical Functions: with Formulas, Graphs, and
@@ -17,7 +17,7 @@
       implicit none
 
       !> k points for effective mass calculation
-      integer :: Nk_mass
+      ! integer :: Nk_mass
       integer :: ik1, ik2, ik3, i, j
 
       real(dp) :: k1(3)
@@ -38,7 +38,7 @@
       eigval= 0d0
       Hamk_bulk= 0d0
 
-   
+
       !> get the eigenvalues
       do ik1=-2, 2
       do ik2=-2, 2
@@ -58,7 +58,7 @@
 
       !> use atomic unit
       eigval = eigval*eV2Hartree
-     
+
       !> xx
       Emass(1, 1) = (-eigval(-2, 0, 0) + 16.0d0*eigval(-1, 0, 0) - 30.0d0*eigval(0,0,0)&
          &+16.0d0*eigval(1, 0, 0) - eigval(2, 0, 0))/(12.0d0*dk_mass*dk_mass)
@@ -77,7 +77,7 @@
          &+ 44.0d0*(eigval( 2,-2,0)+ eigval(-2, 2, 0)- eigval(-2,-2,0)- eigval( 2,2,0))&
          &+ 74.0d0*(eigval(-1,-1,0)+ eigval( 1, 1, 0)- eigval( 1,-1,0)- eigval(-1,1,0)))&
          &/(600.0d0*dk_mass*dk_mass)
- 
+
       Emass(3, 1)=&
          &(-63.0d0*(eigval( 1,0,-2)+ eigval( 2, 0,-1)+ eigval(-2,0, 1)+ eigval(-1,0,2))&
          &+ 63.0d0*(eigval(-1,0,-2)+ eigval(-2, 0,-1)+ eigval( 1,0, 2)+ eigval( 2,0,1))&

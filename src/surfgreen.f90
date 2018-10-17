@@ -8,10 +8,10 @@
      use para
      implicit none
 
-     ! inout variables     
+     ! inout variables
      ! the factor 2 is induced by spin
      ! energy hbar omega
-     real(Dp),intent(in) :: omega  
+     real(Dp),intent(in) :: omega
 
      ! H00 Hamiltonian between nearest neighbour-quintuple-layers
      complex(Dp),intent(in) :: H00(Ndim,Ndim)
@@ -34,7 +34,7 @@
      ! iteration number
      integer :: iter
 
-     ! maximun iteration 
+     ! maximun iteration
      integer ,parameter:: itermax=100
 
      ! accuracy control
@@ -44,31 +44,31 @@
      real(Dp) :: real_temp
 
      ! omegac=omega(i)+I * eta
-     complex(Dp) :: omegac 
+     complex(Dp) :: omegac
 
 
      ! some variables in Eq.(11)
-     complex(Dp), allocatable :: alphai(:, :) 
-     complex(Dp), allocatable :: betai(:, :) 
-     complex(Dp), allocatable :: epsiloni(:, :) 
-     complex(Dp), allocatable :: epsilons(:, :) 
-     complex(Dp), allocatable :: epsilons_t(:, :) 
+     complex(Dp), allocatable :: alphai(:, :)
+     complex(Dp), allocatable :: betai(:, :)
+     complex(Dp), allocatable :: epsiloni(:, :)
+     complex(Dp), allocatable :: epsilons(:, :)
+     complex(Dp), allocatable :: epsilons_t(:, :)
 
-     complex(Dp), allocatable :: mat1 (:, :) 
-     complex(Dp), allocatable :: mat2 (:, :) 
+     complex(Dp), allocatable :: mat1 (:, :)
+     complex(Dp), allocatable :: mat2 (:, :)
 
      ! g0= inv(w-e_i)
-     complex(Dp), allocatable :: g0 (:, :) 
+     complex(Dp), allocatable :: g0 (:, :)
 
      ! allocate some variables
-     allocate(alphai(Ndim, Ndim)) 
-     allocate(betai (Ndim, Ndim)) 
-     allocate(epsiloni (Ndim, Ndim)) 
-     allocate(epsilons (Ndim, Ndim)) 
-     allocate(epsilons_t(Ndim, Ndim)) 
-     allocate(mat1(Ndim, Ndim)) 
-     allocate(mat2(Ndim, Ndim)) 
-     allocate(g0(Ndim, Ndim)) 
+     allocate(alphai(Ndim, Ndim))
+     allocate(betai (Ndim, Ndim))
+     allocate(epsiloni (Ndim, Ndim))
+     allocate(epsilons (Ndim, Ndim))
+     allocate(epsilons_t(Ndim, Ndim))
+     allocate(mat1(Ndim, Ndim))
+     allocate(mat2(Ndim, Ndim))
+     allocate(g0(Ndim, Ndim))
 
      epsiloni= H00
      epsilons= H00
@@ -89,7 +89,7 @@
 
         ! a_i-1*(w-e_i-1)^-1
         call mat_mul(Ndim, alphai, g0, mat1 )
-        
+
         ! b_i-1*(w-e_i-1)^-1
         call mat_mul(Ndim, betai, g0, mat2 )
 
@@ -108,15 +108,15 @@
         ! es_i= es_i-1 + a_i-1*(w-e_i-1)^-1*b_i-1
         epsilons_t= epsilons_t+ g0
 
-        ! a_i= a_i-1*(w-e_i-1)^-1*a_i-1 
+        ! a_i= a_i-1*(w-e_i-1)^-1*a_i-1
         call mat_mul(Ndim, mat1, alphai, g0)
         alphai= g0
-        ! b_i= b_i-1*(w-e_i-1)^-1*b_i-1 
+        ! b_i= b_i-1*(w-e_i-1)^-1*b_i-1
         call mat_mul(Ndim, mat2, betai, g0)
         betai= g0
 
-       !real_temp=maxval(abs(alphai))   
-        real_temp=sum(abs(alphai))   
+       !real_temp=maxval(abs(alphai))
+        real_temp=sum(abs(alphai))
        !if (cpuid.eq.0) print *, iter, real_temp
         if (real_temp.le.accuracy) exit
 
@@ -140,7 +140,7 @@
 ! this subroutine is used to calculate surface state using             !
 ! green's function method  ---  J.Phys.F.Met.Phys.14(1984)1205-1215    !
 ! Quick iterative scheme for the calculation of transfer matrices:
-! application to Mo (100) 
+! application to Mo (100)
 ! History:
 !         by Quan Sheng Wu on 4/20/2010                                !
 !            mpi version      4/21/2010
@@ -151,10 +151,10 @@
      use wmpi
      use para
      implicit none
-     
+
 
      ! general loop index
-     integer :: i,j 
+     integer :: i,j
 
      ! iteration loop index
      integer :: it
@@ -162,7 +162,7 @@
      ! iteration number
      integer :: iter
 
-     ! maximun iteration 
+     ! maximun iteration
      integer ,parameter :: itermax=100
 
      ! accuracy control
@@ -171,7 +171,7 @@
      ! a real type temp variable
      real(Dp) :: real_temp
 
-     ! frequency 
+     ! frequency
      real(Dp),intent(in) :: omega
 
      ! energy energy=omega(i)+I * eta
@@ -225,9 +225,9 @@
      allocate(Tmat_temp(ndim,ndim))
      allocate(Tmat_tempt(ndim,ndim))
      allocate(abs_told(ndim,ndim))
-    
+
      allocate(H01dag(ndim,ndim))
- 
+
      Hs=0.0d0
      t0=0.0d0
      t0tilde=0.0d0
@@ -238,13 +238,13 @@
      Tmatrix=0.0d0
      Tmatrixt=0.0d0
      temp=0.0d0
-     abs_told=0.0d0 
+     abs_told=0.0d0
      Tmat_temp=0.0d0
-	  GLL=0d0
-	  GRR=0d0
+      GLL=0d0
+      GRR=0d0
      Tmat_tempt=0.0d0
-     H01dag=0.0d0 
-   
+     H01dag=0.0d0
+
      ! H01dag=H01^dag
      do i=1,ndim
         do j=1,ndim
@@ -257,16 +257,16 @@
 
 
      call inv(ndim,temp)
-     t0= matmul(temp,H01dag)  
+     t0= matmul(temp,H01dag)
      t0tilde= matmul(temp,H01)
      told=t0
      toldtilde=t0tilde
 
      ! begin iteration
-     iter=0    
-     Tmatrix=0.0d0 
+     iter=0
+     Tmatrix=0.0d0
      Tmat_temp=ones
-     Tmatrixt=0.0d0 
+     Tmatrixt=0.0d0
      Tmat_tempt=ones
      ITER1 : do it=1,itermax
         iter=iter+1
@@ -281,21 +281,21 @@
 
         Tmat_temp=matmul(Tmat_temp,toldtilde)
         Tmatrix=Tmatrix+matmul(Tmat_temp,tnew)
-        
-		  Tmat_tempt=matmul(Tmat_tempt,told)
+
+          Tmat_tempt=matmul(Tmat_tempt,told)
         Tmatrixt=Tmatrixt+matmul(Tmat_tempt,tnewtilde)
-     
+
         told=tnew
         toldtilde=tnewtilde
-      
-        do i=1,ndim 
+
+        do i=1,ndim
            do j=1,ndim
-              abs_told(i,j)=abs(told(i,j))+abs(toldtilde(i,j)) 
-           enddo 
-        enddo 
-        real_temp=maxval(abs_told)   
-        if (real_temp.le.accuracy) exit ITER1 
-     
+              abs_told(i,j)=abs(told(i,j))+abs(toldtilde(i,j))
+           enddo
+        enddo
+        real_temp=maxval(abs_told)
+        if (real_temp.le.accuracy) exit ITER1
+
      end do ITER1
 
      !print *,'iter,acc',iter,real_temp
@@ -307,20 +307,20 @@
      do i=1, ndim
         Hs(i, i)=Hs(i, i)+ surf_onsite
      enddo
-  
+
      Tmatrix=t0+Tmatrix
-     temp=energy*ones-Hs-matmul(H01,Tmatrix)    
+     temp=energy*ones-Hs-matmul(H01,Tmatrix)
      call inv(ndim,temp)
-     
+
      ! g_00=(epsilon-Hs -H01*T)^-1
      GLL(1:ndim,1:ndim)=temp
 
      Tmatrixt=t0tilde+Tmatrixt
-     temp=energy*ones-Hs -matmul(conjg(transpose(H01)),Tmatrixt)  
+     temp=energy*ones-Hs -matmul(conjg(transpose(H01)),Tmatrixt)
      call inv(ndim,temp)
 
      ! g_00=(epsilon-Hs -H01*T)^-1
      GRR(1:ndim,1:ndim)=temp
 
-     return   
+     return
   end subroutine surfgreen_1984

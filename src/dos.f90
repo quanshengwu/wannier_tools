@@ -8,7 +8,7 @@ subroutine dos_sub
    implicit none
 
    !> the integration k space
-   real(dp) :: kxmin, kxmax, kymin, kymax, kzmin, kzmax, emin, emax
+   real(dp) :: emin, emax
 
    real(dp) :: eta_brodening
 
@@ -18,7 +18,7 @@ subroutine dos_sub
    integer :: iband_low, iband_high, iband_tot
 
    real(dp) :: x, dk3, k(3)
-   real(dp) :: time_start, time_end, time_init
+   real(dp) :: time_start, time_end
 
    real(dp), allocatable :: eigval(:)
    real(dp), allocatable :: W(:)
@@ -122,10 +122,10 @@ call mpi_allreduce(dos_mpi,dos,size(dos),&
       write(outfileindex, '(2a16)')'# E(eV)', 'DOS(E) (1/eV/unit cell)'
       do ie=1, NE
          write(outfileindex, '(2f16.6)')omega(ie), dos(ie)
-      enddo ! ie 
+      enddo ! ie
       close(outfileindex)
    endif
- 
+
    outfileindex= outfileindex+ 1
    !> write script for gnuplot
    if (cpuid==0) then
@@ -157,12 +157,12 @@ subroutine joint_dos
    implicit none
 
    !> the integration k space
-   real(dp) :: kxmin
-   real(dp) :: kxmax
-   real(dp) :: kymin
-   real(dp) :: kymax
-   real(dp) :: kzmin
-   real(dp) :: kzmax
+   ! real(dp) :: kxmin
+   ! real(dp) :: kxmax
+   ! real(dp) :: kymin
+   ! real(dp) :: kymax
+   ! real(dp) :: kzmin
+   ! real(dp) :: kzmax
    real(dp) :: emin
    real(dp) :: emax
 
@@ -231,7 +231,7 @@ subroutine joint_dos
    jdos= 0d0
    jdos_mpi= 0d0
    omega= 0d0
- 
+
    ik =0
 
    do ikx= 1, nk1
@@ -315,11 +315,11 @@ subroutine joint_dos
       open(unit=outfileindex, file='jdos.dat')
       do ie=1, NE
          write(outfileindex, *)omega(ie), jdos(ie)
-      enddo ! ie 
+      enddo ! ie
       close(outfileindex)
    endif
 
- 
+
    return
 end subroutine joint_dos
 
@@ -334,19 +334,19 @@ subroutine dos_joint_dos
    implicit none
 
    !> the integration k space
-   real(dp) :: kxmin
-   real(dp) :: kxmax
-   real(dp) :: kymin
-   real(dp) :: kymax
-   real(dp) :: kzmin
-   real(dp) :: kzmax
+   ! real(dp) :: kxmin
+   ! real(dp) :: kxmax
+   ! real(dp) :: kymin
+   ! real(dp) :: kymax
+   ! real(dp) :: kzmin
+   ! real(dp) :: kzmax
    real(dp) :: emin
    real(dp) :: emax
 
    integer :: ik
-   integer :: ik_start
-   integer :: ik_end
-   integer :: Nk_local
+   ! integer :: ik_start
+   ! integer :: ik_end
+   ! integer :: Nk_local
 
    integer :: ie
    integer :: ib, ib1, ib2
@@ -412,7 +412,7 @@ subroutine dos_joint_dos
    dos_mpi= 0d0
    omega_dos= 0d0
    omega_jdos= 0d0
- 
+
 
    dk3= kCubeVolume/dble(knv3)
 
@@ -441,7 +441,7 @@ subroutine dos_joint_dos
       if (cpuid.eq.0) write(stdout, *) 'ik, knv3', ik, knv3
       ikx= (ik- 1)/(Nk2*Nk3)+ 1
       iky= (ik- (ikx-1)*Nk2*Nk3- 1)/Nk3+ 1
-      ikz= ik- (ikx-1)*Nk2*Nk3- (iky-1)*Nk3 
+      ikz= ik- (ikx-1)*Nk2*Nk3- (iky-1)*Nk3
 
       k= K3D_start_cube+ K3D_vec1_cube*(ikx-1)/dble(nk1-1)  &
                 + K3D_vec2_cube*(iky-1)/dble(nk2-1)  &
@@ -496,7 +496,7 @@ subroutine dos_joint_dos
       open(unit=outfileindex, file='jdos.dat')
       do ie=1, NE
          write(outfileindex, *)omega_jdos(ie), jdos(ie)*dk3
-      enddo ! ie 
+      enddo ! ie
       close(outfileindex)
    endif
 
@@ -505,10 +505,10 @@ subroutine dos_joint_dos
       open(unit=outfileindex, file='dos.dat')
       do ie=1, NE
          write(outfileindex, *)omega_dos(ie), dos(ie)*dk3
-      enddo ! ie 
+      enddo ! ie
       close(outfileindex)
    endif
- 
+
    return
 end subroutine dos_joint_dos
 

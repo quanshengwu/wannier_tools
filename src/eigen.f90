@@ -38,7 +38,7 @@
 !          If INFO = 0, the eigenvalues in ascending order.
 
      real(Dp), intent(inout) :: W(N)
-    
+
      integer :: info
 
      real(Dp),allocatable ::  rwork(:)
@@ -53,9 +53,9 @@
      info=0
      W=0.0d0
 
-     if (N==1) then 
-        W=A(1, 1)
-        A(1, 1)= 1d0
+     if (N==1) then
+        W=REAL(A(1, 1),dp)
+        A(1, 1)= cmplx(1d0,0d0,dp)
         return
      endif
 
@@ -111,7 +111,7 @@
 !          If INFO = 0, the eigenvalues in ascending order.
 
      real(Dp), intent(inout) :: W(N)
-    
+
      integer :: info
 
      real(Dp),allocatable :: work(:)
@@ -119,7 +119,7 @@
      allocate( work(16*N))
      work= 0d0
 
-     if (N==1) then 
+     if (N==1) then
         W=A(1, 1)
         A(1, 1)= 1d0
         return
@@ -176,7 +176,7 @@
 
 !    eigenvalues
      complex(Dp), intent(out) :: W(N)
-    
+
 !    left eigenvectors
      complex(dp), allocatable :: VL(:, :)
 
@@ -216,7 +216,7 @@
      info=0
      W=0.0d0
 
-     if (N==1) then 
+     if (N==1) then
         W=A(1, 1)
         VL(1, 1)= 1d0
         VR(1, 1)= 1d0
@@ -226,7 +226,7 @@
      call  ZGEEV( JOBVL, JOBVR, N, A, LDA, W, VL, LDVL, VR, LDVR, &
                         WORK, LWORK, RWORK, INFO )
      if (info /= 0) then
-        stop ">>> Error : something wrong happens in zgeev_pack" 
+        stop ">>> Error : something wrong happens in zgeev_pack"
      endif
 
      return

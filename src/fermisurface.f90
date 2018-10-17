@@ -1,6 +1,6 @@
   subroutine fermisurface3D
      ! This subroutine calculates 3D fermi surface in the 1st BZ using wannier TB method
-     ! 
+     !
      ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 
      use wmpi
@@ -8,7 +8,7 @@
 
      implicit none
 
-     integer :: ik, i, j, l
+     integer :: ik, i
      integer :: knv3
      integer :: ikx, iky, ikz
 
@@ -21,7 +21,7 @@
      integer :: nband_store
 
      real(dp) :: time_start, time_end
-     
+
      ! Hamiltonian of bulk system
      complex(Dp), allocatable :: Hamk_bulk(:, :)
 
@@ -32,7 +32,7 @@
      real(dp), allocatable :: eigval_mpi(:,:)
 
      ! only for output the FS3D.bxsf, we don't have to output all the bands,
-     ! only consider the bands close to the Fermi level 
+     ! only consider the bands close to the Fermi level
      if (SOC == 0) then
         nband_min= Numoccupied- 3
         nband_max= Numoccupied+ 4
@@ -41,7 +41,7 @@
         nband_max= Numoccupied+ 8
      endif
 
-     if (nband_min< 1) then 
+     if (nband_min< 1) then
         nband_min= 1
      endif
      if (nband_max> Num_wann) then
@@ -109,7 +109,7 @@
         stop
      endif
 #else
-     eigval= eigval_mpi 
+     eigval= eigval_mpi
 #endif
      if (cpuid==0) then
         write(stdout, *)'>> All processors finished their job for fermisurface3D'
@@ -126,7 +126,7 @@
         write(outfileindex,'(a)') '      #  Launch as: xcrysden --bxsf FS3D.bxsf'
         write(outfileindex,'(a)') '       Fermi Energy: 0'
         write(outfileindex,'(a)') ' END_INFO'
-        write(outfileindex,'(a)') 
+        write(outfileindex,'(a)')
         write(outfileindex,'(a)') ' BEGIN_BLOCK_BANDGRID_3D'
         write(outfileindex,'(a)') 'from_wannier_code'
         write(outfileindex,'(a)') ' BEGIN_BANDGRID_3D_fermi'
@@ -168,29 +168,29 @@
 
      implicit none
 
-     integer :: ia
+     ! integer :: ia
      integer :: ik, i, j, i1, i2
      integer :: knv3
      integer :: nkx
      integer :: nky
 
      integer :: ierr
-     real(dp) :: kz
+     ! real(dp) :: kz
      real(Dp) :: k(3)
-     
+
      real(Dp) :: dos_max
      ! Hamiltonian of bulk system
      complex(Dp), allocatable :: Hamk_bulk(:, :)
 
      real(dp) :: time_start, time_end
-     real(dp) :: kxmin, kxmax, kymin, kymax
+     ! real(dp) :: kxmin, kxmax, kymin, kymax
      real(dp) :: zmin, zmax
      real(dp) :: kxmin_shape, kxmax_shape, kymin_shape, kymax_shape
 
      real(dp), allocatable :: kxy(:,:)
      real(dp), allocatable :: kxy_shape(:,:)
      real(dp), allocatable :: kxy_plane(:,:)
-    
+
      !> atomic and k resolved spectral function
      real(dp), allocatable :: dos(:, :)
      real(dp), allocatable :: dos_mpi(:, :)
@@ -211,14 +211,14 @@
      kxy=0d0
      kxy_shape=0d0
      kxy_plane=0d0
-     
-     
+
+
      ik =0
      do i= 1, nkx
         do j= 1, nky
            ik =ik +1
            kxy(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(nkx-1)+ K3D_vec2*(j-1)/dble(nky-1)
-           kxy_shape(:, ik)= kxy(1, ik)* Kua+ kxy(2, ik)* Kub+ kxy(3, ik)* Kuc 
+           kxy_shape(:, ik)= kxy(1, ik)* Kua+ kxy(2, ik)* Kub+ kxy(3, ik)* Kuc
            call rotate_k3_to_kplane(kxy_shape(:, ik), kxy_plane(:, ik))
         enddo
      enddo
@@ -229,7 +229,7 @@
      kxmax_shape=maxval(kxy_shape(i1,:))
      kymin_shape=minval(kxy_shape(i2,:))
      kymax_shape=maxval(kxy_shape(i2,:))
-      
+
      knv3= nkx*nky
      allocate( dos    (knv3, Num_wann))
      allocate( dos_mpi(knv3, Num_wann))
@@ -420,18 +420,18 @@
      integer :: ia, ik, i, j, i1, i2
      integer :: knv3, nkx, nky, ierr
 
-     real(dp) :: kz, k(3)
-     
+     real(dp) :: k(3)
+
      ! Hamiltonian of bulk system
      complex(Dp), allocatable :: Hamk_bulk(:, :)
 
      real(dp) :: time_start, time_end
-     real(dp) :: kxmin, kxmax, kymin, kymax
+     ! real(dp) :: kxmin, kxmax, kymin, kymax
      real(dp) :: zmin, zmax
      real(dp) :: kxmin_shape, kxmax_shape, kymin_shape, kymax_shape
 
      real(dp), allocatable :: kxy(:,:), kxy_shape(:,:), kxy_plane(:,:)
-    
+
      !> atomic and k resolved spectral function
      real(dp), allocatable :: dos(:, :), dos_mpi(:, :), dos_atom(:, :)
      real(dp), allocatable :: dos_atom_mpi(:, :), dos_total(:)
@@ -458,14 +458,14 @@
      kxy=0d0
      kxy_shape=0d0
      kxy_plane=0d0
-     
-     
+
+
      ik =0
      do i= 1, nkx
         do j= 1, nky
            ik =ik +1
            kxy(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(nkx-1)+ K3D_vec2*(j-1)/dble(nky-1)
-           kxy_shape(:, ik)= kxy(1, ik)* Kua+ kxy(2, ik)* Kub+ kxy(3, ik)* Kuc 
+           kxy_shape(:, ik)= kxy(1, ik)* Kua+ kxy(2, ik)* Kub+ kxy(3, ik)* Kuc
            call rotate_k3_to_kplane(kxy_shape(:, ik), kxy_plane(:, ik))
         enddo
      enddo
@@ -476,7 +476,7 @@
      kxmax_shape=maxval(kxy_shape(i1,:))
      kymin_shape=minval(kxy_shape(i2,:))
      kymax_shape=maxval(kxy_shape(i2,:))
-      
+
      knv3= nkx*nky
      allocate( dos_atom    (knv3, Num_atoms))
      allocate( dos_atom_mpi(knv3, Num_atoms))
@@ -628,33 +628,33 @@
 
       use wmpi
       use para
-      
+
       implicit none
-      
+
       integer :: ik, i, j, l
       integer :: knv3
       integer :: nkx
       integer :: nky
       integer :: nkz
-      
+
       integer :: ierr
       real(Dp) :: k(3)
-      
+
       ! Hamiltonian of bulk system
-      complex(Dp), allocatable :: Hamk_bulk(:, :) 
-      
+      complex(Dp), allocatable :: Hamk_bulk(:, :)
+
       real(dp) :: kxmin_shape, kxmax_shape, kymin_shape
       real(dp) :: kymax_shape, kzmin_shape, kzmax_shape
-      
+
       real(dp), allocatable :: kxy(:,:)
       real(dp), allocatable :: kxy_shape(:,:)
-      
+
       real(dp), allocatable :: gap(:, :)
       real(dp), allocatable :: gap_mpi(:, :)
       real(dp), allocatable :: W(:)
-      
+
       complex(dp), allocatable :: ones(:,:)
-      
+
       nkx= Nk1
       nky= Nk2
       nkz= Nk3
@@ -662,7 +662,7 @@
       allocate( kxy_shape(3, nkx*nky*nkz))
       kxy=0d0
       kxy_shape=0d0
-      
+
       ik =0
 
       do i= 1, nkx
@@ -672,7 +672,7 @@
                kxy(:, ik)= K3D_start_cube+ K3D_vec1_cube*(i-1)/dble(nkx-1)  &
                          + K3D_vec2_cube*(j-1)/dble(nky-1)  &
                          + K3D_vec3_cube*(l-1)/dble(nkz-1)
-               kxy_shape(:, ik)= kxy(1, ik)* Kua+ kxy(2, ik)* Kub+ kxy(3, ik)* Kuc 
+               kxy_shape(:, ik)= kxy(1, ik)* Kua+ kxy(2, ik)* Kub+ kxy(3, ik)* Kuc
             enddo
          enddo
       enddo
@@ -683,14 +683,14 @@
       kymax_shape=maxval(kxy_shape(2,:))
       kzmin_shape=minval(kxy_shape(3,:))
       kzmax_shape=maxval(kxy_shape(3,:))
-      
-      
+
+
       knv3= nkx*nky*nkz
       allocate( gap    (3, knv3))
       allocate( gap_mpi(3, knv3))
       gap    = 0d0
       gap_mpi= 0d0
-      
+
       allocate(W(Num_wann))
       allocate(ones(Num_wann, Num_wann))
       allocate(Hamk_bulk(Num_wann, Num_wann))
@@ -699,18 +699,18 @@
       do i=1, Num_wann
          ones(i, i)= 1d0
       enddo
-      
+
       if (Numoccupied> Num_wann) then
          stop 'Numoccupied should less than Num_wann'
       endif
-      
+
       do ik= 1+cpuid, knv3, num_cpu
          if (cpuid==0) write(stdout, *) 'Gap3D, ik, knv3', ik, knv3
-      
+
          k(1) = kxy(1, ik)
          k(2) = kxy(2, ik)
          k(3) = kxy(3, ik)
-      
+
          ! calculation bulk hamiltonian
          Hamk_bulk= 0d0
         if (index(KPorTB, 'KP')/=0)then
@@ -724,14 +724,14 @@
           endif
         endif
 
-      
+
          call eigensystem_c( 'N', 'U', Num_wann ,Hamk_bulk, W)
          gap(1, ik)= W(Numoccupied+1)- W(Numoccupied)
          gap(2, ik)= W(Numoccupied)
          gap(3, ik)= W(Numoccupied+1)
-      
+
       enddo
-     
+
       gap_mpi = 0d0
 #if defined (MPI)
       call mpi_allreduce(gap,gap_mpi,size(gap),&
@@ -739,7 +739,7 @@
 #else
      gap_mpi= gap
 #endif
-      
+
       if (cpuid==0)then
          open(unit=15, file='GapCube.dat')
          write(15, '(80a16)')'kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
@@ -752,12 +752,12 @@
          enddo
          close(15)
       endif
-      
+
      !!> minimum and maximum value of energy bands
      !
      !zmax= maxval((gap_mpi))
      !zmin= minval((gap_mpi))
-      
+
       !> write script for gnuplot
       outfileindex= outfileindex+ 1
       if (cpuid==0) then
@@ -788,46 +788,46 @@
          write(outfileindex, '(a, f10.5, a, f10.5, a)')'set zrange [', kzmin_shape, ':', kzmax_shape, ']'
          write(outfileindex, '(2a)')"splot 'GapCube.dat' u 1:2:3 w p pt 7 ps 2"
          close(outfileindex)
-     
+
       endif
-      
-      
+
+
       return
    end subroutine gapshape3D
 
 
    subroutine gapshape
-      ! This subroutine gets the gap at each k 
+      ! This subroutine gets the gap at each k
       ! points on the k plane specified by user
 
       use wmpi
       use para
-      
+
       implicit none
-      
+
       integer :: ik, i, j
       integer :: knv3
       integer :: nkx
       integer :: nky
-      
+
       integer :: ierr, i1, i2
       real(Dp) :: k(3)
-      
+
       ! Hamiltonian of bulk system
       complex(Dp), allocatable :: Hamk_bulk(:, :)
-      
+
       real(dp) :: zmin, zmax
       real(dp) :: kxmin_shape, kxmax_shape, kymin_shape, kymax_shape
-      
+
       real(dp), allocatable :: kxy(:,:)
       real(dp), allocatable :: kxy_shape(:,:)
-      
+
       real(dp), allocatable :: gap(:, :)
       real(dp), allocatable :: gap_mpi(:, :)
       real(dp), allocatable :: W(:)
-      
+
       complex(dp), allocatable :: ones(:,:)
-     
+
       allocate(Hamk_bulk(Num_wann, Num_wann))
 
       nkx= Nk
@@ -836,14 +836,14 @@
       allocate( kxy_shape(3, nkx*nky))
       kxy=0d0
       kxy_shape=0d0
-      
-     
+
+
       ik =0
       do i= 1, nkx
          do j= 1, nky
             ik =ik +1
             kxy(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(nkx-1)+ K3D_vec2*(j-1)/dble(nky-1)
-            kxy_shape(:, ik)= kxy(1, ik)* Kua+ kxy(2, ik)* Kub+ kxy(3, ik)* Kuc 
+            kxy_shape(:, ik)= kxy(1, ik)* Kua+ kxy(2, ik)* Kub+ kxy(3, ik)* Kuc
          enddo
       enddo
 
@@ -853,14 +853,14 @@
       kymax_shape=maxval(kxy_shape(i2,:))
       kxmin_shape=minval(kxy_shape(i1,:))
       kxmax_shape=maxval(kxy_shape(i1,:))
-      
-      
+
+
       knv3= nkx*nky
       allocate( gap    ( 9, knv3))
       allocate( gap_mpi( 9, knv3))
       gap    = 0d0
       gap_mpi= 0d0
-      
+
       allocate(W(Num_wann))
       allocate(ones(Num_wann, Num_wann))
       W= 0d0
@@ -868,18 +868,18 @@
       do i=1, Num_wann
          ones(i, i)= 1d0
       enddo
-      
+
       if (Numoccupied> Num_wann) then
          stop 'Numoccupied should less than Num_wann'
       endif
-      
+
       do ik= 1+cpuid, knv3, num_cpu
          if (cpuid==0)write(stdout, *)'Gap plane', ik, knv3
-      
+
          k(1) = kxy(1, ik)
          k(2) = kxy(2, ik)
          k(3) = kxy(3, ik)
-      
+
          !> calculation bulk hamiltonian
          Hamk_bulk= 0d0
         if (index(KPorTB, 'KP')/=0)then
@@ -893,25 +893,25 @@
           endif
         endif
 
-     
+
          !> diagonalization
          call eigensystem_c( 'N', 'U', Num_wann ,Hamk_bulk, W)
          gap(1, ik)= W(Numoccupied+1)- W(Numoccupied)
          gap(2:9 , ik)= W(Numoccupied-3:Numoccupied+4)
-      
+
       enddo
-      
+
 #if defined (MPI)
       call mpi_allreduce(gap,gap_mpi,size(gap),&
                         mpi_dp,mpi_sum,mpi_cmw,ierr)
 #else
      gap_mpi= gap
 #endif
-      
-      outfileindex= outfileindex+ 1 
+
+      outfileindex= outfileindex+ 1
       if (cpuid==0)then
          open(unit=outfileindex, file='GapPlane.dat')
-     
+
          write(outfileindex, '(100a16)')'% kx', 'ky', 'kz', 'gap', 'Ev4', 'Ev3', &
             'Ev2', 'Ev1', 'Ec1', 'Ec2', 'Ec3', 'Ec4', 'k1', 'k2', 'k3'
          do ik=1, knv3
@@ -921,7 +921,7 @@
          close(outfileindex)
       endif
 
-      outfileindex= outfileindex+ 1 
+      outfileindex= outfileindex+ 1
       if (cpuid==0)then
          open(unit=outfileindex, file='gap2d.dat')
          write(outfileindex, '(100a16)')'% kx', 'ky', 'kz', 'gap', 'Ev2', 'Ev1', 'Ec1', &
@@ -933,8 +933,8 @@
          enddo
          close(outfileindex)
       endif
- 
-      outfileindex= outfileindex+ 1 
+
+      outfileindex= outfileindex+ 1
       if (cpuid==0)then
          open(unit=outfileindex, file='GapPlane_matlab.dat')
          write(outfileindex, '(100a16)')'% kx', 'ky', 'kz', 'gap', 'Ev2', 'Ev1', 'Ec1', &
@@ -944,14 +944,14 @@
          enddo
          close(outfileindex)
       endif
-      
+
       !> minimum and maximum value of energy bands
-      
+
       zmax= maxval(gap_mpi(1, :))
       zmin= minval(gap_mpi(1, :))
-      
+
       !> write script for gnuplot
-      outfileindex= outfileindex+ 1 
+      outfileindex= outfileindex+ 1
       if (cpuid==0) then
          open(unit=outfileindex, file='GapPlane.gnu')
          write(outfileindex, '(a)')"set encoding iso_8859_1"
@@ -983,10 +983,10 @@
          write(outfileindex, '(a)')'set yrange [ ] noextend'
          write(outfileindex, '(a)')'set pm3d interpolate 2,2'
          write(outfileindex, '(2a)')"splot 'GapPlane.dat' u 1:2:4 w pm3d"
-     
+
          close(outfileindex)
       endif
-      
+
       return
    end subroutine gapshape
 
@@ -1015,7 +1015,7 @@
 
       real(dp) :: k(3)
 
-      real(dp) ::  Beta_fake 
+      real(dp) ::  Beta_fake
 
       real(dp) :: lmin
       real(dp) :: lmax
@@ -1061,7 +1061,7 @@
       enddo
 
       do ik=1+ cpuid, knv3, num_cpu
- 
+
          ham= 0d0
          k= kpoints(:, ik)
         if (index(KPorTB, 'KP')/=0)then
@@ -1087,7 +1087,7 @@
 #endif
 
       ! using bisection algorithm to search the fermi level
-      iter= 0 
+      iter= 0
       itermax= 100
       tot= 9999d0
       lmin= minval(eigvals)
@@ -1143,8 +1143,8 @@
 
       ! return value
       real(dp) :: value
-    
-      ! avoid numerical instability 
+
+      ! avoid numerical instability
       if (Beta_fake*omega .ge. 20d0) then
          value = zero
       elseif (Beta_fake*omega.le. -20d0)then
@@ -1181,7 +1181,7 @@
       Urot_t(3, 2)= (kvec1(3)*kvec2(1)- kvec1(1)*kvec2(3))
       Urot_t(3, 3)= (kvec1(1)*kvec2(2)- kvec1(2)*kvec2(1))
       Urot_t(3, :)= Urot_t(3, :)/norm(Urot_t(3, :))
- 
+
       !> e_y'= e_z'\cross e_x'
       Urot_t(2, 1)= (Urot_t(3, 2)*Urot_t(1, 3)- Urot_t(3, 3)*Urot_t(1, 2))
       Urot_t(2, 2)= (Urot_t(3, 3)*Urot_t(1, 1)- Urot_t(3, 1)*Urot_t(1, 3))
@@ -1193,6 +1193,6 @@
       kplane(3)= Urot_t(3, 1)*k3(1)+ Urot_t(3, 2)*k3(2)+ Urot_t(3, 3)*k3(3)
 
       return
-   end subroutine 
+   end subroutine
 
 

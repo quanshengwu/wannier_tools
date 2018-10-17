@@ -1,18 +1,18 @@
   subroutine ek_slab
-     !> This subroutine is used for calculating energy 
+     !> This subroutine is used for calculating energy
      !> dispersion with wannier functions for 2D slab system
      !
      ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
-    
+
      use wmpi
      use para
-     implicit none 
+     implicit none
 
      ! loop index
      integer :: i, j, l, lwork, ierr, io
 
      real(Dp) :: k(2), emin, emax, maxweight
- 
+
      ! time measurement
      real(dp) :: time_start, time_end, time_start0
 
@@ -20,7 +20,7 @@
      real(Dp), allocatable ::  rwork(:)
      complex(Dp), allocatable :: work(:)
 
-     ! eigenvalue 
+     ! eigenvalue
      real(Dp), allocatable :: eigenvalue(:)
 
      ! energy dispersion
@@ -47,7 +47,7 @@
      allocate(CHamk(nslab*Num_wann,nslab*Num_wann))
      allocate(work(lwork))
      allocate(rwork(lwork))
- 
+
      surf_l_weight= 0d0
      surf_l_weight_mpi= 0d0
      surf_r_weight= 0d0
@@ -66,12 +66,12 @@
            write(stdout, '(a, i9, "  /", i10, a, f10.1, "s", a, f10.1, "s")') &
            ' Slabek: ik', i, knv2, ' time left', &
            (knv2-i)*(time_end- time_start)/num_cpu, &
-           ' time elapsed: ', time_end-time_start0 
+           ' time elapsed: ', time_end-time_start0
 
         call now(time_start)
 
         k= k2_path(i, :)
-        chamk=0.0d0 
+        chamk=0.0d0
 
         !> no magnetgic field
         if (abs(Bx)<eps9.and. abs(By)<eps9.and. abs(Bz)<eps9)then
@@ -91,20 +91,20 @@
 
         ! diagonal Chamk
         call eigensystem_c('V', 'U', Num_wann*Nslab, CHamk, eigenvalue)
-       
+
         ekslab(:,i)=eigenvalue
 
         do j=1, Nslab* Num_wann
            !> left is the bottom surface
            do l= 1, NBottomOrbitals
-              io= BottomOrbitals(l) 
+              io= BottomOrbitals(l)
               surf_l_weight(j, i)= surf_l_weight(j, i) &
                  + abs(CHamk(io, j))**2  ! first slab
            enddo ! l sweeps the selected orbitals
 
            !> right is the top surface
            do l= 1, NTopOrbitals
-              io= Num_wann*(Nslab-1)+ TopOrbitals(l)   
+              io= Num_wann*(Nslab-1)+ TopOrbitals(l)
               surf_r_weight(j, i)= surf_r_weight(j, i) &
                  + abs(CHamk(io, j))**2  ! first slab
            enddo ! l sweeps the selected orbitals
@@ -117,7 +117,7 @@
           !      + abs(CHamk(Num_wann*Nslab- l+ 1, j))**2 !& ! last slab
           !     !+ abs(CHamk(Num_wann*(Nslab-1)- l, j))**2 ! last second slab
           !enddo ! l
-        enddo ! j 
+        enddo ! j
         call now(time_end)
      enddo ! i
 
@@ -134,7 +134,7 @@
      surf_r_weight_mpi= surf_r_weight
 #endif
 
- 
+
      !> deal with phonon system
      if (index(Particle,'phonon')/=0) then
         do i=1, knv2
@@ -149,7 +149,7 @@
      maxweight=maxval(surf_r_weight_mpi+ surf_l_weight_mpi)
      surf_l_weight= surf_l_weight_mpi/ maxweight
      surf_r_weight= surf_r_weight_mpi/ maxweight
-     
+
      outfileindex= outfileindex+ 1
      if(cpuid==0)then
         open(unit=outfileindex, file='slabek.dat')
@@ -237,7 +237,7 @@
      203 format(A3,'" ',F10.5,')')
      204 format('set arrow from ',F10.5,',',F10.5, &
         ' to ',F10.5,',',F10.5, ' nohead')
-   
+
      deallocate(eigenvalue)
      deallocate( surf_l_weight )
      deallocate( surf_l_weight_mpi )
@@ -248,34 +248,34 @@
      deallocate(CHamk)
      deallocate(work)
      deallocate(rwork)
-   
+
   return
   end subroutine ek_slab
 
   subroutine ek_slab_2d
-     !> This subroutine is used for calculating energy 
+     !> This subroutine is used for calculating energy
      !> dispersion with wannier functions for 2D slab system
      !
      ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
-    
+
      use wmpi
      use para
-     implicit none 
+     implicit none
 
 
      ! loop index
      integer :: i, j, l, lwork, ierr, knxy, ik, istart, iend
 
-     ! wave vector 
+     ! wave vector
      real(Dp) :: k(2)
 
-     real(dp) :: emin, emax
- 
+     ! real(dp) :: emin, emax
+
      real(Dp), allocatable ::  rwork(:)
      complex(Dp), allocatable :: work(:)
-      
+
      real(Dp), allocatable :: eigenvalue(:)
-   
+
      ! energy dispersion
      real(Dp),allocatable :: ekslab(:,:)
      real(Dp),allocatable :: ekslab_mpi(:,:)
@@ -305,7 +305,7 @@
      allocate(kxy(2,knxy))
      allocate(kxy_shape(2,knxy))
      allocate(kxy_plane(2,knxy))
- 
+
      surf_weight= 0d0
      surf_weight_mpi= 0d0
 
@@ -326,7 +326,7 @@
      do i=1+cpuid, knxy, num_cpu
         if (cpuid==0) write(stdout, *)'SlabEk, ik ',  i, knxy
         k= kxy(:, i)
-        chamk=0.0d0 
+        chamk=0.0d0
 
         call ham_slab(k,Chamk)
 
@@ -334,7 +334,7 @@
 
         ! diagonal Chamk
         call eigensystem_c('V', 'U', Num_wann*Nslab, CHamk, eigenvalue)
-       
+
         ekslab(:,i)=eigenvalue
 
         do j=1, Nslab* Num_wann
@@ -346,7 +346,7 @@
                 !+ abs(CHamk(Num_wann*(Nslab-1)- l, j))**2 ! last second slab
            enddo ! l
            surf_weight(j, i)= (surf_weight(j, i))
-        enddo ! j 
+        enddo ! j
      enddo ! i
 
 #if defined (MPI)
@@ -359,7 +359,7 @@
      surf_weight_mpi= surf_weight
 #endif
 
- 
+
      !> deal with phonon system
      if (index(Particle,'phonon')/=0) then
         do i=1, knxy
@@ -372,7 +372,7 @@
      ekslab=ekslab_mpi
      if (maxval(surf_weight_mpi)<0.00001d0)surf_weight_mpi=1d0
      surf_weight= surf_weight_mpi/ maxval(surf_weight_mpi)
-     
+
 
      outfileindex= outfileindex+ 1
      istart= Numoccupied*Nslab-1
@@ -398,7 +398,7 @@
      deallocate(CHamk)
      deallocate(work)
      deallocate(rwork)
-   
+
   return
   end subroutine ek_slab_2d
 
@@ -406,15 +406,15 @@
 
   subroutine ek_slab_b
   !> This subroutine is used for calculating energy dispersion
-  !> with wannier functions in plane magnetic field 
-  !> 
-    
+  !> with wannier functions in plane magnetic field
+  !>
+
      use wmpi
      use para
-     implicit none 
+     implicit none
 
 ! loop index
-     integer :: i     
+     integer :: i
      integer :: j
      integer :: l
 
@@ -423,15 +423,15 @@
      real(Dp) :: k(2)
 
      real(dp) :: emin, emax
- 
+
 ! parameters for zheev
      integer :: ierr
      real(Dp), allocatable ::  rwork(:)
      complex(Dp), allocatable :: work(:)
-      
-! eigenvalue 
+
+! eigenvalue
      real(Dp), allocatable :: eigenvalue(:)
-   
+
 ! energy dispersion
      real(Dp),allocatable :: ekslab(:,:)
      real(Dp),allocatable :: ekslab_mpi(:,:)
@@ -454,7 +454,7 @@
      allocate(CHamk(nslab*Num_wann,nslab*Num_wann))
      allocate(work(lwork))
      allocate(rwork(lwork))
- 
+
      surf_weight= 0d0
      surf_weight_mpi= 0d0
 
@@ -464,11 +464,11 @@
      do i=1+cpuid,knv2,num_cpu
         if (cpuid==0)write(stdout, *) 'SlabEkB, ik ',  i, knv2
         k= k2_path(i, :)
-        chamk=0.0d0 
+        chamk=0.0d0
         eigenvalue=0.0d0
         ! diagonal Chamk
         call eigensystem_c('V', 'U', Num_wann*Nslab, CHamk, eigenvalue)
-       
+
         ekslab(:,i)=eigenvalue
 
         do j=1, Nslab* Num_wann
@@ -480,7 +480,7 @@
                 !+ abs(CHamk(Num_wann*(Nslab-1)- l+ 1, j))**2 ! last second slab
            enddo ! l
            surf_weight(j, i)= (surf_weight(j, i))
-        enddo ! j 
+        enddo ! j
         if (cpuid==0) write(stdout, *)'SlabEk,k', i, knv2
      enddo ! i
 
@@ -506,7 +506,7 @@
 
      ekslab=ekslab_mpi
      surf_weight= surf_weight_mpi/ maxval(surf_weight_mpi)
-     
+
      outfileindex= outfileindex+ 1
      if(cpuid==0)then
         open(unit=outfileindex, file='slabek.dat')
@@ -580,7 +580,7 @@
      202 format('set xtics (',:20('"',A3,'" ',F10.5,','))
      203 format(A3,'" ',F10.5,')')
      204 format('set arrow from ',F10.5,',',F10.5,' to ',F10.5,',',F10.5, ' nohead')
- 
+
      deallocate(surf_weight )
      deallocate(surf_weight_mpi )
      deallocate(ekslab)
@@ -589,6 +589,6 @@
      deallocate(work)
      deallocate(rwork)
      deallocate(eigenvalue)
-     
+
   return
   end subroutine ek_slab_b
