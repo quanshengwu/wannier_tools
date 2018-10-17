@@ -137,7 +137,8 @@ def get_rot_trans(myposwan):
             # find equiv loc as in original cell
             for jatom in range(natom_pos):
                frac_diff = atoms_frac[:,jatom]-atoms_frac_new
-               if abs(frac_diff-np.array([round(i) for i in frac_diff],dtype=np.float64)).sum() < 1.0E-6: 
+	       # determine the equivalent between two atoms before and after space group operation.
+               if abs(frac_diff-np.array([round(i) for i in frac_diff],dtype=np.float64)).sum() < 1.0E-2: 
                    print>>f, "             ", iatom+1, "->", jatom+1
                    rotmap.append([iatom+1,jatom+1])
 # rot map for wann.in. here 
