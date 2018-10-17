@@ -17,17 +17,14 @@ OBJ =  aux.o symmetry.o readHmnR.o inverse.o proteus.o \
 
 default : wt.x
 
+$(OBJ) : $(MOD)
+
 wt.x : $(MOD) $(OBJ)
 	@echo "Linking $@"
 	@$(F90) $(LFLAG) $(OBJ) $(MOD) -o $@ $(LIBS)
 	@cp -f $@ ../bin
 
-$(MOD) :
-	@echo "Compiling $@"
-	@$(CPP) $(CPPFLAG) $*.f90 > $*_cpp.f90
-	@$(F90) $(FFLAG) $(IFLAG) -c $*_cpp.f90 -o $*.o
-
-$(OBJ) : $(MOD)
+.f90.o :
 	@echo "Compiling $@"
 	@$(CPP) $(CPPFLAG) $*.f90 > $*_cpp.f90
 	@$(F90) $(FFLAG) $(IFLAG) -c $*_cpp.f90 -o $*.o
