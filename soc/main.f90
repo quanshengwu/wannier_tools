@@ -298,6 +298,18 @@
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the slab band structure in k plane mode'
      endif
 
+     !> slab band
+     if (SlabBandWaveFunc_calc)then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the slab band wave function'
+        call now(time_start)
+        call psik_slab
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'SlabBandWaveFunc_calc')
+        if(cpuid.eq.0)write(stdout, *)'<< End of calculating the slab band wave function'
+     endif
+
+
 
      !> slab band
      if (SlabBand_calc)then

@@ -837,9 +837,9 @@
         close(outfileindex)
      endif
 
+     outfileindex= outfileindex+ 1
      if (cpuid.eq.0.and.SOC>0 .and. (SlabSpintexture_calc.or.ArcQPI_calc))then
      !> generate gnuplot scripts for plotting the spin texture
-     outfileindex= outfileindex+ 1
      if (cpuid.eq.0) then
         open(outfileindex,file='spintext_r.gnu')
         write(outfileindex, '(a)')"set encoding iso_8859_1"

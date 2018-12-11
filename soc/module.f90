@@ -366,6 +366,7 @@
      logical :: BulkGap_cube_calc  ! Flag for Gap_cube calculation
      logical :: BulkGap_plane_calc ! Flag for Gap_plane calculation
      logical :: SlabBand_calc  ! Flag for 2D slab energy band calculation
+     logical :: SlabBandWaveFunc_calc  ! Flag for 2D slab band wave function
      logical :: SlabBand_plane_calc  ! Flag for 2D slab energy band calculation
      logical :: WireBand_calc  ! Flag for 1D wire energy band calculation
      logical :: SlabSS_calc    ! Flag for surface state ARPES spectrum calculation
@@ -413,7 +414,7 @@
 
      namelist / Control / BulkBand_calc,BulkFS_calc,  BulkFS_Plane_calc, BulkGap_plane_calc, &
                           BulkBand_points_calc, SlabBand_plane_calc, &
-                          BulkGap_cube_calc, SlabBand_calc, WireBand_calc, &
+                          BulkGap_cube_calc, SlabBand_calc, SlabBandWaveFunc_calc, WireBand_calc, &
                           SlabSS_calc, SlabArc_calc, SlabSpintexture_calc, &
                           WannierCenter_calc,BerryPhase_calc,BerryCurvature_calc, &
                           BerryCurvature_slab_calc, MirrorChern_calc, &
@@ -473,6 +474,7 @@
      integer :: OmegaNum   ! The number of energy slices between OmegaMin and OmegaMax
 
      integer :: NumLCZVecs  !> number of Lanczos vectors
+     integer :: NumSelectedEigenVals  !> number of Selected eigen values
 
      integer :: NumRandomConfs  !> number of random configurations, used in the Lanczos DOS calculation, default is 1
 
@@ -515,7 +517,7 @@
      !> namelist parameters
      namelist /PARAMETERS/ Eta_Arc, OmegaNum, OmegaMin, OmegaMax, &
         E_arc, Nk1, Nk2, Nk3, NP, Gap_threshold, Tmin, Tmax, NumT, NBTau, BTauMax, Rcut, Magp, Nslice_BTau_Max, &
-        wcc_neighbour_tol, wcc_calc_tol, Beta,NumLCZVecs, NumRandomConfs
+        wcc_neighbour_tol, wcc_calc_tol, Beta,NumLCZVecs, NumRandomConfs, NumSelectedEigenVals
 
 
      real(Dp) :: E_fermi  ! Fermi energy, search E-fermi in OUTCAR for VASP, set to zero for Wien2k
@@ -647,6 +649,8 @@
      character(10) :: DirectOrCart_SINGLE ! Whether direct coordinates or Cartisen coordinates
      real(dp), public, save :: Single_KPOINT_3D_DIRECT(3) ! the k point for effective mass calculation
      real(dp), public, save :: Single_KPOINT_3D_CART(3) ! the k point for effective mass calculation
+     real(dp), public, save :: Single_KPOINT_2D_DIRECT(2) ! a single k point in the 2D slab BZ
+     real(dp), public, save :: Single_KPOINT_2D_CART(2) 
 
      !> kpoints plane for 2D system--> arcs
      real(dp) :: K2D_start(2)   ! start k point for 2D system calculation, like arcs

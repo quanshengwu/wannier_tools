@@ -76,8 +76,8 @@ subroutine readinput
 
    if (index(Particle, 'electron')==0 .and. index(Particle, 'phonon')==0 &
       .and. index(Particle, 'photon')==0) then
-      write(stdout, *)' ERROR: Particle shoule equal either "electron", &
-         "phonon", or "photon"'
+      write(stdout, '(2a)')' ERROR: Particle shoule equal either "electron"', &
+         '"phonon", or "photon"'
       stop
    endif
 
@@ -89,6 +89,7 @@ subroutine readinput
    BulkGap_cube_calc     = .FALSE.
    BulkGap_plane_calc    = .FALSE.
    SlabBand_calc         = .FALSE.
+   SlabBandWaveFunc_calc = .FALSE.
    SlabBand_plane_calc   = .FALSE.
    WireBand_calc         = .FALSE.
    SlabSS_calc           = .FALSE.
@@ -135,7 +136,8 @@ subroutine readinput
       write(*, *)"And please make sure that the spelling are correct."
       write(*, *)"BulkBand_calc, BulkBand_plane_calc, BulkFS_calc"
       write(*, *)"BulkGap_cube_calc,BulkGap_plane_calc"
-      write(*, *)"SlabBand_calc,WireBand_calc,SlabSS_calc "
+      write(*, *)"SlabBand_calc,SlabBandWaveFunc_calc"
+      write(*, *)"WireBand_calc,SlabSS_calc,SlabArc_calc "
       write(*, *)"SlabBand_plane_calc,SlabArc_calc "
       write(*, *)"SlabSpintexture,wanniercenter_calc"
       write(*, *)"BerryPhase_calc,BerryCurvature_calc"
@@ -178,6 +180,7 @@ subroutine readinput
       write(stdout, *) "BulkGap_cube_calc   : ",  BulkGap_cube_calc
       write(stdout, *) "BulkGap_plane_calc  : ",  BulkGap_plane_calc
       write(stdout, *) "SlabBand_calc       : ",  SlabBand_calc
+      write(stdout, *) "SlabBandWaveFunc_calc: ",  SlabBandWaveFunc_calc
       write(stdout, *) "SlabBand_plane_calc : ",  SlabBand_plane_calc
       write(stdout, *) "SlabSS_calc         : ",  SlabSS_calc
       write(stdout, *) "SlabArc_calc        : ",  SlabArc_calc
@@ -1524,6 +1527,54 @@ subroutine readinput
      endif
      if (.not.lfound.and.cpuid==0)write(stdout, *)'>> We use the default values for k3points_pointmode_direct=[0,0,0]'
      if (.not.lfound.and.cpuid==0)write(stdout, *)'>> and Nk3_point_mode = 1'
+
+
+
+   !>> setting up a single k points in 2D BZ
+   Single_KPOINT_2D_CART= [0.d0, 0d0]
+   Single_KPOINT_2D_DIRECT= [0.d0, 0d0]
+   rewind(1001)
+   lfound = .false.
+   do while (.true.)
+      read(1001, *, end= 311)inline
+      if (trim(adjustl(inline))=='SINGLEKPOINT_2D') then
+         lfound= .true.
+         if (cpuid==0) write(stdout, *)' '
+         if (cpuid==0) write(stdout, *)'We found SINGLEKPOINT_2D card'
+         exit
+      endif
+   enddo
+
+   read(1001, *, end=307, err=307, iostat=stat)inline   ! The unit of lattice vector
+   DirectOrCart_SINGLE= trim(adjustl(inline))
+   if (index(DirectOrCart_SINGLE, "D")>0)then
+      read(1001, *, end=307, err=307, iostat=stat)Single_KPOINT_2D_DIRECT(1:2)
+   else
+      stop " for SINGLEKPOINT_2D, we only support Direct coordinates"
+   endif
+
+307 continue
+   if (stat/=0 .and. cpuid==0) then
+      write(stdout, '(8f10.5)') "ERROR: there is something wrong in SINGLEKPOINT_2D card"
+      write(stdout, '(8f10.5)') "It should be like this:"
+      write(stdout, '(8f10.5)') "SINGLEKPOINT_2D"
+      write(stdout, '(8f10.5)') "Direct"
+      write(stdout, '(8f10.5)') "0.0  0.0  0.0"
+   endif
+
+   !> print out the single kpoint positions
+   if (cpuid==0) then
+      write(stdout, '(a)')" "
+      write(stdout, '(a)')"Single_KPOINT_2D positions in fractional coordinates"
+      write(stdout, '(8a10)')'k1', 'k2', 'k3'
+      write(stdout, '(8f10.5)')Single_KPOINT_2D_DIRECT
+      write(stdout, '(a)')" "
+   endif
+
+308 continue
+   if (cpuid==0) write(stdout, *)' '
+   if (.not.lfound.and.cpuid==0)write(stdout, *)'>> We use the default values for Single_KPOINT_2D_DIRECT=[0,0]'
+
 
 
 

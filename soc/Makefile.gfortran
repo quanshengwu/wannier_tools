@@ -18,6 +18,11 @@ flag = -O3 #-g -Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none -f
 # blas and lapack libraries
 libs = -L/usr/lib/ -llapack -lblas
  
+# Intel MKL also supports with gfortran comipler
+# dynamic linking
+# libs = -L/${MKLROOT}/lib/intel64 -lmkl_core -lmkl_sequential -lmkl_intel_lp64 -lpthread
+ 
+ 
 main :  $(obj)
 	$(f90) $(obj) -o wt.x $(libs) 
 	cp -f wt.x ../bin

@@ -9,11 +9,11 @@ OBJ =  module.o aux.o symmetry.o readHmnR.o inverse.o proteus.o \
   		 effective_mass.o findnodes.o sigma_AHC.o \
        main.o
 
-# compiler
+# compiler, here mpif90 should be comipled with gfortran
 F90  = mpif90 -cpp -DMPI
 
 INCLUDE =
-WFLAG = -Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none \
+WFLAG = #-Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none \
        -fbacktrace -ffree-line-length-0 -fcheck=all -finit-real=nan \
        -ffpe-trap=zero,overflow,underflow
 OFLAG = -g
@@ -23,6 +23,11 @@ LFLAG = $(OFLAG)
 
 # blas and lapack libraries
 LIBS = /opt/local/lib/libopenblas.a
+
+# Intel MKL also supports with gfortran comipler
+# dynamic linking
+# LIBS = -L/${MKLROOT}/lib/intel64 -lmkl_core -lmkl_sequential -lmkl_intel_lp64 -lpthread
+ 
 
 main : $(OBJ)
 	$(F90) $(LFLAG) $(OBJ) -o wt.x $(LIBS)

@@ -1,6 +1,7 @@
-! complex version
-! a subroutine to calculate eigenvector and eigenvalue
   subroutine eigensystem_c(JOBZ,UPLO,N,A,W)
+     ! A pack of Lapack subroutine zheev, which is 
+     ! a subroutine to calculate eigenvector and eigenvalue for a 
+     ! complex hermite matrix
 
      use para, only : Dp, stdout
      implicit none
@@ -40,19 +41,22 @@
      real(Dp), intent(inout) :: W(N)
     
      integer :: info
+     integer :: lwork
 
      real(Dp),allocatable ::  rwork(:)
 
      complex(Dp),allocatable :: work(:)
 
-     allocate(rwork(16*N))
-     allocate( work(16*N))
+     lwork=16*N
+     allocate(rwork(lwork))
+     allocate( work(lwork))
      rwork= 0d0
-     work= 0d0
+     work= (0d0, 0d0)
 
      info=0
      W=0.0d0
 
+     !> if N==1, you don't have to do the diagonalization
      if (N==1) then 
         W=A(1, 1)
         A(1, 1)= 1d0
@@ -60,7 +64,7 @@
      endif
 
      call zheev( JOBZ, UPLO, N, A, N,  &
-              W, work, 16*N, rwork, info )
+              W, work, lwork, rwork, info )
 
      if (info.ne.0) then
         write(stdout, *) 'ERROR : something wrong with zheev'
@@ -71,9 +75,10 @@
      return
   end subroutine eigensystem_c
 
-! real version
-! a subroutine to calculate eigenvector and eigenvalue
   subroutine eigensystem_r (JOBZ,UPLO,N,A,W)
+     ! A pack of Lapack subroutine dsyev, which is 
+     ! a subroutine to calculate eigenvector and eigenvalue for a 
+     ! real symmetric matrix
 
      use para, only : Dp, stdout
      implicit none
@@ -139,8 +144,9 @@
      return
   end subroutine eigensystem_r
 
-! a subroutine to calculate eigenvector and eigenvalue
   subroutine zgeev_pack(N, A, W)
+     ! a pack of Lapack subroutine zgeev, which is a subroutine to
+     ! calculate eigenvector and eigenvalue of a complex hermite matrix
 
      use para, only : Dp
      implicit none
@@ -203,18 +209,18 @@
      ldvl=N
      ldvr=N
      lwork= 16*N
+
      allocate(VL(N, N))
      allocate(VR(N, N))
-
      allocate(rwork(16*N))
      allocate( work(lwork))
-     VL= 0d0
-     VR= 0d0
+     VL= (0d0, 0d0)
+     VR= (0d0, 0d0)
      rwork= 0d0
-     work= 0d0
+     work= (0d0, 0d0)
 
      info=0
-     W=0.0d0
+     W=(0d0, 0d0)
 
      if (N==1) then 
         W=A(1, 1)
@@ -229,6 +235,79 @@
         stop ">>> Error : something wrong happens in zgeev_pack" 
      endif
 
+     deallocate(VL)
+     deallocate(VR)
+     deallocate(rwork)
+     deallocate( work)
+
      return
   end subroutine zgeev_pack
+
+
+  !> the IL-th through IU-th eigenvalues will be found.
+  subroutine zheevx_pack(JOBZ, UPLO, N, il, iu, A, eigval, eigvec)
+     use para, only : dp
+     implicit none
+    
+     !> inout variables
+     character(1), intent(in) :: JOBZ ! 'V' compute eigenvectors and eigenvalues; 'N' only eigenvalues
+     character(1), intent(in) :: UPLO
+     integer, intent(in) :: N  !> dimension of matrix A
+     integer, intent(in) :: il !> lowest band to be calculated
+     integer, intent(in) :: iu !> highest band to be calculated
+     real(dp), intent(inout) :: eigval(iu-il+1) !> eigenvalues
+     complex(dp), intent(inout) :: A(N, N) !> the input hermite complex matrix
+     complex(dp), intent(inout) :: eigvec(N, iu-il+1) !> eigenvectors
+
+     !> local variables
+     real(dp), allocatable :: eigenvalues(:)
+     integer , allocatable :: iwork(:)
+     integer , allocatable :: ifail(:)
+     real(dp), allocatable :: rwork(:)
+     complex(dp), allocatable :: work(:)
+
+     integer :: mdim
+     integer :: lwork
+     integer :: info
+     real(dp) :: vl  !> not referenced in this subroutine
+     real(dp) :: vu  !> not referenced in this subroutine
+
+     real(dp), parameter :: abstol= 1D-10
+
+     !real(dp), external :: DLAMCH
+     !abstol= 2*DLAMCH('S')
+
+     mdim= iu-il+1
+     lwork= 64*N
+
+     allocate(ifail(N))
+     allocate(iwork(5*N))
+     allocate(rwork(7*N))
+     allocate(work(lwork))
+     allocate(eigenvalues(N))
+     ifail = 0
+     iwork = 0
+     rwork = 0d0
+     work = 0d0
+
+     eigenvalues= 0d0
+     eigvec= 0d0
+     vl=0d0; vu=0d0
+
+     call zheevx(JOBZ,'I',UPLO,N,A,N,vl,vu,il,iu,abstol,&
+         mdim,eigenvalues,eigvec,N,work,lwork,rwork,iwork,ifail,info)
+
+     if (info/=0) then
+        print *, ' Error info in zheevx: ', info
+        stop ' Error happens in zheev_pack'
+     endif
+
+     eigval(1:mdim)= eigenvalues(1:mdim)
+
+     deallocate(eigenvalues, work, iwork, ifail, rwork)
+
+     return
+  end subroutine  zheevx_pack
+
+
 

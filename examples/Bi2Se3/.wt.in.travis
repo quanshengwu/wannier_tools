@@ -40,6 +40,7 @@ BulkFS_calc           = T
 BulkGap_cube_calc     = T
 BulkGap_plane_calc    = T
 SlabBand_calc         = T
+SlabBandWaveFunc_calc = T
 SlabBand_plane_calc   = T
 WireBand_calc         = T
 SlabSS_calc           = T
@@ -64,12 +65,12 @@ surf_onsite= 0.0        ! surf_onsite
 &PARAMETERS
 Eta_Arc = 0.001     ! infinite small value, like brodening 
 E_arc = 0.0         ! energy for calculate Fermi Arc
-OmegaNum = 40       ! omega number       
+OmegaNum = 10       ! omega number       
 OmegaMin = -0.6     ! energy interval
 OmegaMax =  0.5     ! energy interval
-Nk1 = 6            ! number k points  odd number would be better
-Nk2 = 6             ! number k points  odd number would be better
-Nk3 = 6             ! number k points  odd number would be better
+Nk1 = 4            ! number k points  odd number would be better
+Nk2 = 4             ! number k points  odd number would be better
+Nk3 = 4             ! number k points  odd number would be better
 NP = 2              ! number of principle layers
 Gap_threshold = 0.01 ! threshold for GapCube output
 /
@@ -116,6 +117,15 @@ Direct
 0.5  0.0  0.0
 0.0  0.5  0.0
 0.0  0.0  0.5
+  
+SELECTED_BANDS
+4
+180 181 182 183
+
+SINGLEKPOINT_2D
+Direct
+0 0 0
+
 
 
 

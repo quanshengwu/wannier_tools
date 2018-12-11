@@ -33,22 +33,23 @@ SURFACE            ! Specify surface with two vectors, see doc
 
 !> bulk band structure calculation flag
 &CONTROL
-BulkBand_calc         = T
-BulkBand_points_calc  = F
-DOS_calc              = T
-BulkFS_calc           = F
-BulkGap_cube_calc     = F
-BulkGap_plane_calc    = F
-SlabBand_calc         = T
-SlabBand_plane_calc   = T
-WireBand_calc         = F
-SlabSS_calc           = T
-SlabArc_calc          = T
-SlabQPI_calc          = F
-ArcQPI_calc           = T
-Z2_3D_calc            = T
-SlabSpintexture_calc  = T
-Wanniercenter_calc    = F
+BulkBand_calc            = T
+BulkBand_points_calc     = T
+DOS_calc                 = T
+BulkFS_calc              = F
+BulkGap_cube_calc        = F
+BulkGap_plane_calc       = F
+SlabBand_calc            = T
+SlabBandWaveFunc_calc    = T
+SlabBand_plane_calc      = T
+WireBand_calc            = T
+SlabSS_calc              = T
+SlabArc_calc             = T
+SlabQPI_calc             = T
+ArcQPI_calc              = T
+Z2_3D_calc               = T
+SlabSpintexture_calc     = T
+Wanniercenter_calc       = T
 /
 
 &SYSTEM
@@ -67,11 +68,11 @@ E_arc = 0.0         ! energy for calculate Fermi Arc
 OmegaNum = 400      ! omega number       
 OmegaMin = -0.6     ! energy interval
 OmegaMax =  0.5     ! energy interval
-Nk1 = 101           ! number k points  odd number would be better
-Nk2 = 101            ! number k points  odd number would be better
-Nk3 = 61            ! number k points  odd number would be better
+Nk1 = 40           ! number k points  odd number would be better
+Nk2 = 40            ! number k points  odd number would be better
+Nk3 = 20            ! number k points  odd number would be better
 NP = 2              ! number of principle layers
-Gap_threshold = 0.01 ! threshold for GapCube output
+Gap_threshold = 0.01 ! threshold for FindNodes_calc output
 /
 
 KPATH_BULK            ! k point path
@@ -116,6 +117,15 @@ Direct
 0.5  0.0  0.0
 0.0  0.5  0.0
 0.0  0.0  0.5
+  
+SELECTED_BANDS
+4
+180 181 182 183
+
+SINGLEKPOINT_2D
+Direct
+0 0 0
+
 
 
 

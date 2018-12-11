@@ -1,82 +1,92 @@
-! This subroutine is used to caculate energy dispersion for 
-! slab Bi2Se3
+  subroutine psik_slab()
+     ! Psik calculates the eigenvector for a given k point and selected bands
+     ! for 2D slab system
 
-  subroutine psik()
-
-     use para,only : Dp,Num_wann,Nslab, stdout, cpuid 
+     use para,only : Dp,Num_wann,Nslab, stdout, cpuid , outfileindex, Single_KPOINT_2D_DIRECT, &
+        NumberofSelectedBands, Selected_band_index
      
      implicit none 
-! loop index
-     integer     :: i,j     
-     integer     :: info
 
-! wave vector 
+     ! loop index
+     integer     :: i,j, mdim, ib, iband
+
+     ! wave vector 
      real(Dp)    :: k(2)
- 
-! eigenvalue 
-     real(Dp)    :: eigenvalue (nslab*Num_wann)
+      
+     ! eigenvalue 
+     real(Dp), allocatable   :: W(:)
      
-   
-! energy dispersion
-     real(Dp)    :: ekslab(Nslab*Num_wann)
-     real(Dp)    :: psi2  (Nslab)
-     complex(Dp) :: psi   (Nslab*Num_wann)
+     !> norm of psi |\psi|^2
+     real(Dp), allocatable   :: psi2  (:, :)
 
-! hamiltonian slab
-     complex(Dp),allocatable :: CHamk(:,:)
-     complex(Dp),allocatable :: eigenvector(:,:)
+     !> wave function for the given band and k point
+     complex(Dp), allocatable:: psi(:, :)
+
+     ! hamiltonian slab
+     complex(Dp),allocatable :: hamk_slab(:,:), hamk_slab_t(:,:)
+
+     mdim= Nslab*Num_wann
+
+     allocate(psi2(Nslab, NumberofSelectedBands))
+     allocate(psi (mdim, 1))
+     allocate(W(mdim))
+     allocate(hamk_slab(mdim,mdim), hamk_slab_t(mdim,mdim))
 
 
-     allocate(CHamk(nslab*Num_wann,nslab*Num_wann))
-     allocate(eigenvector(nslab*Num_wann,nslab*Num_wann))
+     !> Single_KPOINT_2D_DIRECT is provided in the wt.in or input.dat
+     k= Single_KPOINT_2D_DIRECT
+     hamk_slab=0.0d0 
 
-! sweep k
-     ekslab=0.0d0
+     ! calculate Hamiltonian
+     call ham_slab(k,hamk_slab)
 
-! Ka direction
-     k=0.0d0
-     chamk=0.0d0 
-
-! calculate Hamiltonian
-     call ham_slab(k,Chamk)
-     eigenvalue=0.0d0
-     eigenvector=Chamk
-
-! diagonal Chamk
-     call eigensystem_c('V', 'U', Num_wann*nslab, eigenvector, eigenvalue)
-    
-     ekslab=eigenvalue
-    
-     !> with given band index
-     info=18*Nslab+2 
-
-     psi(:)=eigenvector(:, info)
-     if (cpuid.eq.0) write(stdout,*) 'eigenvalue',info,ekslab(info)
-
-     j=0
      psi2=0.0d0
-     do i=1,Nslab
-        do j=1,Num_wann
-           psi2(i)=psi2(i)+abs(psi((i-1)*Num_wann+j))**2
+     do ib=1, NumberofSelectedBands
+        iband = Selected_band_index(ib)
+        if (iband > mdim.or. iband<0) then
+           write(*, *)"ERROR: selected bands should be smaller than ", mdim
+           stop
+        endif
+
+        !> diagonal hamk_slab, only get one eigenvalue
+        W=0.0d0; psi= 0d0
+        hamk_slab_t= hamk_slab
+        call zheevx_pack('V', 'U', mdim, iband, iband, hamk_slab_t, W, psi)
+       
+        if (cpuid.eq.0) write(stdout,'(2X, a, i8, a, f16.6)') 'Eigenvalue for band ', iband, ' is', W(1)
+   
+        j=0
+        do i=1,Nslab
+           do j=1,Num_wann
+              psi2(i, ib)=psi2(i, ib)+abs(psi((i-1)*Num_wann+j, 1))**2
+           enddo
         enddo
      enddo
 
-     open(unit=100, file='squarepsi.dat')
-     do i=1,Nslab
-        write(100,'(2f16.9)')real(i),psi2(i)
-     enddo
-     close(100)
-     
-     write(stdout,*) 'calculate psi  done'
-     
-  end
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+        open(unit=outfileindex, file='psi_abs.txt')
+        write(outfileindex, '(a8, a5, 2000i16 )')'#islab', 'band', Selected_band_index(:)
+        do i=1,Nslab
+           write(outfileindex,'(i8, 5X, 2000f16.9)')i,psi2(i, :)
+        enddo
+        close(outfileindex)
+        write(stdout,*) '<< Calculating psi done'
+     endif
+ 
+     deallocate(psi2)
+     deallocate(psi )
+     deallocate(hamk_slab)
 
-! This subroutine is used to caculate energy dispersion for 
-! bulk system
+     return
+    
+  end subroutine psik_slab
 
   subroutine psik_bulk()
+     ! Psik calculates the eigenvector for a given k point and energe band
+     ! for 3D bulk system
     
-     use para,only : Dp,Num_wann, stdout, Numoccupied, cpuid
+     use para,only : Dp,Num_wann, stdout, Numoccupied, cpuid, outfileindex
      implicit none 
 
 ! loop index
@@ -113,7 +123,8 @@
      kpoints(:, 8)= (/0.5d0, 0.0d0, 0.5d0/)
 
      ib= Numoccupied
-     if (cpuid==0)open(unit=100, file='wavefunction.dat')
+     outfileindex= outfileindex+ 1
+     if (cpuid==0)open(unit=outfileindex, file='wavefunction.dat')
      do ik=1, 8
 
         k=kpoints(:, ik)
@@ -128,13 +139,13 @@
         psi(:)=eigenvector(:, ib)
         if (cpuid==0)write(stdout,*) 'eigenvalue',info,eigenvalue(ib)
    
-        if (cpuid==0)write(100, '(a,3f8.4)')'K point ', k
+        if (cpuid==0)write(outfileindex, '(a,3f8.4)')'K point ', k
         do i=1, Num_wann
-           if (cpuid==0)write(100,'(i5, 30f16.9)')i, eigenvector(i, ib-1), eigenvector(i, ib)
+           if (cpuid==0)write(outfileindex,'(i5, 30f16.9)')i, eigenvector(i, ib-1), eigenvector(i, ib)
         enddo
-        if (cpuid==0)write(100,*)' '
+        if (cpuid==0)write(outfileindex,*)' '
     
      enddo ! ik
         
-     if (cpuid==0)close(100)
+     if (cpuid==0)close(outfileindex)
   end subroutine psik_bulk

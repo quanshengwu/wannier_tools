@@ -774,6 +774,8 @@ SUBROUTINE surfstat_jdos
         CLOSE(doslfile)
         CLOSE(dosrfile)
         CLOSE(dosbulkfile)
+        CLOSE(spindoslfile)
+        CLOSE(spindosrfile)
     ENDIF
 
     ! Begin to calculate JDOS from DOS before
