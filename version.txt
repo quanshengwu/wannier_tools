@@ -1,3 +1,8 @@
+Develop branch on Dec 11 2018
+1. Added the SlabBandWaveFunc_calc function to get the density profile of slab system at a given
+k point and given band index specified by SINGLEKPOINT_2D and SELECTED_BANDS respectively.
+2. Fixed a bug about the closing a file in surfstat.f90. This bug only happens within the gfortran compiler.
+
 Version V2.4.1
 1. Fixed some bugs about the 2D bulk bands. 
 
