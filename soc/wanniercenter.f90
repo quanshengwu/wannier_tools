@@ -1822,9 +1822,9 @@
       !> the first dimension is the integration direction
       !> the WCCs are calculated along the second k line
       do ik2=1, Nk2 ! the mesh for k line of that wcc are calculated
-         theta2= (ik2- 1d0)/(Nk2- 1d0)* pi
-         if (ik2== 1) theta2= (ik2- 1d0+ 0.10)/(Nk2- 1d0)* pi  ! avoid the North pole
-         if (ik2== Nk2) theta2= (ik2- 1d0- 0.10)/(Nk2- 1d0)* pi  ! avoid the south pole
+         theta2= (1d0-(ik2- 1d0)/(Nk2- 1d0))* pi
+         if (ik2== 1) theta2= (1d0-(ik2- 1d0+ 0.10)/(Nk2- 1d0))* pi  ! avoid the North pole
+         if (ik2== Nk2) theta2= (1d0-(ik2- 1d0- 0.10)/(Nk2- 1d0))* pi  ! avoid the south pole
          do ik1=1, Nk1  ! the mesh along the integration direction
             theta1= (ik1- 1d0)/Nk1* 2d0* pi
             r_para= r0* sin(theta2)
