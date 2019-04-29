@@ -104,6 +104,7 @@ subroutine readinput
    NLChirality_calc      = .FALSE.
    BerryPhase_calc       = .FALSE.
    BerryCurvature_calc   = .FALSE.
+   BerryCurvature_EF_calc   = .FALSE.
    BerryCurvature_slab_calc = .FALSE.
    MirrorChern_calc      = .FALSE.
    Dos_calc              = .FALSE.
@@ -141,7 +142,7 @@ subroutine readinput
       write(*, *)"SlabBand_plane_calc,SlabArc_calc "
       write(*, *)"SlabSpintexture,wanniercenter_calc"
       write(*, *)"BerryPhase_calc,BerryCurvature_calc"
-      write(*, *)"BerryCurvature_slab_calc"
+      write(*, *)"BerryCurvature_EF_calc,BerryCurvature_slab_calc"
       write(*, *)"Dos_calc, JDos_calc, FindNodes_calc"
       write(*, *)"BulkFS_plane_calc"
       write(*, *)"Z2_3D_calc"

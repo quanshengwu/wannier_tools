@@ -334,7 +334,7 @@
      endif
 
 
-     if (BerryCurvature_calc)then
+     if (BerryCurvature_calc.or.Berrycurvature_EF_calc)then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Berry curvature'
         call now(time_start)

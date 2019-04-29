@@ -153,7 +153,7 @@
      W=0d0; vx= 0d0; vy= 0d0; vz= 0d0; UU= 0d0; UU_dag= 0d0
 
      ! calculation bulk hamiltonian by a direct Fourier transformation of HmnR
-     call ham_bulk_latticegauge(k, Hamk_bulk)
+     call ham_bulk(k, Hamk_bulk)
 
      !> diagonalization by call zheev in lapack
      UU=Hamk_bulk
@@ -161,12 +161,7 @@
     !call zhpevx_pack(hamk_bulk,Num_wann, W, UU)
 
      UU_dag= conjg(transpose(UU))
-     do iR= 1, Nrpts
-        kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
-        vx= vx+ zi*crvec(1, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
-        vy= vy+ zi*crvec(2, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
-        vz= vz+ zi*crvec(3, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
-     enddo ! iR
+     call dHdk_atomicgauge(k, vx, vy, vz)
 
      !> unitility rotate velocity
      call mat_mul(Num_wann, vx, UU, Amat) 
@@ -179,7 +174,7 @@
      Omega_x=0d0;Omega_y=0d0; Omega_z=0d0
      do m= 1, Num_wann
         do n= 1, Num_wann
-           if (m==n) cycle
+           if (abs(w(m)-w(n))<eps6) cycle
            Omega_x(m)= Omega_x(m)+ vy(n, m)*vz(m, n)/((W(m)-W(n))**2)
            Omega_y(m)= Omega_y(m)+ vz(n, m)*vx(m, n)/((W(m)-W(n))**2)
            Omega_z(m)= Omega_z(m)+ vx(n, m)*vy(m, n)/((W(m)-W(n))**2)
@@ -191,6 +186,7 @@
      Omega_z= -Omega_z*2d0*zi
 
      !> consider the Fermi-distribution according to the brodening Earc_eta
+     if (Eta_Arc<eps6) Eta_Arc= eps6
      Beta_fake= 1d0/Eta_Arc
      do m= 1, Num_wann
         Omega_x(m)= Omega_x(m)*fermi(W(m)-mu, Beta_fake)
@@ -777,8 +773,11 @@
 
         !call berry_curvarture_singlek_numoccupied_old(k, Omega_x, Omega_y, Omega_z)
         !call berry_curvarture_singlek_numoccupied(k, Omega_x(1), Omega_y(1), Omega_z(1))
-        call berry_curvarture_singlek_numoccupied_total(k, Omega_x(1), Omega_y(1), Omega_z(1))
-        ! call berry_curvarture_singlek_EF(k, 0d0, Omega_x, Omega_y, Omega_z)
+        if (Berrycurvature_EF_calc) then
+           call berry_curvarture_singlek_EF(k, E_arc, Omega_x, Omega_y, Omega_z)
+        else
+           call berry_curvarture_singlek_numoccupied_total(k, Omega_x(1), Omega_y(1), Omega_z(1))
+        endif
         Omega(1, ik) = sum(Omega_x)
         Omega(2, ik) = sum(Omega_y)
         Omega(3, ik) = sum(Omega_z)

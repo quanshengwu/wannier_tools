@@ -23,7 +23,7 @@ Direct    ! Direct or Cartesian coordinate
 
 &SYSTEM
 NSLAB = 30 
-NumOccupied = 21       ! NumOccupied
+NumOccupied = 22       ! NumOccupied
 SOC = 0                 ! soc
 E_FERMI =0            ! e-fermi
 /

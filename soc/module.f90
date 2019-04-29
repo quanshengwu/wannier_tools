@@ -384,6 +384,7 @@
      logical :: MirrorChern_calc  ! Flag for mirror Chern number calculations
      logical :: BerryPhase_calc   ! Flag for Berry phase calculation
      logical :: BerryCurvature_calc ! Flag for Berry curvature calculation
+     logical :: BerryCurvature_EF_calc ! Flag for Berry curvature calculation at Fermi level E_arc
      logical :: BerryCurvature_slab_calc ! Flag for Berry curvature calculation for a slab system
      logical :: EffectiveMass_calc  ! Flag for effective mass calculation
      logical :: FindNodes_calc  ! Flag for effective mass calculation
@@ -417,7 +418,7 @@
                           BulkGap_cube_calc, SlabBand_calc, SlabBandWaveFunc_calc, WireBand_calc, &
                           SlabSS_calc, SlabArc_calc, SlabSpintexture_calc, &
                           WannierCenter_calc,BerryPhase_calc,BerryCurvature_calc, &
-                          BerryCurvature_slab_calc, MirrorChern_calc, &
+                          BerryCurvature_EF_calc, BerryCurvature_slab_calc, MirrorChern_calc, &
                           Z2_3D_calc, Chern_3D_calc, WeylChirality_calc, NLChirality_calc, &
                           Dos_calc, JDos_calc, EffectiveMass_calc, SlabQPI_calc, ArcQPI_calc, &
                           FindNodes_calc, TBtoKP_calc, LOTO_correction, &
