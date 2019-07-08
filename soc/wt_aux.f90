@@ -34,6 +34,46 @@
      return
   end subroutine print_time_cost
 
+  subroutine printallocationinfo(variablename, ierr)
+     use para, only : stdout
+
+     implicit none
+
+     character(len=*), intent(in) :: variablename
+     integer, intent(in) :: ierr
+
+     if (ierr/=0) then
+        write(*, *)"ERROR: no enough memory for ", variablename, '  STAT=',ierr
+#if defined (MPI)
+        call mpi_finalize(ierr)
+#endif
+        stop
+     endif
+
+     return
+  end subroutine printallocationinfo
+
+  subroutine printerrormsg(errormsg)
+     use para, only : stdout
+     use wmpi, only : cpuid
+     implicit none
+     character(*), intent(in) :: errormsg
+     integer :: ierr
+
+     if (cpuid==0) then
+        write(stdout, *) trim(errormsg)
+     endif
+
+#if defined (MPI)
+        call mpi_finalize(ierr)
+#endif
+     stop
+     return
+  end subroutine printerrormsg
+
+
+
+
   !> print header
   subroutine header
      use wmpi
@@ -87,4 +127,60 @@
         write(stdout, '(2x,a)') "======================================================================="
      endif
   end subroutine footer
+
+
+  !> Sorting arr in ascending order
+   subroutine sortheap(n, arr)
+      use para, only : dp
+      implicit none
+      integer, intent(in) :: n
+      real(dp), intent(inout) :: arr(n)
+
+      !* local variables
+      integer :: i
+
+      do i=n/2, 1, -1
+         call sift_down(i, n)
+      enddo
+
+      do i=n, 2, -1
+         call swap(arr(1), arr(i))
+         call sift_down(1, i-1)
+      enddo
+      contains
+      subroutine sift_down(l, r)
+         use para, only : dp
+         integer, intent(in) :: l, r
+         integer :: j, jold
+         real(dp) :: a
+         a= arr(l)
+         jold= l
+         j= l+ l
+
+         do while (j<=r)
+            if (j<r) then
+               if (arr(j)<arr(j+1))j=j+1
+            endif
+            if (a>= arr(j))exit
+            arr(jold)= arr(j)
+            jold= j
+            j= j+ j
+         enddo
+         arr(jold)= a
+         return
+      end subroutine sift_down
+   end subroutine sortheap
+
+   !>> swap two real numbers
+   subroutine swap(a, b)
+      use para, only : dp
+      real(dp), intent(inout) :: a
+      real(dp), intent(inout) :: b
+      real(dp) :: c
+      c=a
+      a=b
+      b=c
+      return
+   end subroutine swap
+
 

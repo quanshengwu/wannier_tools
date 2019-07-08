@@ -160,7 +160,7 @@
      real(dp) :: nac_q
 
     
-     allocate(kBorn(Num_atoms, 3))
+     allocate(kBorn(Origin_cell%Num_atoms, 3))
      allocate(mat1(Num_wann, Num_wann))
      allocate(mat2(Num_wann, Num_wann))
      allocate(nac_correction(Num_wann, Num_wann, Nrpts))
@@ -184,9 +184,9 @@
         temp1(qq)= knew(1)*Diele_Tensor(qq, 1)+knew(2)*Diele_Tensor(qq, 2) 
      enddo
      temp2= knew(1)*temp1(1)+ knew(2)*temp1(2)
-     constant_t= 4d0*3.1415926d0/(temp2*CellVolume)*VASPToTHZ/0.529177
+     constant_t= 4d0*3.1415926d0/(temp2*Origin_cell%CellVolume)*VASPToTHZ/0.529177
 
-     do ii=1, Num_atoms
+     do ii=1, Origin_cell%Num_atoms
         do pp=1, 3
            kBorn(ii, pp)=  knew(1)*Born_Charge(ii,1,pp)+knew(2)*Born_Charge(ii,2,pp)
         enddo
@@ -208,9 +208,9 @@
            kdotr=knew(1)*new_ia+knew(2)*new_ib
            ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
 
-           do ii= 1,Num_atoms
+           do ii= 1,Origin_cell%Num_atoms
               do pp= 1, 3
-                 do jj= 1, Num_atoms
+                 do jj= 1, Origin_cell%Num_atoms
                     do qq= 1, 3
                        nac_q= kBorn(jj, qq)*kBorn(ii, pp)*constant_t/sqrt(Atom_Mass(ii)*Atom_Mass(jj))
                        nac_correction((ii-1)*3+pp,(jj-1)*3+qq,iR) = HmnR((ii-1)*3+pp,(jj-1)*3+qq,iR) + dcmplx(nac_q,0)
@@ -267,66 +267,6 @@
 
   return
   end subroutine ham_qlayer2qlayer_LOTO
-
-
-  subroutine ham_qlayer2qlayer2(k,Hij)
-     ! This subroutine caculates Hamiltonian between
-     ! slabs  
-     ! 4/23/2010 by QS Wu
-     ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
-
-     use para
-
-     implicit none
-
-     ! loop index
-     integer :: iR
-
-     ! index used to sign irvec     
-     integer :: ia,ib,ic
-
-     ! 
-
-     ! new index used to sign irvec     
-     real(dp) :: new_ia,new_ib,new_ic
-     integer :: inew_ic
-
-     ! wave vector k times lattice vector R  
-     real(Dp) :: kdotr  
-
-     ! input wave vector k's cooridinates
-     real(Dp),intent(in) :: k(2)
-
-     ! H00 Hamiltonian between nearest neighbour-quintuple-layers
-     ! the factor 2 is induced by spin
-
-     complex(dp) :: ratio
-
-     complex(Dp), intent(out) :: Hij(-ijmax:ijmax,Num_wann,Num_wann)
-
-     Hij=0.0d0
-     do iR=1,Nrpts
-        ia=irvec(1,iR)
-        ib=irvec(2,iR)
-        ic=irvec(3,iR)
-
-        !> new lattice
-        call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
-
-        inew_ic= int(new_ic)
-        if (abs(new_ic).le.ijmax)then
-           kdotr=k(1)*new_ia+k(2)*new_ib
-           ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
-
-           Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
-           =Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
-           +HmnR(:,:,iR)*ratio/ndegen(iR)
-        endif
-
-     enddo
-
-  return
-  end subroutine ham_qlayer2qlayer2
 
 
   subroutine ham_qlayer2qlayer_velocity(k,Vij_x,Vij_y)
@@ -387,6 +327,57 @@
   end subroutine ham_qlayer2qlayer_velocity
 
 
+  subroutine ham_qlayer2qlayer2(k,Hij)
+     ! This subroutine caculates Hamiltonian between
+     ! slabs  
+     ! 4/23/2010 by QS Wu
+     ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
+
+     use para
+
+     implicit none
+
+     ! loop index
+     integer :: iR, ia, ib, ic, inew_ic
+
+     ! new index used to sign irvec     
+     real(dp) :: new_ia,new_ib,new_ic
+
+     ! wave vector k times lattice vector R  
+     real(Dp) :: kdotr  
+
+     ! input wave vector k's cooridinates
+     real(Dp),intent(in) :: k(2)
+
+     complex(dp) :: ratio
+
+     complex(Dp), intent(out) :: Hij(-ijmax:ijmax,Num_wann,Num_wann)
+
+     Hij=0.0d0
+     do iR=1,Nrpts
+        ia=irvec(1,iR)
+        ib=irvec(2,iR)
+        ic=irvec(3,iR)
+
+        !> new lattice
+        call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
+
+        inew_ic= int(new_ic)
+        if (abs(new_ic).le.ijmax)then
+           kdotr=k(1)*new_ia+k(2)*new_ib
+           ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
+
+           Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
+           =Hij(inew_ic, 1:Num_wann, 1:Num_wann )&
+           +HmnR(:,:,iR)*ratio/ndegen(iR)
+        endif
+
+     enddo
+
+  return
+  end subroutine ham_qlayer2qlayer2
+
+
 
   subroutine ham_qlayer2qlayer2_LOTO(k,Hij)
      ! This subroutine caculates Hamiltonian between
@@ -427,7 +418,7 @@
      complex(Dp),allocatable :: nac_correction(:, :, :) 
 
      real(dp) :: temp1(2), temp2, knew(2)
-     real(dp) :: constant_t
+     real(dp) ::  constant_t
      complex(dp), allocatable :: mat1(:, :)
      complex(dp), allocatable :: mat2(:, :)
  
@@ -436,7 +427,7 @@
 
      real(dp) :: nac_q
 
-     allocate(kBorn(Num_atoms, 3))
+     allocate(kBorn(Origin_cell%Num_atoms, 3))
      allocate(mat1(Num_wann, Num_wann))
      allocate(mat2(Num_wann, Num_wann))
      allocate(nac_correction(Num_wann, Num_wann, Nrpts))
@@ -459,9 +450,9 @@
         temp1(qq)= knew(1)*Diele_Tensor(qq, 1)+knew(2)*Diele_Tensor(qq, 2) 
      enddo
      temp2= knew(1)*temp1(1)+ knew(2)*temp1(2)
-     constant_t= 4d0*3.1415926d0/(temp2*CellVolume)*VASPToTHZ/0.529177
+     constant_t= 4d0*3.1415926d0/(temp2*Origin_cell%CellVolume)*VASPToTHZ/0.529177
 
-     do ii=1, Num_atoms
+     do ii=1, Origin_cell%Num_atoms
         do pp=1, 3
            kBorn(ii, pp)=  knew(1)*Born_Charge(ii,1,pp)+knew(2)*Born_Charge(ii,2,pp)
         enddo
@@ -483,9 +474,9 @@
            kdotr=knew(1)*new_ia+knew(2)*new_ib
            ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
 
-           do ii= 1,Num_atoms
+           do ii= 1,Origin_cell%Num_atoms
               do pp= 1, 3
-                 do jj= 1, Num_atoms
+                 do jj= 1, Origin_cell%Num_atoms
                     do qq= 1, 3
                        nac_q= kBorn(jj, qq)*kBorn(ii, pp)*constant_t/sqrt(Atom_Mass(ii)*Atom_Mass(jj))
                        nac_correction((ii-1)*3+pp,(jj-1)*3+qq,iR) = HmnR((ii-1)*3+pp,(jj-1)*3+qq,iR) + dcmplx(nac_q,0)
@@ -589,3 +580,26 @@
 
      return
   end subroutine latticetransform
+  
+    subroutine transform_r(v0, x, y, z)
+     !> use Umatrix to get the new representation of a vector in new basis
+     !> R= a*R1+b*R2+c*R3= x*R1'+y*R2'+z*R3'
+     use para
+     implicit none
+
+     real(dp), intent(in)  :: v0(3)
+     real(dp), intent(out) :: x, y, z
+
+     real(dp), allocatable :: Uinv(:, :)
+
+     allocate(Uinv(3, 3))
+     Uinv= Umatrix
+
+     call inv_r(3, Uinv)
+
+     x= v0(1)*Uinv(1, 1)+ v0(2)*Uinv(2, 1)+ v0(3)*Uinv(3, 1)
+     y= v0(1)*Uinv(1, 2)+ v0(2)*Uinv(2, 2)+ v0(3)*Uinv(3, 2)
+     z= v0(1)*Uinv(1, 3)+ v0(2)*Uinv(2, 3)+ v0(3)*Uinv(3, 3)
+
+     return
+  end subroutine 

@@ -2,26 +2,22 @@
       ! We try to find all the local minimal of the energy gap in 3D BZ,
       ! basically, we generate a serials of starting k point for FindNode_k0
       !
-      ! By QuanSheng Wu
+      ! By QuanSheng Wu 
       !
       ! wuquansheng@gmail.com
       !
       ! Nov 9 2016  at ETHZ
 
       use para
+      implicit none
 
-      integer :: ierr
-      integer :: ik, ikx, iky, ikz
-      integer :: knv3
-      integer :: Nleft
-      real(dp) :: k(3), k_cart(3)
-      real(dp) :: k_out(3)
-      real(dp) :: gap_out
+      integer :: ik, ikx, iky, ikz, knv3, ierr, Nleft
+      real(dp) :: k(3), k_cart(3), k_out(3), gap_out
       real(dp), allocatable :: kabc_minimal(:, :)
       real(dp), allocatable :: gap_minimal(:)
       real(dp), allocatable :: kabc_minimal_mpi(:, :)
       real(dp), allocatable :: gap_minimal_mpi(:)
-
+  
       interface
          function func_energy(x)
          implicit none
@@ -31,7 +27,7 @@
          end function func_energy
       end interface
 
-
+      logical :: In_KCUBE
 
       knv3= Nk1*Nk2*Nk3
       allocate(kabc_minimal(3, knv3))
@@ -41,13 +37,16 @@
 
       kabc_minimal= 0d0
       gap_minimal= 0d0
-
+     
 
       do ik=1+cpuid, knv3, num_cpu
          ikx= (ik- 1)/(Nk2*Nk3)+ 1
          iky= (ik- (ikx-1)*Nk2*Nk3- 1)/Nk3+ 1
-         ikz= ik- (ikx-1)*Nk2*Nk3- (iky-1)*Nk3
-
+         ikz= ik- (ikx-1)*Nk2*Nk3- (iky-1)*Nk3 
+         if (cpuid.eq.0) then
+            write(stdout, *)'>>>Find nodes for ik', ik, 'in knv3', knv3
+         endif
+         
          k= K3D_start_cube+ K3D_vec1_cube*(ikx-1)/dble(nk1)  &
                    + K3D_vec2_cube*(iky-1)/dble(nk2)  &
                    + K3D_vec3_cube*(ikz-1)/dble(nk3)
@@ -55,8 +54,8 @@
          call FindNode_k0(k, k_out, gap_out)
          kabc_minimal(:, ik)= k_out
          gap_minimal(ik)= gap_out
-
-      enddo
+ 
+      enddo 
 
 #if defined (MPI)
       kabc_minimal_mpi= 0
@@ -71,26 +70,31 @@
 #endif
 
 
-      outfileindex= outfileindex+ 1
+      outfileindex= outfileindex+ 1 
       if (cpuid==0)then
          open(unit=outfileindex, file='Nodes.dat')
          write (outfileindex, '(a)') '# local minimal position and the related energy gap'
          write(outfileindex, '("#", A10, 80A14)') 'kx', 'ky', 'kz', 'gap', 'E', 'k1', 'k2', 'k3'
 
-         ! transform k into [-0.5:0.5]*[-0.5:0,5]*[-0.5:0.5]
-         do ik=1, knv3
-            call transformto1BZ(kabc_minimal_mpi(:, ik))
-         enddo
+         if (index(KPorTB, 'KP')==0)then
+            ! transform k into [-0.5:0.5]*[-0.5:0,5]*[-0.5:0.5]
+            do ik=1, knv3
+               call transformto1BZ(kabc_minimal_mpi(:, ik))
+            enddo
+         endif
 
          ! eliminate the duplicated k point
          call eliminate_duplicates(knv3, kabc_minimal_mpi, gap_minimal_mpi, Nleft)
 
-         ! move the k points into Wigner-Seitz cell
-         do ik=1, Nleft
-            call moveinto_wigner_seitzcell(kabc_minimal_mpi(:, ik))
-         enddo
+         if (index(KPorTB, 'KP')==0)then
+            ! move the k points into Wigner-Seitz cell
+            do ik=1, Nleft
+               call moveinto_wigner_seitzcell(kabc_minimal_mpi(:, ik))
+            enddo
+         endif
 
          do ik=1, Nleft
+           !if (gap_minimal_mpi(ik)< Gap_threshold.and.In_KCUBE(kabc_minimal_mpi(:, ik))) then
             if (gap_minimal_mpi(ik)< Gap_threshold) then
                call direct_cart_rec(kabc_minimal_mpi(:, ik), k_cart)
                write(outfileindex, '(80f14.8)') k_cart, gap_minimal_mpi(ik), &
@@ -99,7 +103,7 @@
          enddo
          close(outfileindex)
       endif
-
+       
       !> write script for gnuplot
       outfileindex= outfileindex+ 1
       if (cpuid==0) then
@@ -130,19 +134,66 @@
          write(outfileindex, '(a, f10.5, a, f10.5, a)')'set zrange [', -0.5, ':', 0.5, ']'
          write(outfileindex, '(2a)')"splot 'Nodes.dat' u 6:7:8 w p pt 7 ps 2"
          close(outfileindex)
-
+     
       endif
+      
+#if defined (MPI)
+      call mpi_barrier(mpi_cmw, ierr)
+#endif
 
+      deallocate(kabc_minimal)
+      deallocate(gap_minimal)
+      deallocate(kabc_minimal_mpi)
+      deallocate(gap_minimal_mpi)
 
       return
    end subroutine FindNodes
 
+   !> https://math.stackexchange.com/questions/1472049/check-if-a-point-is-inside-a-rectangular-shaped-area-3d?noredirect=1&lq=1
+   !> Check if a k point is inside a rectangular shaped area (3D)?
+   function In_KCUBE(k)
+      use para
+      implicit none
+
+      real(dp), intent(in) :: k(3)
+      logical :: In_KCUBE
+
+      real(dp) :: a, b, c, p0(3), p1(3), p2(3), p3(3), u(3), v(3), w(3)
+      p0= K3D_start_cube
+      u= K3D_vec1_cube
+      v= K3D_vec2_cube
+      w= K3D_vec3_cube
+      p1= p0+ u
+      p2= p0+ v
+      p3= p0+ w
+
+      !> check whether the dot product u.x is between u.P0 and u.P1
+      a=dot_product(u, k)
+      b=dot_product(u, p0)
+      c=dot_product(u, p1)
+      In_KCUBE= (b<a).and.(a<c)
+
+      !> check whether the dot product v.x is between v.P0 and v.P2
+      a=dot_product(v, k)
+      b=dot_product(v, p0)
+      c=dot_product(v, p2)
+      In_KCUBE= In_KCUBE.and.(b<a).and.(a<c)
+
+      !> check whether the dot product w.x is between w.P0 and w.P3
+      a=dot_product(w, k)
+      b=dot_product(w, p0)
+      c=dot_product(w, p3)
+      In_KCUBE= In_KCUBE.and.(b<a).and.(a<c)
+
+      return
+   end function In_KCUBE
+
 
    subroutine FindNode_k0(k0, k_out, gap_out)
-      ! We find the local minimal of the energy gap in 3D BZ,
+      ! We find the local minimal of the energy gap in 3D BZ, 
       ! the result depends on the initial point
       !
-      ! By QuanSheng Wu
+      ! By QuanSheng Wu 
       !
       ! wuquansheng@gmail.com
       !
@@ -198,7 +249,7 @@
          gap(i)= func_gap(npara, k(i, :))
       enddo
 
-      ptol=1d-5
+      ptol=1d-5 
       call Proteus(npara, k, gap, ptol, func_gap, iter)
 
       x= k(1, :)
@@ -218,7 +269,7 @@
    function func_energy(X)
       ! this function calculates the energy gap at a given k point
       !
-      ! By QuanSheng Wu
+      ! By QuanSheng Wu 
       !
       ! wuquansheng@gmail.com
       !
@@ -229,7 +280,7 @@
 
       real(Dp),intent(in):: X(3) ! k point coordinates
 
-      real(dp) :: func_energy  ! energy gap at a given k point
+      real(dp) :: func_energy  ! energy at a given k point
 
       real(dp), allocatable :: W(:)
       complex(dp), allocatable :: Hamk_bulk(:, :)
@@ -239,16 +290,10 @@
 
       ! generate bulk Hamiltonian
       if (index(KPorTB, 'KP')/=0)then
-         call ham_bulk_kp(X, Hamk_bulk)
+         call ham_bulk_kp  (X, Hamk_bulk)
       else
-        !> deal with phonon system
-        if (index(Particle,'phonon')/=0.and.LOTO_correction) then
-           call ham_bulk_LOTO(X, Hamk_bulk)
-        else
-           call ham_bulk_latticegauge (X, Hamk_bulk)
-        endif
+         call ham_bulk_atomicgauge     (X, Hamk_bulk)
       endif
-
 
       ! diagonalization by call zheev in lapack
       W= 0d0
@@ -270,7 +315,7 @@
    function func_gap(N,X)
       ! this function calculates the energy gap at a given k point
       !
-      ! By QuanSheng Wu
+      ! By QuanSheng Wu 
       !
       ! wuquansheng@gmail.com
       !
@@ -290,19 +335,13 @@
 
       allocate(W(num_wann))
       allocate(Hamk_bulk(num_wann, num_wann))
-
       ! generate bulk Hamiltonian
       if (index(KPorTB, 'KP')/=0)then
          call ham_bulk_kp(X, Hamk_bulk)
       else
-        !> deal with phonon system
-        if (index(Particle,'phonon')/=0.and.LOTO_correction) then
-           call ham_bulk_LOTO(X, Hamk_bulk)
-        else
-           call ham_bulk_latticegauge (X, Hamk_bulk)
-        endif
+         call ham_bulk_atomicgauge  (X, Hamk_bulk)
       endif
-
+ 
       ! diagonalization by call zheev in lapack
       W= 0d0
       call eigensystem_c( 'N', 'U', Num_wann ,Hamk_bulk, W)
@@ -314,10 +353,11 @@
       return
    end function func_gap
 
+
    subroutine transformto1BZ(kin)
       ! Transform the k points to the 1st BZ
       !
-      ! By QuanSheng Wu
+      ! By QuanSheng Wu 
       !
       ! wuquansheng@gmail.com
       !
@@ -347,7 +387,7 @@
    subroutine eliminate_duplicates(knv3, kabc_minimal, gap_minimal, Nleft)
       ! Eliminate the duplicated k points
       !
-      ! By QuanSheng Wu
+      ! By QuanSheng Wu 
       !
       ! wuquansheng@gmail.com
       !
@@ -399,7 +439,7 @@
    !> input : k(3) in fractional units
    !> output : k(3) in fractional units
    subroutine moveinto_wigner_seitzcell(k)
-      use para, only : dp, Kua, Kub, Kuc
+      use para, only : dp, Origin_cell
       implicit none
 
       integer :: ik, l, m, n, ik0
@@ -429,7 +469,7 @@
       smallest_vec_len= 999d0
       ! find the smallest k vector in 125 ks
       do ik0=1, 125
-         k0= shiftedk(1, ik0)* Kua+ shiftedk(2, ik0)*Kub+ shiftedk(3, ik0)*Kuc
+         k0= shiftedk(1, ik0)* Origin_cell%Kua+ shiftedk(2, ik0)*Origin_cell%Kub+ shiftedk(3, ik0)*Origin_cell%Kuc
          klen= dsqrt(k0(1)*k0(1)+ k0(2)*k0(2)+ k0(3)*k0(3))
          if (klen< smallest_vec_len) then
             smallest_vec_len= klen
@@ -442,12 +482,10 @@
       return
    end subroutine moveinto_wigner_seitzcell
 
-
-
    function if_in_the_WS(kin)
       ! check whether kin is in the Wigner-Seitz cell
       !
-      ! By QuanSheng Wu
+      ! By QuanSheng Wu 
       !
       ! wuquansheng@gmail.com
       !
@@ -471,6 +509,5 @@
 
       return
    end function if_in_the_WS
-
 
 

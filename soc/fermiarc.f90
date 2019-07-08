@@ -55,8 +55,8 @@
      real(dp), allocatable :: sx_r(:, :), sy_r(:, :), sz_r(:, :)
      real(dp), allocatable :: sx_r_mpi(:, :), sy_r_mpi(:, :), sz_r_mpi(:, :)
 
-     ! spin operator matrix sigma_x,sigma_y in sigma_z representation
-     complex(Dp),allocatable :: sigma_x(:,:), sigma_y(:,:), sigma_z(:,:)
+     ! spin operator matrix spin_sigma_x,spin_sigma_y in spin_sigma_z representation
+     complex(Dp),allocatable :: spin_sigma_x(:,:), spin_sigma_y(:,:), spin_sigma_z(:,:)
      complex(Dp),allocatable :: ctemp(:,:), ones(:,:)
      complex(dp), allocatable :: GLL(:,:), GRR(:,:), GB(:,:)
      complex(dp), allocatable :: H00(:,:), H01(:,:)
@@ -80,7 +80,7 @@
      allocate( jdos_r(nkx*nky), jdos_r_mpi(nkx*nky))
      allocate( GLL(ndim,ndim), GRR(ndim,ndim), GB(ndim, ndim))
      allocate( ctemp(ndim,ndim))
-     if (SOC>0 .and. (SlabSpintexture_calc.or.ArcQPI_calc)) then
+     if (SOC>0 .and. (SlabSpintexture_calc.or.SlabQPI_kplane_calc)) then
         allocate( jsdos_l(nkx*nky), jsdos_l_mpi(nkx*nky))
         allocate( jsdos_r(nkx*nky), jsdos_r_mpi(nkx*nky))
         allocate( sx_l(nkx,nky), sx_l_mpi(nkx,nky))
@@ -89,7 +89,7 @@
         allocate( sx_r(nkx,nky), sx_r_mpi(nkx,nky))
         allocate( sy_r(nkx,nky), sy_r_mpi(nkx,nky))
         allocate( sz_r(nkx,nky), sz_r_mpi(nkx,nky))
-        allocate(sigma_x(ndim,ndim), sigma_y(ndim,ndim), sigma_z(ndim,ndim))
+        allocate(spin_sigma_x(ndim,ndim), spin_sigma_y(ndim,ndim), spin_sigma_z(ndim,ndim))
      endif
 
      ik12=0
@@ -98,8 +98,8 @@
      dos_r=0d0; dos_r_mpi=0d0
      jdos_l=0d0; jdos_l_mpi=1d-12
      jdos_r=0d0; jdos_r_mpi=1d-12
-     if (SOC>0 .and. (SlabSpintexture_calc.or.ArcQPI_calc)) then
-        sigma_x=0.0d0; sigma_y=0.0d0; sigma_z=0.0d0
+     if (SOC>0 .and. (SlabSpintexture_calc.or.SlabQPI_kplane_calc)) then
+        spin_sigma_x=0.0d0; spin_sigma_y=0.0d0; spin_sigma_z=0.0d0
         jsdos_l=0d0; jsdos_l_mpi=1d-12
         jsdos_r=0d0; jsdos_r_mpi=1d-12
         sx_l=0d0; sy_l=0d0; sz_l=0d0
@@ -135,7 +135,7 @@
         ones(i,i)=1.0d0
      enddo
 
-     if (SOC>0 .and. (SlabSpintexture_calc.or.ArcQPI_calc)) then
+     if (SOC>0 .and. (SlabSpintexture_calc.or.SlabQPI_kplane_calc)) then
         if (index(Particle,'phonon')/=0) then
            stop "ERROR: we don't support spintexture calculation for phonon system"
         endif
@@ -146,24 +146,24 @@
            .or. index( Package, 'Abinit')/=0.or. index( Package, 'openmx')/=0) then
            do i=1, Np
               do j=1, Nwann
-                 sigma_x(Num_wann*(i-1)+j, Num_wann*(i-1)+Nwann+j)=1.0d0
-                 sigma_x(Num_wann*(i-1)+j+Nwann, Num_wann*(i-1)+j)=1.0d0
-                 sigma_y(Num_wann*(i-1)+j, Num_wann*(i-1)+Nwann+j)=-zi
-                 sigma_y(Num_wann*(i-1)+j+Nwann, Num_wann*(i-1)+j)=zi
-                 sigma_z(Num_wann*(i-1)+j, Num_wann*(i-1)+j)= 1d0
-                 sigma_z(Num_wann*(i-1)+j+Nwann, Num_wann*(i-1)+j+Nwann)=-1d0
+                 spin_sigma_x(Num_wann*(i-1)+j, Num_wann*(i-1)+Nwann+j)=1.0d0
+                 spin_sigma_x(Num_wann*(i-1)+j+Nwann, Num_wann*(i-1)+j)=1.0d0
+                 spin_sigma_y(Num_wann*(i-1)+j, Num_wann*(i-1)+Nwann+j)=-zi
+                 spin_sigma_y(Num_wann*(i-1)+j+Nwann, Num_wann*(i-1)+j)=zi
+                 spin_sigma_z(Num_wann*(i-1)+j, Num_wann*(i-1)+j)= 1d0
+                 spin_sigma_z(Num_wann*(i-1)+j+Nwann, Num_wann*(i-1)+j+Nwann)=-1d0
               enddo
            enddo
         elseif (index( Package, 'QE')/=0.or.index( Package, 'quantumespresso')/=0 &
              .or.index( Package, 'quantum-espresso')/=0.or.index( Package, 'pwscf')/=0) then
            do i=1, Np
               do j=1, Nwann
-                 sigma_x(Num_wann*(i-1)+(2*j-1), Num_wann*(i-1)+2*j)=1.0d0
-                 sigma_x(Num_wann*(i-1)+2*j, Num_wann*(i-1)+(2*j-1))=1.0d0
-                 sigma_y(Num_wann*(i-1)+(2*j-1), Num_wann*(i-1)+2*j)=-zi
-                 sigma_y(Num_wann*(i-1)+2*j, Num_wann*(i-1)+(2*j-1))=zi
-                 sigma_z(Num_wann*(i-1)+(2*j-1), Num_wann*(i-1)+(2*j-1))=1.0d0
-                 sigma_z(Num_wann*(i-1)+2*j, Num_wann*(i-1)+2*j)=-1.0d0
+                 spin_sigma_x(Num_wann*(i-1)+(2*j-1), Num_wann*(i-1)+2*j)=1.0d0
+                 spin_sigma_x(Num_wann*(i-1)+2*j, Num_wann*(i-1)+(2*j-1))=1.0d0
+                 spin_sigma_y(Num_wann*(i-1)+(2*j-1), Num_wann*(i-1)+2*j)=-zi
+                 spin_sigma_y(Num_wann*(i-1)+2*j, Num_wann*(i-1)+(2*j-1))=zi
+                 spin_sigma_z(Num_wann*(i-1)+(2*j-1), Num_wann*(i-1)+(2*j-1))=1.0d0
+                 spin_sigma_z(Num_wann*(i-1)+2*j, Num_wann*(i-1)+2*j)=-1.0d0
               enddo
            enddo
         else
@@ -223,30 +223,30 @@
            dos_bulk(ik1, ik2)=dos_bulk(ik1, ik2)- AIMAG(GB(i,i))/pi
         enddo ! i
 
-        if (SOC>0 .and. (SlabSpintexture_calc.or.ArcQPI_calc)) then
+        if (SOC>0 .and. (SlabSpintexture_calc.or.SlabQPI_kplane_calc)) then
            !>> calculate spin-resolved bulk spectrum
            sx_bulk= 0d0
-           call mat_mul(ndim,GB ,sigma_x,ctemp)
+           call mat_mul(ndim,GB ,spin_sigma_x,ctemp)
            do i= 1, Ndim
               sx_bulk=sx_bulk- aimag(ctemp(i,i))/pi
            enddo ! i
    
            sy_bulk= 0d0
-           call mat_mul(ndim,GB ,sigma_y,ctemp)
+           call mat_mul(ndim,GB ,spin_sigma_y,ctemp)
            do i= 1, Ndim
               sy_bulk=sy_bulk- aimag(ctemp(i,i))/pi
            enddo ! i
    
            sz_bulk= 0d0
-           call mat_mul(ndim,GB ,sigma_z,ctemp)
+           call mat_mul(ndim,GB ,spin_sigma_z,ctemp)
            do i= 1, Ndim
               sz_bulk=sz_bulk- aimag(ctemp(i,i))/pi
            enddo ! i
    
            !>> calculate spin-resolved surface spectrum
    
-           !ctemp=matmul(surfgreen,sigma_x)
-           call mat_mul(ndim,GLL,sigma_x,ctemp)
+           !ctemp=matmul(surfgreen,spin_sigma_x)
+           call mat_mul(ndim,GLL,spin_sigma_x,ctemp)
            do i= 1, NtopOrbitals
               io= TopOrbitals(i)
               sx_l(ik1, ik2)=sx_l(ik1, ik2)- aimag(ctemp(io,io))/pi
@@ -254,8 +254,8 @@
           !sx_l(ik1, ik2)= sx_l(ik1, ik2)- sx_bulk
           !if (sx_l(ik1, ik2)<0) sx_l(ik1, ik2)= eps9
    
-           !ctemp=matmul(surfgreen,sigma_y)
-           call mat_mul(ndim,GLL,sigma_y,ctemp)
+           !ctemp=matmul(surfgreen,spin_sigma_y)
+           call mat_mul(ndim,GLL,spin_sigma_y,ctemp)
            do i= 1, NtopOrbitals
               io= TopOrbitals(i)
               sy_l(ik1, ik2)=sy_l(ik1, ik2)- aimag(ctemp(io,io))/pi
@@ -264,8 +264,8 @@
           !if (sy_l(ik1, ik2)<0) sy_l(ik1, ik2)= eps9
    
    
-           !ctemp=matmul(surfgreen,sigma_z)
-           call mat_mul(ndim,GLL,sigma_z,ctemp)
+           !ctemp=matmul(surfgreen,spin_sigma_z)
+           call mat_mul(ndim,GLL,spin_sigma_z,ctemp)
            do i= 1, NtopOrbitals
               io= TopOrbitals(i)
               sz_l(ik1, ik2)=sz_l(ik1, ik2)- aimag(ctemp(io,io))/pi
@@ -274,8 +274,8 @@
           !if (sz_l(ik1, ik2)<0) sz_l(ik1, ik2)= eps9
    
    
-           !ctemp=matmul(surfgreen,sigma_x)
-           call mat_mul(ndim,GRR,sigma_x,ctemp)
+           !ctemp=matmul(surfgreen,spin_sigma_x)
+           call mat_mul(ndim,GRR,spin_sigma_x,ctemp)
            do i= 1, NBottomOrbitals
               io= Ndim- Num_wann+ BottomOrbitals(i)
               sx_r(ik1, ik2)=sx_r(ik1, ik2)- aimag(ctemp(io,io))/pi
@@ -284,8 +284,8 @@
           !if (sx_r(ik1, ik2)<0) sx_r(ik1, ik2)= eps9
    
    
-           !ctemp=matmul(surfgreen,sigma_y)
-           call mat_mul(ndim,GRR,sigma_y,ctemp)
+           !ctemp=matmul(surfgreen,spin_sigma_y)
+           call mat_mul(ndim,GRR,spin_sigma_y,ctemp)
            do i= 1, NBottomOrbitals
               io= Ndim- Num_wann+ BottomOrbitals(i)
               sy_r(ik1, ik2)=sy_r(ik1, ik2)- aimag(ctemp(io,io))/pi
@@ -294,8 +294,8 @@
           !if (sy_r(ik1, ik2)<0) sy_r(ik1, ik2)= eps9
    
    
-           !ctemp=matmul(surfgreen,sigma_z)
-           call mat_mul(ndim,GRR,sigma_z,ctemp)
+           !ctemp=matmul(surfgreen,spin_sigma_z)
+           call mat_mul(ndim,GRR,spin_sigma_z,ctemp)
            do i= 1, NBottomOrbitals
               io= Ndim- Num_wann+ BottomOrbitals(i)
               sz_r(ik1, ik2)=sz_r(ik1, ik2)- aimag(ctemp(io,io))/pi
@@ -316,7 +316,7 @@
                      mpi_sum, mpi_comm_world, ierr)
      call mpi_allreduce(dos_bulk, dos_bulk_mpi, size(dos_bulk),mpi_double_precision,&
                      mpi_sum, mpi_comm_world, ierr)
-     if (SOC>0 .and. (SlabSpintexture_calc.or.ArcQPI_calc)) then
+     if (SOC>0 .and. (SlabSpintexture_calc.or.SlabQPI_kplane_calc)) then
         call mpi_allreduce(sx_l, sx_l_mpi, size(sx_l),mpi_double_precision,&
                         mpi_sum, mpi_comm_world, ierr)
         call mpi_allreduce(sy_l, sy_l_mpi, size(sy_l),mpi_double_precision,&
@@ -334,7 +334,7 @@
      dos_l_mpi= dos_l
      dos_r_mpi= dos_r
      dos_bulk_mpi= dos_bulk
-     if (SOC>0 .and. (SlabSpintexture_calc.or.ArcQPI_calc)) then
+     if (SOC>0 .and. (SlabSpintexture_calc.or.SlabQPI_kplane_calc)) then
         sx_l_mpi= sx_l
         sy_l_mpi= sy_l
         sz_l_mpi= sz_l
@@ -354,7 +354,7 @@
         dos_l_only(ik1, ik2)= dos_l_mpi(ik1, ik2)
         if (dos_l_only(ik1, ik2)<dos_l_max/10d0) then
            dos_l_only(ik1, ik2)=eps9
-           if (SOC>0 .and. (SlabSpintexture_calc.or.ArcQPI_calc)) then
+           if (SOC>0 .and. (SlabSpintexture_calc.or.SlabQPI_kplane_calc)) then
               sx_l_mpi(ik1, ik2)=eps9
               sy_l_mpi(ik1, ik2)=eps9
               sz_l_mpi(ik1, ik2)=eps9
@@ -363,7 +363,7 @@
         dos_r_only(ik1, ik2)= dos_r_mpi(ik1, ik2)
         if (dos_r_only(ik1, ik2)<dos_r_max/10d0) then
            dos_r_only(ik1, ik2)=eps9
-           if (SOC>0 .and. (SlabSpintexture_calc.or.ArcQPI_calc)) then
+           if (SOC>0 .and. (SlabSpintexture_calc.or.SlabQPI_kplane_calc)) then
               sx_r_mpi(ik1, ik2)=eps9
               sy_r_mpi(ik1, ik2)=eps9
               sz_r_mpi(ik1, ik2)=eps9
@@ -427,7 +427,7 @@
         close(arcbulkfile)
      endif
            
-     if (cpuid.eq.0.and.SOC>0 .and. (SlabSpintexture_calc.or.ArcQPI_calc))then
+     if (cpuid.eq.0.and.SOC>0 .and. (SlabSpintexture_calc.or.SlabQPI_kplane_calc))then
         open(spindoslfile,file='spindos.dat_l')
         open(spindosrfile,file='spindos.dat_r')
         write(spindoslfile,'(a)')'# The coordinates of sx,sy,sz are redefined according to the SURFACE card'
@@ -460,7 +460,7 @@
         enddo
         close(spindoslfile)
         close(spindosrfile)
-     endif ! SlabSpintexture_calc and ArcQPI_calc=T
+     endif ! SlabSpintexture_calc and SlabQPI_kplane_calc=T
 
      if (cpuid.eq.0)then
         write(stdout,*)'Ndim: ',ndim
@@ -468,7 +468,7 @@
         write(stdout,*)'Calculated surface density of state successfully'
      endif
 
-     IF (ArcQPI_calc) then
+     IF (SlabQPI_kplane_calc) then
 
      !> calculate QPI (jdos)
      do iq= 1+ cpuid, nkx*nky, num_cpu
@@ -531,9 +531,9 @@
         jsdos_r_mpi= jsdos_r
      endif
 #endif
-     ENDIF ! ArcQPI_calc= T
+     ENDIF ! SlabQPI_kplane_calc= T
 
-     if (cpuid.eq.0.and.ArcQPI_calc)then
+     if (cpuid.eq.0.and.SlabQPI_kplane_calc)then
         write(stdout,*)'The calculation of joint density of state was done.'
         write(stdout,*)'Now it is ready to write out.'
         open (unit=arcljfile, file='arc.jdat_l')
@@ -563,7 +563,7 @@
         close(arcrjfile)
      endif ! cpuid==0
 
-     if (cpuid.eq.0.and.SOC>0.and.ArcQPI_calc)then
+     if (cpuid.eq.0.and.SOC>0.and.SlabQPI_kplane_calc)then
         open (unit=arcljsfile, file='arc.jsdat_l')
         write(arcljsfile,'(a)')'# Surface joint density of states(in consideration of spin contribution) of bottom surface'
         write(arcljsfile,'(a)')'# The coordinate of k is redefined according to the SURFACE card'
@@ -593,7 +593,7 @@
      endif !> SOC>0
 
      outfileindex= outfileindex+ 1
-     if (cpuid.eq.0.and.SOC>0.and.ArcQPI_calc)then
+     if (cpuid.eq.0.and.SOC>0.and.SlabQPI_kplane_calc)then
         open(unit=outfileindex, file='arc_l_jsdos.gnu')
         write(outfileindex, '(a)')"set encoding iso_8859_1"
         write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
@@ -628,7 +628,7 @@
   
        !> write script for gnuplot
      outfileindex= outfileindex+ 1
-     if (cpuid.eq.0.and.SOC>0.and.ArcQPI_calc)then
+     if (cpuid.eq.0.and.SOC>0.and.SlabQPI_kplane_calc)then
         open(unit=outfileindex, file='arc_r_jsdos.gnu')
         write(outfileindex, '(a)')"set encoding iso_8859_1"
         write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
@@ -665,7 +665,7 @@
 
      !> write script for gnuplot
      outfileindex= outfileindex+ 1
-     if (cpuid.eq.0.and.SOC>0.and.ArcQPI_calc)then
+     if (cpuid.eq.0.and.SOC>0.and.SlabQPI_kplane_calc)then
         open(unit=outfileindex, file='arc_l_jdos.gnu')
         write(outfileindex, '(a)')"set encoding iso_8859_1"
         write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
@@ -700,7 +700,7 @@
 
      !> write script for gnuplot
      outfileindex= outfileindex+ 1
-     if (cpuid.eq.0.and.SOC>0.and.ArcQPI_calc)then
+     if (cpuid.eq.0.and.SOC>0.and.SlabQPI_kplane_calc)then
         open(unit=outfileindex, file='arc_r_jdos.gnu')
         write(outfileindex, '(a)')"set encoding iso_8859_1"
         write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
@@ -838,7 +838,7 @@
      endif
 
      outfileindex= outfileindex+ 1
-     if (cpuid.eq.0.and.SOC>0 .and. (SlabSpintexture_calc.or.ArcQPI_calc))then
+     if (cpuid.eq.0.and.SOC>0 .and. (SlabSpintexture_calc.or.SlabQPI_kplane_calc))then
      !> generate gnuplot scripts for plotting the spin texture
      if (cpuid.eq.0) then
         open(outfileindex,file='spintext_r.gnu')
@@ -907,7 +907,7 @@
   
         close(outfileindex)
      endif
-     endif !> SlabSpintexture_calc or ArcQPI_calc
+     endif !> SlabSpintexture_calc or SlabQPI_kplane_calc
    
      if (cpuid.eq.0)write(stdout,*)'calculate spintexture successfully' 
  
@@ -924,7 +924,7 @@
      deallocate( dos_bulk,  dos_bulk_mpi)
      deallocate( jdos_l,  jdos_l_mpi)
      deallocate( jdos_r,  jdos_r_mpi)
-     if (SOC>0 .and. (SlabSpintexture_calc.or.ArcQPI_calc)) then
+     if (SOC>0 .and. (SlabSpintexture_calc.or.SlabQPI_kplane_calc)) then
         deallocate( jsdos_l,  jsdos_l_mpi)
         deallocate( jsdos_r,  jsdos_r_mpi)
         deallocate( sx_l,  sx_l_mpi)
@@ -933,7 +933,7 @@
         deallocate( sx_r,  sx_r_mpi)
         deallocate( sy_r,  sy_r_mpi)
         deallocate( sz_r,  sz_r_mpi)
-        deallocate(sigma_x, sigma_y, sigma_z)
+        deallocate(spin_sigma_x, spin_sigma_y, spin_sigma_z)
      endif
      deallocate( GLL, GRR, GB)
      deallocate(ctemp, H00, H01, ones)

@@ -153,7 +153,7 @@
      W=0d0; vx= 0d0; vy= 0d0; vz= 0d0; UU= 0d0; UU_dag= 0d0
 
      ! calculation bulk hamiltonian by a direct Fourier transformation of HmnR
-     call ham_bulk(k, Hamk_bulk)
+     call ham_bulk_atomicgauge(k, Hamk_bulk)
 
      !> diagonalization by call zheev in lapack
      UU=Hamk_bulk
@@ -174,7 +174,7 @@
      Omega_x=0d0;Omega_y=0d0; Omega_z=0d0
      do m= 1, Num_wann
         do n= 1, Num_wann
-           if (abs(w(m)-w(n))<eps6) cycle
+           if (abs(W(m)-W(n))<eps6) cycle
            Omega_x(m)= Omega_x(m)+ vy(n, m)*vz(m, n)/((W(m)-W(n))**2)
            Omega_y(m)= Omega_y(m)+ vz(n, m)*vx(m, n)/((W(m)-W(n))**2)
            Omega_z(m)= Omega_z(m)+ vx(n, m)*vy(m, n)/((W(m)-W(n))**2)
@@ -220,7 +220,7 @@
      complex(dp), intent(out) :: Omega_y(Num_wann)
      complex(dp), intent(out) :: Omega_z(Num_wann)
 
-     integer :: iR, m, n, i, j
+     integer :: iR, m, n, i
      real(dp), allocatable :: W(:)
      real(dp) :: kdotr
      complex(dp), allocatable :: Amat(:, :), DHDk(:, :, :), DHDkdag(:, :, :)
@@ -427,7 +427,7 @@
 
      ! calculation bulk hamiltonian by a direct Fourier transformation of HmnR
      !call ham_bulk_latticegauge(k, Hamk_bulk)
-     call ham_bulk    (k, Hamk_bulk)
+     call ham_bulk_atomicgauge    (k, Hamk_bulk)
 
      !> diagonalization by call zheev in lapack
      UU=Hamk_bulk
@@ -435,12 +435,6 @@
     !call zhpevx_pack(hamk_bulk,Num_wann, W, UU)
 
      UU_dag= conjg(transpose(UU))
-    !do iR= 1, Nrpts
-    !   kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
-    !   vx= vx+ zi*crvec(1, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
-    !   vy= vy+ zi*crvec(2, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
-    !   vz= vz+ zi*crvec(3, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
-    !enddo ! iR
 
      !call dHdk_latticegauge(k, vx, vy, vz)
      call dHdk_atomicgauge(k, vx, vy, vz)
@@ -490,7 +484,7 @@
      complex(dp), intent(out) :: Omega_y(Num_wann)
      complex(dp), intent(out) :: Omega_z(Num_wann)
 
-     integer :: m, n
+     integer :: m, n      
      real(dp), allocatable :: W(:)
      complex(dp), allocatable :: Amat(:, :), DHDk(:, :, :), DHDkdag(:, :, :)
      complex(dp), allocatable :: UU(:, :), UU_dag(:, :), Hamk_bulk(:, :)
@@ -503,7 +497,7 @@
      W=0d0; vx= 0d0; vy= 0d0; vz= 0d0; UU= 0d0; UU_dag= 0d0
 
      ! calculation bulk hamiltonian by a direct Fourier transformation of HmnR
-     call ham_bulk    (k, Hamk_bulk)
+     call ham_bulk_atomicgauge    (k, Hamk_bulk)
      !call ham_bulk_latticegauge(k, Hamk_bulk)
 
      !> diagonalization by call zheev in lapack
@@ -512,12 +506,6 @@
     !call zhpevx_pack(hamk_bulk,Num_wann, W, UU)
 
      UU_dag= conjg(transpose(UU))
-    !do iR= 1, Nrpts
-    !   kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
-    !   vx= vx+ zi*crvec(1, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
-    !   vy= vy+ zi*crvec(2, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
-    !   vz= vz+ zi*crvec(3, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
-    !enddo ! iR
 
      !call dHdk_latticegauge(k, vx, vy, vz)
      call dHdk_atomicgauge(k, vx, vy, vz)
@@ -531,10 +519,10 @@
      call mat_mul(Num_wann, UU_dag, Amat, vz) 
 
      Omega_x=0d0;Omega_y=0d0; Omega_z=0d0
-     do m= NumOccupied, NumOccupied
-        do n= NumOccupied+1, NumOccupied+1
-    !do m= 1, NumOccupied
-    !   do n= 1, Num_wann
+    !do m= NumOccupied  , NumOccupied
+    !   do n= NumOccupied+1, NumOccupied+1
+     do m= 1, NumOccupied
+        do n= 1, Num_wann
            if (m==n) cycle
            Omega_x(m)= Omega_x(m)+ vy(n, m)*vz(m, n)/((W(m)-W(n))**2)
            Omega_y(m)= Omega_y(m)+ vz(n, m)*vx(m, n)/((W(m)-W(n))**2)
@@ -562,9 +550,9 @@
      use para
      implicit none
     
-     integer :: ik, i, j, ierr, Mdim
+     integer :: ik, ierr, Mdim, i, j
 
-     real(dp) :: k(2)
+     real(dp) :: k(2)  
 
      !> k points slice
      real(dp), allocatable :: k12(:, :)
@@ -688,8 +676,274 @@
 
   end subroutine berry_curvarture_slab
 
+! subroutine berry_curvarture_line
+!    !> Calculate Berry curvature for a k line defined bu KPATH_BULK
+!    !
+!    !> ref : Physical Review B 74, 195118(2006)
+!    !
+!    !> eqn (9), Eqn (34)
+!    !
+!    !> Sep. 28 2018 by Quansheng Wu @ EPFL
+!    !
+!    ! Copyright (c) 2018 QuanSheng Wu. All rights reserved.
 
-  subroutine berry_curvarture
+!    use wmpi
+!    use para
+!    implicit none
+!   
+!    integer :: ik, ierr
+
+!    real(dp) :: k(3), o1(3), k_cart(3)
+!    real(dp) :: time_start, time_end, time_start0
+
+!    real(dp), external :: norm
+
+!    !> Berry curvature  (3, bands, k)
+!    complex(dp), allocatable :: Omega_x(:), Omega_y(:), Omega_z(:)
+!    real(dp), allocatable :: Omega(:, :), Omega_mpi(:, :)
+
+!    !> energy bands
+!    real(dp), allocatable :: eigv(:,:)
+!    real(dp), allocatable :: eigv_mpi(:,:)
+
+!    allocate( Omega_x(Num_wann))
+!    allocate( Omega_y(Num_wann))
+!    allocate( Omega_z(Num_wann))
+!    allocate( eigv    (Num_wann, knv3))
+!    allocate( eigv_mpi(Num_wann, knv3))
+!    allocate( Omega    (3, nk3_band))
+!    allocate( Omega_mpi(3, nk3_band))
+!    omega= 0d0
+!    omega_mpi= 0d0
+!   
+!    time_start= 0d0
+!    time_start0= 0d0
+!    call now(time_start0)
+!    time_start= time_start0
+!    time_end  = time_start0
+!    do ik= 1+ cpuid, nk3_band, num_cpu
+!       if (cpuid==0.and. mod(ik/num_cpu, 100)==0) &
+!          write(stdout, '(a, i9, "  /", i10, a, f10.1, "s", a, f10.1, "s")') &
+!          ' Berry curvature: ik', ik, nk3_band, ' time left', &
+!          (nk3_band-ik)*(time_end- time_start)/num_cpu, &
+!          ' time elapsed: ', time_end-time_start0 
+
+!       !> a k point in fractional coordinates
+!       k= k3points(:, ik)
+
+!       call now(time_start)
+!
+!       Omega_x= 0d0
+!       Omega_y= 0d0
+!       Omega_z= 0d0
+
+!       call berry_curvarture_singlek_numoccupied(k, Omega_x, Omega_y, Omega_z)
+!       !call berry_curvarture_singlek_numoccupied_total(k, Omega_x(1), Omega_y(1), Omega_z(1))
+!       Omega(1, ik) = real(sum(Omega_x))
+!       Omega(2, ik) = real(sum(Omega_y))
+!       Omega(3, ik) = real(sum(Omega_z))
+!       call now(time_end)
+!    enddo ! ik
+
+!    Omega_mpi= 0d0
+
+!if defined (MPI)
+!    call mpi_allreduce(Omega,Omega_mpi,size(Omega_mpi),&
+!                      mpi_dp,mpi_sum,mpi_cmw,ierr)
+!else
+!    Omega_mpi= Omega
+!endif
+
+!    !> output the Berry curvature to file
+!    outfileindex= outfileindex+ 1
+!    if (cpuid==0) then
+!       open(unit=outfileindex, file='Berrycurvature_line.dat')
+!       write(outfileindex, '(20a18)')'# Column 1-3 cartesian coordinates of k'
+!       write(outfileindex, '(20a18)')'# Column 4-6 Berry curvature'
+!       write(outfileindex, '(20a18)')'# Column 7-9 Normalized Berry curvature \Omega/|\Omega|'
+!       write(outfileindex, '(20a18)')'# kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
+!          'real(Omega_x)', 'real(Omega_y)', 'real(Omega_z)', "NOx", "NOy", "NOz"
+
+!       do ik= 1, nk3_band
+!          k=k3points(:, ik)
+!          o1= real(Omega_mpi(:, ik))
+!          if (norm(o1)>eps9) o1= o1/norm(o1)
+!          write(outfileindex, '(20E18.8)')k_cart, real(Omega_mpi(:, ik)), o1
+!       enddo
+
+!       close(outfileindex)
+!    endif
+
+!    !> write script for gnuplot
+!    outfileindex= outfileindex+ 1
+!    if (cpuid==0) then
+!       open(unit=outfileindex, file='Berrycurvature_line.gnu')
+!       write(outfileindex, '(a)') 'set terminal  postscript enhanced color font 24'
+!       write(outfileindex, '(a)')"set output 'Berrycurvature_line.eps'"
+!       write(outfileindex, '(a)')'set style data linespoints'
+!       write(outfileindex, '(a)')'unset ztics'
+!       write(outfileindex, '(a)')'unset key'
+!       write(outfileindex, '(a)')'set pointsize 0.8'
+!       write(outfileindex, '(a)')'set view 0,0'
+!       write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
+!       if (index(Particle,'phonon')/=0) then
+!          write(outfileindex, '(a, f10.5, a)')'set yrange [0:', emax, ']'
+!          write(outfileindex, '(a)')'set ylabel "Frequency (THz)"'
+!       else
+!          write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+!          write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
+!       endif
+!       write(outfileindex, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
+!       write(outfileindex, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
+! 
+!       do i=1, nk3lines-1
+!          if (index(Particle,'phonon')/=0) then
+!             write(outfileindex, 204)k3line_stop(i+1), 0.0, k3line_stop(i+1), emax
+!          else
+!             write(outfileindex, 204)k3line_stop(i+1), emin, k3line_stop(i+1), emax
+!          endif
+!       enddo
+!       write(outfileindex, '(2a)')"plot 'Berrycurvature_line.dat' u 1:2 ",  &
+!          "w lp lw 2 pt 7  ps 0.2, \"
+!       write(outfileindex, '(2a)')"     'bulkek.dat' u 1:2:($3/6):($4/6) ",  &
+!          "w vec"
+!       close(outfileindex)
+!    endif
+
+!02 format('set xtics (',20('"',A3,'" ',F10.5,','))
+!03 format(A3,'" ',F10.5,')')
+!04 format('set arrow from ',F10.5,',',F10.5,' to ',F10.5,',',F10.5, ' nohead')
+
+
+!if defined (MPI)
+!    call mpi_barrier(mpi_cmw, ierr)
+!endif
+
+!    deallocate( Omega_x, Omega_y, Omega_z)
+!    deallocate( Omega, Omega_mpi)
+!
+!    return
+
+! end subroutine berry_curvarture_line
+
+
+  subroutine berry_curvarture_cube
+     !> Calculate Berry curvature  in a cube defined in KCUBE_BULK
+     !
+     !> ref : Physical Review B 74, 195118(2006)
+     !
+     !> eqn (34)
+     !
+     !> Sep. 28 2018 by Quansheng Wu @ EPFL
+     !
+     ! Copyright (c) 2018 QuanSheng Wu. All rights reserved.
+
+     use wmpi
+     use para
+     implicit none
+    
+     integer :: ik, ierr, ikx, iky, ikz
+
+     real(dp) :: k(3), o1(3), k_cart(3)
+     real(dp) :: time_start, time_end, time_start0
+
+     real(dp), external :: norm
+
+     !> Berry curvature  (3, bands, k)
+     complex(dp), allocatable :: Omega_x(:), Omega_y(:), Omega_z(:)
+     real(dp), allocatable :: Omega(:, :), Omega_mpi(:, :)
+
+     allocate( Omega_x(Num_wann))
+     allocate( Omega_y(Num_wann))
+     allocate( Omega_z(Num_wann))
+     allocate( Omega    (3, Nk1*Nk2*Nk3))
+     allocate( Omega_mpi(3, Nk1*Nk2*Nk3))
+     omega= 0d0
+     omega_mpi= 0d0
+    
+     time_start= 0d0
+     time_start0= 0d0
+     call now(time_start0)
+     time_start= time_start0
+     time_end  = time_start0
+     do ik= 1+ cpuid, Nk1*Nk2*Nk3, num_cpu
+        if (cpuid==0.and. mod(ik/num_cpu, 100)==0) &
+           write(stdout, '(a, i9, "  /", i10, a, f10.1, "s", a, f10.1, "s")') &
+           ' Berry curvature: ik', ik, Nk1*Nk2*Nk3, ' time left', &
+           (Nk1*Nk2*Nk3-ik)*(time_end- time_start)/num_cpu, &
+           ' time elapsed: ', time_end-time_start0 
+        ikx= (ik-1)/(nk2*nk3)+1
+        iky= ((ik-1-(ikx-1)*Nk2*Nk3)/nk3)+1
+        ikz= (ik-(iky-1)*Nk3- (ikx-1)*Nk2*Nk3)
+        k= K3D_start_cube+ K3D_vec1_cube*(ikx-1)/dble(nk1)  &
+           + K3D_vec2_cube*(iky-1)/dble(nk2)  &
+           + K3D_vec3_cube*(ikz-1)/dble(nk3) &
+           - (K3D_vec1_cube+ K3D_vec2_cube+ K3D_vec3_cube)/2d0
+
+        call now(time_start)
+ 
+        Omega_x= 0d0
+        Omega_y= 0d0
+        Omega_z= 0d0
+
+        !call berry_curvarture_singlek_numoccupied_old(k, Omega_x, Omega_y, Omega_z)
+        call berry_curvarture_singlek_numoccupied(k, Omega_x, Omega_y, Omega_z)
+        !call berry_curvarture_singlek_numoccupied_total(k, Omega_x(1), Omega_y(1), Omega_z(1))
+        !call berry_curvarture_singlek_EF(k, 0d0, Omega_x, Omega_y, Omega_z)
+        Omega(1, ik) = real(sum(Omega_x))
+        Omega(2, ik) = real(sum(Omega_y))
+        Omega(3, ik) = real(sum(Omega_z))
+        call now(time_end)
+     enddo ! ik
+
+     Omega_mpi= 0d0
+
+#if defined (MPI)
+     call mpi_allreduce(Omega,Omega_mpi,size(Omega_mpi),&
+                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     Omega_mpi= Omega
+#endif
+
+     !> output the Berry curvature to file
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+        open(unit=outfileindex, file='Berrycurvature_cube-matlab.dat')
+        write(outfileindex, '(20a28)')'% kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
+           'Omega_x', 'Omega_y', 'Omega_z' 
+
+        do ik= 1, Nk1*Nk2*Nk3
+           ikx= (ik-1)/(nk2*nk3)+1
+           iky= ((ik-1-(ikx-1)*Nk2*Nk3)/nk3)+1
+           ikz= (ik-(iky-1)*Nk3- (ikx-1)*Nk2*Nk3)
+
+           k= K3D_start_cube+ K3D_vec1_cube*(ikx-1)/dble(nk1-1)  &
+           + K3D_vec2_cube*(iky-1)/dble(nk2-1)  &
+           + K3D_vec3_cube*(ikz-1)/dble(nk3-1) &
+           -(K3D_vec3_cube+K3D_vec2_cube+K3D_vec1_cube)/2d0
+           call direct_cart_rec(k, k_cart)
+           o1= real(Omega_mpi(:, ik))
+           if (norm(o1)>eps9) o1= o1/norm(o1)
+           write(outfileindex, '(20E28.10)')k_cart, o1
+        enddo
+
+        close(outfileindex)
+     endif
+
+#if defined (MPI)
+     call mpi_barrier(mpi_cmw, ierr)
+#endif
+
+     deallocate( Omega_x, Omega_y, Omega_z)
+     deallocate( Omega, Omega_mpi)
+ 
+     return
+
+  end subroutine berry_curvarture_cube
+
+
+
+  subroutine berry_curvarture_plane
      !> Calculate Berry curvature 
      !
      !> ref : Physical Review B 74, 195118(2006)
@@ -704,20 +958,17 @@
      use para
      implicit none
     
-     integer :: ik, m, n, i, j, ierr
+     integer :: ik, i, j, ierr
 
-     real(dp) :: kdotr, k(3), o1(3), vmin, vmax
-
-     real(dp) :: time_start, time_end, time_start0
+     real(dp) :: k(3), o1(3), vmin, vmax
 
      !> k points slice
      real(dp), allocatable :: kslice(:, :), kslice_shape(:, :)
    
      real(dp), external :: norm
+     
+     real(dp) :: time_start, time_end, time_start0
 
-     !> velocities
-     real(dp), allocatable :: vx(:), vy(:), vz(:)
-    
      !> Berry curvature  (3, bands, k)
      complex(dp), allocatable :: Omega_x(:), Omega_y(:), Omega_z(:)
      complex(dp), allocatable :: Omega(:, :), Omega_mpi(:, :)
@@ -729,16 +980,10 @@
      allocate( Omega_z(Num_wann))
      allocate( Omega    (3, Nk1*Nk2))
      allocate( Omega_mpi(3, Nk1*Nk2))
-     allocate( vx      (Num_wann))
-     allocate( vy      (Num_wann))
-     allocate( vz      (Num_wann))
      kslice=0d0
      kslice_shape=0d0
      omega= 0d0
      omega_mpi= 0d0
-     vx=0d0
-     vy=0d0
-     vz=0d0
     
      !> kslice is centered at K3d_start
      ik =0
@@ -747,7 +992,7 @@
            ik =ik +1
            kslice(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(nk1-1)  &
                      + K3D_vec2*(j-1)/dble(nk2-1) - (K3D_vec1+ K3D_vec2)/2d0
-           kslice_shape(:, ik)= kslice(1, ik)* Kua+ kslice(2, ik)* Kub+ kslice(3, ik)* Kuc 
+           kslice_shape(:, ik)= kslice(1, ik)* Origin_cell%Kua+ kslice(2, ik)* Origin_cell%Kub+ kslice(3, ik)* Origin_cell%Kuc 
         enddo
      enddo
 
@@ -763,7 +1008,9 @@
            (nk1*nk2-ik)*(time_end- time_start)/num_cpu, &
            ' time elapsed: ', time_end-time_start0 
 
+
         call now(time_start)
+ 
         !> diagonalize hamiltonian
         k= kslice(:, ik)
 
@@ -772,7 +1019,6 @@
         Omega_z= 0d0
 
         !call berry_curvarture_singlek_numoccupied_old(k, Omega_x, Omega_y, Omega_z)
-        !call berry_curvarture_singlek_numoccupied(k, Omega_x(1), Omega_y(1), Omega_z(1))
         if (Berrycurvature_EF_calc) then
            call berry_curvarture_singlek_EF(k, E_arc, Omega_x, Omega_y, Omega_z)
         else
@@ -781,8 +1027,8 @@
         Omega(1, ik) = sum(Omega_x)
         Omega(2, ik) = sum(Omega_y)
         Omega(3, ik) = sum(Omega_z)
-
         call now(time_end)
+
      enddo ! ik
 
      Omega_mpi= 0d0
@@ -882,7 +1128,6 @@
         write(outfileindex, '(a)')"set title 'Berry Curvature {/Symbol W}_z'"
         write(outfileindex, '(a)')"set colorbox"
         write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:6 w pm3d"
- 
         close(outfileindex)
      endif
 
@@ -924,7 +1169,7 @@
  
      return
 
-  end subroutine berry_curvarture
+  end subroutine berry_curvarture_plane
 
   subroutine Fourier_R_to_k(k, ham)
      !> Fourier transform the Hamiltonian from R space to k space
@@ -938,7 +1183,6 @@
 
      ham= 0d0
      do iR= 1, Nrpts
-       !R= Rua*irvec(1,iR) + Rub*irvec(2,iR) + Ruc*irvec(3,iR)
         kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
         Ham= Ham+ HmnR(:,:,iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
      enddo
@@ -1107,5 +1351,175 @@
 
      return
   end subroutine Chern_sphere
+
+
+
+  subroutine Chern_halftorus_single(k0, Rbig, rsmall_a, rsmall_b, Chern)
+     !> calculate Chern number on a halftorus by integration over a halftorus
+     !> QuanSheng Wu at EPFL June 12 2018
+     !> wuquansheng@gmail.com
+     !> The halftorus is defined by a center k0 and a radius in WEYL_CHIRALITY
+     !> C= \int d\theta d\phi 
+     !> k0 must be in Cartesian coordinates
+
+     use wmpi
+     use para
+     implicit none
+     
+     !> inout variables
+     real(dp), intent(in) :: k0(3)
+     real(dp), intent(in) :: Rbig
+     real(dp), intent(in) :: rsmall_a
+     real(dp), intent(in) :: rsmall_b
+     real(dp), intent(out) :: Chern
+     real(dp), external :: norm
+
+
+     integer :: ik, ik1, ik2, nkmesh2, ierr
+     real(dp) :: theta, phi, r_para, dtheta, dphi, Chern_mpi
+     real(dp) :: time_start, time_end
+     real(dp) :: st, ct, sp, cp, O_x, O_y, O_z, rt
+
+     !> k points in the halftorus
+     real(dp) :: k_cart(3), k_direct(3), o1(3)
+     real(dp), allocatable :: kpoints(:, :)
+     real(dp), allocatable :: thetas(:)
+     real(dp), allocatable :: phis(:)
+     real(dp), allocatable :: Omega_k(:, :)
+     real(dp), allocatable :: Omega_k_mpi(:, :)
+
+     !> Berry curvature  (bands)
+     complex(dp), allocatable :: Omega_x(:)
+     complex(dp), allocatable :: Omega_y(:)
+     complex(dp), allocatable :: Omega_z(:)
+
+     nkmesh2= Nk1*Nk2
+     allocate(Omega_x(Num_wann), Omega_y(Num_wann), Omega_z(Num_wann))
+     allocate(thetas(nkmesh2), phis(nkmesh2), kpoints(3, nkmesh2))
+     allocate(Omega_k(3, nkmesh2), Omega_k_mpi(3, nkmesh2))
+     Omega_k= 0d0; Omega_k_mpi= 0d0
+
+     !> set k plane
+     !> the first dimension should be in one primitive cell, phi=[0, 2*pi]
+     !> the first dimension is the integration direction
+     !> the WCCs are calculated along the second k line theta=[0, pi]
+     ik= 0
+     do ik2=1, Nk2 ! the mesh for k line of that wcc are calculated ->theta
+        theta= (ik2- 1d0)/(Nk2- 1d0)* 1d0*pi
+        if (ik2== 1) theta= (ik2- 1d0+ 0.01)/(Nk2- 1d0)* pi  ! avoid the North pole
+        if (ik2== Nk2) theta= (ik2- 1d0- 0.01)/(Nk2- 1d0)* pi  ! avoid the south pole
+        do ik1=1, Nk1  ! the mesh along the integration direction -> phi
+           ik = ik+ 1
+           phi= (ik1- 1d0)/Nk1* 2.0d0* pi
+           r_para= Rbig+ rsmall_a* cos(theta)
+           k_cart(1)= k0(1)+ r_para* cos(phi)
+           k_cart(2)= k0(2)+ r_para* sin(phi)
+           k_cart(3)= k0(3)+ rsmall_b* sin(theta)
+           call cart_direct_rec(k_cart, k_direct)
+           kpoints(:, ik)= k_direct
+           thetas(ik)= theta
+           phis(ik) = phi
+        enddo
+     enddo
+     dtheta= 1d0/(Nk2- 1d0)*pi
+     dphi= 1d0/Nk1*2d0*pi
+
+     Chern_mpi = 0d0
+     time_start= 0d0
+     time_end= 0d0
+     call now(time_start)
+     time_end= time_start
+     do ik=cpuid+1, Nk1*Nk2, num_cpu
+        if (cpuid==0.and. mod(ik/num_cpu, 100)==0) &
+           write(stdout, '(a, i8, a, i7, a, f16.1, a)') &
+           'Chern_halftorus_single, ik ', ik, ' nkmesh2 ',nkmesh2, ' time left ', &
+           (nkmesh2-ik)*(time_end- time_start)/num_cpu, ' s'
+        call now(time_start)
+ 
+        k_direct= kpoints(:, ik)
+        theta= thetas(ik)
+        phi= phis(ik)
+        st=sin(theta)
+        ct=cos(theta)
+        sp=sin(phi)
+        cp=cos(phi)
+        rt= Rbig+ rsmall_a* ct
+        call berry_curvarture_singlek_numoccupied(k_direct, Omega_x, Omega_y, Omega_z)
+       !O_x= real(Omega_x(Numoccupied))
+       !O_y= real(Omega_y(Numoccupied))
+       !O_z= real(Omega_z(Numoccupied))
+        O_x= real(sum(Omega_x))
+        O_y= real(sum(Omega_y))
+        O_z= real(sum(Omega_z))
+        Chern_mpi= Chern_mpi-( rsmall_b*rt*ct*cp*O_x+ rsmall_b*rt*ct*sp*O_y+rsmall_a*rt*st*O_z)
+        call now(time_end)
+        Omega_k_mpi(1, ik)= O_x
+        Omega_k_mpi(2, ik)= O_y
+        Omega_k_mpi(3, ik)= O_z
+     enddo
+
+#if defined (MPI)
+     Chern= 0d0
+     call mpi_allreduce(Chern_mpi, Chern, 1, &
+                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+     call mpi_allreduce(Omega_k_mpi, Omega_k, size(Omega_k), &
+                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     Chern= Chern_mpi 
+     Omega_k= Omega_k_mpi
+#endif
+
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+        open(unit=outfileindex, file='halftorus.txt')
+        write(outfileindex, '(a, 3f12.5)')'# Torus centered at : ', k0
+        write(outfileindex, '(a, f12.5)') '# Rbig (1/A) ', Rbig
+        write(outfileindex, '(a, f12.5)') '# rsmall_a (1/A) ', rsmall_a
+        write(outfileindex, '(a, f12.5)') '# rsmall_b (1/A) ', rsmall_b
+        do ik=1, Nk1*Nk2
+           k_direct= kpoints(:, ik)
+           call direct_cart_rec(k_direct, k_cart)
+           o1= Omega_k(:, ik)
+           if (norm(o1)>eps9) o1= o1/norm(o1)
+           write(outfileindex, '(6f16.5)') k_cart, o1
+        enddo
+        close(outfileindex)
+     endif
+
+
+
+      Chern = Chern* dtheta* dphi/pi/2d0
+
+     return
+  end subroutine Chern_halftorus_single
+
+  subroutine Chern_halftorus
+     use wmpi
+     use para
+     implicit none
+
+     integer :: i
+     real(dp) :: k0(3), Chern
+     real(dp), allocatable :: Chern_array(:)
+
+     allocate(Chern_array(Num_NLs))
+     Chern_array= 0d0
+
+     do i=1, Num_NLs
+        k0= NL_center_position_cart(:, i)
+        call Chern_halftorus_single(k0, Rbig_NL, rsmall_a_NL, rsmall_b_NL, Chern)
+        Chern_array(i)= Chern
+     enddo
+
+     if (cpuid==0)then
+        write(stdout, *)'# Chern number for the Weyl points'
+        write(stdout, '("#",a8,5a9, a16)')'kx', 'ky', 'kz', 'k1', 'k2', 'k3', 'Chern'
+        do i=1, Num_NLs
+           write(stdout, '(6f9.5, f16.8)')NL_center_position_cart(:, i), NL_center_position_direct(:, i), Chern_array(i)
+        enddo
+     endif
+
+     return
+  end subroutine Chern_halftorus
 
 

@@ -129,7 +129,7 @@
 
         k=kpoints(:, ik)
         ! calculate Hamiltonian
-        call ham_bulk(k,Chamk)
+        call ham_bulk_latticegauge(k,Chamk)
         eigenvalue=0.0d0
         eigenvector=Chamk
         

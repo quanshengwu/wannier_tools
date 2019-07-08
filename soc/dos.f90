@@ -89,7 +89,7 @@ subroutine dos_sub
        + K3D_vec3_cube*(ikz-1)/dble(nk3)
 
       !> get Hamiltonian at a given k point and diagonalize it
-      call ham_bulk(k, Hk)
+      call ham_bulk_latticegauge(k, Hk)
       W= 0d0
       call eigensystem_c( 'N', 'U', Num_wann ,Hk, W)
       eigval(:)= W(iband_low:iband_high)
@@ -229,7 +229,7 @@ subroutine joint_dos
    do ik=1+cpuid, knv3, num_cpu
       if (cpuid.eq.0) write(stdout, *) 'ik, knv3', ik, knv3
       k= kpoints(:, ik)
-      call ham_bulk(k, Hk)
+      call ham_bulk_latticegauge(k, Hk)
       W= 0d0
       call eigensystem_c( 'N', 'U', Num_wann ,Hk, W)
       eigval_mpi(:, ik)= W(iband_low:iband_high)
@@ -397,7 +397,7 @@ subroutine dos_joint_dos
       k= K3D_start_cube+ K3D_vec1_cube*(ikx-1)/dble(nk1-1)  &
                 + K3D_vec2_cube*(iky-1)/dble(nk2-1)  &
                 + K3D_vec3_cube*(ikz-1)/dble(nk3-1)
-      call ham_bulk(k, Hk)
+      call ham_bulk_latticegauge(k, Hk)
       W= 0d0
       call eigensystem_c( 'N', 'U', Num_wann ,Hk, W)
 

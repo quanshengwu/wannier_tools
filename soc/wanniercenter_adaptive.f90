@@ -5,7 +5,7 @@
       use wmpi
       implicit none
 
-      integer :: ik2, i
+      integer :: ik2, i, j 
       integer :: Nk2_adaptive
 
       real(dp) :: kstart(3)
@@ -300,8 +300,8 @@
       outfileindex= outfileindex+ 1
       if (cpuid==0) then
          open(unit=outfileindex, file='wcc.dat')
-         write(outfileindex, '(10000A16)')'#      k', 'largestgap', 'sum(wcc(:,ik))', &
-                                          'wcc(:, ik)' 
+         write(outfileindex, '(4A16, A)')'#      k', 'largestgap', 'sum(wcc(:,ik))', &
+                                          'wcc(i, ik)', '(i=1, NumOccupied)'
          do ik2=1, Nk2_adaptive
             write(outfileindex, '(10000f16.8)')kpath_wcc(ik2), &
                largestgap(ik2), dmod(sum(wcc(:, ik2)), 1d0), & 
@@ -331,8 +331,7 @@
          write(outfileindex, '(a)')'set ylabel offset 2, 0.0 '
          write(outfileindex, '(a)')'set xrange [0: 0.5]'
          write(outfileindex, '(a)')'set yrange [0:1]'
-        !write(outfileindex, '(a)')"plot 'wcc.dat' u 1:2 w l lw 2  lc 'blue', \"   
-         write(outfileindex, '(a)')"plot  \"   
+         write(outfileindex, '(a)')"plot 'wcc.dat' u 1:2 w l lw 2  lc 'blue', \"   
          write(outfileindex, '(a, i5, a)')" for [i=4: ", Numoccupied+3, "] 'wcc.dat' u 1:i w p  pt 7  ps 1.1 lc 'red'"
          close(outfileindex)
       endif
@@ -351,8 +350,8 @@
       use wmpi
       implicit none
 
-      integer :: i, ik, ik2
-
+      integer :: i, j, l , m , ia, imax
+      integer :: ik, ik1, ik2
       integer :: ierr
 
       real(dp), intent(in) :: kstart(3)
@@ -398,8 +397,8 @@
 
       logical :: converged, exceed
 
-      real(dp) :: g, phi1, phi2, phi3
-      real(dp) :: zm, zm1, xnm1, Deltam, dis
+      real(dp) :: g, phi1, phi2, phi3, zm
+      real(dp) :: zm1, xnm1, Deltam, dis
       real(dp), allocatable :: xnm(:)
 
       allocate(xnm(Numoccupied))
@@ -448,7 +447,7 @@
       Nk2_adaptive= Nk2
       
       iter= 0
-      neighbour_tol= 0.50d0
+      neighbour_tol= wcc_neighbour_tol
       converged=.False.
       Do while (.true.)
          if (converged .or. Nk2_adaptive>=Nk2_max) exit
@@ -640,32 +639,46 @@
       real(dp), intent(out) :: largestgap_pos_val
 
       logical :: not_in
-      integer :: i, j, m, it, imax, iter
+      integer :: i, j, l , m , ia, it, imax
 
       integer :: ik1, ik, Nk_start, Nk_Max, Nk_adaptive
 
-      real(dp) :: dis
-      real(dp) :: max_diff
-      real(dp), parameter :: wcc_tol=0.1d0
+      integer :: ierr, iter
+
+      real(dp) :: dis,  max_diff,  wcc_tol
 
       !> k points in kx-ky plane
       real(dp), allocatable :: kpoints(:, :)
 
       !> hamiltonian for each k point
       !> and also the eigenvector of hamiltonian after eigensystem_c
-      complex(dp), allocatable :: Hamk(:, :)
-      complex(dp), allocatable :: Hamk_dag(:, :)
+      complex(dp), allocatable :: Hamk(:, :), Hamk_dag(:, :)
+
+      !> for sparse hamiltonian
+      !> dim= Num_wann*Num_wann
+      integer :: nnzmax, nnz
+      integer, allocatable :: jcoo(:), icoo(:)
+      complex(dp), allocatable :: acoo(:)
+      complex(dp), allocatable :: zeigv(:, :)
+
+      !number of ARPACK eigenvalues
+      integer :: neval
+   
+      ! number of Arnoldi vectors
+      integer :: nvecs
+   
+      !> calculate eigenvector or not
+      logical :: ritzvec
+   
+      !shift-invert shiftsigma
+      complex(dp) :: shiftsigma=(0d0,0d0)
 
       !> Mmnkb=<u_n(k)|u_m(k+b)>
       !> |u_n(k)> is the periodic part of wave function
-      complex(dp), allocatable :: Mmnkb(:, :)
-      complex(dp), allocatable :: Mmnkb_com(:, :)
-      complex(dp), allocatable :: Mmnkb_full(:, :)
+      complex(dp), allocatable :: Mmnkb(:, :), Mmnkb_com(:, :)
 
       !> 
-      complex(dp), allocatable :: Lambda_eig(:)
-      complex(dp), allocatable :: Lambda(:, :)
-      complex(dp), allocatable :: Lambda0(:, :)
+      complex(dp), allocatable :: Lambda_eig(:), Lambda(:, :), Lambda0(:, :)
 
       !> three matrix for SVD 
       !> M= U.Sigma.V^\dag
@@ -687,34 +700,36 @@
       !> exp(-i*b.R)
       complex(dp) :: ratio
 
-      real(dp) :: k(3)
-      real(dp) :: b(3)
+      real(dp) :: k(3), b(3)
 
-      real(dp) :: maxgap
-      real(dp) :: maxgap0
-      real(dp) :: maxgap_new
-      real(dp) :: maxgap_old
+      real(dp) :: maxgap, maxgap0, maxgap_new, maxgap_old
 
       type(kline_integrate_type) :: kline_integrate(Nk2_max)
+
+      wcc_tol= wcc_calc_tol
 
       allocate(Lambda_eig(Numoccupied))
       allocate(Lambda(Numoccupied, Numoccupied))
       allocate(Lambda0(Numoccupied, Numoccupied))
       allocate(Mmnkb(Numoccupied, Numoccupied))
       allocate(Mmnkb_com(Numoccupied, Numoccupied))
-      allocate(Mmnkb_full(Num_wann, Num_wann))
-      allocate(hamk(Num_wann, Num_wann))
-      allocate(hamk_dag(Num_wann, Num_wann))
       allocate(eigenvalue(Num_wann))
       allocate(U(Numoccupied, Numoccupied))
       allocate(Sigma(Numoccupied, Numoccupied))
       allocate(VT(Numoccupied, Numoccupied))
       allocate(wcc_new(Numoccupied))
       allocate(wcc_old(Numoccupied))
+      if (Is_Sparse) then
+         allocate(hamk(Num_wann, NumOccupied))
+         allocate(hamk_dag(Num_wann, NumOccupied))
+      else
+         allocate(hamk(Num_wann, Num_wann))
+         allocate(hamk_dag(Num_wann, Num_wann))
+      endif
+
       wcc_old= 0d0
       hamk=0d0
       eigenvalue=0d0
-      Mmnkb_full=0d0
       Mmnkb=0d0
       Mmnkb_com=0d0
       Lambda =0d0
@@ -722,6 +737,25 @@
       U= 0d0
       Sigma= 0d0
       VT= 0d0
+
+      if (Is_Sparse) then
+         neval=OmegaNum
+         if (neval>Num_wann-2) neval= Num_wann- 2
+      
+         !> ncv
+         nvecs=int(2*neval)
+         if (nvecs<50) nvecs= int(6*neval)
+      
+         if (nvecs>Num_wann) nvecs= Num_wann
+
+         shiftsigma=(1d0,0d0)*E_arc
+         nnzmax=splen+Num_wann
+         nnz=splen
+         allocate( acoo(nnzmax))
+         allocate( jcoo(nnzmax))
+         allocate( icoo(nnzmax))
+         allocate( zeigv(Num_wann,nvecs))
+      endif
 
       !> the first dimension should be in one primitive cell, [0, 1] 
       !> the first dimension is the integration direction
@@ -745,15 +779,15 @@
          kline_integrate(ik1)%delta= (ik1-1d0)/dble(Nk_start)
          if (ik1==Nk_start) then
             b= kpoints(:, 2)- kpoints(:, 1)
-            b= b(1)*kua+b(2)*kub+b(3)*kuc
+            b= b(1)*Origin_cell%Kua+b(2)*Origin_cell%Kub+b(3)*Origin_cell%Kuc
             kline_integrate(ik1)%b = b
          else
             b= kpoints(:, ik1+1)- kpoints(:, ik1)
-            b= b(1)*kua+b(2)*kub+b(3)*kuc
+            b= b(1)*Origin_cell%Kua+b(2)*Origin_cell%Kub+b(3)*Origin_cell%Kuc
             kline_integrate(ik1)%b= b
          endif
          if (.not.allocated(kline_integrate(ik1)%eig_vec)) &
-            allocate(kline_integrate(ik1)%eig_vec(Num_wann, Num_wann))
+            allocate(kline_integrate(ik1)%eig_vec(Num_wann, NumOccupied))
          kline_integrate(ik1)%eig_vec= (0d0, 0d0)
          kline_integrate(ik1)%calculated= .False. ! not calculated
       enddo
@@ -789,7 +823,7 @@
                kline_integrate(it)%k= kpoints(:, ik1)
                kline_integrate(it)%delta= (ik1-1d0)/Nk_adaptive
                if (.not. allocated(kline_integrate(it)%eig_vec))&
-                   allocate(kline_integrate(it)%eig_vec(Num_wann, Num_wann))
+                   allocate(kline_integrate(it)%eig_vec(Num_wann, NumOccupied))
                kline_integrate(it)%eig_vec= 0d0
                kline_integrate(it)%calculated= .False.
             endif
@@ -806,14 +840,25 @@
                cycle
             endif
             k= kline_integrate(ik1)%k
-  
-            !> get the TB hamiltonian in k space
-            call ham_bulk_latticegauge(k,hamk)
+            if (Is_Sparse) then
+               call ham_bulk_coo_sparsehr_latticegauge(k,acoo,icoo,jcoo)
+               nnz= splen
+              
+               ritzvec= .true.
+               stop " we don't support sparse hr in this version"
+              !call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,eigenvalue,shiftsigma, zeigv, ritzvec)
+              !kline_integrate(ik1)%eig_vec(1:Num_wann, 1:NumOccupied)= zeigv(1:Num_wann, 1:NumOccupied)
+
+            else
+               !> get the TB hamiltonian in k space
+               call ham_bulk_latticegauge(k,hamk)
+      
+               !> diagonal hamk
+               call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
+               kline_integrate(ik1)%eig_vec(1:Num_wann, 1:NumOccupied)= hamk(1:Num_wann, 1:NumOccupied)
+ 
+            endif
    
-            !> diagonal hamk
-            call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
-   
-            kline_integrate(ik1)%eig_vec= hamk
          enddo  ! ik1
 
          do ik1=1, Nk_adaptive
@@ -829,18 +874,18 @@
          do ik1=1, Nk_adaptive
             !> <u_k|u_k+1>
             Mmnkb= 0d0
-            hamk_dag= kline_integrate(ik1)%eig_vec
+            hamk_dag(:, 1:NumOccupied)= kline_integrate(ik1)%eig_vec
             if (ik1==Nk_adaptive) then
-               hamk= kline_integrate(1)%eig_vec     
+               hamk(:, 1:NumOccupied)= kline_integrate(1)%eig_vec     
             else
-               hamk= kline_integrate(ik1+1)%eig_vec 
+               hamk(:, 1:NumOccupied)= kline_integrate(ik1+1)%eig_vec 
             endif
 
             b= kline_integrate(ik1)%b
             do m=1, Num_wann
-               br= b(1)*wannier_centers_cart(1, m)+ &
-                   b(2)*wannier_centers_cart(2, m)+ &
-                   b(3)*wannier_centers_cart(3, m)
+               br= b(1)*Origin_cell%wannier_centers_cart(1, m)+ &
+                   b(2)*Origin_cell%wannier_centers_cart(2, m)+ &
+                   b(3)*Origin_cell%wannier_centers_cart(3, m)
                ratio= cos(br)- zi* sin(br)
          
                do j=1, Numoccupied
@@ -943,9 +988,9 @@
       real(dp) :: delta ! apart from the start point
       real(dp) :: b(3)  ! dis
       logical  :: calculated
-      complex(dp), allocatable :: eig_vec(:, :)  !dim= (num_wann, num_wann)
+      complex(dp), allocatable :: eig_vec(:, :)  !dim= (num_wann, NumOccupied)
 
-      allocate(eig_vec(num_wann, num_wann))
+      allocate(eig_vec(num_wann, NumOccupied))
       eig_vec= 0d0
 
       do i= Nk_adaptive-1, 1, -1  ! > start n-1 sweeping
@@ -976,11 +1021,11 @@
       do i=1, Nk_adaptive
          if (i==Nk_adaptive) then
             b= kline_integrate(2)%k- kline_integrate(1)%k
-            b= b(1)*kua+b(2)*kub+b(3)*kuc
+            b= b(1)*Origin_cell%Kua+b(2)*Origin_cell%Kub+b(3)*Origin_cell%Kuc
             kline_integrate(i)%b = b
          else
             b= kline_integrate(i+ 1)%k- kline_integrate(i)%k
-            b= b(1)*kua+b(2)*kub+b(3)*kuc
+            b= b(1)*Origin_cell%Kua+b(2)*Origin_cell%Kub+b(3)*Origin_cell%Kuc
             kline_integrate(i)%b= b
          endif
       enddo
@@ -1010,8 +1055,8 @@
       real(dp) :: largestgap_pos_i     ! largest gap position
       real(dp) :: largestgap_pos_val   ! largest gap position value
       real(dp) :: largestgap_val       ! largest gap value
-      real(dp), allocatable :: wcc(:)  !dim= (num_wann, num_wann)
-      real(dp), allocatable :: gap(:)  !dim= (num_wann, num_wann)
+      real(dp), allocatable :: wcc(:)  !dim= (NumOccupied)
+      real(dp), allocatable :: gap(:)  !dim= (NumOccupied)
 
       allocate(wcc(Numoccupied))
       allocate(gap(Numoccupied))
@@ -1098,19 +1143,19 @@
    end subroutine largest_gap_find
 
    subroutine dis_phase(x, y, dis)
-      !> the distance between two phases
       use para, only : dp
       use wmpi
       real(dp), intent(in) :: x, y
       real(dp), intent(out) :: dis
 
       real(dp) :: a, b
-      dis = 0d0
+      a=x
+      b=y
 
-      a= dmod(x, 1d0)
-      b= dmod(y, 1d0)
+      a= dmod(a, 1d0)
+      b= dmod(b, 1d0)
 
-      dis= min( dmod(abs(1d0+ a- b), 1d0), dmod(abs(1d0- a+ b), 1d0))
+      dis= min( dmod(abs(1d0+ a- b), 1d0), dmod( abs(1d0- a+ b), 1d0))
 
       return
    end subroutine dis_phase

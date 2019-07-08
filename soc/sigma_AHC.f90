@@ -192,7 +192,7 @@
 #else
      sigma_tensor_ahc= sigma_tensor_ahc_mpi
 #endif
-     sigma_tensor_ahc= sigma_tensor_ahc/dble(knv3)/CellVolume*24341d0*2d0  ! in (Omega*cm)^-1
+     sigma_tensor_ahc= sigma_tensor_ahc/dble(knv3)/Origin_cell%CellVolume*24341d0*2d0  ! in (Omega*cm)^-1
 
      outfileindex= outfileindex+ 1
      if (cpuid.eq.0) then
@@ -238,7 +238,7 @@
      implicit none
     
      integer :: iR, ik, ikx, iky, ikz
-     integer :: m, n, ie
+     integer :: m, n, i, j, ie
      integer :: ierr, knv3
 
      real(dp) :: kdotr, mu, Beta_fake
@@ -259,6 +259,7 @@
      !> Berry curvature
      complex(dp), allocatable :: Omega_x(:), Omega_y(:), Omega_z(:)
      complex(dp), allocatable :: Omega_x_t(:), Omega_y_t(:), Omega_z_t(:)
+     complex(dp) :: ratio
 
      !> conductivity  dim= OmegaNum
      real(dp), allocatable :: energy(:)
@@ -378,7 +379,7 @@
 #else
      sigma_tensor_ahc= sigma_tensor_ahc_mpi
 #endif
-     sigma_tensor_ahc= sigma_tensor_ahc/dble(knv3)/CellVolume*24341d0  ! in (Omega*cm)^-1
+     sigma_tensor_ahc= sigma_tensor_ahc/dble(knv3)/Origin_cell%CellVolume*24341d0  ! in (Omega*cm)^-1
 
      outfileindex= outfileindex+ 1
      if (cpuid.eq.0) then

@@ -15,6 +15,7 @@
 ! version     2.2.1  At EPFL, Switzerland, Sep. 14. 2017
 ! version     2.4.0  At EPFL, Switzerland, Aug. 31. 2018
 ! version     2.4.1  At EPFL, Switzerland, Oct. 15. 2018
+! version     2.4.2  At EPFL, Switzerland, Oct. 15. 2018
 ! wuquansheng@gmail.com
 ! Copyright (c) 2017 QuanSheng Wu. All rights reserved.
 !--------+--------+--------+--------+--------+--------+--------+------!
@@ -35,7 +36,7 @@
 
 
      !> version of WannierTools
-     version='2.4.1'
+     version='2.4.2'
 
      ierr = 0
      cpuid= 0
@@ -64,54 +65,73 @@
         write(stdout, *)' '
      endif
 
-     !> readin the control parameters for this program
-     call readinput
+   !> readin the control parameters for this program
+   call readinput
+   !call deepmdkit_interface
+   !> determine whether you are using kp model or TB model
+   IF (index(KPorTB, 'KP')/=0) then
+      Num_wann= sum(Origin_cell%nprojs)
+      if (SOC>0) num_wann= 2*num_wann
+   ELSE  ! you are using TB model
+      !> open file Hmn_R.data to get Num_wann and Nrpts
+      if (cpuid.eq.0)then
+         write(stdout,*)''
+         inquire (file =Hrfile, EXIST = exists)
+         if (exists)then
+            !> the standard format defined by wannier90
+            if (index(Hrfile, 'HWR')==0) then
+               write(stdout,'(2x,a,a,a)')'File ',trim(Hrfile), &
+                  ' exist, We are using HmnR from wannier90'
+               open(unit=1001,file=Hrfile,status='old')
+               read(1001,*)
+               !> for sparse hr format, this line is the number of non-zero lines
+               if(Is_Sparse_Hr) read(1001,*)
+               read(1001,*) Num_wann
+               read(1001,*) Nrpts
+               write(stdout,*)'>> Num_wann', Num_wann
+               write(stdout,*)'>> NRPTS', NRPTS
+               close(1001)
+            !> the format defined by OpenMX
+            else
+               write(stdout,'(2x, 3a)')'File ',trim(Hrfile), &
+                  ' exist, We are using HmnR from HWR'
+               open(unit=1001,file=Hrfile,status='old')
+               read(1001,*)
+               read(1001,'(a26, i3)')cht, Num_wann
+               read(1001,'(a32,i10)')cht,Nrpts
+               write(stdout,*)'>> Num_wann', Num_wann
+               write(stdout,*)'>> NRPTS', NRPTS
+               close(1001)
+            endif ! hwr or not
+         else
+            write(stdout,'(2x,a25)')'>>> Error : no HmnR input'
+            stop
+         endif ! exists or not
 
-     !> determine whether you are using kp model or TB model
-     IF (index(KPorTB, 'KP')/=0) then
-        Num_wann= sum(nprojs)
-        if (SOC>0) num_wann= 2*num_wann
-     ELSE  ! you are using TB model
-     !> open file Hmn_R.data to get Num_wann and Nrpts
-     if (cpuid.eq.0)then
-        write(stdout,*)''
-        inquire (file =Hrfile, EXIST = exists)
-        if (exists)then
-           if (index(Hrfile, 'HWR')==0) then
-              write(stdout,'(2x,a,a,a)')'File ',trim(Hrfile), &
-                 ' exist, We are using HmnR from wannier90'
-              open(unit=1001,file=Hrfile,status='old')
-              read(1001,*)
-              read(1001,*) Num_wann
-              read(1001,*) Nrpts
-              write(stdout,*)'>> Num_wann', Num_wann
-              write(stdout,*)'>> NRPTS', NRPTS
-              close(1001)
-           else
-              write(stdout,'(2x, 3a)')'File ',trim(Hrfile), &
-                 ' exist, We are using HmnR from HWR'
-              open(unit=1001,file=Hrfile,status='old')
-              read(1001,*)
-              read(1001,'(a26, i3)')cht, Num_wann
-              read(1001,'(a32,i10)')cht,Nrpts
-              write(stdout,*)'>> Num_wann', Num_wann
-              write(stdout,*)'>> NRPTS', NRPTS
-              close(1001)
-           endif ! hwr or not
-        else
-           write(stdout,'(2x,a25)')'>>> Error : no HmnR input'
-           stop
-        endif ! exists or not
-        if ((soc==0 .and. sum(nprojs)/=Num_wann) .or. &
-           (soc>0 .and. sum(nprojs)/=Num_wann/2))then
-           print *, 'sum(nprojs), num_wann, num_wann/2'
-           print *, sum(nprojs), num_wann, num_wann/2
-           stop 'projectors are wrong'
-        endif
-     endif ! cpuid
+         !> We need to extend the spinless hamiltonian to spinfull hamiltonian if
+         !> we want to add Zeeman field when spin-orbit coupling is not included in 
+         !> the hr file.
+         if (Add_Zeeman_Field.and.SOC==0)then
+            Num_wann= Num_wann*2
+            if (cpuid==0) then
+               write(stdout,*)'>> Num_wann is doubled due to the consideration of Zeeman effect'
+               write(stdout,*)">> Num_wann : ", Num_wann
+            endif
+         endif
+
+         if ((soc==0 .and. sum(Origin_cell%nprojs)/=Num_wann .and. .not.Add_Zeeman_Field) .or. &
+            (soc>0 .and. sum(Origin_cell%nprojs)/=Num_wann/2))then
+            print *, 'sum(Origin_cell%nprojs), num_wann, num_wann/2'
+            print *, sum(Origin_cell%nprojs), num_wann, num_wann/2
+            print *, "ERROR: Maybe the SOC tags in the SYSTEM is wrongly set"
+            stop "ERROR: the summation of all projectors times spin degeneracy is not equal to num_wann"
+         endif
+      endif ! cpuid
 
 
-     !> broadcast and Nrpts to every cpu
+
+
+      !> broadcast and Nrpts to every cpu
 #if defined (MPI)
      call MPI_bcast(Num_wann,1,mpi_in,0,mpi_cmw,ierr)
      call MPI_bcast(Nrpts,1,mpi_in,0,mpi_cmw,ierr)
@@ -119,38 +139,65 @@
      !> dimension for surface green's function
      Ndim= Num_wann* Np
 
+      if (cpuid==0)then
+         write(stdout,*) ' >> Begin to read Hmn_R.data'
+      endif
 
-     !> allocate necessary arrays for tight binding hamiltonians
-     allocate(irvec(3,nrpts))
-     allocate(ndegen(nrpts))
-     allocate(HmnR(num_wann,num_wann,nrpts))
+      allocate(irvec(3,nrpts))
+      allocate(ndegen(nrpts))
+      irvec= 0
+      ndegen=1
 
-     if (cpuid==0)then
-        write(stdout,*) ' >> Begin to read Hmn_R.data'
-     endif
-     call readHmnR()
-     if (cpuid==0)then
-        write(stdout,*) ' << Read Hmn_R.data successfully'
-     endif
+      if(Is_HrFile) then
+         !> allocate necessary arrays for tight binding hamiltonians
+         !> normal hmnr file
+         if(.not. Is_Sparse_Hr) then
+            !> for the dense hr file, we allocate HmnR
+            allocate(HmnR(num_wann,num_wann,nrpts))
+            HmnR= 0d0
+            call readNormalHmnR()
+         !> sparse hmnr input
+         else
+            call readSparseHmnR()
+         end if
+      else
+         stop "We only support Is_HrFile=.true. for this version"
+      end if
 
+      if (cpuid==0)then
+         write(stdout,*) ' << Read Hmn_R.data successfully'
+      endif
 
      !> broadcast data to every cpu
 #if defined (MPI)
-     call MPI_bcast(irvec,size(irvec),mpi_in,0,mpi_cmw,ierr)
-     call MPI_bcast(HmnR,size(HmnR),mpi_dc,0,mpi_cmw,ierr)
-     call MPI_bcast(ndegen,size(ndegen),mpi_in,0,mpi_cmw,ierr)
+     !call MPI_bcast(irvec,size(irvec),mpi_in,0,mpi_cmw,ierr)
+     !call MPI_bcast(HmnR,size(HmnR),mpi_dc,0,mpi_cmw,ierr)
+     !call MPI_bcast(ndegen,size(ndegen),mpi_in,0,mpi_cmw,ierr)
 #endif
+
      ENDIF  ! end if the choice of kp model or TB model
 
-     !> import symmetry
-     call symmetry
+   !> import symmetry
+   call symmetry
+
+
+   !> bulk band
+   if (BulkBand_unfold_line_calc) then
+      if(cpuid.eq.0)write(stdout, *)' '
+      if(cpuid.eq.0)write(stdout, *)'>> Start of unfolding bulk band'
+      call now(time_start)
+      call unfolding
+      call now(time_end)
+      call print_time_cost(time_start, time_end, 'BulkBand_unfold_line_calc')
+      if(cpuid.eq.0)write(stdout, *)'<< End of unfolding bulk band'
+   endif
 
      !> bulk band
-     if (BulkBand_calc) then
+     if (BulkBand_calc.or.BulkBand_line_calc) then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating bulk band'
         call now(time_start)
-        call ek_bulk
+        call ek_bulk_line
        !call ek_bulk_mirror_x
        !call ek_bulk_mirror_z
         call now(time_end)
@@ -170,7 +217,6 @@
      endif
 
 
-
      !> bulk band in a plane. For Dirac or Weyl cone
      if (BulkBand_plane_calc) then
         if(cpuid.eq.0)write(stdout, *)' '
@@ -181,6 +227,16 @@
         call print_time_cost(time_start, time_end, 'BulkBand_plane')
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the bulk band in plane'
      endif
+
+   if (BulkBand_cube_calc) then
+      if(cpuid.eq.0)write(stdout, *)' '
+      if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the bulk band in a cube of BZ'
+      call now(time_start)
+      call ek_bulk_cube
+      call now(time_end)
+      call print_time_cost(time_start, time_end, 'BulkBand_cube')
+      if(cpuid.eq.0)write(stdout, *)'<< End of calculating the bulk band in a cube of BZ'
+   endif
 
 
      !> Find nodes in BZ
@@ -199,11 +255,22 @@
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the bulk FS in a k plane'
         call now(time_start)
-        call fermisurface
+        call fermisurface_kplane
         call now(time_end)
         call print_time_cost(time_start, time_end, 'BulkFS_Plane')
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the bulk FS in a k plane'
      endif
+
+   if (BulkFS_Plane_stack_calc) then
+      if(cpuid.eq.0)write(stdout, *)' '
+      if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the bulk FS in a k plane stacking'
+      call now(time_start)
+      call fermisurface_stack
+      call now(time_end)
+      call print_time_cost(time_start, time_end, 'BulkFS_Plane_stack')
+      if(cpuid.eq.0)write(stdout, *)'<< End of calculating the bulk FS in a k plane stacking'
+   endif
+
 
      !> calculate 3D Fermi surface
      if (BulkFS_calc) then
@@ -338,11 +405,22 @@
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Berry curvature'
         call now(time_start)
-        call berry_curvarture
+        call berry_curvarture_plane
         call now(time_end)
         call print_time_cost(time_start, time_end, 'BerryCurvature')
         if(cpuid.eq.0)write(stdout, *)'End of calculating the Berry curvature'
      endif
+
+   if (BerryCurvature_Cube_calc)then
+      if(cpuid.eq.0)write(stdout, *)' '
+      if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Berry curvature in a cube'
+      call now(time_start)
+      call berry_curvarture_cube
+      call now(time_end)
+      call print_time_cost(time_start, time_end, 'BerryCurvature_Cube')
+      if(cpuid.eq.0)write(stdout, *)'End of calculating the Berry curvature in a cube'
+   endif
+
 
 
      if (WireBand_calc) then
@@ -456,21 +534,21 @@
         if(cpuid.eq.0)write(stdout, *)'End of calculating the surface arc'
      endif
 
-     !> Surface State QPI
-     if (SlabQPI_calc) then
+     !> fermi arc QPI in kpath mode
+     if (SlabQPI_kpath_calc) then
         if(cpuid.eq.0)write(stdout, *)' '
-        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the surface QPI'
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the surface QPI in kpath mode'
         call now(time_start)
         call surfstat_jdos
         call now(time_end)
         call print_time_cost(time_start, time_end, 'SlabQPI')
-        if(cpuid.eq.0)write(stdout, *)'End of calculating the surface QPI'
+        if(cpuid.eq.0)write(stdout, *)'End of calculating the surface QPI in kpath mode'
      endif
 
-     !> fermi arc QPI
-     if (ArcQPI_calc) then
+     !> Surface State QPI in kplane mode
+     if (SlabQPI_calc.or.SlabQPI_kplane_calc) then
         if(cpuid.eq.0)write(stdout, *)' '
-        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the fermi arc QPI'
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the surface QPI'
         call now(time_start)
         call SurfaceDOSkk
         call now(time_end)
@@ -489,6 +567,18 @@
         call print_time_cost(time_start, time_end, 'SlabSpintexture')
         if(cpuid.eq.0)write(stdout, *)'End of calculating the spin texture for surface'
      endif
+
+     !> calculate spin-texture for bulk bands
+     if (BulkSpintexture_calc)then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the spin texture for surface'
+        call now(time_start)
+        call fermisurface_kplane
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'SlabSpintexture')
+        if(cpuid.eq.0)write(stdout, *)'End of calculating the spin texture for surface'
+     endif
+
 
 
      call now(time_end)

@@ -1,7 +1,7 @@
 
 subroutine readinput
-   ! Read in the control paramters from wt.in,
-   ! and set default values if not specified in the wt.in
+   ! Read in the control paramters from input.dat,
+   ! and set default values if not specified in the input.dat
    !
    ! Constructed on 4/22/2010 by QS.Wu
 
@@ -9,19 +9,20 @@ subroutine readinput
    use para
    implicit none
 
-   character*12 :: fname='wt.in'
+   character*12 :: fname='input.dat'
    character*25 :: char_temp
-   character*80 :: inline
+   character*256 :: inline
    logical ::  exists
-   logical ::  lfound
+   logical ::  lfound, lcount
    real(dp) :: cell_volume
    real(dp) :: cell_volume2
 
    integer  :: stat
-   integer  :: i, ia, ik
-   integer  :: j, io, it
+   integer  :: i, ia, n, ik, ik1, ik2, ik3
+   integer  :: j, io, it, idummy, ig
    integer  :: NN
-   integer :: nwann
+   integer  :: knv3, knv3_mod
+   integer  :: NumberOfspinorbitals, NumberOfspinorbitals_unfold
 
    integer, allocatable :: iarray_temp(:)
 
@@ -30,7 +31,7 @@ subroutine readinput
    real(dp) :: k1(3), k2(3), k(3)
    real(dp) :: kstart(3), kend(3)
    real(dp) :: R1(3), R2(3), R3(3), Rt(3)
-   real(dp), external :: norm
+   real(dp), external :: norm, angle
 
    real(dp), allocatable :: mass_temp(:)
    real(dp), allocatable :: Born_Charge_temp(:, :, :)
@@ -38,19 +39,23 @@ subroutine readinput
    inquire(file=fname,exist=exists)
    if (exists)then
       if(cpuid==0)write(stdout,*) '  '
-      if(cpuid==0)write(stdout,*) '>>>Read some paramters from wt.in'
+      if(cpuid==0)write(stdout,*) '>>>Read some paramters from input.dat'
       open(unit=1001,file=fname,status='old')
    else
       if(cpuid==0)write(stdout,*)'file' ,fname, 'dosnot exist'
       stop
    endif
 
+!===============================================================================================================!
+!  TB_FILE namelist
+!===============================================================================================================!
 
    Particle='electron'
    Package= 'VASP'
    KPorTB = 'TB'
    Is_HrFile= .TRUE.
-   Is_Sparse= .FALSE.
+   Is_Sparse_Hr= .FALSE.
+   Is_Sparse   = .FALSE.
    Use_ELPA= .FALSE.
    vef=0d0
    read(1001, TB_FILE, iostat= stat)
@@ -61,50 +66,61 @@ subroutine readinput
       if (.not.exists) stop "TB_FIlE namelist should be given or wannier90_hr.dat should exist"
    endif
    if(cpuid==0)write(stdout,'(1x, a, a6, a)')"You are using : ", KPorTB, " model"
+   Is_Sparse_Hr= (Is_Sparse_Hr.or.Is_Sparse)
    if(cpuid==0) then
       if(Is_HrFile) then
-         write(stdout,'(1x, a)')"Tight binding Hamiltonian FROM: Hr File"
-         if(Is_Sparse) write(stdout,'(1x, a)')"Tight binding Hamiltonian FROM: Sparse Hr File"
+         write(stdout,'(1x, a)')"Tight-binding Hamiltonian FROM: Hr File"
+         write(stdout,'(1x, a, L2)')"Is_Sparse_Hr= ", Is_Sparse_Hr
+         if(Is_Sparse_Hr) write(stdout,'(1x, a)')"Tight-binding Hamiltonian FROM: Sparse Hr File"
       else
-         write(stdout,'(1x, a)')"Tight binding Hamiltonian FROM: fitting"
+         write(stdout,'(1x, a)')"Tight-binding Hamiltonian FROM: fitting"
 !~          read(1001,*) vef
       end if
    end if
-   if(cpuid==0)write(stdout,'(1x, a, a25)')"Tight binding Hamiltonian file: ",Hrfile
+   if(cpuid==0)write(stdout,'(1x, a, a25)')"Tight-binding Hamiltonian filename: ",Hrfile
    if(cpuid==0)write(stdout,'(1x, a, a25)')"System of particle: ", Particle
-   if(cpuid==0)write(stdout,'(1x, a, a25)')"Tight binding Hamiltonian obtained from : ",Package
+   if(cpuid==0)write(stdout,'(1x, a, a25)')"Tight-binding Hamiltonian obtained from : ",Package
 
    if (index(Particle, 'electron')==0 .and. index(Particle, 'phonon')==0 &
       .and. index(Particle, 'photon')==0) then
-      write(stdout, '(2a)')' ERROR: Particle shoule equal either "electron"', &
-         '"phonon", or "photon"'
+      write(stdout, *)' ERROR: Particle shoule equal either "electron", &
+         "phonon", or "photon"'
       stop
    endif
 
+!===============================================================================================================!
+!> CONTROL namelist
+!===============================================================================================================!
 
    BulkBand_calc         = .FALSE.
+   BulkBand_line_calc    = .FALSE.
+   BulkBand_unfold_line_calc    = .FALSE.
+   BulkFatBand_calc      = .FALSE.
    BulkBand_plane_calc   = .FALSE.
+   BulkBand_cube_calc    = .FALSE.
    BulkFS_calc           = .FALSE.
    BulkFS_Plane_calc     = .FALSE.
+   BulkFS_plane_stack_calc     = .FALSE.
    BulkGap_cube_calc     = .FALSE.
    BulkGap_plane_calc    = .FALSE.
    SlabBand_calc         = .FALSE.
    SlabBandWaveFunc_calc = .FALSE.
-   SlabBand_plane_calc   = .FALSE.
    WireBand_calc         = .FALSE.
    SlabSS_calc           = .FALSE.
    SlabArc_calc          = .FALSE.
    SlabQPI_calc          = .FALSE.
-   ArcQPI_calc           = .FALSE.
+   SlabQPI_kpath_calc    = .FALSE.
+   SlabQPI_kplane_calc   = .FALSE.
    SlabSpintexture_calc  = .FALSE.
+   BulkSpintexture_calc  = .FALSE.
    wanniercenter_calc    = .FALSE.
    Z2_3D_calc            = .FALSE.
    Chern_3D_calc         = .FALSE.
    WeylChirality_calc    = .FALSE.
-   NLChirality_calc      = .FALSE.
+   NLChirality_calc    = .FALSE.
    BerryPhase_calc       = .FALSE.
    BerryCurvature_calc   = .FALSE.
-   BerryCurvature_EF_calc   = .FALSE.
+   BerryCurvature_Cube_calc   = .FALSE.
    BerryCurvature_slab_calc = .FALSE.
    MirrorChern_calc      = .FALSE.
    Dos_calc              = .FALSE.
@@ -128,23 +144,31 @@ subroutine readinput
    LandauLevel_k_dos_calc = .FALSE.
    LandauLevel_B_dos_calc = .FALSE.
    Translate_to_WS_calc    = .FALSE.
+   FermiLevel_calc    = .FALSE.
 
    read(1001, CONTROL, iostat=stat)
+   SlabQPI_kplane_calc= SlabQPI_kplane_calc.or.SlabQPI_calc
 
    if (stat/=0) then
       write(*, *)"ERROR: namelist CONTROL should be set"
       write(*, *)"You should set one of these functions to be T."
       write(*, *)"And please make sure that the spelling are correct."
       write(*, *)"BulkBand_calc, BulkBand_plane_calc, BulkFS_calc"
+      write(*, *)"BulkBand_line_calc, BulkBand_cube_calc"
+      write(*, *)"BulkBand_unfold_line_calc, "
+      write(*, *)"BulkFatBand_calc, "
       write(*, *)"BulkGap_cube_calc,BulkGap_plane_calc"
       write(*, *)"SlabBand_calc,SlabBandWaveFunc_calc"
       write(*, *)"WireBand_calc,SlabSS_calc,SlabArc_calc "
-      write(*, *)"SlabBand_plane_calc,SlabArc_calc "
+      write(*, *)"SlabQPI_calc"
+      write(*, *)"SlabQPI_kpath_calc"
+      write(*, *)"SlabQPI_kplane_calc"
       write(*, *)"SlabSpintexture,wanniercenter_calc"
       write(*, *)"BerryPhase_calc,BerryCurvature_calc"
-      write(*, *)"BerryCurvature_EF_calc,BerryCurvature_slab_calc"
+      write(*, *)"BerryCurvature_slab_calc, BerryCurvature_Cube_calc"
       write(*, *)"Dos_calc, JDos_calc, FindNodes_calc"
       write(*, *)"BulkFS_plane_calc"
+      write(*, *)"BulkFS_plane_stack_calc"
       write(*, *)"Z2_3D_calc"
       write(*, *)"Chern_3D_calc"
       write(*, *)"MirrorChern_calc"
@@ -166,54 +190,66 @@ subroutine readinput
       write(*, *)"LandauLevel_k_dos_calc"
       write(*, *)"LandauLevel_B_dos_calc"
       write(*, *)"Translate_to_WS_calc"
+      write(*, *)"FermiLevel_calc"
       write(*, *)"The default Vaule is F"
       stop
    endif
+
+   !> In order to be compatiable with the old version, we keep the bulkband_calc.
+   BulkBand_line_calc= BulkBand_line_calc.or.BulkBand_calc
 
    !> control parameters
    if (cpuid==0) then
       write(stdout, *) "  "
       write(stdout, *) ">>>Control parameters: "
-      write(stdout, *) "BulkBand_calc       : ",  BulkBand_calc
-      write(stdout, *) "BulkBand_plane_calc : ",  BulkBand_plane_calc
-      write(stdout, *) "BulkFS_calc         : ",  BulkFS_calc
-      write(stdout, *) "BulkFS_Plane_calc   : ",  BulkFS_Plane_calc
-      write(stdout, *) "BulkGap_cube_calc   : ",  BulkGap_cube_calc
-      write(stdout, *) "BulkGap_plane_calc  : ",  BulkGap_plane_calc
-      write(stdout, *) "SlabBand_calc       : ",  SlabBand_calc
-      write(stdout, *) "SlabBandWaveFunc_calc: ",  SlabBandWaveFunc_calc
-      write(stdout, *) "SlabBand_plane_calc : ",  SlabBand_plane_calc
-      write(stdout, *) "SlabSS_calc         : ",  SlabSS_calc
-      write(stdout, *) "SlabArc_calc        : ",  SlabArc_calc
-      write(stdout, *) "SlabSpintexture_calc: ",  SlabSpintexture_calc
-      write(stdout, *) "wanniercenter_calc  : ", wanniercenter_calc
-      write(stdout, *) "BerryPhase_calc     : ", BerryPhase_calc
-      write(stdout, *) "BerryCurvature_calc : ", BerryCurvature_calc
-      write(stdout, *) "BerryCurvature_slab_calc : ", BerryCurvature_slab_calc
-      write(stdout, *) "Dos_calc            : ",  DOS_calc
-      write(stdout, *) "Z2_3D_calc          : ",  Z2_3D_calc
-      write(stdout, *) "WeylChirality_calc  : ",  WeylChirality_calc
-      write(stdout, *) "NLChirality_calc    : ",  NLChirality_calc
-      write(stdout, *) "Chern_3D_calc       : ",  Chern_3D_calc
-      write(stdout, *) "MirrorChern_calc    : ",  MirrorChern_calc
-      write(stdout, *) "JDos_calc           : ",  JDOS_calc
-      write(stdout, *) "FindNodes_calc      : ",  FindNodes_calc
-      write(stdout, *) "EffectiveMass_calc  : ", EffectiveMass_calc
-      write(stdout, *) "AHC_calc            : ", AHC_calc
-      write(stdout, *) "Boltz_OHE_calc      : ", Boltz_OHE_calc
-      write(stdout, *) "LOTO_correction     : ", LOTO_correction
-      write(stdout, *) "OrbitalTexture_calc    : ", OrbitalTexture_calc
-      write(stdout, *) "OrbitalTexture_3D_calc : ", OrbitalTexture_3D_calc
-      write(stdout, *) "LandauLevel_k_calc     : ", LandauLevel_k_calc
-      write(stdout, *) "LandauLevel_B_calc     : ", LandauLevel_B_calc
+      write(stdout, *) "BulkBand_line_calc                : ",  BulkBand_line_calc
+      write(stdout, *) "BulkFatBand_calc                  : ",  BulkFatBand_calc
+      write(stdout, *) "BulkBand_plane_calc               : ",  BulkBand_plane_calc
+      write(stdout, *) "BulkBand_cube_calc                : ",  BulkBand_cube_calc
+      write(stdout, *) "BulkFS_calc                       : ",  BulkFS_calc
+      write(stdout, *) "BulkFS_Plane_calc                 : ",  BulkFS_Plane_calc
+      write(stdout, *) "BulkFS_plane_stack_calc           : ",  BulkFS_plane_stack_calc
+      write(stdout, *) "BulkGap_cube_calc                 : ",  BulkGap_cube_calc
+      write(stdout, *) "BulkGap_plane_calc                : ",  BulkGap_plane_calc
+      write(stdout, *) "SlabBand_calc                     : ",  SlabBand_calc
+      write(stdout, *) "SlabBandWaveFunc_calc             : ",  SlabBandWaveFunc_calc
+      write(stdout, *) "SlabSS_calc                       : ",  SlabSS_calc
+      write(stdout, *) "SlabArc_calc                      : ",  SlabArc_calc
+      write(stdout, *) "SlabSpintexture_calc              : ",  SlabSpintexture_calc
+      write(stdout, *) "wanniercenter_calc                : ", wanniercenter_calc
+      write(stdout, *) "BerryPhase_calc                   : ", BerryPhase_calc
+      write(stdout, *) "BerryCurvature_calc               : ", BerryCurvature_calc
+      write(stdout, *) "BerryCurvature_Cube_calc          : ", BerryCurvature_Cube_calc
+      write(stdout, *) "BerryCurvature_slab_calc          : ", BerryCurvature_slab_calc
+      write(stdout, *) "Dos_calc                          : ",  DOS_calc
+      write(stdout, *) "Z2_3D_calc                        : ",  Z2_3D_calc
+      write(stdout, *) "WeylChirality_calc                : ",  WeylChirality_calc
+      write(stdout, *) "NLChirality_calc                  : ",  NLChirality_calc
+      write(stdout, *) "Chern_3D_calc                     : ",  Chern_3D_calc
+      write(stdout, *) "MirrorChern_calc                  : ",  MirrorChern_calc
+      write(stdout, *) "JDos_calc                         : ",  JDOS_calc
+      write(stdout, *) "FindNodes_calc                    : ",  FindNodes_calc
+      write(stdout, *) "EffectiveMass_calc                : ", EffectiveMass_calc
+      write(stdout, *) "AHC_calc                          : ", AHC_calc
+      write(stdout, *) "Boltz_OHE_calc                    : ", Boltz_OHE_calc
+      write(stdout, *) "LOTO_correction                   : ", LOTO_correction
+      write(stdout, *) "OrbitalTexture_calc               : ", OrbitalTexture_calc
+      write(stdout, *) "OrbitalTexture_3D_calc            : ", OrbitalTexture_3D_calc
+      write(stdout, *) "LandauLevel_k_calc                : ", LandauLevel_k_calc
+      write(stdout, *) "LandauLevel_B_calc                : ", LandauLevel_B_calc
       write(stdout, *) "LandauLevel_wavefunction_calc     : ", LandauLevel_wavefunction_calc
-      write(stdout, *) "Fit_kp_calc         : ", Fit_kp_calc
-      write(stdout, *) "DMFT_MAG_calc       : ", DMFT_MAG_calc
-      write(stdout, *) "Translate_to_WS_calc: ", Translate_to_WS_calc
-      write(stdout, *) "LandauLevel_kplane_calc", LandauLevel_kplane_calc
-      write(stdout, *) "LandauLevel_k_dos_calc", LandauLevel_k_dos_calc
-      write(stdout, *) "LandauLevel_B_dos_calc", LandauLevel_B_dos_calc
+      write(stdout, *) "Fit_kp_calc                       : ", Fit_kp_calc
+      write(stdout, *) "DMFT_MAG_calc                     : ", DMFT_MAG_calc
+      write(stdout, *) "Translate_to_WS_calc              : ", Translate_to_WS_calc
+      write(stdout, *) "LandauLevel_kplane_calc           : ", LandauLevel_kplane_calc
+      write(stdout, *) "LandauLevel_k_dos_calc            : ", LandauLevel_k_dos_calc
+      write(stdout, *) "LandauLevel_B_dos_calc            : ", LandauLevel_B_dos_calc
+      write(stdout, *) "FermiLevel_calc                   : ", FermiLevel_calc
    endif
+
+!===============================================================================================================!
+!> SYSTEM namelist
+!===============================================================================================================!
 
    !> set system parameters by default
    Nslab= 10
@@ -222,13 +258,33 @@ subroutine readinput
    Numoccupied = 0
    Ntotch = 0
    SOC = 0
+   SOC_in = 0
    E_FERMI = 0d0
+
+   !> By default magnetic field is zero
    Bx = 0d0
    By = 0d0
    Bz = 0d0
+   
+   Bmagnitude = 0d0
    Btheta = -99999d0
-   Bphi = 0d0
+   Bphi = -99999d0
    surf_onsite = 0d0
+
+   !> By default, we don't add zeeman field
+   Add_Zeeman_Field = .FALSE.
+
+   !> by default, g-factor is 2
+   Effective_gfactor = 2d0
+   Zeeman_energy_in_eV = 0d0
+
+   !> by default, Electric_field_in_eVpA=0
+   Electric_field_in_eVpA= 0d0
+   Inner_symmetrical_Electric_Field= .False.
+
+   !> by default, Vacuum_thickness_in_Angstrom= 12 Angstrom
+   Vacuum_thickness_in_Angstrom = 12d0
+
 
    !> read system parameters from file
    read(1001, SYSTEM, iostat=stat)
@@ -236,6 +292,7 @@ subroutine readinput
       write(*, *)"ERROR: namelist SYSTEM is wrong and should be set correctly"
       !stop
    endif
+   SOC_in=SOC
 
    if (SOC == -1) then
       write(*, *)"ERROR: you should set SOC in namelist SYSTEM correctly"
@@ -248,13 +305,16 @@ subroutine readinput
    endif
 
    if (Ntotch == 0) then
-      Ntotch = Numoccupied
+      if (SOC>0) then
+         Ntotch = Numoccupied
+      else
+         Ntotch = Numoccupied*2
+      endif
    endif
 
-   if (abs(Btheta+99999d0)>eps6) then
-      Bx=sin(Btheta/180d0*pi)*cos(Bphi/180d0*pi)
-      By=sin(Btheta/180d0*pi)*sin(Bphi/180d0*pi)
-      Bz=cos(Btheta/180d0*pi)
+   if (.not.Add_Zeeman_Field) then
+      Zeeman_energy_in_eV = 0d0
+      Effective_gfactor = 0d0
    endif
 
    if (cpuid==0) then
@@ -264,37 +324,156 @@ subroutine readinput
       write(stdout, '(1x, a, i6)')"Nslab1 for ribbon  :", Nslab1
       write(stdout, '(1x, a, i6)')"Nslab2 for ribbon  :", Nslab2
       write(stdout, '(1x, a, i6)')"Number of Occupied bands:", NumOccupied
-      write(stdout, '(1x, a, i6)')"Number of total electrons:", Ntotch
+      write(stdout, '(1x, a, f12.6)')"Number of total electrons:", Ntotch
       write(stdout, '(1x, a, i6)')"With SOC or not in Hrfile:", SOC
-      write(stdout, '(1x, a, 3f16.6)')"Fermi energy :", E_FERMI
-      write(stdout, '(1x, a, 3f16.6)')"Bx, By, Bz (in Tesla) :", Bx, By, Bz
-      write(stdout, '(1x, a, 3f16.6)')"Btheta, Bphi :", Btheta, Bphi
+      write(stdout, '(1x, a, 3f16.6)')"Fermi energy (eV) :", E_FERMI
       write(stdout, '(1x, a, 3f16.6)')"surf_onsite (eV): ", surf_onsite
+      write(stdout, '(1x, a, L)')"Add_Zeeman_Field: ", Add_Zeeman_Field
+      write(stdout, '(1x, a, 3f16.6)')"Zeeman_energy_in_eV (eV): ",  Zeeman_energy_in_eV
+      write(stdout, '(1x, a, 3f16.6)')"Electric_field_in_eVpA (eV/Angstrom): ",  Electric_field_in_eVpA
+      write(stdout, '(1x, a, L)')"Inner_symmetrical_Electric_Field: ",  Inner_symmetrical_Electric_Field
+      write(stdout, '(1x, a, i6 )')"ijmax :", ijmax
    endif
 
+   if (cpuid==0) then
+      write(stdout, *) "  "
+      write(stdout, "(1x,a)") "**Notes**: There are two ways to specify magnetic field."
+      write(stdout, "(1x,a)") "1. specify Bmagnitude, Btheta, Bphi"
+      write(stdout, "(1x,a)") "2. specify Bx, By, Bz"
+      write(stdout, "(1x,a)") "Bmagnitude, Bx, By, Bz are real numbers in unit of Tesla. and Bx, By, Bz "
+      write(stdout, "(1x,a)") "are in the cartesian coordinates. Btheta is the angle with z axial "
+      write(stdout, "(1x,a)") " and Bphi is the angle with respect to x axial in the x-y plane"
+      write(stdout, "(1x,a)") " Btheta is in [0, 180], Bphi is in [0, 360)."
+      write(stdout, "(1x,a)") "If you specify both of them together, we will choose the first one."
+      write(stdout, "(1x,a)") "If choose the first one, but not specify Btheta, Bphi, then "
+      write(stdout, "(1x,a)") "by default we set Btheta=0, Bphi=0 which means B is along z direction."
+   endif
 
-   !> get the direction of magnetic field
-   Bmagnitude= sqrt(Bx*Bx+By*By+Bz*Bz)  !> in Tesla
-   if (Bmagnitude<eps9) then
-      Bdirection(1)= 0d0
-      Bdirection(2)= 0d0
-      Bdirection(3)= 1d0
-   else
+   !> check if Bmagnitude is specified in the input.dat/wt.in
+   if (abs(Bmagnitude)>eps6 .and. (abs(Bx)+abs(By)+abs(Bz))>eps6) then
+      if (cpuid==0) then
+         write(stdout, *) " "
+         write(stdout, *) " Warning: You specify Bmagnitude and Bx, By, Bz at the same time "
+         write(stdout, *) " in the SYSTEM namelist in the wt.in/input.dat."
+         write(stdout, *) " However, we will only take Bmagnitude and Btheta, Bphi but discard Bx,By,Bz. "
+         write(stdout, *) " Bx,By,Bz will be calculated as Bx=Bmagnitude*sin(Btheta*pi/180)*cos(bphi/180*pi). "
+         write(stdout, *) "  By=Bmagnitude*sin(Btheta*pi/180)*sin(bphi/180*pi), "
+         write(stdout, *) "  Bz=cos(btheta/180*pi). "
+      endif
+   endif
+
+   if (abs(Bmagnitude)<eps6 .and. (abs(Bx)+abs(By)+abs(Bz))<eps6) then
+      if (cpuid==0) then
+         write(stdout, *) " "
+         write(stdout, *) " Warning: You didn't specify the magnitude of magnetic field."
+         write(stdout, *) " "
+      endif
+   endif
+
+   if (abs(Bmagnitude)>eps6) then
+      if (abs(Btheta+99999d0)<eps6) then
+         Btheta=0d0
+      endif
+      if (abs(Bphi+99999d0)<eps6) then
+         Bphi=0d0
+      endif
+
+      Bx=Bmagnitude*sin(Btheta/180d0*pi)*cos(Bphi/180d0*pi)
+      By=Bmagnitude*sin(Btheta/180d0*pi)*sin(Bphi/180d0*pi)
+      Bz=Bmagnitude*cos(Btheta/180d0*pi)
+
       Bdirection(1)=Bx/Bmagnitude
       Bdirection(2)=By/Bmagnitude
       Bdirection(3)=Bz/Bmagnitude
+
+      if (cpuid==0)then
+         write(stdout, '(1x, a,  f16.6)')">>You specified the magnitude of magnetic field, "
+         write(stdout, '(1x, a,  f16.6)')"So we will take this option but discard the setting of Bx, By, Bz"
+         write(stdout, '(1x, a,  f16.6)')"Bmagnitude (in Tesla) :", Bmagnitude
+         write(stdout, '(1x, a, 3f16.6)')"Btheta, Bphi :", Btheta, Bphi
+         write(stdout, '(1x, a, 3f16.6)')"Bx, By, Bz (in Tesla) :", Bx, By, Bz
+         write(stdout, '(1x, a, 3f16.6)')"B direction cosines :", Bdirection
+      endif
+   else
+      if (abs(Bx)+abs(By)+abs(Bz)>eps6) then
+         if (cpuid==0)then
+            write(stdout, '(1x, a,  f16.6)')">>You did not specified the magnitude of magnetic field, "
+            write(stdout, '(1x, a,  f16.6)')" but set Bx, By, Bz. So we will set the magnetic direction"
+            write(stdout, '(1x, a,  f16.6)')" from Bx, By, Bz but discard the settings of Btheta, Bphi."
+         endif
+         Bmagnitude= sqrt(Bx*Bx+By*By+Bz*Bz)  !> in Tesla
+         Bdirection(1)=Bx/Bmagnitude
+         Bdirection(2)=By/Bmagnitude
+         Bdirection(3)=Bz/Bmagnitude
+
+         Btheta= acos(Bdirection(3))*180d0/pi
+         if (abs(Bx)+abs(By)<eps6) then
+            Bphi=0d0
+         else
+            Bphi= atan2(Bdirection(2),Bdirection(1))*180d0/pi
+         endif
+      else   
+         if (cpuid==0)then
+            write(stdout, '(1x, a,  f16.6)')">>You did not specified the magnitude of magnetic field, "
+            write(stdout, '(1x, a,  f16.6)')" and also didn't set Bx, By, Bz. So we will set the magnetic direction"
+            write(stdout, '(1x, a,  f16.6)')" from the settings of Btheta, Bphi."
+            write(stdout, '(1x, a,  f16.6)')" If you even didn't set Btheta, Bphi, we will take the default value, "
+            write(stdout, '(1x, a,  f16.6)')" Btheta=0, Bphi=0 which means B is along z direction"
+         endif
+
+         if (abs(Btheta+99999d0)<eps6) then
+            Btheta=0d0
+            if (cpuid==0)then
+               write(stdout, '(1x, a,  f16.6)')">>You didn't set Btheta, and we set it to 0."
+            endif
+         else
+            if (cpuid==0)then
+               write(stdout, '(1x, a,  f16.6)')">>You set Btheta, and we will take it."
+            endif
+         endif
+         if (abs(Bphi+99999d0)<eps6) then
+            Bphi=0d0
+            if (cpuid==0)then
+               write(stdout, '(1x, a,  f16.6)')">>You didn't set Bphi, and we set it to 0."
+            endif
+         else
+            if (cpuid==0)then
+               write(stdout, '(1x, a,  f16.6)')">>You set Bphi, and we will take it."
+            endif
+         endif
+         Bdirection(1)=sin(Btheta/180d0*pi)*cos(Bphi/180d0*pi)
+         Bdirection(2)=sin(Btheta/180d0*pi)*sin(Bphi/180d0*pi)
+         Bdirection(3)=cos(Btheta/180d0*pi)
+         Bmagnitude= 1d0
+         Bx=Bmagnitude*sin(Btheta/180d0*pi)*cos(Bphi/180d0*pi)
+         By=Bmagnitude*sin(Btheta/180d0*pi)*sin(Bphi/180d0*pi)
+         Bz=Bmagnitude*cos(Btheta/180d0*pi)
+      endif
+
+      if (cpuid==0)then
+         write(stdout, '(1x, a,  f16.6)')"Bmagnitude (in Tesla) :", Bmagnitude
+         write(stdout, '(1x, a, 3f16.6)')"Btheta, Bphi :", Btheta, Bphi
+         write(stdout, '(1x, a, 3f16.6)')"Bx, By, Bz (in Tesla) :", Bx, By, Bz
+         write(stdout, '(1x, a, 3f16.6)')"B direction cosines :", Bdirection
+      endif
    endif
+
+!===============================================================================================================!
+!> PARAMETERS namelist
+!===============================================================================================================!
+
 
    !> set up parameters for calculation
    E_arc = 0.0d0
    Eta_Arc= 0.001d0
    OmegaNum = 100
+   OmegaNum_unfold = 0
    OmegaMin = -1d0
    OmegaMax =  1d0
-   Nk1 = 50
-   Nk2 = 50
-   Nk3 = 50
-   NP = 2
+   Nk1 = 10
+   Nk2 = 10
+   Nk3 = 1 
+   NP  = 2
    Gap_threshold= 0.01d0
    Tmin = 100.  ! in Kelvin
    Tmax = 100.  ! in Kelvin
@@ -304,15 +483,25 @@ subroutine readinput
    BTauMax = 0d0
    Rcut = 999999d0
    Magp= 1
+   Magp_min=0
+   Magp_max=0   
    wcc_calc_tol= 0.08
    wcc_neighbour_tol= 0.3
    NumLCZVecs=400
    NumRandomConfs=1
+   NumSelectedEigenVals=0 
+   Beta= 100
+
+   !> by default, we only project on atoms for a given wave function
+   projection_weight_mode = "NORMAL"
+
 
    read(1001, PARAMETERS, iostat= stat)
-!~    if (Magp>Nslab) Magp= Nslab
    if (Magp<1) Magp= 0
-
+   if (Magp_max<1) Magp_max= Magp
+   if (OmegaNum_unfold==0) OmegaNum_unfold= 4*OmegaNum
+  
+   projection_weight_mode= upper(projection_weight_mode)
    if (cpuid==0) then
       write(stdout, *) "  "
       write(stdout, *) ">>>calculation parameters : "
@@ -322,6 +511,7 @@ subroutine readinput
       write(stdout, '(1x, a, f16.5)')'OmegaMin : ', OmegaMin
       write(stdout, '(1x, a, f16.5)')'OmegaMax : ', OmegaMax
       write(stdout, '(1x, a, i6   )')'OmegaNum : ', OmegaNum
+      write(stdout, '(1x, a, i6   )')'OmegaNum_unfold : ', OmegaNum_unfold
       write(stdout, '(1x, a, i6   )')'Nk1 : ', Nk1
       write(stdout, '(1x, a, i6   )')'Nk2 : ', Nk2
       write(stdout, '(1x, a, i6   )')'Nk3 : ', Nk3
@@ -330,23 +520,39 @@ subroutine readinput
       write(stdout, '(1x, a, f16.5)')'Tmax(Kelvin)  : ', Tmax
       write(stdout, '(1x, a, i6   )')'NumT  : ', NumT
       write(stdout, '(1x, a, i6   )')'NBTau  : ', NBTau
+      write(stdout, '(1x, a, f16.5)')'Beta  : ', Beta
       write(stdout, '(1x, a, i6   )')'Nslice_BTau_Max  : ', Nslice_BTau_Max
       write(stdout, '(1x, a, f16.5)')'BTauMax(Tesla.ps)', BTauMax
       write(stdout, '(1x, a, f16.5)')'Rcut', Rcut
       write(stdout, '(1x, a, i16  )')'Magp', Magp
+      write(stdout, '(1x, a, i16  )')'Magp_min', Magp_min
+      write(stdout, '(1x, a, i16  )')'Magp_max', Magp_max
       write(stdout, '(1x, a, f16.5)')'wcc_calc_tol', wcc_calc_tol
       write(stdout, '(1x, a, f16.5)')'wcc_neighbour_tol', wcc_neighbour_tol
       write(stdout, '(1x, a, i6   )')'NumLCZVecs', NumLCZVecs
-      write(stdout, '(1x, a, i6   )')'NumRandomConfs', NumRandomConfs
+      write(stdout, '(1x, a, i6   )')'NumSelectedEigenVals', NumSelectedEigenVals
+      write(stdout, '(1x, a, i6   )')'NumRandomConfs:', NumRandomConfs
+      write(stdout, '(1x, a, a    )')'Projection weight mode:', projection_weight_mode
    endif
+
+   !> 
+   allocate(Omega_array(OmegaNum))
+   do i=1, OmegaNum
+      Omega_array(i)= OmegaMin+ (OmegaMax-OmegaMin)* (i-1d0)/dble(OmegaNum-1)
+   enddo ! i
+
+!===============================================================================================================!
+!> LATTICE card
+!===============================================================================================================!
 
    NK = Nk1
 
-   !> read lattice information
+   !> Read the cell information include the lattice and atom's position
    rewind(1001)
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 100)inline
+      inline= upper(inline)
       if (trim(adjustl(inline))=='LATTICE') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
@@ -358,59 +564,86 @@ subroutine readinput
 
    if (lfound) then
       read(1001, *)inline   ! The unit of lattice vector
+      inline= upper(inline)
       AngOrBohr=trim(adjustl(inline))
-      read(1001, *)Rua
-      read(1001, *)Rub
-      read(1001, *)Ruc
+      read(1001, *)Origin_cell%Rua
+      read(1001, *)Origin_cell%Rub
+      read(1001, *)Origin_cell%Ruc
    else
       stop 'ERROR: please set lattice information'
    endif
 
-   if (index(AngOrBohr, 'Bohr')>0) then
-      Rua= Rua*0.529177d0
-      Rub= Rub*0.529177d0
-      Ruc= Ruc*0.529177d0
+   if (index(AngOrBohr, 'BOHR')>0) then
+      Origin_cell%Rua= Origin_cell%Rua*0.529177d0
+      Origin_cell%Rub= Origin_cell%Rub*0.529177d0
+      Origin_cell%Ruc= Origin_cell%Ruc*0.529177d0
    endif
+
+   !> cell parameters
+   Origin_cell%cell_parameters(1)= norm(Origin_cell%Rua)
+   Origin_cell%cell_parameters(2)= norm(Origin_cell%Rub)
+   Origin_cell%cell_parameters(3)= norm(Origin_cell%Ruc)
+   Origin_cell%cell_parameters(4)= angle(Origin_cell%Rub, Origin_cell%Ruc)
+   Origin_cell%cell_parameters(5)= angle(Origin_cell%Rua, Origin_cell%Ruc)
+   Origin_cell%cell_parameters(6)= angle(Origin_cell%Rua, Origin_cell%Rub)
 
    !> transform lattice from direct space to reciprocal space
 
-   Kua= 0d0
-   Kub= 0d0
-   Kuc= 0d0
-   CellVolume= Rua(1)*(Rub(2)*Ruc(3)- Rub(3)*Ruc(2)) &
-      +Rua(2)*(Rub(3)*Ruc(1)- Rub(1)*Ruc(3)) &
-      +Rua(3)*(Rub(1)*Ruc(2)- Rub(2)*Ruc(1))
-   ReciprocalCellVolume= (2d0*3.1415926535d0)**3/CellVolume
+   Origin_cell%Kua= 0d0
+   Origin_cell%Kub= 0d0
+   Origin_cell%Kuc= 0d0
+   Origin_cell%CellVolume= Origin_cell%Rua(1)*(Origin_cell%Rub(2)*Origin_cell%Ruc(3)- Origin_cell%Rub(3)*Origin_cell%Ruc(2)) &
+      +Origin_cell%Rua(2)*(Origin_cell%Rub(3)*Origin_cell%Ruc(1)- Origin_cell%Rub(1)*Origin_cell%Ruc(3)) &
+      +Origin_cell%Rua(3)*(Origin_cell%Rub(1)*Origin_cell%Ruc(2)- Origin_cell%Rub(2)*Origin_cell%Ruc(1))
+   Origin_cell%ReciprocalCellVolume= (2d0*3.1415926535d0)**3/Origin_cell%CellVolume
 
+   
+   Origin_cell%Kua(1)= 2d0*pi*(Origin_cell%Rub(2)*Origin_cell%Ruc(3)- Origin_cell%Rub(3)*Origin_cell%Ruc(2))/Origin_cell%CellVolume
+   Origin_cell%Kua(2)= 2d0*pi*(Origin_cell%Rub(3)*Origin_cell%Ruc(1)- Origin_cell%Rub(1)*Origin_cell%Ruc(3))/Origin_cell%CellVolume
+   Origin_cell%Kua(3)= 2d0*pi*(Origin_cell%Rub(1)*Origin_cell%Ruc(2)- Origin_cell%Rub(2)*Origin_cell%Ruc(1))/Origin_cell%CellVolume
 
-   Kua(1)= 2d0*pi*(Rub(2)*Ruc(3)- Rub(3)*Ruc(2))/CellVolume
-   Kua(2)= 2d0*pi*(Rub(3)*Ruc(1)- Rub(1)*Ruc(3))/CellVolume
-   Kua(3)= 2d0*pi*(Rub(1)*Ruc(2)- Rub(2)*Ruc(1))/CellVolume
+   Origin_cell%Kub(1)= 2d0*pi*(Origin_cell%Ruc(2)*Origin_cell%Rua(3)- Origin_cell%Ruc(3)*Origin_cell%Rua(2))/Origin_cell%CellVolume
+   Origin_cell%Kub(2)= 2d0*pi*(Origin_cell%Ruc(3)*Origin_cell%Rua(1)- Origin_cell%Ruc(1)*Origin_cell%Rua(3))/Origin_cell%CellVolume
+   Origin_cell%Kub(3)= 2d0*pi*(Origin_cell%Ruc(1)*Origin_cell%Rua(2)- Origin_cell%Ruc(2)*Origin_cell%Rua(1))/Origin_cell%CellVolume
 
-   Kub(1)= 2d0*pi*(Ruc(2)*Rua(3)- Ruc(3)*Rua(2))/CellVolume
-   Kub(2)= 2d0*pi*(Ruc(3)*Rua(1)- Ruc(1)*Rua(3))/CellVolume
-   Kub(3)= 2d0*pi*(Ruc(1)*Rua(2)- Ruc(2)*Rua(1))/CellVolume
+   Origin_cell%Kuc(1)= 2d0*pi*(Origin_cell%Rua(2)*Origin_cell%Rub(3)- Origin_cell%Rua(3)*Origin_cell%Rub(2))/Origin_cell%CellVolume
+   Origin_cell%Kuc(2)= 2d0*pi*(Origin_cell%Rua(3)*Origin_cell%Rub(1)- Origin_cell%Rua(1)*Origin_cell%Rub(3))/Origin_cell%CellVolume
+   Origin_cell%Kuc(3)= 2d0*pi*(Origin_cell%Rua(1)*Origin_cell%Rub(2)- Origin_cell%Rua(2)*Origin_cell%Rub(1))/Origin_cell%CellVolume
 
-   Kuc(1)= 2d0*pi*(Rua(2)*Rub(3)- Rua(3)*Rub(2))/CellVolume
-   Kuc(2)= 2d0*pi*(Rua(3)*Rub(1)- Rua(1)*Rub(3))/CellVolume
-   Kuc(3)= 2d0*pi*(Rua(1)*Rub(2)- Rua(2)*Rub(1))/CellVolume
+   !> cell parameters
+   Origin_cell%reciprocal_cell_parameters(1)= norm(Origin_cell%Kua)
+   Origin_cell%reciprocal_cell_parameters(2)= norm(Origin_cell%Kub)
+   Origin_cell%reciprocal_cell_parameters(3)= norm(Origin_cell%Kuc)
+   Origin_cell%reciprocal_cell_parameters(4)= angle(Origin_cell%Kub, Origin_cell%Kuc)
+   Origin_cell%reciprocal_cell_parameters(5)= angle(Origin_cell%Kua, Origin_cell%Kuc)
+   Origin_cell%reciprocal_cell_parameters(6)= angle(Origin_cell%Kua, Origin_cell%Kub)
 
    if(cpuid==0)write(stdout, '(a)') '>> lattice information (Angstrom)'
-   if(cpuid==0)write(stdout, '(3f12.6)')Rua
-   if(cpuid==0)write(stdout, '(3f12.6)')Rub
-   if(cpuid==0)write(stdout, '(3f12.6)')Ruc
+   if(cpuid==0)write(stdout, '(6a12)')" a", " b", " c", 'alpha', 'beta', 'gamma'
+   if(cpuid==0)write(stdout, '(6f12.6)')Origin_cell%cell_parameters
+   if(cpuid==0)write(stdout, '(a)')" Three Lattice vectors of the unfolded cell: "
+   if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Rua
+   if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Rub
+   if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Ruc
 
    if(cpuid==0)write(stdout, '(a)') '>> Reciprocal lattice information (1/Angstrom)'
-   if(cpuid==0)write(stdout, '(3f12.6)')Kua
-   if(cpuid==0)write(stdout, '(3f12.6)')Kub
-   if(cpuid==0)write(stdout, '(3f12.6)')Kuc
+   if(cpuid==0)write(stdout, '(6a12)')" a", " b", " c", 'alpha', 'beta', 'gamma'
+   if(cpuid==0)write(stdout, '(6f12.6)')Origin_cell%reciprocal_cell_parameters
+   if(cpuid==0)write(stdout, '(a)')" Three reciprocal lattice vectors of the primitive cell: "
+   if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Kua
+   if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Kub
+   if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Kuc
 
+!===============================================================================================================!
+!> ATOM_POSITIONS card
+!===============================================================================================================!
 
    !> Read atom positions information
    rewind(1001)
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 101)inline
+      inline=upper(inline)
       if (trim(adjustl(inline))=='ATOM_POSITIONS') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
@@ -421,25 +654,25 @@ subroutine readinput
 101 continue
 
    if (lfound) then
-      read(1001, *)Num_atoms   ! total number of atoms
-      if(cpuid==0)write(stdout, '(a, i5)')'Num_atoms', Num_atoms
-      allocate(atom_name(Num_atoms))
-      allocate(Atom_position(3, Num_atoms))
-      allocate(Atom_position_direct(3, Num_atoms))
-      allocate(Atom_position_cart_newcell(3, Num_atoms))
-      allocate(Atom_position_direct_newcell(3, Num_atoms))
-      allocate(Atom_magnetic_moment(3, Num_atoms))
-      Atom_magnetic_moment= 0d0
+      read(1001, *)Origin_cell%Num_atoms   ! total number of atoms
+      if(cpuid==0)write(stdout, '(a, i5)')'Origin_cell%Num_atoms', Origin_cell%Num_atoms
+      allocate(Origin_cell%atom_name(Origin_cell%Num_atoms))
+      allocate(Origin_cell%Atom_position_cart(3, Origin_cell%Num_atoms))
+      allocate(Origin_cell%Atom_position_direct(3, Origin_cell%Num_atoms))
+      allocate(Atom_position_cart_newcell(3, Origin_cell%Num_atoms))
+      allocate(Atom_position_direct_newcell(3, Origin_cell%Num_atoms))
+      allocate(Origin_cell%Atom_magnetic_moment(3, Origin_cell%Num_atoms))
+      Origin_cell%Atom_magnetic_moment= 0d0
       read(1001, *)inline   ! The unit of lattice vector
       DirectOrCart= trim(adjustl(inline))
 
       !> check whether we have the magnetic moment in the POSITION card
-      do i=1, Num_atoms
-         read(1001, *, err=132) atom_name(i), Atom_position(:, i), Atom_magnetic_moment(:, i)
-         if(cpuid==0)write(stdout, '(a4,3f12.6)')atom_name(i), Atom_position(:, i)
+      do i=1, Origin_cell%Num_atoms
+         read(1001, *, err=132) Origin_cell%atom_name(i), Origin_cell%Atom_position_cart(:, i), Origin_cell%Atom_magnetic_moment(:, i)
+         if(cpuid==0)write(stdout, '(a4,3f12.6)')Origin_cell%atom_name(i), Origin_cell%Atom_position_cart(:, i)
          if (index(DirectOrCart, "D")>0)then
-            pos= Atom_position(:, i)
-            Atom_position(:, i)= pos(1)*Rua+ pos(2)*Rub+ pos(3)*Ruc
+            pos= Origin_cell%Atom_position_cart(:, i)
+            Origin_cell%Atom_position_cart(:, i)= pos(1)*Origin_cell%Rua+ pos(2)*Origin_cell%Rub+ pos(3)*Origin_cell%Ruc
          endif
       enddo
       go to 133
@@ -451,10 +684,11 @@ subroutine readinput
          "Warning: You didn't specify the atom magnetic moment in the ATOMIC_POSITION card", &
          " Or the format is wrong. ", &
          "So we set all the Atom-magnetic-moments to zero."
-      Atom_magnetic_moment= 0d0
+      Origin_cell%Atom_magnetic_moment= 0d0
       rewind(1001)
       do while (.true.)
-         read(1001, *, end= 101)inline
+         read(1001, *)inline
+         inline=upper(inline)
          if (trim(adjustl(inline))=='ATOM_POSITIONS') then
             exit
          endif
@@ -463,12 +697,12 @@ subroutine readinput
       read(1001, *)
       read(1001, *)
 
-      do i=1, Num_atoms
-         read(1001, *, err=134) atom_name(i), Atom_position(:, i)
-         if(cpuid==0)write(stdout, '(a4,3f12.6)')atom_name(i), Atom_position(:, i)
+      do i=1, Origin_cell%Num_atoms
+         read(1001, *, err=134) Origin_cell%atom_name(i), Origin_cell%Atom_position_cart(:, i)
+         !> Origin_cell%Atom_position_cart is in the cartesian coordinate.
          if (index(DirectOrCart, "D")>0)then
-            pos= Atom_position(:, i)
-            Atom_position(:, i)= pos(1)*Rua+ pos(2)*Rub+ pos(3)*Ruc
+            pos= Origin_cell%Atom_position_cart(:, i)
+            Origin_cell%Atom_position_cart(:, i)= pos(1)*Origin_cell%Rua+ pos(2)*Origin_cell%Rub+ pos(3)*Origin_cell%Ruc
          endif
       enddo
       go to 133
@@ -480,19 +714,21 @@ subroutine readinput
 
 133   continue
 
-      if(cpuid==0)write(stdout,'(a)')' '
-      if(cpuid==0)write(stdout,'(a)')'Atom position and magnetic moment in cartisen coordinate'
-      if(cpuid==0)write(stdout,'(a6, 2X, a10, 3a12, 3a8)')'index', 'Atom Name ', 'kx', 'ky', 'kz', 'Mx', 'My', 'Mz'
-      do i=1, Num_atoms
-         if(cpuid==0)write(stdout, '(i6,2X, a10,3f12.6,3f8.3)')i, atom_name(i), Atom_position(:, i), Atom_magnetic_moment(:, i)
+      do ia=1, Origin_cell%Num_atoms
+         call cart_direct_real(Origin_cell%Atom_position_cart(:, ia), Origin_cell%Atom_position_direct(:, ia))
       enddo
 
       if(cpuid==0)write(stdout,'(a)')' '
-      if(cpuid==0)write(stdout,'(a)')'Atom position in direct coordinate'
-      do ia=1, Num_atoms
-         call cart_direct_real(Atom_position(:, ia), Atom_position_direct(:, ia))
-         if(cpuid==0)write(stdout, '(a4,3f12.6)')atom_name(ia), Atom_position_direct(:, ia)
+      if(cpuid==0)write(stdout,'(a)')'>> Atom position and magnetic moment of Original lattice'
+      if(cpuid==0)write(stdout,'(13X, 2a36, a24)')' Catesian', 'Fractional(Direct)', 'Magnetic moment'
+      if(cpuid==0)write(stdout,'(a)')'------------------------------------------------------------------------------------------------------------------'
+      if(cpuid==0)write(stdout,'(a6, 2X, a10, 6a12, 3a8)')'index', 'Atom Name ', ' x', ' y', ' z', 'a', 'b', 'c', 'Mx', 'My', 'Mz'
+      if(cpuid==0)write(stdout,'(a)')'------------------------------------------------------------------------------------------------------------------'
+      do i=1, Origin_cell%Num_atoms
+         if(cpuid==0)write(stdout, '(i6,2X, a10,6f12.6,3f8.3)')i, Origin_cell%atom_name(i), &
+            Origin_cell%Atom_position_cart(:, i), Origin_cell%Atom_position_direct(:,i), Origin_cell%Atom_magnetic_moment(:, i)
       enddo
+
    else
       stop "ERROR: please set atom's positions information correctly"
    endif
@@ -500,54 +736,59 @@ subroutine readinput
 
    !> setup atom type
    if (allocated(iarray_temp))deallocate(iarray_temp)
-   allocate(iarray_temp(Num_atoms))
+   allocate(iarray_temp(Origin_cell%Num_atoms))
    iarray_temp= 1
-   do ia=1, Num_atoms
-      char_temp= atom_name(ia)
-      do i=ia+1, Num_atoms
-         if (char_temp==atom_name(i).and.iarray_temp(i)/=0)then
+   do ia=1, Origin_cell%Num_atoms
+      char_temp= Origin_cell%atom_name(ia)
+      do i=ia+1, Origin_cell%Num_atoms
+         if (char_temp==Origin_cell%atom_name(i).and.iarray_temp(i)/=0)then
             iarray_temp(i)=0
          endif
       enddo
    enddo
-   Num_atom_type= sum(iarray_temp)
+   Origin_cell%Num_atom_type= sum(iarray_temp)
 
-   allocate(Name_of_atomtype(Num_atom_type))
-   allocate(Num_atoms_eachtype(Num_atom_type))
-   allocate(itype_atom(Num_atoms))
+   allocate(Origin_cell%Name_of_atomtype(Origin_cell%Num_atom_type))
+   allocate(Origin_cell%Num_atoms_eachtype(Origin_cell%Num_atom_type))
+   allocate(Origin_cell%itype_atom(Origin_cell%Num_atoms))
    it = 0
-   do ia=1, Num_atoms
+   do ia=1, Origin_cell%Num_atoms
       if (iarray_temp(ia)/=0) then
          it= it+ 1
-         Name_of_atomtype(it)= atom_name(ia)
+         Origin_cell%Name_of_atomtype(it)= Origin_cell%atom_name(ia)
       endif
    enddo
 
    !> find the type of atoms and label them
-   do ia=1, Num_atoms
-      do i=1, Num_atom_type
-         if (atom_name(ia)==Name_of_atomtype(i))then
-            itype_atom(ia)= i
+   do ia=1, Origin_cell%Num_atoms
+      do i=1, Origin_cell%Num_atom_type
+         if (Origin_cell%atom_name(ia)==Origin_cell%Name_of_atomtype(i))then
+            Origin_cell%itype_atom(ia)= i
          endif
       enddo
    enddo
 
-   do i=1, Num_atom_type
+   do i=1, Origin_cell%Num_atom_type
       it = 0
-      do ia=1, Num_atoms
-         if (atom_name(ia)==Name_of_atomtype(i))then
+      do ia=1, Origin_cell%Num_atoms
+         if (Origin_cell%atom_name(ia)==Origin_cell%Name_of_atomtype(i))then
             it = it+ 1
          endif
       enddo
-      Num_atoms_eachtype(i)= it
+      Origin_cell%Num_atoms_eachtype(i)= it
    enddo
 
+
+!===============================================================================================================!
+!> PROJECTORS card
+!===============================================================================================================!
 
    !> Read projectors information
    rewind(1001)
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 102)inline
+      inline=upper(inline)
       if (trim(adjustl(inline))=='PROJECTORS'.or.&
          trim(adjustl(inline))=='PROJECTOR') then
          lfound= .true.
@@ -559,64 +800,71 @@ subroutine readinput
 102 continue
 
    if (lfound) then
-      allocate(nprojs(Num_atoms))
-      nprojs= 0
-      read(1001, *)nprojs
+      allocate(Origin_cell%nprojs(Origin_cell%Num_atoms))
+      Origin_cell%nprojs= 0
+      read(1001, *)Origin_cell%nprojs
       if(cpuid==0)write(stdout, '(a)')' >>Number of projectors per atoms:'
-      if(cpuid==0)write(stdout, '(10i6)')nprojs
+      if(cpuid==0)write(stdout, '(10i6)')Origin_cell%nprojs
 
-      max_projs= maxval(nprojs)
-      allocate(proj_name(max_projs, Num_atoms))
-      proj_name= ' '
-      do i=1, Num_atoms
-         read(1001, *)char_temp, proj_name(1:nprojs(i), i)
+      Origin_cell%max_projs= maxval(Origin_cell%nprojs)
+      allocate(Origin_cell%proj_name(Origin_cell%max_projs, Origin_cell%Num_atoms))
+      Origin_cell%proj_name= ' '
+      do i=1, Origin_cell%Num_atoms
+         read(1001, *)char_temp, Origin_cell%proj_name(1:Origin_cell%nprojs(i), i)
          if(cpuid==0)write(stdout, '(40a8)') &
-            char_temp, proj_name(1:nprojs(i), i)
+            char_temp, Origin_cell%proj_name(1:Origin_cell%nprojs(i), i)
       enddo
    else
       stop "ERROR: please set projectors for Wannier functions information"
    endif
 
    !> set up orbitals_start
-   allocate(orbitals_start(Num_atoms))
+   allocate(orbitals_start(Origin_cell%Num_atoms))
    orbitals_start= 1
-   do i=1, Num_atoms-1
-      orbitals_start(i+1)= orbitals_start(i)+ nprojs(i)
+   do i=1, Origin_cell%Num_atoms-1
+      orbitals_start(i+1)= orbitals_start(i)+ Origin_cell%nprojs(i)
    enddo
 
    !> orbital index order
-   allocate(index_start(Num_atoms))
-   allocate(index_end  (Num_atoms))
+   allocate(index_start(Origin_cell%Num_atoms))
+   allocate(index_end  (Origin_cell%Num_atoms))
    index_start= 0
    index_end= 0
    index_start(1)= 1
-   index_end(1)= nprojs(1)
-   do i=2, Num_atoms
-      index_start(i)= index_start(i-1)+ nprojs(i-1)
-      index_end(i)= index_end(i-1)+ nprojs(i)
+   index_end(1)= Origin_cell%nprojs(1)
+   do i=2, Origin_cell%Num_atoms
+      index_start(i)= index_start(i-1)+ Origin_cell%nprojs(i-1)
+      index_end(i)= index_end(i-1)+ Origin_cell%nprojs(i)
    enddo
 
 
 
    !> read Wannier centres
-   nwann= sum(nprojs)
-   if (SOC>0) nwann= 2*nwann
-   allocate(wannier_centers_cart(3, Nwann))
-   allocate(wannier_centers_direct(3, Nwann))
-   wannier_centers_direct= 0d0
-   wannier_centers_cart= 0d0
+   NumberOfspinorbitals= sum(Origin_cell%nprojs)
+   if (SOC>0.or.Add_Zeeman_Field) NumberOfspinorbitals= 2*NumberOfspinorbitals
+   Origin_cell%NumberOfspinorbitals= NumberOfspinorbitals
+   allocate(Origin_cell%spinorbital_to_atom_index(NumberOfspinorbitals))
+   allocate(Origin_cell%spinorbital_to_projector_index(NumberOfspinorbitals))
+   allocate(Origin_cell%wannier_centers_cart(3, NumberOfspinorbitals))
+   allocate(Origin_cell%wannier_centers_direct(3, NumberOfspinorbitals))
+   Origin_cell%wannier_centers_direct= 0d0
+   Origin_cell%wannier_centers_cart= 0d0
    !> default wannier centers
    i= 0
-   do ia= 1, Num_atoms
-      do j= 1, nprojs(ia)
+   do ia= 1, Origin_cell%Num_atoms
+      do j= 1, Origin_cell%nprojs(ia)
          i= i+ 1
-         wannier_centers_cart(:, i)=  Atom_position(:, ia)
-         call cart_direct_real(wannier_centers_cart(:, i),  &
-            wannier_centers_direct(:, i))
-         if (SOC>0) then
-            wannier_centers_cart(:, i+Nwann/2)=  Atom_position(:, ia)
-            call cart_direct_real(wannier_centers_cart(:, i+Nwann/2),  &
-               wannier_centers_direct(:, i+Nwann/2))
+         Origin_cell%spinorbital_to_atom_index(i)= ia
+         Origin_cell%spinorbital_to_projector_index(i)= j
+         Origin_cell%wannier_centers_cart(:, i)=  Origin_cell%Atom_position_cart(:, ia)
+         call cart_direct_real(Origin_cell%wannier_centers_cart(:, i),  &
+            Origin_cell%wannier_centers_direct(:, i))
+         if (SOC>0.or.Add_Zeeman_Field) then
+            Origin_cell%spinorbital_to_atom_index(i+NumberOfspinorbitals/2)= ia
+            Origin_cell%spinorbital_to_projector_index(i+NumberOfspinorbitals/2)= j
+            Origin_cell%wannier_centers_cart(:, i+NumberOfspinorbitals/2)=  Origin_cell%Atom_position_cart(:, ia)
+            call cart_direct_real(Origin_cell%wannier_centers_cart(:, i+NumberOfspinorbitals/2),  &
+               Origin_cell%wannier_centers_direct(:, i+NumberOfspinorbitals/2))
          endif
       enddo ! j
    enddo ! ia
@@ -625,44 +873,46 @@ subroutine readinput
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 110)inline
-      if (trim(adjustl(inline))=='WANNIER_CENTERS' &
+      inline=upper(inline)
+      if (trim(adjustl(inline))=='Origin_cell%wannier_ceters' &
          .or. trim(adjustl(inline))=='WANNIER_CENTRES') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
-         if (cpuid==0) write(stdout, *)'We found wannier_centers card'
+         if (cpuid==0) write(stdout, *)'We found Origin_cell%wannier_ceters card'
          exit
       endif
    enddo
 
    if (lfound) then
       read(1001, *)inline   ! The unit of lattice vector
+      inline= upper(inline)
       DirectOrCart= trim(adjustl(inline))
 
       it= 0
       if (index(DirectOrCart, "D")>0)then
-         do i=1, Nwann
-            read(1001, *, end=207, err=207) wannier_centers_direct(:, i)
+         do i=1, NumberOfspinorbitals
+            read(1001, *, end=207, err=207) Origin_cell%wannier_centers_direct(:, i)
             it= it+ 1
-            call direct_cart_real(wannier_centers_direct(:, i), &
-               wannier_centers_cart(:, i))
+            call direct_cart_real(Origin_cell%wannier_centers_direct(:, i), &
+               Origin_cell%wannier_centers_cart(:, i))
          enddo
 
       else
-         do i=1, Nwann
-            read(1001, *, end=207, err=207) wannier_centers_cart(:, i)
+         do i=1, NumberOfspinorbitals
+            read(1001, *, end=207, err=207) Origin_cell%wannier_centers_cart(:, i)
             it= it+ 1
-            call cart_direct_real(wannier_centers_cart(:, i), &
-               wannier_centers_direct(:, i))
+            call cart_direct_real(Origin_cell%wannier_centers_cart(:, i), &
+               Origin_cell%wannier_centers_direct(:, i))
          enddo
       endif
-   endif ! found wannier_centers card
+   endif ! found Origin_cell%wannier_ceters card
 207 continue
-   if (it< Nwann.and.cpuid==0) then
+   if (it< NumberOfspinorbitals.and.cpuid==0) then
       write(stdout, *)' '
       write(stdout, *)' >>>> Error happens in Wannier_centres card'
-      write(stdout, *)' Error: the number of wannier_centers lines should '
+      write(stdout, *)' Error: the number of Origin_cell%wannier_ceters lines should '
       write(stdout, *)' equal to the number wannier functions (include spin)'
-      write(stdout, *)' Num_wann', Nwann, ' the centres lines you given ', it
+      write(stdout, *)' Num_wann', NumberOfspinorbitals, ' the centres lines you given ', it
       write(stdout, *)' Otherwise, if you do not know the meaning of this,'
       write(stdout, *)' please delete this card'
       stop
@@ -675,11 +925,11 @@ subroutine readinput
    if (lfound) then
       if (cpuid==0) then
          write(stdout, *)" "
-         write(stdout, *)">> Wannier centers from wt.in, in unit of reciprocal lattice vector"
+         write(stdout, *)">> Wannier centers from input.dat, in unit of reciprocal lattice vector"
          write(stdout, '(a6, 4a10)')'iwann', 'R1', 'R2', 'R3'
-         do i=1, Nwann
-            write(stdout, '(i6, 3f10.6)')i, wannier_centers_direct(:, i)
-            !write(stdout, '(i6, 3f10.6)')i, wannier_centers_cart(:, i)
+         do i=1, NumberOfspinorbitals
+            write(stdout, '(i6, 3f10.6)')i, Origin_cell%wannier_centers_direct(:, i)
+            !write(stdout, '(i6, 3f10.6)')i, Origin_cell%wannier_centers_cart(:, i)
          enddo
       endif
    else
@@ -687,19 +937,370 @@ subroutine readinput
          write(stdout, *)" "
          write(stdout, *)">> Wannier centers by default, in unit of reciprocal lattice vector"
          write(stdout, '(a6, 4a10)')'iwann', 'R1', 'R2', 'R3'
-         do i=1, Nwann
-            write(stdout, '(i6, 3f10.6)')i, wannier_centers_direct(:, i)
-            !write(stdout, '(i6, 3f10.6)')i, wannier_centers_cart(:, i)
+         do i=1, NumberOfspinorbitals
+            write(stdout, '(i6, 3f10.6)')i, Origin_cell%wannier_centers_direct(:, i)
+            !write(stdout, '(i6, 3f10.6)')i, Origin_cell%wannier_centers_cart(:, i)
          enddo
       endif
    endif
 
+  
+!===============================================================================================================!
+!> LATTICE_UNFOLD card
+!===============================================================================================================!
+
+   !>> This segment is for folded lattice which is smaller than the original lattice usually
+   !> read folded lattice information
+   rewind(1001)
+   lfound = .false.
+   do while (.true.)
+      read(1001, *, end= 1080)inline
+      inline= upper(inline)
+      if (trim(adjustl(inline))=='LATTICE_UNFOLD') then
+         lfound= .true.
+         if (cpuid==0) write(stdout, *)' '
+         if (cpuid==0) write(stdout, *)'We found LATTICE_UNFOLD card'
+         exit
+      endif
+   enddo
+1080 continue
+
+   if (lfound) then
+      read(1001, *)inline   ! The unit of lattice vector
+      AngOrBohr=trim(adjustl(inline))
+      read(1001, *)Folded_cell%Rua
+      read(1001, *)Folded_cell%Rub
+      read(1001, *)Folded_cell%Ruc
+   else
+      if (cpuid==0) write(stdout, *)"We didn't found LATTICE_UNFOLD card, so it is the same as the unit cell."
+      Folded_cell%Rua=Origin_cell%Rua
+      Folded_cell%Rub=Origin_cell%Rub
+      Folded_cell%Ruc=Origin_cell%Ruc
+   endif
+
+   if (index(AngOrBohr, 'Bohr')>0) then
+      Folded_cell%Rua= Folded_cell%Rua*0.529177d0
+      Folded_cell%Rub= Folded_cell%Rub*0.529177d0
+      Folded_cell%Ruc= Folded_cell%Ruc*0.529177d0
+   endif
+
+   !> cell parameters
+   Folded_cell%cell_parameters(1)= norm(Folded_cell%Rua)
+   Folded_cell%cell_parameters(2)= norm(Folded_cell%Rub)
+   Folded_cell%cell_parameters(3)= norm(Folded_cell%Ruc)
+   Folded_cell%cell_parameters(4)= angle(Folded_cell%Rub, Folded_cell%Ruc)
+   Folded_cell%cell_parameters(5)= angle(Folded_cell%Rua, Folded_cell%Ruc)
+   Folded_cell%cell_parameters(6)= angle(Folded_cell%Rua, Folded_cell%Rub)
+
+
+   !> transform lattice from direct space to reciprocal space
+
+   Folded_cell%Kua= 0d0
+   Folded_cell%Kub= 0d0
+   Folded_cell%Kuc= 0d0
+   Folded_cell%CellVolume= Folded_cell%Rua(1)*(Folded_cell%Rub(2)*Folded_cell%Ruc(3)- Folded_cell%Rub(3)*Folded_cell%Ruc(2)) &
+      +Folded_cell%Rua(2)*(Folded_cell%Rub(3)*Folded_cell%Ruc(1)- Folded_cell%Rub(1)*Folded_cell%Ruc(3)) &
+      +Folded_cell%Rua(3)*(Folded_cell%Rub(1)*Folded_cell%Ruc(2)- Folded_cell%Rub(2)*Folded_cell%Ruc(1))
+   Folded_cell%ReciprocalCellVolume= (2d0*3.1415926535d0)**3/Folded_cell%CellVolume
+
+   
+   Folded_cell%Kua(1)= 2d0*pi*(Folded_cell%Rub(2)*Folded_cell%Ruc(3)- Folded_cell%Rub(3)*Folded_cell%Ruc(2))/Folded_cell%CellVolume
+   Folded_cell%Kua(2)= 2d0*pi*(Folded_cell%Rub(3)*Folded_cell%Ruc(1)- Folded_cell%Rub(1)*Folded_cell%Ruc(3))/Folded_cell%CellVolume
+   Folded_cell%Kua(3)= 2d0*pi*(Folded_cell%Rub(1)*Folded_cell%Ruc(2)- Folded_cell%Rub(2)*Folded_cell%Ruc(1))/Folded_cell%CellVolume
+
+   Folded_cell%Kub(1)= 2d0*pi*(Folded_cell%Ruc(2)*Folded_cell%Rua(3)- Folded_cell%Ruc(3)*Folded_cell%Rua(2))/Folded_cell%CellVolume
+   Folded_cell%Kub(2)= 2d0*pi*(Folded_cell%Ruc(3)*Folded_cell%Rua(1)- Folded_cell%Ruc(1)*Folded_cell%Rua(3))/Folded_cell%CellVolume
+   Folded_cell%Kub(3)= 2d0*pi*(Folded_cell%Ruc(1)*Folded_cell%Rua(2)- Folded_cell%Ruc(2)*Folded_cell%Rua(1))/Folded_cell%CellVolume
+
+   Folded_cell%Kuc(1)= 2d0*pi*(Folded_cell%Rua(2)*Folded_cell%Rub(3)- Folded_cell%Rua(3)*Folded_cell%Rub(2))/Folded_cell%CellVolume
+   Folded_cell%Kuc(2)= 2d0*pi*(Folded_cell%Rua(3)*Folded_cell%Rub(1)- Folded_cell%Rua(1)*Folded_cell%Rub(3))/Folded_cell%CellVolume
+   Folded_cell%Kuc(3)= 2d0*pi*(Folded_cell%Rua(1)*Folded_cell%Rub(2)- Folded_cell%Rua(2)*Folded_cell%Rub(1))/Folded_cell%CellVolume
+
+   !> reciprlcal cell parameters
+   Folded_cell%reciprocal_cell_parameters(1)= norm(Folded_cell%Kua)
+   Folded_cell%reciprocal_cell_parameters(2)= norm(Folded_cell%Kub)
+   Folded_cell%reciprocal_cell_parameters(3)= norm(Folded_cell%Kuc)
+   Folded_cell%reciprocal_cell_parameters(4)= angle(Folded_cell%Kub, Folded_cell%Kuc)
+   Folded_cell%reciprocal_cell_parameters(5)= angle(Folded_cell%Kua, Folded_cell%Kuc)
+   Folded_cell%reciprocal_cell_parameters(6)= angle(Folded_cell%Kua, Folded_cell%Kub)
+
+   if(cpuid==0)write(stdout, '(a)') '>> Folded lattice information (Angstrom)'
+   if(cpuid==0)write(stdout, '(6a12)')" a", " b", " c", 'alpha', 'beta', 'gamma'
+   if(cpuid==0)write(stdout, '(6f12.6)')Folded_cell%cell_parameters
+   if(cpuid==0)write(stdout, '(a)')" Three Lattice vectors of unfolded cell: "
+   if(cpuid==0)write(stdout, '(3f12.6)')Folded_cell%Rua
+   if(cpuid==0)write(stdout, '(3f12.6)')Folded_cell%Rub
+   if(cpuid==0)write(stdout, '(3f12.6)')Folded_cell%Ruc
+
+   if(cpuid==0)write(stdout, '(a)') '>> Folded Reciprocal lattice information (1/Angstrom)'
+   if(cpuid==0)write(stdout, '(6a12)')" a", " b", " c", 'alpha', 'beta', 'gamma'
+   if(cpuid==0)write(stdout, '(6f12.6)')Folded_cell%reciprocal_cell_parameters
+   if(cpuid==0)write(stdout, '(a)')" Three reciprocal lattice vectors of unfolded cell: "
+   if(cpuid==0)write(stdout, '(3f12.6)')Folded_cell%Kua
+   if(cpuid==0)write(stdout, '(3f12.6)')Folded_cell%Kub
+   if(cpuid==0)write(stdout, '(3f12.6)')Folded_cell%Kuc
+
+   !> calculate the coordinates of Origin_cell in the unit of Folded_cell
+   call cart_direct_real_unfold(Origin_cell%Rua, R1)
+   call cart_direct_real_unfold(Origin_cell%Rub, R2)
+   call cart_direct_real_unfold(Origin_cell%Ruc, R3)
+
+   if(cpuid==0) then
+      write(stdout, '(a)') ' '
+      write(stdout, '(a)') '>> The relation between the original lattice and the unfolded lattice'
+      write(stdout, '(a, f12.6)') '>> The cell volume ratio is: ', Origin_cell%CellVolume/Folded_cell%CellVolume
+      write(stdout, '(a, f12.6)') '>> The lattice constant a ratio is: ', Origin_cell%cell_parameters(1)/Folded_cell%cell_parameters(1)
+      write(stdout, '(a, f12.6)') '>> The lattice constant b ratio is: ', Origin_cell%cell_parameters(2)/Folded_cell%cell_parameters(2)
+      write(stdout, '(a, f12.6)') '>> The lattice constant c ratio is: ', Origin_cell%cell_parameters(3)/Folded_cell%cell_parameters(3)
+      write(stdout, '(a, 3f12.6)') '>> Origin_cell in unit of Folded_cell: R1  ', R1 
+      write(stdout, '(a, 3f12.6)') '>> Origin_cell in unit of Folded_cell: R2  ', R2 
+      write(stdout, '(a, 3f12.6)') '>> Origin_cell in unit of Folded_cell: R3  ', R3 
+      write(stdout, '(a)') ' '
+   endif
+
+
+!===============================================================================================================!
+!> ATOM_POSITIONS_UNFOLD card
+!===============================================================================================================!
+
+   !> Read atom positions information
+   rewind(1001)
+   lfound = .false.
+   do while (.true.)
+      read(1001, *, end= 1013)inline
+      inline=upper(inline)
+      if (trim(adjustl(inline))=='ATOM_POSITIONS_UNFOLD') then
+         lfound= .true.
+         if (cpuid==0) write(stdout, *)' '
+         if (cpuid==0) write(stdout, *)'We found ATOM_POSITIONS_UNFOLD card'
+         exit
+      endif
+   enddo
+1013 continue
+
+   if (lfound) then
+      read(1001, *)Folded_cell%Num_atoms   ! total number of atoms
+      if(cpuid==0)write(stdout, '(a, i5)')'Folded_cell%Num_atoms', Folded_cell%Num_atoms
+      allocate(Folded_cell%atom_name(Folded_cell%Num_atoms))
+      allocate(Folded_cell%Atom_position_cart(3, Folded_cell%Num_atoms))
+      allocate(Folded_cell%Atom_position_direct(3, Folded_cell%Num_atoms))
+      allocate(Folded_cell%Atom_magnetic_moment(3, Folded_cell%Num_atoms))
+      Folded_cell%Atom_magnetic_moment= 0d0
+      read(1001, *)inline   ! The unit of lattice vector
+      DirectOrCart= trim(adjustl(inline))
+
+      !> check whether we have the magnetic moment in the POSITION card
+      do i=1, Folded_cell%Num_atoms
+         read(1001, *, err=1320) Folded_cell%atom_name(i), Folded_cell%Atom_position_cart(:, i), Folded_cell%Atom_magnetic_moment(:, i)
+         if(cpuid==0)write(stdout, '(a4,3f12.6)')Folded_cell%atom_name(i), Folded_cell%Atom_position_cart(:, i)
+         if (index(DirectOrCart, "D")>0)then
+            pos= Folded_cell%Atom_position_cart(:, i)
+            Folded_cell%Atom_position_cart(:, i)= pos(1)*Folded_cell%Rua+ pos(2)*Folded_cell%Rub+ pos(3)*Folded_cell%Ruc
+         endif
+      enddo
+      go to 1330
+
+1320  continue
+      !> if the code comes to here, it means there is no atom's magnetic moment in the POSITION card
+      if (cpuid==0) write(stdout, *) ' '
+      if (cpuid==0) write(stdout, *) &
+         "Warning: You didn't specify the atom magnetic moment in the ATOMIC_POSITION card", &
+         " Or the format is wrong. ", &
+         "So we set all the Atom-magnetic-moments to zero."
+      Folded_cell%Atom_magnetic_moment= 0d0
+      rewind(1001)
+      do while (.true.)
+         read(1001, *)inline
+         inline=upper(inline)
+         if (trim(adjustl(inline))=='ATOM_POSITIONS_UNFOLD') then
+            exit
+         endif
+      enddo
+      !> skip two lines
+      read(1001, *)
+      read(1001, *)
+
+      do i=1, Folded_cell%Num_atoms
+         read(1001, *, err=1340) Folded_cell%atom_name(i), Folded_cell%Atom_position_cart(:, i)
+         !> Folded_cell%Atom_position_cart is in the cartesian coordinate.
+         if (index(DirectOrCart, "D")>0)then
+            pos= Folded_cell%Atom_position_cart(:, i)
+            Folded_cell%Atom_position_cart(:, i)= pos(1)*Folded_cell%Rua+ pos(2)*Folded_cell%Rub+ pos(3)*Folded_cell%Ruc
+         endif
+      enddo
+      go to 1330
+1340  continue
+      write(*, *)"ERROR happens in the ATOM_POSITION_UNFOLD card"
+      write(*, *)"This is a free format card, between lines there should be any comments"
+      write(*, *)"The number in the second line should be the same as the number of lines of the atom positions."
+      stop "ERROR: please set ATOM_POSITION_UNFOLD card correctly, see manual on www.wanniertools.com"
+
+1330  continue
+
+      if(cpuid==0)write(stdout,'(a)')' '
+      do ia=1, Folded_cell%Num_atoms
+         call cart_direct_real_unfold(Folded_cell%Atom_position_cart(:, ia), Folded_cell%Atom_position_direct(:, ia))
+         if(cpuid==0)write(stdout, '(a4,3f12.6)')Folded_cell%atom_name(ia), Folded_cell%Atom_position_direct(:, ia)
+      enddo
+   else
+      if (abs(Folded_cell%CellVolume-Origin_cell%CellVolume)>eps6) then
+         call printerrormsg("ERROR: please set ATOM_POSITIONS_UNFOLD since you set LATTICE_UNFOLD")
+      else
+         Folded_cell%Num_atoms= Origin_cell%Num_atoms
+         allocate(Folded_cell%atom_name(Folded_cell%Num_atoms))
+         allocate(Folded_cell%Atom_position_cart(3, Folded_cell%Num_atoms))
+         allocate(Folded_cell%Atom_position_direct(3, Folded_cell%Num_atoms))
+         allocate(Folded_cell%Atom_magnetic_moment(3, Folded_cell%Num_atoms))
+         Folded_cell%atom_name= Origin_cell%atom_name
+         Folded_cell%Atom_position_cart= Origin_cell%Atom_position_cart
+         Folded_cell%Atom_position_direct= Origin_cell%Atom_position_direct
+         Folded_cell%Atom_magnetic_moment= Origin_cell%Atom_magnetic_moment
+      endif
+   endif
+
+   if(cpuid==0)write(stdout,'(a)')' '
+   if(cpuid==0)write(stdout,'(a)')'>>> Atom position and magnetic moment of Unfolded lattice'
+   if(cpuid==0)write(stdout,'(13X, 2a36, a24)')' Catesian', 'Fractional(Direct)', 'Magnetic moment'
+   if(cpuid==0)write(stdout,'(a)')'------------------------------------------------------------------------------------------------------------------'
+   if(cpuid==0)write(stdout,'(a6, 2X, a10, 6a12, 3a8)')'index', 'Atom Name ', ' x', ' y', ' z', 'a', 'b', 'c', 'Mx', 'My', 'Mz'
+   if(cpuid==0)write(stdout,'(a)')'------------------------------------------------------------------------------------------------------------------'
+   do i=1, Folded_cell%Num_atoms
+      if(cpuid==0)write(stdout, '(i6,2X, a10,6f12.6,3f8.3)')i, Folded_cell%atom_name(i), &
+         Folded_cell%Atom_position_cart(:, i), Folded_cell%Atom_position_direct(:,i), Folded_cell%Atom_magnetic_moment(:, i)
+   enddo
+
+
+   !> setup atom type
+   if (allocated(iarray_temp))deallocate(iarray_temp)
+   allocate(iarray_temp(Folded_cell%Num_atoms))
+   iarray_temp= 1
+   do ia=1, Folded_cell%Num_atoms
+      char_temp= Folded_cell%atom_name(ia)
+      do i=ia+1, Folded_cell%Num_atoms
+         if (char_temp==Folded_cell%atom_name(i).and.iarray_temp(i)/=0)then
+            iarray_temp(i)=0
+         endif
+      enddo
+   enddo
+   Folded_cell%Num_atom_type= sum(iarray_temp)
+
+   allocate(Folded_cell%Name_of_atomtype(Folded_cell%Num_atom_type))
+   allocate(Folded_cell%Num_atoms_eachtype(Folded_cell%Num_atom_type))
+   allocate(Folded_cell%itype_atom(Folded_cell%Num_atoms))
+   it = 0
+   do ia=1, Folded_cell%Num_atoms
+      if (iarray_temp(ia)/=0) then
+         it= it+ 1
+         Folded_cell%Name_of_atomtype(it)= Folded_cell%atom_name(ia)
+      endif
+   enddo
+
+   !> find the type of atoms and label them
+   do ia=1, Folded_cell%Num_atoms
+      do i=1, Folded_cell%Num_atom_type
+         if (Folded_cell%atom_name(ia)==Folded_cell%Name_of_atomtype(i))then
+            Folded_cell%itype_atom(ia)= i
+         endif
+      enddo
+   enddo
+
+   do i=1, Folded_cell%Num_atom_type
+      it = 0
+      do ia=1, Folded_cell%Num_atoms
+         if (Folded_cell%atom_name(ia)==Folded_cell%Name_of_atomtype(i))then
+            it = it+ 1
+         endif
+      enddo
+      Folded_cell%Num_atoms_eachtype(i)= it
+   enddo
+
+!===============================================================================================================!
+!> PROJECTORS_UNFOLD card
+!===============================================================================================================!
+
+   !> Read projectors information for unfolded lattice
+   rewind(1001)
+   lfound = .false.
+   do while (.true.)
+      read(1001, *, end= 1020)inline
+      inline=upper(inline)
+      if (trim(adjustl(inline))=='PROJECTORS_UNFOLD'.or.&
+         trim(adjustl(inline))=='PROJECTOR_UNFOLD') then
+         lfound= .true.
+         if (cpuid==0) write(stdout, *)' '
+         if (cpuid==0) write(stdout, *)'We found PROJECTORS_UNFOLD card'
+         exit
+      endif
+   enddo
+1020 continue
+
+   if (lfound) then
+      allocate(Folded_cell%nprojs(Folded_cell%Num_atoms))
+      Folded_cell%nprojs= 0
+      read(1001, *)Folded_cell%nprojs
+      if(cpuid==0)write(stdout, '(a)')' >>Number of projectors per atoms:'
+      if(cpuid==0)write(stdout, '(10i6)')Folded_cell%nprojs
+
+      Folded_cell%max_projs= maxval(Folded_cell%nprojs)
+      allocate(Folded_cell%proj_name(Folded_cell%max_projs, Folded_cell%Num_atoms))
+      Folded_cell%proj_name= ' '
+      do i=1, Folded_cell%Num_atoms
+         read(1001, *)char_temp, Folded_cell%proj_name(1:Folded_cell%nprojs(i), i)
+         if(cpuid==0)write(stdout, '(40a8)') &
+            char_temp, Folded_cell%proj_name(1:Folded_cell%nprojs(i), i)
+      enddo
+   else
+      if (abs(Folded_cell%CellVolume-Origin_cell%CellVolume)>eps6) then
+         call printerrormsg("ERROR: please set PROJECTORS_UNFOLD since you set LATTICE_UNFOLD")
+      else
+         allocate(Folded_cell%nprojs(Folded_cell%Num_atoms))
+         Folded_cell%nprojs= Origin_cell%nprojs
+         Folded_cell%max_projs= maxval(Folded_cell%nprojs)
+         allocate(Folded_cell%proj_name(Folded_cell%max_projs, Folded_cell%Num_atoms))
+         Folded_cell%proj_name= Origin_cell%proj_name
+      endif
+   endif
+
+   !> Wannier centres for unfoled lattice
+   NumberOfspinorbitals_unfold= sum(Folded_cell%nprojs)
+   if (SOC>0) NumberOfspinorbitals_unfold= 2*NumberOfspinorbitals_unfold
+   Folded_cell%NumberOfspinorbitals= NumberOfspinorbitals_unfold
+   allocate(Folded_cell%spinorbital_to_atom_index(NumberOfspinorbitals_unfold))
+   allocate(Folded_cell%spinorbital_to_projector_index(NumberOfspinorbitals_unfold))
+   allocate(Folded_cell%wannier_centers_cart(3, NumberOfspinorbitals_unfold))
+   allocate(Folded_cell%wannier_centers_direct(3, NumberOfspinorbitals_unfold))
+   Folded_cell%wannier_centers_direct= 0d0
+   Folded_cell%wannier_centers_cart= 0d0
+   !> default wannier centers
+   i= 0
+   do ia= 1, Folded_cell%Num_atoms
+      do j= 1, Folded_cell%nprojs(ia)
+         i= i+ 1
+         Folded_cell%spinorbital_to_atom_index(i)= ia
+         Folded_cell%spinorbital_to_projector_index(i)= j
+         Folded_cell%wannier_centers_cart(:, i)=  Folded_cell%Atom_position_cart(:, ia)
+         call cart_direct_real_unfold(Folded_cell%wannier_centers_cart(:, i),  &
+            Folded_cell%wannier_centers_direct(:, i))
+         if (SOC>0) then
+            Folded_cell%spinorbital_to_atom_index(i+NumberOfspinorbitals_unfold/2)= ia
+            Folded_cell%spinorbital_to_projector_index(i+NumberOfspinorbitals_unfold/2)= j
+            Folded_cell%wannier_centers_cart(:, i+NumberOfspinorbitals_unfold/2)=  Folded_cell%Atom_position_cart(:, ia)
+            call cart_direct_real_unfold(Folded_cell%wannier_centers_cart(:, i+NumberOfspinorbitals_unfold/2),  &
+               Folded_cell%wannier_centers_direct(:, i+NumberOfspinorbitals_unfold/2))
+         endif
+      enddo ! j
+   enddo ! ia
+
+!===============================================================================================================!
+!> MILLER_INDICES card
+!===============================================================================================================!
 
    !> read surface information by Miller indices
    rewind(1001)
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 224)inline
+      inline=upper(inline)
       if (trim(adjustl(inline))=='MILLER_INDICES'  &
          .or. trim(adjustl(inline))=='MILLER_INDEX') then
          lfound= .true.
@@ -721,12 +1322,16 @@ subroutine readinput
       call MillerIndicestoumatrix()
    endif
 
+!===============================================================================================================!
+!> SURFACE card
+!===============================================================================================================!
 
    !> read surface information
    rewind(1001)
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 103)inline
+      inline=upper(inline)
       if (trim(adjustl(inline))=='SURFACE') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
@@ -776,34 +1381,39 @@ subroutine readinput
    !> check whether Umatrix is right
    !> the volume of the new cell should be the same as the old ones
    !> Here R1, R2, R3 are vectors defined by SURFACE CARD in original cartesian coordinates
-   R1= Umatrix(1, 1)*Rua+ Umatrix(1, 2)*Rub+ Umatrix(1, 3)*Ruc
-   R2= Umatrix(2, 1)*Rua+ Umatrix(2, 2)*Rub+ Umatrix(2, 3)*Ruc
-   R3= Umatrix(3, 1)*Rua+ Umatrix(3, 2)*Rub+ Umatrix(3, 3)*Ruc
+   R1= Umatrix(1, 1)*Origin_cell%Rua+ Umatrix(1, 2)*Origin_cell%Rub+ Umatrix(1, 3)*Origin_cell%Ruc
+   R2= Umatrix(2, 1)*Origin_cell%Rua+ Umatrix(2, 2)*Origin_cell%Rub+ Umatrix(2, 3)*Origin_cell%Ruc
+   R3= Umatrix(3, 1)*Origin_cell%Rua+ Umatrix(3, 2)*Origin_cell%Rub+ Umatrix(3, 3)*Origin_cell%Ruc
 
    cell_volume2= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
       +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
       +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
-
-   if (abs(cell_volume2)>0.001d0) cell_volume2= 2d0*3.1415926535d0/cell_volume2
 
    if (cell_volume2<0) then
       R3=-R3
       Umatrix(3, :)= -Umatrix(3, :)
    endif
 
-   if (abs(abs(cell_volume2)-abs(CellVolume))> 0.001d0.and.cpuid==0) then
+   if (abs(abs(cell_volume2)-abs(Origin_cell%CellVolume))> 0.001d0.and.cpuid==0) then
       write(stdout, '(a)')' '
       write(stdout, '(2a)')' Warnning: The Umatrix is wrongly set, the new cell', &
          'volume should be the same as the old ones. '
-      write(stdout, '(a,2f10.4)')' cell_volume vs cell_volume-new', CellVolume, cell_volume2
+      write(stdout, '(a,2f10.4)')' cell_volume vs cell_volume-new', Origin_cell%CellVolume, cell_volume2
       write(stdout, '(a)')" However, don't worry, WannierTools will help you to find a suitable rotation matrix."
       write(stdout, '(a)')" I am looking for new unit cell atuomatically: "
    endif
-   if (abs(abs(cell_volume2)-abs(CellVolume))> 0.001d0) then
+   if (abs(abs(cell_volume2)-abs(Origin_cell%CellVolume))> 0.001d0) then
       call FindTheThirdLatticeVector()
-      R1= Umatrix(1, 1)*Rua+ Umatrix(1, 2)*Rub+ Umatrix(1, 3)*Ruc
-      R2= Umatrix(2, 1)*Rua+ Umatrix(2, 2)*Rub+ Umatrix(2, 3)*Ruc
-      R3= Umatrix(3, 1)*Rua+ Umatrix(3, 2)*Rub+ Umatrix(3, 3)*Ruc
+      R1= Umatrix(1, 1)*Origin_cell%Rua+ Umatrix(1, 2)*Origin_cell%Rub+ Umatrix(1, 3)*Origin_cell%Ruc
+      R2= Umatrix(2, 1)*Origin_cell%Rua+ Umatrix(2, 2)*Origin_cell%Rub+ Umatrix(2, 3)*Origin_cell%Ruc
+      R3= Umatrix(3, 1)*Origin_cell%Rua+ Umatrix(3, 2)*Origin_cell%Rub+ Umatrix(3, 3)*Origin_cell%Ruc
+      if (cpuid==0) then
+         write(stdout, '(a)')' '
+         write(stdout, '(a)')'>> New SURFACE CARD:'
+         write(stdout, '(a, 3f12.6)')' The 1st vector on surface     :', Umatrix(1, :)
+         write(stdout, '(a, 3f12.6)')' The 2nd vector on surface     :', Umatrix(2, :)
+         write(stdout, '(a, 3f12.6)')' The 3rd vector out of surface :', Umatrix(3, :)
+      endif
    endif
 
    !> print out the new basis
@@ -813,14 +1423,19 @@ subroutine readinput
       write(stdout, '(3f12.6)') R1
       write(stdout, '(3f12.6)') R2
       write(stdout, '(3f12.6)') R3
+
+      cell_volume2= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
+                  + R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
+                  + R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
+      write(stdout, '(a, f18.5, a)')"New cell's Volume is ", cell_volume2, 'Ang^3'
       write(stdout, *)" "
    endif
 
    if (cpuid.eq.0) then
       write(stdout, *)"Fractional coordinates of atoms in units of new lattice vectors : "
-      do ia=1, Num_atoms
-         call rotate_newlattice(Atom_position_direct(:, ia), Rt)
-         if(cpuid==0)write(stdout, '(a4,3f12.6)')atom_name(ia), Rt
+      do ia=1, Origin_cell%Num_atoms
+         call rotate_newlattice(Origin_cell%Atom_position_direct(:, ia), Rt)
+         if(cpuid==0)write(stdout, '(a4,3f12.6)')Origin_cell%atom_name(ia), Rt
       enddo
       write(stdout, *)" "
    endif
@@ -834,12 +1449,13 @@ subroutine readinput
       write(outfileindex, '(3f12.6)') R1
       write(outfileindex, '(3f12.6)') R2
       write(outfileindex, '(3f12.6)') R3
-      write(outfileindex, '(1000i5)') Num_atoms
+      write(outfileindex, '(300A6)') Origin_cell%Name_of_atomtype
+      write(outfileindex, '(300i6)') Origin_cell%Num_atoms_eachtype
       write(outfileindex, '(a)')"Direct"
-      do ia=1, Num_atoms
-         call rotate_newlattice(Atom_position_direct(:, ia), Rt)
+      do ia=1, Origin_cell%Num_atoms
+         call rotate_newlattice(Origin_cell%Atom_position_direct(:, ia), Rt)
          call transformtohomecell(Rt)
-         if(cpuid==0)write(outfileindex, '(3f12.6, a9)')Rt, trim(adjustl(atom_name(ia)))
+         if(cpuid==0)write(outfileindex, '(3f12.6, a9)')Rt, trim(adjustl(Origin_cell%atom_name(ia)))
       enddo
       close(outfileindex)
    endif
@@ -849,11 +1465,37 @@ subroutine readinput
    Rub_newcell= R2
    Ruc_newcell= R3
 
-   do ia=1, Num_atoms
-      call rotate_newlattice(Atom_position_direct(:, ia), Rt)
+
+   !> Setting the new cell defined by SURFACE card
+   Cell_defined_by_surface%Rua = R1
+   Cell_defined_by_surface%Rub = R2
+   Cell_defined_by_surface%Ruc = R3
+
+   Cell_defined_by_surface%Num_atoms = Origin_cell%Num_atoms
+   Cell_defined_by_surface%max_projs = Origin_cell%max_projs
+   Cell_defined_by_surface%NumberOfspinorbitals = Origin_cell%NumberOfspinorbitals
+   Cell_defined_by_surface%Num_atom_type= Origin_cell%Num_atom_type
+   allocate(Cell_defined_by_surface%Num_atoms_eachtype(Origin_cell%Num_atom_type))
+   allocate(Cell_defined_by_surface%Name_of_atomtype(Origin_cell%Num_atom_type))
+   allocate(Cell_defined_by_surface%itype_atom(Origin_cell%Num_atoms))
+   allocate(Cell_defined_by_surface%Atom_name(Origin_cell%Num_atoms))
+   allocate(Cell_defined_by_surface%Atom_position_cart  (3, Origin_cell%Num_atoms))
+   allocate(Cell_defined_by_surface%Atom_position_direct(3, Origin_cell%Num_atoms))
+   Cell_defined_by_surface%Num_atoms_eachtype= Origin_cell%Num_atoms_eachtype
+   Cell_defined_by_surface%Name_of_atomtype= Origin_cell%Name_of_atomtype
+   Cell_defined_by_surface%itype_atom= Origin_cell%itype_atom
+   Cell_defined_by_surface%Atom_name= Origin_cell%Atom_name
+   do ia=1, Origin_cell%Num_atoms
+      call rotate_newlattice(Origin_cell%Atom_position_direct(:, ia), Rt)
       Atom_position_direct_newcell(:, ia)= Rt
+      Cell_defined_by_surface%Atom_position_direct(:, ia)= Rt
       call direct_cart_real_newcell(Rt, Atom_position_cart_newcell(:, ia))
+      Cell_defined_by_surface%Atom_position_cart(:, ia)= Atom_position_cart_newcell(:, ia)
    enddo
+
+   !> generate POSCAR for slab system 
+   call generate_slab_poscar()
+
 
 
    !> get the surface vector, we should set the new coordinate system
@@ -876,8 +1518,8 @@ subroutine readinput
    Urot(2, 2)= (Urot(3, 3)*Urot(1, 1)- Urot(3, 1)*Urot(1, 3))
    Urot(2, 3)= (Urot(3, 1)*Urot(1, 2)- Urot(3, 2)*Urot(1, 1))
    Urot(2, :)= Urot(2, :)/norm(Urot(2, :))
-
-   !> Here Rua_new, Rub_new, Ruc_new are vectors defined by SURFACE CARD in new coordinates
+   
+   !> Here Rua_new, Origin_cell%Rub_new, Origin_cell%Ruc_new are vectors defined by SURFACE CARD in new coordinates
    call rotate(R1, Rua_new)
    call rotate(R2, Rub_new)
    call rotate(R3, Ruc_new)
@@ -914,7 +1556,7 @@ subroutine readinput
 
 
    !> get information for magnetic supercell
-   !> magnetic supercell stacks along Ruc_newcell direction
+   !> magnetic supercell stacks along Origin_cell%Ruc_newcell direction
    !> The size of the supercell is Nslab
    !> Magnetic field is along Rua_newcell
    Rua_mag= Rua_newcell
@@ -960,17 +1602,23 @@ subroutine readinput
 
    if (cpuid==0) then
       write(stdout, *)" "
-      write(stdout, '(a, f16.8, a)')'3D Primitive CellVolume: ', CellVolume, ' in Angstrom^3'
+      write(stdout, '(a, f16.8, a)')'3D Primitive Origin_cell%CellVolume: ', Origin_cell%CellVolume, ' in Angstrom^3'
       write(stdout, '(a, f16.8, a)')'3D Magnetic supercell Volume: ', MagneticSuperCellVolume, ' in Angstrom^3'
       write(stdout, '(a, f16.8, a)')'Projected area of magnetic supercell normal to the first vector specifed in SURFACE card: ',  &
          MagneticSuperProjectedArea, ' in Angstrom^2'
    endif
+
+!===============================================================================================================!
+!> KPATH_BULK card
+!===============================================================================================================!
+
 
    !> read kpath_bulk information
    rewind(1001)
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 104)inline
+      inline=upper(inline)
       if (trim(adjustl(inline))=='KPATH_BULK') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
@@ -979,7 +1627,7 @@ subroutine readinput
       endif
    enddo
 
-   !> kline for 3d band structure
+   !> kline for 3d band stOrigin_cell%Ructure
    !> high symmetry k points
    read(1001, *) nk3lines
    if(cpuid==0)write(stdout, '(a, 40i5)')'Number of K lines : ', nk3lines
@@ -988,8 +1636,8 @@ subroutine readinput
    allocate(k3line_name(nk3lines+1))
    allocate(k3line_stop(nk3lines+1))
    allocate(k3line_mag_stop(nk3lines+1))
-   k3line_stop= 0d0
    k3line_mag_stop= 0d0
+   k3line_stop= 0d0
    k3line_start= 0d0
    k3line_end= 0d0
    k3line_name= ' '
@@ -1028,8 +1676,8 @@ subroutine readinput
       do i=1, NN
          kstart= k3line_start(:, j)
          kend  = k3line_end(:, j)
-         k1= kstart(1)*Kua+ kstart(2)*Kub+ kstart(3)*Kuc
-         k2= kend(1)*Kua+ kend(2)*Kub+ kend(3)*Kuc
+         k1= kstart(1)*Origin_cell%Kua+ kstart(2)*Origin_cell%Kub+ kstart(3)*Origin_cell%Kuc
+         k2= kend(1)*Origin_cell%Kua+ kend(2)*Origin_cell%Kub+ kend(3)*Origin_cell%Kuc
          !k1= kstart
          !k2= kend
 
@@ -1069,15 +1717,20 @@ subroutine readinput
    enddo
 
 104 continue
-   if (.not.lfound .and. (BulkBand_calc.or.LandauLevel_k_calc)) then
-      stop 'ERROR: please set KPATH_BULK for bulk band structure calculation'
+   if (.not.lfound .and. (BulkBand_line_calc.or.LandauLevel_k_calc)) then
+      stop 'ERROR: please set KPATH_BULK for bulk band stOrigin_cell%Ructure calculation'
    endif
+
+!===============================================================================================================!
+!> KPATH_SLAB card
+!===============================================================================================================!
 
    !> read kpath_slab information
    rewind(1001)
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 105)inline
+      inline=upper(inline)
       if (trim(adjustl(inline))=='KPATH_SLAB') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
@@ -1147,7 +1800,7 @@ subroutine readinput
 
 105 continue
    if (.not.lfound .and.(SlabBand_calc .or. SlabSS_calc)) then
-      stop 'ERROR: please set KPATH_SLAB for slab band structure calculation'
+      stop 'ERROR: please set KPATH_SLAB for slab band stOrigin_cell%Ructure calculation'
    endif
 
 
@@ -1161,6 +1814,7 @@ subroutine readinput
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 106)inline
+      inline=upper(inline)
       if (trim(adjustl(inline))=='KPLANE_SLAB') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
@@ -1199,6 +1853,9 @@ subroutine readinput
    endif
 
 
+!===============================================================================================================!
+!> KPLANE_BULK card
+!===============================================================================================================!
 
    !> read kplane_bulk information
    !> default value for KPLANE_BULK
@@ -1210,6 +1867,7 @@ subroutine readinput
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 107)inline
+      inline=upper(inline)
       if (trim(adjustl(inline))=='KPLANE_BULK') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
@@ -1217,6 +1875,31 @@ subroutine readinput
          exit
       endif
    enddo
+
+   !> check whether we have a line to determine the coordinates
+   read(1001, *, end= 107)inline
+   inline=trim(adjustl(inline))
+   if (index(inline, 'C')==0.and.index(inline, 'D')==0 &
+       .and.index(inline, 'c')==0.and.index(inline, 'd')==0)then
+      DirectOrCart='D'
+
+      rewind(1001)
+      do while (.true.)
+         read(1001, *, end= 107)inline
+         inline=upper(inline)
+         if (trim(adjustl(inline))=='KPLANE_BULK') then
+            lfound= .true.
+            exit
+         endif
+      enddo
+      goto 2061
+   elseif (index(inline, 'c')==1.or.index(inline, 'C')==1)then
+      DirectOrCart='C'
+   else
+      DirectOrCart='D'
+   endif
+
+2061 continue
 
    !> kpoints plane for 3D system--> gapshape
    it= 0
@@ -1226,6 +1909,16 @@ subroutine readinput
    it= it+ 1
    read(1001, *, err=206)K3D_vec2
    it= it+ 1
+
+   if (index(DirectOrCart, 'C')>0) then
+      call cart_direct_rec(K3D_start, k1)
+      K3D_start= k1
+      call cart_direct_rec(K3D_vec1, k1)
+      K3D_vec1= k1
+      call cart_direct_rec(K3D_vec2, k1)
+      K3D_vec2= k1
+   endif
+
 206 continue
    if (it< 3.and.cpuid==0) then
       write(stdout, *)' '
@@ -1247,7 +1940,9 @@ subroutine readinput
       stop 'ERROR: please set KPLANE_bulk for gap or WCC calculations'
    endif
 
-
+!===============================================================================================================!
+!> KCUBE_BULK card
+!===============================================================================================================!
 
    !> read kcube_bulk information
    !> default value for KCUBE_BULK
@@ -1260,6 +1955,7 @@ subroutine readinput
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 108)inline
+      inline= upper(inline)
       if (trim(adjustl(inline))=='KCUBE_BULK') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
@@ -1296,7 +1992,7 @@ subroutine readinput
       + K3D_vec1_cube(3)*(K3D_vec2_cube(1)*K3D_vec3_cube(2) &
       - K3D_vec2_cube(2)*K3D_vec3_cube(1))
 
-   kCubeVolume= kCubeVolume*ReciprocalCellVolume
+   kCubeVolume= kCubeVolume*Origin_cell%ReciprocalCellVolume
 
 108 continue
    if (cpuid==0) write(stdout, *)'>> Kpoints cube for 3D system--> gapshape3D  '
@@ -1305,10 +2001,14 @@ subroutine readinput
    if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 2nd vector: ', K3D_vec2_cube
    if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 3rd vector: ', K3D_vec3_cube
    if (cpuid==0) write(stdout, '((a, 3f8.4))')'kCubeVolume: ', kCubeVolume
-   if (cpuid==0) write(stdout, '((a, 3f8.4))')'ReciprocalCellVolume: ', ReciprocalCellVolume
+   if (cpuid==0) write(stdout, '((a, 3f8.4))')'ReciprocalOrigin_cell%CellVolume: ', Origin_cell%ReciprocalCellVolume
    if (.not.lfound .and.(BulkGap_cube_calc)) then
       stop 'ERROR: please set KCUBE_BULK for gap3D calculations'
    endif
+
+!===============================================================================================================!
+!> KPATH_BERRY card
+!===============================================================================================================!
 
    !> set default parameters for Berry phase calculation
    NK_Berry= 2
@@ -1319,6 +2019,7 @@ subroutine readinput
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 113)inline
+      inline=upper(inline)
       if (trim(adjustl(inline))=='KPATH_BERRY') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
@@ -1370,6 +2071,11 @@ subroutine readinput
    !< end of Berry phase setting
 
 
+!===============================================================================================================!
+!> KPOINT_BULK card
+!===============================================================================================================!
+
+
    !> default parameters for KPOINT
    Kpoint_3D_direct = 0
    Kpoint_3D_cart = 0
@@ -1377,6 +2083,7 @@ subroutine readinput
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 114)inline
+      inline= upper(inline)
       if (trim(adjustl(inline))=='KPOINT_BULK') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
@@ -1390,6 +2097,7 @@ subroutine readinput
    enddo
 
    read(1001, *)inline   ! The unit of lattice vector
+   inline=upper(inline)
    DirectOrCart= trim(adjustl(inline))
    if (index(DirectOrCart, "D")>0)then
       read(1001, *)Kpoint_3D_direct
@@ -1407,6 +2115,10 @@ subroutine readinput
       write(stdout, '(a, 3f7.4, a)')'>> k points ', Kpoint_3D_cart, " in Cartesian coordinates"
    endif
 
+!===============================================================================================================!
+!> EFFECTIVE_MASS card
+!===============================================================================================================!
+
    !>> setting up effective mass calculation
    !> default parameters for effective mass calculation
    dk_mass= 0.01  ! in unit of 1/Ang
@@ -1416,6 +2128,7 @@ subroutine readinput
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 109)inline
+      inline= upper(inline)
       if (trim(adjustl(inline))=='EFFECTIVE_MASS') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
@@ -1456,12 +2169,16 @@ subroutine readinput
    call direct_cart_rec(k1, k_mass)
    if (cpuid==0) write(stdout, '(a, 3f7.4, a)')'>> k points ', k_mass, " in unit of 1/Angstrom"
 
+!===============================================================================================================!
+!> KPOINTS_3D card
+!===============================================================================================================!
 
      !>> setting up a series of k points in 3D BZ
      rewind(1001)
      lfound = .false.
      do while (.true.)
-        read(1001, *, end= 311)inline
+        read(1001, *, end= 321)inline
+        inline=upper(inline)
         if (trim(adjustl(inline))=='KPOINTS_3D') then
            lfound= .true.
            if (cpuid==0) write(stdout, *)' '
@@ -1477,6 +2194,7 @@ subroutine readinput
      k3points_pointmode_direct= 0d0
 
      read(1001, *, end=319, err=319, iostat=stat)inline   ! The unit of lattice vector
+     inline= upper(inline)
      if (index(trim(adjustl(inline)), "D")>0)then
         do ik= 1, Nk3_point_mode
            read(1001, *, end=319, err=319, iostat=stat)k3points_pointmode_direct(:, ik)
@@ -1490,7 +2208,7 @@ subroutine readinput
               k3points_pointmode_direct(:, ik))
         enddo
      endif
-
+     
      319 continue
      if (stat/=0 .and. cpuid==0) then
         write(stdout, '(8f10.5)') "ERROR: there are something wrong in KPOINTS_3D card"
@@ -1504,15 +2222,16 @@ subroutine readinput
         write(stdout, '(8f10.5)') "0.5  0.0  0.0"
         write(stdout, '(8f10.5)') "0.0  0.5  0.0"
         write(stdout, '(8f10.5)') "0.0  0.0  0.5"
+        stop
      endif
 
      !> print out the single kpoint positions
      if (cpuid==0) then
         write(stdout, '(a)')" "
         write(stdout, '(a)')"KPOINTS_3D positions"
+        write(stdout, '(8a10)')"index", "kx", 'ky', 'kz', 'k1', 'k2', 'k3'
         do ik=1, Nk3_point_mode
-           write(stdout, '(8a10)')"kx", 'ky', 'kz', 'k1', 'k2', 'k3'
-           write(stdout, '(8f10.5)')k3points_pointmode_cart(:, ik), k3points_pointmode_direct(:, ik)
+           write(stdout, '(i8,4x,8f10.5)')ik, k3points_pointmode_cart(:, ik), k3points_pointmode_direct(:, ik)
         enddo
         write(stdout, '(a)')" "
      endif
@@ -1526,10 +2245,91 @@ subroutine readinput
         k3points_pointmode_cart= 0d0
         k3points_pointmode_direct= 0d0
      endif
-     if (.not.lfound.and.cpuid==0)write(stdout, *)'>> We use the default values for k3points_pointmode_direct=[0,0,0]'
+     if (.not.lfound.and.cpuid==0)write(stdout, *)'>> We use the default values for k3points_pointmode_direct=[0,0,0]' 
      if (.not.lfound.and.cpuid==0)write(stdout, *)'>> and Nk3_point_mode = 1'
 
+!===============================================================================================================!
+!> KPOINTS_FOLD_3D card
+!===============================================================================================================!
 
+     !>> setting up a series of k points in the folded 3D BZ
+     rewind(1001)
+     lfound = .false.
+     do while (.true.)
+        read(1001, *, end= 3210)inline
+        inline=upper(inline)
+        if (trim(adjustl(inline))=='KPOINTS_FOLD_3D'.or.trim(adjustl(inline))=='KPOINTS_FOLDED_3D') then
+           lfound= .true.
+           if (cpuid==0) write(stdout, *)' '
+           if (cpuid==0) write(stdout, *)'We found KPOINTS_FOLD_3D card'
+           exit
+        endif
+     enddo
+
+     read(1001, *, end=3190, err=3190, iostat=stat)Nk3_unfold_point_mode   ! The unit of lattice vector
+     allocate(k3points_unfold_pointmode_cart(3, Nk3_unfold_point_mode))
+     allocate(k3points_unfold_pointmode_direct(3, Nk3_unfold_point_mode))
+     k3points_unfold_pointmode_cart= 0d0
+     k3points_unfold_pointmode_direct= 0d0
+
+     read(1001, *, end=3190, err=3190, iostat=stat)inline   ! The unit of lattice vector
+     inline=upper(inline)
+     if (index(trim(adjustl(inline)), "D")>0)then
+        do ik= 1, Nk3_unfold_point_mode
+           read(1001, *, end=3190, err=3190, iostat=stat)k3points_unfold_pointmode_direct(:, ik)
+           call direct_cart_rec_unfold(k3points_unfold_pointmode_direct(:, ik), &
+              k3points_unfold_pointmode_cart(:, ik))
+        enddo
+     else
+        do ik= 1, Nk3_point_mode
+           read(1001, *, end=3190, err=3190, iostat=stat)k3points_unfold_pointmode_cart(:, ik)
+           call cart_direct_rec_unfold(k3points_unfold_pointmode_cart(:, ik), &
+              k3points_unfold_pointmode_direct(:, ik))
+        enddo
+     endif
+     
+     3190 continue
+     if (stat/=0 .and. cpuid==0) then
+        write(stdout, '(8f10.5)') "ERROR: there are something wrong in KPOINTS_FOLD_3D card"
+        write(stdout, '(8f10.5)') "It should be like this:"
+        write(stdout, '(8f10.5)') "The number of lines below 'Direct' "
+        write(stdout, '(8f10.5)') "should be the same as the number of k points"
+        write(stdout, '(8f10.5)') "KPOINTS_FOLD_3D"
+        write(stdout, '(8f10.5)') "4 ! number of k points"
+        write(stdout, '(8f10.5)') "Direct"
+        write(stdout, '(8f10.5)') "0.0  0.0  0.0"
+        write(stdout, '(8f10.5)') "0.5  0.0  0.0"
+        write(stdout, '(8f10.5)') "0.0  0.5  0.0"
+        write(stdout, '(8f10.5)') "0.0  0.0  0.5"
+     endif
+
+     !> print out the set of kpoints' positions
+     if (cpuid==0) then
+        write(stdout, '(a)')" "
+        write(stdout, '(a)')"KPOINTS_FOLD_3D positions"
+        write(stdout, '(8a10)')"index", "kx", 'ky', 'kz', 'k1', 'k2', 'k3'
+        do ik=1, Nk3_unfold_point_mode
+           write(stdout, '(i8, 4x,8f10.5)')ik, k3points_unfold_pointmode_cart(:, ik), k3points_unfold_pointmode_direct(:, ik)
+        enddo
+        write(stdout, '(a)')" "
+     endif
+
+     3210 continue
+     if (cpuid==0) write(stdout, *)' '
+     if (.not. lfound) then
+        Nk3_unfold_point_mode = 1
+        allocate(k3points_unfold_pointmode_cart(3, Nk3_unfold_point_mode))
+        allocate(k3points_unfold_pointmode_direct(3, Nk3_unfold_point_mode))
+        k3points_unfold_pointmode_cart= 0d0
+        k3points_unfold_pointmode_direct= 0d0
+     endif
+     if (.not.lfound.and.cpuid==0)write(stdout, *)'>> We use the default values for k3points_unfold_pointmode_direct=[0,0,0]' 
+     if (.not.lfound.and.cpuid==0)write(stdout, *)'>> and Nk3_unfold_point_mode = 1'
+
+
+!===============================================================================================================!
+!> SINGLEKPOINT_2D card
+!===============================================================================================================!
 
    !>> setting up a single k points in 2D BZ
    Single_KPOINT_2D_CART= [0.d0, 0d0]
@@ -1538,6 +2338,7 @@ subroutine readinput
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 311)inline
+      inline=upper(inline)
       if (trim(adjustl(inline))=='SINGLEKPOINT_2D') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
@@ -1547,6 +2348,7 @@ subroutine readinput
    enddo
 
    read(1001, *, end=307, err=307, iostat=stat)inline   ! The unit of lattice vector
+   inline=upper(inline)
    DirectOrCart_SINGLE= trim(adjustl(inline))
    if (index(DirectOrCart_SINGLE, "D")>0)then
       read(1001, *, end=307, err=307, iostat=stat)Single_KPOINT_2D_DIRECT(1:2)
@@ -1578,7 +2380,9 @@ subroutine readinput
 
 
 
-
+!===============================================================================================================!
+!> SINGLEKPOINT_3D card
+!===============================================================================================================!
 
 
    !>> setting up a single k points in 3D BZ
@@ -1588,6 +2392,7 @@ subroutine readinput
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 311)inline
+      inline=upper(inline)
       if (trim(adjustl(inline))=='SINGLEKPOINT_3D') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
@@ -1597,6 +2402,7 @@ subroutine readinput
    enddo
 
    read(1001, *, end=309, err=309, iostat=stat)inline   ! The unit of lattice vector
+   inline=upper(inline)
    DirectOrCart_SINGLE= trim(adjustl(inline))
    if (index(DirectOrCart_SINGLE, "D")>0)then
       read(1001, *, end=309, err=309, iostat=stat)Single_KPOINT_3D_DIRECT(1:3)
@@ -1629,12 +2435,15 @@ subroutine readinput
    if (.not.lfound.and.cpuid==0)write(stdout, *)'>> We use the default values for Single_KPOINT_3D_DIRECT=[0,0,0]'
 
 
+!===============================================================================================================!
+!> SURFACE_ATOMS card
+!===============================================================================================================!
 
    !> setup the atoms on top and bottom surface that used for output the
    !> surface-state spectrum
    !> by default we output all the atoms' weight
-   NtopAtoms   = Num_atoms
-   NbottomAtoms= Num_atoms
+   NtopAtoms   = Origin_cell%Num_atoms
+   NbottomAtoms= Origin_cell%Num_atoms
    allocate(TopAtoms(NtopAtoms))
    allocate(BottomAtoms(NbottomAtoms))
    do i=1, NTopAtoms
@@ -1648,6 +2457,7 @@ subroutine readinput
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 112, err=116, iostat=stat)inline
+      inline=upper(inline)
       if (trim(adjustl(inline))=='SURFACE_ATOMS') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
@@ -1655,18 +2465,30 @@ subroutine readinput
          exit
       endif
    enddo
-   read(1001, *, end= 112, err=116, iostat=stat)NtopAtoms
-   deallocate(TopAtoms)
-   allocate(TopAtoms(NtopAtoms))
-   read(1001, *, end= 112, err=116, iostat=stat)TopAtoms
-   read(1001, *, end= 112, err=116, iostat=stat)NbottomAtoms
-   deallocate(BottomAtoms)
-   allocate(BottomAtoms(NbottomAtoms))
-   read(1001, *, end= 112, err=116, iostat=stat)BottomAtoms
+   if (allocated(TopAtoms))deallocate(TopAtoms)
+   allocate(TopAtoms(1))
+   read(1001, '(A)', end= 112, err=116, iostat=stat)inline
+   !> first count howmany values
+   call param_get_range_vector('TOPATOMS',inline,NTopAtoms,.true., TOPATOMS)
+   if (allocated(TopAtoms))deallocate(TopAtoms)
+   allocate(TopAtoms(NTopAtoms))
+   !> then get values
+   call param_get_range_vector('TOPATOMS',inline,NTopAtoms,.false., TopAtoms)
+
+
+   if (allocated(BottomAtoms))deallocate(BottomAtoms)
+   allocate(BottomAtoms(1))
+   read(1001, '(A)', end= 112, err=116, iostat=stat)inline
+   !> first count howmany values
+   call param_get_range_vector('BOTTOMATOMS',inline,NBottomAtoms,.true., BottomAtoms)
+   if (allocated(BottomAtoms))deallocate(BottomAtoms)
+   allocate(BottomAtoms(NBottomAtoms))
+   !> then get values
+   call param_get_range_vector('BOTTOMATOMS',inline,NBottomAtoms,.false., BottomAtoms)
 
    !> error happens when reading SURFACE_ATOMS
 116 if (stat/=0 .and. cpuid==0) then
-       write(stdout, '(a)')'>>> ERROR: There are something wrong with the SURFACE_ATOMS card'
+       write(stdout, '(a)')'>>> ERROR: There are something wrong with the SURFACE_ATOMS card' 
        write(stdout, '(a)')'    It should like this:'
        write(stdout, '(a)')'SURFACE_ATOMS '
        write(stdout, '(a)')'2 ! number of atoms on the top surface (large c fractional coordinate)'
@@ -1687,7 +2509,7 @@ subroutine readinput
 
    NtopOrbitals=0
    do i=1, NTopAtoms
-      NtopOrbitals= NtopOrbitals+ nprojs(TopAtoms(i))
+      NtopOrbitals= NtopOrbitals+ Origin_cell%nprojs(TopAtoms(i))
    enddo
    if (SOC>0) NtopOrbitals= NtopOrbitals*2
    allocate(TopOrbitals(NtopOrbitals))
@@ -1696,16 +2518,16 @@ subroutine readinput
    !> set up top surface orbitals for output the surface spectrum
    io=0
    do i=1, NTopAtoms
-      do j=1, nprojs(TopAtoms(i))
+      do j=1, Origin_cell%nprojs(TopAtoms(i))
          io =io+ 1
          TopOrbitals(io)= orbitals_start(TopAtoms(i))+ j- 1
-         if (SOC>0)TopOrbitals(io+ NtopOrbitals/2 )= orbitals_start(TopAtoms(i))+ j- 1+ Nwann/2
+         if (SOC>0)TopOrbitals(io+ NtopOrbitals/2 )= orbitals_start(TopAtoms(i))+ j- 1+ NumberOfspinorbitals/2
       enddo ! j
    enddo ! i
 
    NBottomOrbitals=0
    do i=1, NBottomAtoms
-      NBottomOrbitals= NBottomOrbitals+ nprojs(BottomAtoms(i))
+      NBottomOrbitals= NBottomOrbitals+ Origin_cell%nprojs(BottomAtoms(i))
    enddo
    if (SOC>0) NBottomOrbitals= NBottomOrbitals*2
    allocate(BottomOrbitals(NBottomOrbitals))
@@ -1714,10 +2536,10 @@ subroutine readinput
    !> set up Bottom surface orbitals for output the surface spectrum
    io=0
    do i=1, NBottomAtoms
-      do j=1, nprojs(BottomAtoms(i))
+      do j=1, Origin_cell%nprojs(BottomAtoms(i))
          io =io+ 1
          BottomOrbitals(io)= orbitals_start(BottomAtoms(i))+ j- 1
-         if (SOC>0)BottomOrbitals(io+ NBottomOrbitals/2)= orbitals_start(BottomAtoms(i))+ j- 1+ Nwann/2
+         if (SOC>0)BottomOrbitals(io+ NBottomOrbitals/2)= orbitals_start(BottomAtoms(i))+ j- 1+ NumberOfspinorbitals/2
       enddo ! j
    enddo ! i
 
@@ -1728,16 +2550,22 @@ subroutine readinput
    if (cpuid==0) write(stdout, '(a)')'> BottomOrbitals '
    if (cpuid==0) write(stdout, '(10i6)')BottomOrbitals
 
+!===============================================================================================================!
+!> NL_CHIRALITY card
+!===============================================================================================================!
+
 
    !> setup for Weyl points chirality calculation
    !> default
    Num_NLs= 0 ! in unit of 1/Ang
    Rbig_NL= 0d0
-   rsmall_NL= 0d0
+   rsmall_a_NL= 0d0
+   rsmall_b_NL= 0d0
    rewind(1001)
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 211)inline
+      inline=upper(inline)
       if (trim(adjustl(inline))=='NL_CHIRALITY') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
@@ -1752,8 +2580,9 @@ subroutine readinput
    NL_center_position_cart= 0d0
    NL_center_position_direct= 0d0
    read(1001, *, end=219, err=219)inline   ! The unit of lattice vector
+   inline=upper(inline)
    DirectOrCart_NL= trim(adjustl(inline))
-   read(1001, *, end=219, err=219)Rbig_NL, rsmall_NL
+   read(1001, *, end=219, err=219)Rbig_NL, rsmall_a_NL, rsmall_b_NL
    it= 0
    do i=1, Num_NLs
       if (index(DirectOrCart_NL, "D")>0)then
@@ -1806,6 +2635,7 @@ subroutine readinput
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 111)inline
+      inline=upper(inline)
       if (trim(adjustl(inline))=='WEYL_CHIRALITY') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
@@ -1820,6 +2650,7 @@ subroutine readinput
    weyl_position_direct= 0d0
    weyl_position_cart= 0d0
    read(1001, *, end=209, err=209)inline   ! The unit of lattice vector
+   inline=upper(inline)
    DirectOrCart_Weyl= trim(adjustl(inline))
    read(1001, *, end=209, err=209)kr0
    it= 0
@@ -1865,14 +2696,25 @@ subroutine readinput
       write(stdout, *) 'ERROR: you should specify the WEYL_CHIRALITY card, see documentation'
    endif
 
-   !> parameters for SelectedAtoms
-   !> this part is useful for surfstat or other slab or bulk band structure calculations
+!===============================================================================================================!
+!> SELECTED_ATOMS card
+!===============================================================================================================!
+
+! SELECTED_ATOMS
+! 2 ! NumberofSelectedAtoms_groups
+! 1-3  8  ! atom indicies of group 1
+! 4-6  9  ! atom indicies of group 2
+
+
+   !>> parameters for SelectedAtoms
+   !> this part is useful for surfstat or other slab or bulk band stOrigin_cell%Ructure calculations
    rewind(1001)
    lfound = .false.
    stat=0
    do while (.true.)
       read(1001, *, end= 332)inline
-      if (trim(adjustl(inline))=='SELECTED_ATOMS') then
+      inline=upper(inline)
+      if (trim(adjustl(inline))=='SELECTED_ATOMS'.OR.trim(adjustl(inline))=='SELECTEDATOMS') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
          if (cpuid==0) write(stdout, *)'We found SELECTED_ATOMS card'
@@ -1882,16 +2724,29 @@ subroutine readinput
 
    it= 0
    stat= 0
-   NumberofSelectedAtoms= 0
-   read(1001, *, err=332, iostat=stat)NumberofSelectedAtoms
+   NumberofSelectedAtoms_groups= 0
+   read(1001, *, err=332, iostat=stat)NumberofSelectedAtoms_groups
+   allocate(NumberofSelectedAtoms(NumberofSelectedAtoms_groups))
+   allocate(Selected_Atoms(NumberofSelectedAtoms_groups))
+   do i=1, NumberofSelectedAtoms_groups
+      read(1001, '(A)', err=332, iostat=stat)inline
+      idummy=1
+      if (allocated(Selected_Atoms(i)%iarray))deallocate(Selected_Atoms(i)%iarray)
+      allocate(Selected_Atoms(i)%iarray(1))
 
-   if (NumberofSelectedAtoms>0) then
-      allocate(Selected_Atoms(NumberofSelectedAtoms))
-      Selected_Atoms= 0
-      read(1001, *, err=332, iostat=stat) (Selected_Atoms(i), i=1, NumberofSelectedAtoms)
-   else
-      stop 'NumberofSelectedAtoms should be an integer and larger than zero'
-   endif
+      !> first count howmany atoms for each line
+      call param_get_range_vector('SelectedAtoms',inline,idummy,.true., Selected_Atoms(i)%iarray)
+      NumberofSelectedAtoms(i)=idummy
+      Selected_Atoms(i)%length=idummy
+      if (idummy>0) then
+         if (allocated(Selected_Atoms(i)%iarray))deallocate(Selected_Atoms(i)%iarray)
+         allocate(Selected_Atoms(i)%iarray(idummy))
+         !> then get values
+         call param_get_range_vector('SelectedAtoms',inline,idummy,.false., Selected_Atoms(i)%iarray)
+      else
+         stop 'NumberofSelectedAtoms should be an integer and larger than zero'
+      endif
+   enddo
 
 332 continue
    if (stat/=0) then
@@ -1900,19 +2755,49 @@ subroutine readinput
       if (cpuid==0) write(stdout, '(a)')'Error: Please set the right number of atoms in wt.in like this:'
       if (cpuid==0) write(stdout, *)' '
       if (cpuid==0) write(stdout, '(a)')'SELECTED_ATOMS'
-      if (cpuid==0) write(stdout, '(a)')'4  ! number of selected atoms'
-      if (cpuid==0) write(stdout, '(a)')'1 2 3 4 ! atomic indices '
+      if (cpuid==0) write(stdout, '(a)')'2 ! number of groups'
+      if (cpuid==0) write(stdout, '(a)')'1 2-4 ! atomic indices '
+      if (cpuid==0) write(stdout, '(a)')'3 5 ! atomic indices '
       stop 'Errors happen in the WT.in, please check informations in the WT.out'
    endif
 
-!> parameters for selectedorbitals
-   !> this part is useful for surfstat or other slab or bulk band structure calculations
+   !> setup SelectedAtoms if not specified by input.dat
+   if (.not.allocated(Selected_Atoms)) then
+      NumberofSelectedAtoms_groups=1
+      allocate(NumberofSelectedAtoms(NumberofSelectedAtoms_groups))
+      allocate(Selected_Atoms(NumberofSelectedAtoms_groups))
+      allocate(Selected_Atoms(1)%iarray(Origin_cell%Num_atoms))
+      NumberofSelectedAtoms(1)=Origin_cell%Num_atoms
+      Selected_Atoms(1)%length=Origin_cell%Num_atoms
+      do ia=1, Origin_cell%Num_atoms
+         Selected_Atoms(1)%iarray(ia)= ia
+      enddo
+   endif
+
+   if (cpuid==0) write(stdout, *)' '
+   if (cpuid==0) write(stdout, '(a,i4,a)')'>> There are ', NumberofSelectedAtoms_groups, ' groups of SelectedAtoms'
+   do i=1, NumberofSelectedAtoms_groups
+      if (cpuid==0) write(stdout, '(a, i3)')'Group : ', i
+      if (cpuid==0) write(stdout, '(a, 3i10)')'>> Number of atoms selected', &
+         NumberofSelectedAtoms(i)
+      if (cpuid==0) write(stdout, '(a)')'>> Selected atoms are'
+      if (cpuid==0) write(stdout, '(10(i5, 2X, a))') &
+         (Selected_Atoms(i)%iarray(ia), Origin_cell%atom_name(Selected_Atoms(i)%iarray(ia)), ia=1, NumberofSelectedAtoms(i))
+   enddo
+
+!===============================================================================================================!
+!> SELECTEDWANNIERORBITALS card
+!===============================================================================================================!
+
+   !>> parameters for selectedorbitals
+   !> this part is useful for surfstat or other slab or bulk band stOrigin_cell%Ructure calculations
    rewind(1001)
    lfound = .false.
    stat=0
    do while (.true.)
       read(1001, *, end= 331)inline
-      if (trim(adjustl(inline))=='SELECTED_WANNIERORBITALS') then
+      inline=upper(inline)
+      if (trim(adjustl(inline))=='SELECTED_WANNIERORBITALS'.or.trim(adjustl(inline))=='SELECTEDWANNIERORBITALS') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
          if (cpuid==0) write(stdout, *)'We found SELECTED_WANNIERORBITALS card'
@@ -1922,16 +2807,32 @@ subroutine readinput
 
    it= 0
    stat= 0
-   NumberofSelectedOrbitals= 0
-   read(1001, *, err=331, iostat=stat)NumberofSelectedOrbitals
+   NumberofSelectedOrbitals_groups= 0
+   read(1001, *, err=332, iostat=stat)NumberofSelectedOrbitals_groups
+   allocate(Selected_WannierOrbitals(NumberofSelectedOrbitals_groups))
+   allocate(NumberofSelectedOrbitals(NumberofSelectedOrbitals_groups))
 
-   if (NumberofSelectedOrbitals>0) then
-      allocate(Selected_WannierOrbitals(NumberofSelectedOrbitals))
-      Selected_WannierOrbitals= 0
-      read(1001, *, err=331, iostat=stat) (Selected_WannierOrbitals(i), i=1, NumberofSelectedOrbitals)
-   else
-      stop 'NumberofSelectedOrbitals should be an integer and larger than zero'
-   endif
+   do i=1, NumberofSelectedOrbitals_groups
+      read(1001, '(A)', err=332, iostat=stat)inline
+      !> first count howmany orbitals selected
+      idummy= 1
+      if (allocated(Selected_WannierOrbitals(i)%iarray))deallocate(Selected_WannierOrbitals(i)%iarray)
+      allocate(Selected_WannierOrbitals(i)%iarray(1))
+      
+      call param_get_range_vector('SelectedOrbitals',inline,idummy,.true., Selected_WannierOrbitals(i)%iarray)
+      NumberofSelectedOrbitals(i)= idummy
+      Selected_WannierOrbitals(i)%length= idummy
+
+      if (NumberofSelectedOrbitals(i)>0) then
+         if (allocated(Selected_WannierOrbitals(i)%iarray))deallocate(Selected_WannierOrbitals(i)%iarray)
+         allocate(Selected_WannierOrbitals(i)%iarray(idummy))
+         
+         !> then get values
+         call param_get_range_vector('SelectedOrbitals',inline,idummy,.false., Selected_WannierOrbitals(i)%iarray)
+      else
+         stop 'NumberofSelectedOrbitals should be an integer and larger than zero'
+      endif
+   enddo
 
 331 continue
    if (stat/=0) then
@@ -1940,12 +2841,128 @@ subroutine readinput
       if (cpuid==0) write(stdout, '(a)')'Error: Please set the right number of orbitals and orbitals in wt.in like this:'
       if (cpuid==0) write(stdout, *)' '
       if (cpuid==0) write(stdout, '(a)')'SELECTED_WANNIERORBITALS'
-      if (cpuid==0) write(stdout, '(a)')'4  ! number of selected orbitals'
-      if (cpuid==0) write(stdout, '(a)')'4 5 6 7 ! orbitals indices '
+      if (cpuid==0) write(stdout, '(a)')'2  ! number of groups of selectedorbitals'
+      if (cpuid==0) write(stdout, '(a)')'1-3 ! orbitals indices '
+      if (cpuid==0) write(stdout, '(a)')'4-7 ! orbitals indices '
       stop 'Errors happen in the WT.in, please check informations in the WT.out'
    endif
 
 
+   !> setup SelectedOrbitals if not specified by input.dat
+   !> by default we take the orbitals associated with Selected_Atoms
+   if (.not.allocated(Selected_WannierOrbitals)) then
+      NumberofSelectedOrbitals_groups= NumberofSelectedAtoms_groups
+      allocate(NumberofSelectedOrbitals(NumberofSelectedAtoms_groups))
+      allocate(Selected_WannierOrbitals(NumberofSelectedAtoms_groups))
+      NumberofSelectedOrbitals= 0
+
+      do ig=1, NumberofSelectedOrbitals_groups
+         do i=1, NumberofSelectedAtoms(ig)
+            ia = Selected_Atoms(ig)%iarray(i)
+            NumberofSelectedOrbitals(ig)= NumberofSelectedOrbitals(ig)+ Origin_cell%nprojs(ia)
+         enddo
+         if (SOC>0) NumberofSelectedOrbitals(ig)= NumberofSelectedOrbitals(ig)*2
+   
+         allocate(Selected_WannierOrbitals(ig)%iarray(NumberofSelectedOrbitals(ig)))
+         Selected_WannierOrbitals(ig)%iarray = 0
+         io= 0
+         do i=1, NumberofSelectedAtoms(ig)
+            ia = Selected_Atoms(ig)%iarray(i)
+            do j=1, Origin_cell%nprojs(ia)
+               io = io+ 1
+               Selected_WannierOrbitals(ig)%iarray(io)= index_start(ia)+ j- 1
+            enddo
+         enddo
+         if (SOC>0) then
+            do i=1, NumberofSelectedAtoms(ig)
+               ia = Selected_Atoms(ig)%iarray(i)
+               do j=1, Origin_cell%nprojs(ia)
+                  io = io+ 1
+                  Selected_WannierOrbitals(ig)%iarray(io)=index_start(ia)+ j+ NumberOfspinorbitals/2- 1
+               enddo
+            enddo
+         endif
+      enddo ! groups
+   endif
+
+   if (cpuid==0) write(stdout, *)' '
+   if (cpuid==0) write(stdout, '(a,i3,a)')'>> There are ', NumberofSelectedOrbitals_groups, ' groups of SelectedOrbitals'
+   do ig=1, NumberofSelectedOrbitals_groups
+      if (cpuid==0) write(stdout, *)'>> SelectedOrbitals'
+      if (cpuid==0) write(stdout, '(a, 3i10)')'>> Number of orbitals selected (including spin degenarcy)', &
+         NumberofSelectedOrbitals(ig)
+      if (cpuid==0) write(stdout, '(a)')'>> Orbitals are'
+      if (cpuid==0) write(stdout, '(12i8)')Selected_WannierOrbitals(ig)%iarray(:)
+   enddo
+
+!===============================================================================================================!
+!> SELECTED_OCCUPIEDBANDS card
+!===============================================================================================================!
+
+   !> parameters for selectedOccupiedBands
+   rewind(1001)
+   lfound = .false.
+   stat=0
+   do while (.true.)
+      read(1001, *, end= 232)inline
+      inline=upper(inline)
+      if (trim(adjustl(inline))=='SELECTED_OCCUPIEDBANDS' .or.&
+          trim(adjustl(inline))=='SELECTED_OCCUPIED_BANDS'.or.&
+          trim(adjustl(inline))=='SELECTEDOCCUPIEDBANDS') then
+         lfound= .true.
+         if (cpuid==0) write(stdout, *)' '
+         if (cpuid==0) write(stdout, *)'We found SELECTED_OCCUPIED_BANDS card'
+         exit
+      endif
+   enddo
+
+   it= 0
+   stat= 0
+   NumberofSelectedOccupiedBands= 0
+   read(1001, '(A)', err=232, iostat=stat)inline
+   !> get howmany integer numbers specified in the inline string
+   call param_get_range_vector('SelectedOccupiedBands',inline,idummy,.true., Selected_Occupiedband_index)
+   NumberofSelectedOccupiedBands= idummy
+
+   if (NumberofSelectedOccupiedBands>0) then
+      allocate(Selected_Occupiedband_index(NumberofSelectedOccupiedBands))
+      Selected_Occupiedband_index= 0
+      call param_get_range_vector('SelectedOccupiedBands',inline,idummy,.false., Selected_Occupiedband_index)
+   else
+      stop 'NumberofSelectedOccupiedBands should be an integer and larger than zero'
+   endif
+
+232 continue
+   if (stat/=0) then
+      if (cpuid==0) write(stdout, *)' '
+      if (cpuid==0) write(stdout, *)' '
+      if (cpuid==0) write(stdout, '(a)')'Error: Please set the right number of bands and band indices in wt.in like this:'
+      if (cpuid==0) write(stdout, *)' '
+      if (cpuid==0) write(stdout, '(a)')'SELECTED_OCCUPIED_BANDS'
+      if (cpuid==0) write(stdout, '(a)')'4-7 ! band indices '
+      stop 'Errors happen in the WT.in, please check informations in the WT.out'
+   endif
+
+   !> setup SELECTEDOccupiedBANDS
+   if (.not.allocated(Selected_Occupiedband_index))then
+      NumberofSelectedOccupiedBands= NumOccupied
+      allocate(Selected_Occupiedband_index(NumberofSelectedOccupiedBands))
+      do i=1, NumberofSelectedOccupiedBands
+         Selected_Occupiedband_index(i)= i
+      enddo
+   endif
+
+   if (cpuid==0) write(stdout, *)' '
+   if (cpuid==0) write(stdout, *)'>> SELECTED_OCCUPIED_BANDS'
+   if (cpuid==0) write(stdout, '(a, 3i10)')'>> Number of Occupied bands selected ', &
+      NumberofSelectedOccupiedBands
+   if (cpuid==0) write(stdout, '(a)')'>> OccupiedBand indices are'
+   if (cpuid==0) write(stdout, '(12i6)')Selected_Occupiedband_index(:)
+   if (cpuid==0) write(stdout, *) ' '
+
+!===============================================================================================================!
+!> SELECTEDBANDS card
+!===============================================================================================================!
 
    !> parameters for selectedbands
    rewind(1001)
@@ -1953,7 +2970,8 @@ subroutine readinput
    stat=0
    do while (.true.)
       read(1001, *, end= 231)inline
-      if (trim(adjustl(inline))=='SELECTED_BANDS') then
+      inline=upper(inline)
+      if (trim(adjustl(inline))=='SELECTED_BANDS'.or.trim(adjustl(inline))=='SELECTEDBANDS') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
          if (cpuid==0) write(stdout, *)'We found SELECTED_BANDS card'
@@ -1986,6 +3004,28 @@ subroutine readinput
       stop 'Errors happen in the WT.in, please check informations in the WT.out'
    endif
 
+   !> setup SELECTEDBANDS
+   if (.not.allocated(Selected_band_index))then
+      NumberofSelectedBands= NumberOfspinorbitals
+      allocate(Selected_band_index(NumberofSelectedBands))
+      do i=1, NumberOfspinorbitals
+         Selected_band_index(i)= i
+      enddo
+   endif
+
+   if (cpuid==0) write(stdout, *)' '
+   if (cpuid==0) write(stdout, *)'>> SELECTEDBANDS'
+   if (cpuid==0) write(stdout, '(a, 3i10)')'>> Number of bands selected ', &
+      NumberofSelectedBands
+   if (cpuid==0) write(stdout, '(a)')'>> Band indices are'
+   if (cpuid==0) write(stdout, '(12i6)')Selected_band_index(:)
+   if (cpuid==0) write(stdout, *) ' '
+
+
+!===============================================================================================================!
+!> TBTOKP card
+!===============================================================================================================!
+
 
    !> parameters for tbtokp
    Num_selectedbands_tbtokp = 0
@@ -1993,6 +3033,7 @@ subroutine readinput
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 220)inline
+      inline=upper(inline)
       if (trim(adjustl(inline))=='TBTOKP') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
@@ -2020,12 +3061,12 @@ subroutine readinput
    read(1001, *, err=220, iostat=stat) k_tbtokp
 
    if (cpuid==0) write(stdout, *)' '
-   if (.not.lfound.and.cpuid==0)write(stdout, *)'>>We donot construct kp model.'
+   if (.not.lfound.and.cpuid==0)write(stdout, *)'>>We donot constOrigin_cell%Ruct kp model.'
    if (cpuid==0) write(stdout, '(a, i10)')'>> Number of bands selected for kp model', &
       Num_selectedbands_tbtokp
    if (cpuid==0) write(stdout, '(a)')'>> Band indices are'
    if (cpuid==0) write(stdout, '(10i5)')Selected_bands_tbtokp(:)
-   if (cpuid==0) write(stdout, '(a, 3f10.6)')'k point to construct kp model in fractional coordinates', k_tbtokp
+   if (cpuid==0) write(stdout, '(a, 3f10.6)')'k point to constOrigin_cell%Ruct kp model in fractional coordinates', k_tbtokp
 
 220 continue
    if (stat/=0) then
@@ -2034,12 +3075,15 @@ subroutine readinput
       if (cpuid==0) write(stdout, '(a)')'Error: Please set the right number of bands and band indices in wt.in like this:'
       if (cpuid==0) write(stdout, *)' '
       if (cpuid==0) write(stdout, '(a)')'TBTOKP'
-      if (cpuid==0) write(stdout, '(a)')'8  ! number of selected bands to construct kp model'
+      if (cpuid==0) write(stdout, '(a)')'8  ! number of selected bands to constOrigin_cell%Ruct kp model'
       if (cpuid==0) write(stdout, '(a)')'1 2 3 4 5 6 7 8 ! band indices '
       if (cpuid==0) write(stdout, '(a)')'0 0 0 ! k point in fractional coordinates '
       stop 'Errors happen in the WT.in, please check informations in the WT.out'
    endif
 
+!===============================================================================================================!
+!> ATOM_MASS card
+!===============================================================================================================!
 
    !> for phonon system,  LO-TO correction, by T.T Zhang
    !> Atomic MASS in unit of g/mol
@@ -2047,6 +3091,7 @@ subroutine readinput
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 221)inline
+      inline=upper(inline)
       if (trim(adjustl(inline))=='ATOM_MASS') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
@@ -2057,24 +3102,20 @@ subroutine readinput
 221 continue
 
    if (lfound) then
-      read(1001,*)it
-      if (it/=Num_atom_type) then
-         write(*, '(a)')"ERROR: Number of atom's type in ATOM_MASS card should be consistent with the atomic_position card"
-         stop
-      endif
-      if(cpuid==0)write(stdout,'(a,i10,a)')'There are', Num_atom_type, 'kind of atoms'
-      if (.not.allocated(Num_atoms_eachtype))allocate(Num_atoms_eachtype(Num_atom_type))
-      allocate(mass_temp(Num_atom_type))
-      allocate(ATOM_MASS(Num_atoms))
-      read(1001,*)Num_atoms_eachtype(1:Num_atom_type)
-      read(1001,*)mass_temp(1:Num_atom_type)
-      do i= 1, Num_atom_type
-         write(stdout,'(a,i10,a)')'Each type have', Num_atoms_eachtype(i), ' atoms'
+      read(1001,*)Origin_cell%Num_atom_type
+      if(cpuid==0)write(stdout,'(a,i10,a)')'There are', Origin_cell%Num_atom_type, 'kind of atoms'
+      allocate(Origin_cell%Num_atoms_eachtype(Origin_cell%Num_atom_type))
+      allocate(mass_temp(Origin_cell%Num_atom_type))
+      allocate(ATOM_MASS(Origin_cell%Num_atoms))
+      read(1001,*)Origin_cell%Num_atoms_eachtype(1:Origin_cell%Num_atom_type)
+      read(1001,*)mass_temp(1:Origin_cell%Num_atom_type)
+      do i= 1, Origin_cell%Num_atom_type
+         write(stdout,'(a,i10,a)')'Each type have', Origin_cell%Num_atoms_eachtype(i), ' atoms'
          write(stdout,'(a,f12.6)')'And their mass is', mass_temp(i)
       enddo
       it=0
-      do i=1, Num_atom_type
-         do j=1, Num_atoms_eachtype(i)
+      do i=1, Origin_cell%Num_atom_type
+         do j=1, Origin_cell%Num_atoms_eachtype(i)
             it=it+1
             ATOM_MASS(it)=mass_temp(i)
          enddo
@@ -2088,6 +3129,7 @@ subroutine readinput
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 222)inline
+      inline=upper(inline)
       if (trim(adjustl(inline))=='LOTO_DT') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
@@ -2119,6 +3161,7 @@ subroutine readinput
    lfound = .false.
    do while (.true.)
       read(1001, *, end= 223)inline
+      inline=upper(inline)
       if (trim(adjustl(inline))=='LOTO_BC') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
@@ -2130,16 +3173,16 @@ subroutine readinput
 
    if (lfound) then
       it=0
-      allocate(Born_Charge(Num_atoms,3,3))
-      allocate(Born_Charge_temp(Num_atom_type,3,3))
-      do i=1,Num_atom_type
+      allocate(Born_Charge(Origin_cell%Num_atoms,3,3))
+      allocate(Born_Charge_temp(Origin_cell%Num_atom_type,3,3))
+      do i=1,Origin_cell%Num_atom_type
          read(1001, *)Born_Charge_temp(i,1,:)
          read(1001, *)Born_Charge_temp(i,2,:)
          read(1001, *)Born_Charge_temp(i,3,:)
-         do j=1,Num_atoms_eachtype(i)
+         do j=1,Origin_cell%Num_atoms_eachtype(i)
             it=it+1
             Born_Charge(it,:,:)=Born_Charge_temp(i,:,:)
-            write(stdout,'(a,i3,2X,a6)')'Born_Charge for atom ', it, atom_name(it)
+            write(stdout,'(a,i3,2X,a6)')'Born_Charge for atom ', it, Origin_cell%atom_name(it)
             write(stdout,'(3f12.5)')Born_Charge(it,1,:)
             write(stdout,'(3f12.5)')Born_Charge(it,2,:)
             write(stdout,'(3f12.5)')Born_Charge(it,3,:)
@@ -2156,29 +3199,30 @@ subroutine readinput
    endif
 
 
-   !> close wt.in
+   !> close input.dat
    close(1001)
 
    eta=(omegamax- omegamin)/omeganum*2d0
 
-   if(cpuid==0)write(stdout,*)'<<<Read wt.in file successfully'
+   if(cpuid==0)write(stdout,*)'<<<Read input.dat file successfully'
 
-   return
+   contains
+
+   function upper(s1) result (s2)
+      character(*)       :: s1
+      character(len(s1)) :: s2
+      character          :: ch
+      integer, parameter :: DUC = ICHAR('A') - ICHAR('a')
+      integer            :: i
+
+      do i = 1,LEN(s1)
+         ch = s1(i:i)
+         if (ch >= 'a'.AND.ch <= 'z') ch = CHAR(ICHAR(ch)+DUC)
+         s2(i:i) = ch
+      enddo
+   end function upper
+
 end subroutine readinput
-
-function norm(R1)
-   use para, only : dp
-
-   implicit none
-   real(dp), intent(in) :: R1(3)
-   real(dp) :: norm1
-   real(dp) :: norm
-
-   norm1= R1(1)*R1(1)+ R1(2)*R1(2)+ R1(3)*R1(3)
-   norm= sqrt(norm1)
-
-   return
-end function norm
 
 
  !> rotate a vector in unit of  the original lattice vector into the new lattice
@@ -2299,6 +3343,29 @@ subroutine cart_direct_real_newcell(R1, R2)
 end subroutine cart_direct_real_newcell
 
 
+ !> transform from Cartesian coordinates to direct lattice vector basis
+subroutine cart_direct_real_unfold(R1, R2)
+   use para
+   implicit none
+   real(dp), intent(in) :: R1(3)
+   real(dp), intent(inout) :: R2(3)
+   real(dp), allocatable :: mata(:, :)
+
+   allocate(mata(3, 3))
+
+   mata(1, :)= Folded_cell%Rua
+   mata(2, :)= Folded_cell%Rub
+   mata(3, :)= Folded_cell%Ruc
+
+   call inv_r(3, mata)
+   R2= R1(1)*mata(1, :)+ R1(2)*mata(2, :)+ R1(3)*mata(3, :)
+
+   deallocate(mata)
+
+   return
+end subroutine cart_direct_real_unfold
+
+
 
  !> transform from Cartesian coordinates to direct lattice vector basis
 subroutine cart_direct_real(R1, R2)
@@ -2310,9 +3377,9 @@ subroutine cart_direct_real(R1, R2)
 
    allocate(mata(3, 3))
 
-   mata(1, :)= Rua
-   mata(2, :)= Rub
-   mata(3, :)= Ruc
+   mata(1, :)= Origin_cell%Rua
+   mata(2, :)= Origin_cell%Rub
+   mata(3, :)= Origin_cell%Ruc
 
    call inv_r(3, mata)
    R2= R1(1)*mata(1, :)+ R1(2)*mata(2, :)+ R1(3)*mata(3, :)
@@ -2336,13 +3403,26 @@ end subroutine direct_cart_real_newcell
 
 
  !> transform from direct lattice vector basis to Cartesian coordinates
+subroutine direct_cart_real_unfold(R1, R2)
+   use para
+   implicit none
+   real(dp), intent(in) :: R1(3)
+   real(dp), intent(inout) :: R2(3)
+
+   R2= R1(1)*Folded_cell%Rua+ R1(2)*Folded_cell%Rub+ R1(3)*Folded_cell%Ruc
+
+   return
+end subroutine direct_cart_real_unfold
+
+
+ !> transform from direct lattice vector basis to Cartesian coordinates
 subroutine direct_cart_real(R1, R2)
    use para
    implicit none
    real(dp), intent(in) :: R1(3)
    real(dp), intent(inout) :: R2(3)
 
-   R2= R1(1)*Rua+ R1(2)*Rub+ R1(3)*Ruc
+   R2= R1(1)*Origin_cell%Rua+ R1(2)*Origin_cell%Rub+ R1(3)*Origin_cell%Ruc
 
    return
 end subroutine direct_cart_real
@@ -2371,6 +3451,30 @@ subroutine cart_direct_rec_newcell(k1, k2)
 end subroutine cart_direct_rec_newcell
 
 
+ !> transform from Cartesian coordinates to reciprocal lattice vector basis
+subroutine cart_direct_rec_unfold(k1, k2)
+   use para
+   implicit none
+   real(dp), intent(in) :: k1(3)
+   real(dp), intent(inout) :: k2(3)
+
+   real(dp), allocatable :: mata(:, :)
+
+   allocate(mata(3, 3))
+
+   mata(1, :)= Folded_cell%Kua
+   mata(2, :)= Folded_cell%Kub
+   mata(3, :)= Folded_cell%Kuc
+
+   call inv_r(3, mata)
+   K2= k1(1)*mata(1, :)+ k1(2)*mata(2, :)+ k1(3)*mata(3, :)
+
+   deallocate(mata)
+
+   return
+end subroutine cart_direct_rec_unfold
+
+
 
  !> transform from Cartesian coordinates to reciprocal lattice vector basis
 subroutine cart_direct_rec(k1, k2)
@@ -2383,9 +3487,9 @@ subroutine cart_direct_rec(k1, k2)
 
    allocate(mata(3, 3))
 
-   mata(1, :)= Kua
-   mata(2, :)= Kub
-   mata(3, :)= Kuc
+   mata(1, :)= Origin_cell%Kua
+   mata(2, :)= Origin_cell%Kub
+   mata(3, :)= Origin_cell%Kuc
 
    call inv_r(3, mata)
    K2= k1(1)*mata(1, :)+ k1(2)*mata(2, :)+ k1(3)*mata(3, :)
@@ -2412,17 +3516,29 @@ subroutine direct_cart_rec(k1, k2)
    real(dp), intent(in) :: k1(3)
    real(dp), intent(inout) :: k2(3)
 
-   K2= k1(1)*Kua+ k1(2)*Kub+ k1(3)*Kuc
+   K2= k1(1)*Origin_cell%Kua+ k1(2)*Origin_cell%Kub+ k1(3)*Origin_cell%Kuc
 
    return
 end subroutine direct_cart_rec
+
+subroutine direct_cart_rec_unfold(k1, k2)
+   use para
+   implicit none
+   real(dp), intent(in) :: k1(3)
+   real(dp), intent(inout) :: k2(3)
+
+   K2= k1(1)*Folded_cell%Kua+ k1(2)*Folded_cell%Kub+ k1(3)*Folded_cell%Kuc
+
+   return
+end subroutine direct_cart_rec_unfold
+
 
  !> define a new unit cell with the given MillerIndices [hkl]
 subroutine MillerIndicestoumatrix()
    use para
    implicit none
-   integer :: i1, i2, i3, h, k, l, it
-   real(dp) :: R1(3), R2(3), R3(3), Rhkl(3), dot
+   integer :: i1, i2, i3, j1, j2, j3, h, k, l, it
+   real(dp) :: R(3), R1(3), R2(3), R3(3), Rhkl(3), dot
 
    integer, allocatable :: vector_on_hkl_surface(:, :)
    integer :: Nvectors_on_hkl_surface
@@ -2441,7 +3557,7 @@ subroutine MillerIndicestoumatrix()
    h= MillerIndices(1)
    k= MillerIndices(2)
    l= MillerIndices(3)
-   Rhkl= h*Rua+ k*Rub+ l*Ruc
+   Rhkl= h*Origin_cell%Rua+ k*Origin_cell%Rub+ l*Origin_cell%Ruc
 
    !> Firstly, find all vectors that are orthorgonal to hkl
    it= 0
@@ -2449,7 +3565,7 @@ subroutine MillerIndicestoumatrix()
       do i2=-iRmax, iRmax
          do i3=-iRmax, iRmax
             if (i1==0 .and. i2==0 .and. i3==0) cycle
-            !R= i1*Rua+i2*Rub+i3*Ruc
+            !R= i1*Origin_cell%Rua+i2*Origin_cell%Rub+i3*Origin_cell%Ruc
             !dot=abs(R(1)*Rhkl(1)+ R(2)*Rhkl(2)+ R(3)*Rhkl(3))
             dot=abs(i1*h+i2*k+i3*l)
             if (dot<eps9) then
@@ -2469,12 +3585,12 @@ subroutine MillerIndicestoumatrix()
    largestangle= 0
    do i1=1, Nvectors_on_hkl_surface
       do i2=i1+1, Nvectors_on_hkl_surface
-         R1= vector_on_hkl_surface(1, i1)*Rua+ &
-            vector_on_hkl_surface(2, i1)*Rub+ &
-            vector_on_hkl_surface(3, i1)*Ruc
-         R2= vector_on_hkl_surface(1, i2)*Rua+ &
-            vector_on_hkl_surface(2, i2)*Rub+ &
-            vector_on_hkl_surface(3, i2)*Ruc
+         R1= vector_on_hkl_surface(1, i1)*Origin_cell%Rua+ &
+            vector_on_hkl_surface(2, i1)*Origin_cell%Rub+ &
+            vector_on_hkl_surface(3, i1)*Origin_cell%Ruc
+         R2= vector_on_hkl_surface(1, i2)*Origin_cell%Rua+ &
+            vector_on_hkl_surface(2, i2)*Origin_cell%Rub+ &
+            vector_on_hkl_surface(3, i2)*Origin_cell%Ruc
          dot= R1(1)*R2(1)+ R1(2)*R2(2)+ R1(3)*R2(3)
          norm_1= sqrt(R1(1)*R1(1)+ R1(2)*R1(2)+ R1(3)*R1(3))
          norm_2= sqrt(R2(1)*R2(1)+ R2(2)*R2(2)+ R2(3)*R2(3))
@@ -2493,12 +3609,12 @@ subroutine MillerIndicestoumatrix()
    largestangle= 0
    do i1=1, Nvectors_on_hkl_surface
       do i2=i1+1, Nvectors_on_hkl_surface
-         R1= vector_on_hkl_surface(1, i1)*Rua+ &
-            vector_on_hkl_surface(2, i1)*Rub+ &
-            vector_on_hkl_surface(3, i1)*Ruc
-         R2= vector_on_hkl_surface(1, i2)*Rua+ &
-            vector_on_hkl_surface(2, i2)*Rub+ &
-            vector_on_hkl_surface(3, i2)*Ruc
+         R1= vector_on_hkl_surface(1, i1)*Origin_cell%Rua+ &
+            vector_on_hkl_surface(2, i1)*Origin_cell%Rub+ &
+            vector_on_hkl_surface(3, i1)*Origin_cell%Ruc
+         R2= vector_on_hkl_surface(1, i2)*Origin_cell%Rua+ &
+            vector_on_hkl_surface(2, i2)*Origin_cell%Rub+ &
+            vector_on_hkl_surface(3, i2)*Origin_cell%Ruc
 
          R3(1)= R1(2)*R2(3)- R1(3)*R2(2)
          R3(2)= R1(3)*R2(1)- R1(1)*R2(3)
@@ -2521,12 +3637,12 @@ subroutine MillerIndicestoumatrix()
    !> angle
    l1: do i1=1, Nvectors_on_hkl_surface
       do i2=i1+1, Nvectors_on_hkl_surface
-         R1= vector_on_hkl_surface(1, i1)*Rua+ &
-            vector_on_hkl_surface(2, i1)*Rub+ &
-            vector_on_hkl_surface(3, i1)*Ruc
-         R2= vector_on_hkl_surface(1, i2)*Rua+ &
-            vector_on_hkl_surface(2, i2)*Rub+ &
-            vector_on_hkl_surface(3, i2)*Ruc
+         R1= vector_on_hkl_surface(1, i1)*Origin_cell%Rua+ &
+            vector_on_hkl_surface(2, i1)*Origin_cell%Rub+ &
+            vector_on_hkl_surface(3, i1)*Origin_cell%Ruc
+         R2= vector_on_hkl_surface(1, i2)*Origin_cell%Rua+ &
+            vector_on_hkl_surface(2, i2)*Origin_cell%Rub+ &
+            vector_on_hkl_surface(3, i2)*Origin_cell%Ruc
          dot= R1(1)*R2(1)+ R1(2)*R2(2)+ R1(3)*R2(3)
          norm_1= dsqrt(R1(1)*R1(1)+ R1(2)*R1(2)+ R1(3)*R1(3))
          norm_2= dsqrt(R2(1)*R2(1)+ R2(2)*R2(2)+ R2(3)*R2(3))
@@ -2547,13 +3663,13 @@ subroutine MillerIndicestoumatrix()
    !> The last step, find the third vector that makes the new unit cell has
    !> the same volume as the old unit cell
    smallest_volume= 9999999d0
-   R1= Umatrix(1, 1)*Rua+  Umatrix(1, 2)*Rub+  Umatrix(1, 3)*Ruc
-   R2= Umatrix(2, 1)*Rua+  Umatrix(2, 2)*Rub+  Umatrix(2, 3)*Ruc
+   R1= Umatrix(1, 1)*Origin_cell%Rua+  Umatrix(1, 2)*Origin_cell%Rub+  Umatrix(1, 3)*Origin_cell%Ruc
+   R2= Umatrix(2, 1)*Origin_cell%Rua+  Umatrix(2, 2)*Origin_cell%Rub+  Umatrix(2, 3)*Origin_cell%Ruc
    do i1=-iRmax, iRmax
       do i2=-iRmax, iRmax
          do i3=-iRmax, iRmax
             if (i1==0 .and. i2==0 .and. i3==0) cycle
-            R3= i1*Rua+i2*Rub+i3*Ruc
+            R3= i1*Origin_cell%Rua+i2*Origin_cell%Rub+i3*Origin_cell%Ruc
             cell_volume= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
                +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
                +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
@@ -2570,7 +3686,7 @@ subroutine MillerIndicestoumatrix()
       do i2=-iRmax, iRmax
          do i3=-iRmax, iRmax
             if (i1==0 .and. i2==0 .and. i3==0) cycle
-            R3= i1*Rua+i2*Rub+i3*Ruc
+            R3= i1*Origin_cell%Rua+i2*Origin_cell%Rub+i3*Origin_cell%Ruc
             cell_volume= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
                +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
                +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
@@ -2587,7 +3703,7 @@ subroutine MillerIndicestoumatrix()
       do i2=-iRmax, iRmax
          do i3=-iRmax, iRmax
             if (i1==0 .and. i2==0 .and. i3==0) cycle
-            R3= i1*Rua+i2*Rub+i3*Ruc
+            R3= i1*Origin_cell%Rua+i2*Origin_cell%Rub+i3*Origin_cell%Ruc
             cell_volume= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
                +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
                +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
@@ -2604,22 +3720,22 @@ subroutine MillerIndicestoumatrix()
       enddo
    enddo l2
 
-   R1= Umatrix(1, 1)*Rua+  Umatrix(1, 2)*Rub+ Umatrix(1, 3)*Ruc
-   R2= Umatrix(2, 1)*Rua+  Umatrix(2, 2)*Rub+ Umatrix(2, 3)*Ruc
-   R3= Umatrix(3, 1)*Rua+  Umatrix(3, 2)*Rub+ Umatrix(3, 3)*Ruc
+   R1= Umatrix(1, 1)*Origin_cell%Rua+  Umatrix(1, 2)*Origin_cell%Rub+ Umatrix(1, 3)*Origin_cell%Ruc
+   R2= Umatrix(2, 1)*Origin_cell%Rua+  Umatrix(2, 2)*Origin_cell%Rub+ Umatrix(2, 3)*Origin_cell%Ruc
+   R3= Umatrix(3, 1)*Origin_cell%Rua+  Umatrix(3, 2)*Origin_cell%Rub+ Umatrix(3, 3)*Origin_cell%Ruc
    cell_volume= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
       + R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
       + R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
    if (cell_volume<0) Umatrix(3, :)= -Umatrix(3, :)
 
-   R1= Umatrix(1, 1)*Rua+  Umatrix(1, 2)*Rub+ Umatrix(1, 3)*Ruc
-   R2= Umatrix(2, 1)*Rua+  Umatrix(2, 2)*Rub+ Umatrix(2, 3)*Ruc
-   R3= Umatrix(3, 1)*Rua+  Umatrix(3, 2)*Rub+ Umatrix(3, 3)*Ruc
+   R1= Umatrix(1, 1)*Origin_cell%Rua+  Umatrix(1, 2)*Origin_cell%Rub+ Umatrix(1, 3)*Origin_cell%Ruc
+   R2= Umatrix(2, 1)*Origin_cell%Rua+  Umatrix(2, 2)*Origin_cell%Rub+ Umatrix(2, 3)*Origin_cell%Ruc
+   R3= Umatrix(3, 1)*Origin_cell%Rua+  Umatrix(3, 2)*Origin_cell%Rub+ Umatrix(3, 3)*Origin_cell%Ruc
    cell_volume= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
       + R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
       + R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
 
-   if (abs(cell_volume- CellVolume)< eps9 .and. cpuid==0) then
+   if (abs(cell_volume- Origin_cell%CellVolume)< eps9 .and. cpuid==0) then
       write(stdout, *)'  Congratulations, you got a unit cell that has ', &
          ' the same volume as the original unit cell '
       write(stdout, *)' The unitary rotation matrix is : '
@@ -2638,19 +3754,19 @@ subroutine MillerIndicestoumatrix()
    return
 end subroutine MillerIndicestoumatrix
 
- !> define a new unit cell with the given MillerIndices [hkl]
+ !> define a new unit cell with the given two vectors of the SURFACE card
 subroutine FindTheThirdLatticeVector()
    use para
    implicit none
-   integer :: i1, i2, i3, it
-   real(dp) :: R1(3), R2(3), R3(3), cross(3), dot
+   integer :: i1, i2, i3, j1, j2, j3, h, k, l, it
+   real(dp) :: R(3), R1(3), R2(3), R3(3), cross(3), dot
 
    integer, allocatable :: vectors_parallel_umatrix1(:, :)
    integer, allocatable :: vectors_parallel_umatrix2(:, :)
    integer :: Nvectors_parallel_umatrix1, Nvectors_parallel_umatrix2
    real(dp) :: smallest_volume, cell_volume
    real(dp) :: smallest_length
-   real(dp) :: norm_3
+   real(dp) :: norm_1, norm_2, norm_3
 
    integer :: iRmax
    iRmax= 6
@@ -2666,7 +3782,7 @@ subroutine FindTheThirdLatticeVector()
       do i2=-iRmax, iRmax
          do i3=-iRmax, iRmax
             if (i1==0 .and. i2==0 .and. i3==0) cycle
-            !R= i1*Rua+i2*Rub+i3*Ruc
+            !R= i1*Origin_cell%Rua+i2*Origin_cell%Rub+i3*Origin_cell%Ruc
             !dot=abs(R(1)*Rhkl(1)+ R(2)*Rhkl(2)+ R(3)*Rhkl(3))
             cross(1)= Umatrix(2, 1)*i3- i2*Umatrix(3, 1)
             cross(2)= Umatrix(3, 1)*i1- i3*Umatrix(1, 1)
@@ -2686,9 +3802,9 @@ subroutine FindTheThirdLatticeVector()
    !> and select the shortest vectors_parallel_umatrix1
    smallest_length= 9999999d0
    do it= 1, Nvectors_parallel_umatrix1
-      R1= vectors_parallel_umatrix1(1, it)*Rua+ &
-         vectors_parallel_umatrix1(2, it)*Rub+ &
-         vectors_parallel_umatrix1(3, it)*Ruc
+      R1= vectors_parallel_umatrix1(1, it)*Origin_cell%Rua+ &
+         vectors_parallel_umatrix1(2, it)*Origin_cell%Rub+ &
+         vectors_parallel_umatrix1(3, it)*Origin_cell%Ruc
       norm_3= dsqrt(R1(1)*R1(1)+ R1(2)*R1(2)+ R1(3)*R1(3))
       if (norm_3< smallest_length) then
          smallest_length= norm_3
@@ -2703,7 +3819,7 @@ subroutine FindTheThirdLatticeVector()
       do i2=-iRmax, iRmax
          do i3=-iRmax, iRmax
             if (i1==0 .and. i2==0 .and. i3==0) cycle
-            !R= i1*Rua+i2*Rub+i3*Ruc
+            !R= i1*Origin_cell%Rua+i2*Origin_cell%Rub+i3*Origin_cell%Ruc
             !dot=abs(R(1)*Rhkl(1)+ R(2)*Rhkl(2)+ R(3)*Rhkl(3))
             cross(1)= Umatrix(2, 2)*i3- i2*Umatrix(3, 2)
             cross(2)= Umatrix(3, 2)*i1- i3*Umatrix(1, 2)
@@ -2723,9 +3839,9 @@ subroutine FindTheThirdLatticeVector()
    !> and select the shortest vectors_parallel_umatrix1
    smallest_length= 9999999d0
    do it= 1, Nvectors_parallel_umatrix2
-      R2= vectors_parallel_umatrix2(1, it)*Rua+ &
-         vectors_parallel_umatrix2(2, it)*Rub+ &
-         vectors_parallel_umatrix2(3, it)*Ruc
+      R2= vectors_parallel_umatrix2(1, it)*Origin_cell%Rua+ &
+         vectors_parallel_umatrix2(2, it)*Origin_cell%Rub+ &
+         vectors_parallel_umatrix2(3, it)*Origin_cell%Ruc
       norm_3= dsqrt(R2(1)*R2(1)+ R2(2)*R2(2)+ R2(3)*R2(3))
       if (norm_3< smallest_length) then
          smallest_length= norm_3
@@ -2736,13 +3852,13 @@ subroutine FindTheThirdLatticeVector()
    !> The last step, find the third vector that makes the new unit cell has
    !> the same volume as the old unit cell
    smallest_volume= 9999999d0
-   R1= Umatrix(1, 1)*Rua+  Umatrix(1, 2)*Rub+  Umatrix(1, 3)*Ruc
-   R2= Umatrix(2, 1)*Rua+  Umatrix(2, 2)*Rub+  Umatrix(2, 3)*Ruc
+   R1= Umatrix(1, 1)*Origin_cell%Rua+  Umatrix(1, 2)*Origin_cell%Rub+  Umatrix(1, 3)*Origin_cell%Ruc
+   R2= Umatrix(2, 1)*Origin_cell%Rua+  Umatrix(2, 2)*Origin_cell%Rub+  Umatrix(2, 3)*Origin_cell%Ruc
    do i1=-iRmax, iRmax
       do i2=-iRmax, iRmax
          do i3=-iRmax, iRmax
             if (i1==0 .and. i2==0 .and. i3==0) cycle
-            R3= i1*Rua+i2*Rub+i3*Ruc
+            R3= i1*Origin_cell%Rua+i2*Origin_cell%Rub+i3*Origin_cell%Ruc
             cell_volume= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
                +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
                +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
@@ -2759,7 +3875,7 @@ subroutine FindTheThirdLatticeVector()
       do i2=-iRmax, iRmax
          do i3=-iRmax, iRmax
             if (i1==0 .and. i2==0 .and. i3==0) cycle
-            R3= i1*Rua+i2*Rub+i3*Ruc
+            R3= i1*Origin_cell%Rua+i2*Origin_cell%Rub+i3*Origin_cell%Ruc
             cell_volume= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
                +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
                +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
@@ -2776,7 +3892,7 @@ subroutine FindTheThirdLatticeVector()
       do i2=-iRmax, iRmax
          do i3=-iRmax, iRmax
             if (i1==0 .and. i2==0 .and. i3==0) cycle
-            R3= i1*Rua+i2*Rub+i3*Ruc
+            R3= i1*Origin_cell%Rua+i2*Origin_cell%Rub+i3*Origin_cell%Ruc
             cell_volume= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
                +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
                +R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
@@ -2793,22 +3909,22 @@ subroutine FindTheThirdLatticeVector()
       enddo
    enddo l2
 
-   R1= Umatrix(1, 1)*Rua+  Umatrix(1, 2)*Rub+ Umatrix(1, 3)*Ruc
-   R2= Umatrix(2, 1)*Rua+  Umatrix(2, 2)*Rub+ Umatrix(2, 3)*Ruc
-   R3= Umatrix(3, 1)*Rua+  Umatrix(3, 2)*Rub+ Umatrix(3, 3)*Ruc
+   R1= Umatrix(1, 1)*Origin_cell%Rua+  Umatrix(1, 2)*Origin_cell%Rub+ Umatrix(1, 3)*Origin_cell%Ruc
+   R2= Umatrix(2, 1)*Origin_cell%Rua+  Umatrix(2, 2)*Origin_cell%Rub+ Umatrix(2, 3)*Origin_cell%Ruc
+   R3= Umatrix(3, 1)*Origin_cell%Rua+  Umatrix(3, 2)*Origin_cell%Rub+ Umatrix(3, 3)*Origin_cell%Ruc
    cell_volume= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
       + R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
       + R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
    if (cell_volume<0) Umatrix(3, :)= -Umatrix(3, :)
 
-   R1= Umatrix(1, 1)*Rua+  Umatrix(1, 2)*Rub+ Umatrix(1, 3)*Ruc
-   R2= Umatrix(2, 1)*Rua+  Umatrix(2, 2)*Rub+ Umatrix(2, 3)*Ruc
-   R3= Umatrix(3, 1)*Rua+  Umatrix(3, 2)*Rub+ Umatrix(3, 3)*Ruc
+   R1= Umatrix(1, 1)*Origin_cell%Rua+  Umatrix(1, 2)*Origin_cell%Rub+ Umatrix(1, 3)*Origin_cell%Ruc
+   R2= Umatrix(2, 1)*Origin_cell%Rua+  Umatrix(2, 2)*Origin_cell%Rub+ Umatrix(2, 3)*Origin_cell%Ruc
+   R3= Umatrix(3, 1)*Origin_cell%Rua+  Umatrix(3, 2)*Origin_cell%Rub+ Umatrix(3, 3)*Origin_cell%Ruc
    cell_volume= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
       + R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
       + R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
 
-   if (abs(cell_volume- CellVolume)< eps9 .and. cpuid==0) then
+   if (abs(cell_volume- Origin_cell%CellVolume)< eps9 .and. cpuid==0) then
       write(stdout, *)'  Congratulations, you got a unit cell that has ', &
          ' the same volume as the original unit cell '
       write(stdout, *)' The unitary rotation matrix is : '
@@ -2822,6 +3938,32 @@ subroutine FindTheThirdLatticeVector()
       write(stdout, '(a,3f10.3)')' R2=', R2
       write(stdout, '(a,3f10.3)')' R3=', R3
       write(stdout, *)' Where R1, R2, R3 are in cartesian coordinates'
+   else
+      write(stdout, *) &
+         " Warning:  I am sorry that I can't proper unit cell with the first two vectors", &
+         " defined in the SURFACE card that have the same volume as the original one." , &
+         " Now, I will use my own method to choose the SURFACE card. But don't worry, ", &
+         " The new surface card we found is just for the surface you defined. However, ", &
+         " you should notice that the first and the second vectors in the SURFACE card ", &
+         " could be changed which would affect the slab reciprocal lattice vectors."
+
+   endif
+
+   !> use MillerIndicestoumatrix
+   if (abs(cell_volume- Origin_cell%CellVolume)> eps9 ) then
+      !> first find the Miller indices
+      h=Umatrix(1, 2)*Umatrix(2, 3)-Umatrix(1, 3)*Umatrix(2, 2)
+      k=Umatrix(1, 3)*Umatrix(2, 1)-Umatrix(1, 1)*Umatrix(2, 3)
+      l=Umatrix(1, 1)*Umatrix(2, 2)-Umatrix(1, 2)*Umatrix(2, 1)
+      MillerIndices(1)=h
+      MillerIndices(2)=k
+      MillerIndices(3)=l
+
+      if (cpuid.eq.0) then
+         write(stdout, '(a, 3i5)')'>> Miller indices for SURFACE are : ', h, k, l
+      endif
+
+      call MillerIndicestoumatrix()
    endif
 
    return
@@ -2858,4 +4000,168 @@ subroutine transformtohomecell(pos)
    return
 end subroutine transformtohomecell
 
+!====================================================================!
+subroutine param_get_range_vector(keyword,inline,length,lcount,i_value)
+!====================================================================!
+!!   Read a range vector eg. 1,2,3,4-10  or 1 3 400:100           
+!!   if(lcount) we return the number of states in length            
+!!   From Wannier90, modified by QSWU
+!====================================================================!
+
+!> usage
+!> first count howmany values
+!> call param_get_range_vector('TOPATOMS','1,2,3,4-10',NTopAtoms,lcount=.true., TOPATOMS)
+!> then get values
+!> call param_get_range_vector('TOPATOMS','1,2,3,4-10',NTopAtoms,lcount=.false., TopAtoms)
+
+    implicit none
+
+    character(len=*), intent(in) :: keyword
+    character(len=*), intent(inout) :: inline
+    integer,           intent(inout) :: length
+    !! Number of states
+    logical,           intent(in)    :: lcount
+    !! If T only count states
+    integer, intent(out)   :: i_value(length)
+    !! States specified in range vector
+
+    integer   :: kl, in,loop,num1,num2,i_punc
+    integer   :: counter,i_digit,loop_r,range_size
+    character(len=256) :: dummy
+    character(len=10), parameter :: c_digit="0123456789"
+    character(len=2) , parameter :: c_range="-:"
+    character(len=3) , parameter :: c_sep=" ,;"
+    character(len=5) , parameter :: c_punc=" ,;-:"
+    character(len=2) , parameter :: comment_punc="#!"
+    character(len=5)  :: c_num1,c_num2
+
+    !> remove the comment part
+    i_punc= scan(inline,comment_punc)
+    if (i_punc>0) then
+       dummy= inline(1:i_punc-1)
+    else
+       dummy=adjustl(inline)
+    endif
+
+    dummy=adjustl(dummy)
+    
+    counter=0
+    do 
+       i_punc=scan(dummy,c_punc)
+       if(i_punc==0) call printerrormsg('Error parsing keyword '//trim(keyword)) 
+       c_num1=dummy(1:i_punc-1)
+       read(c_num1,*,err=1201,end=1201) num1
+       dummy=adjustl(dummy(i_punc:))
+       !look for range
+       if(scan(dummy,c_range)==1) then
+          i_digit=scan(dummy,c_digit)
+          dummy=adjustl(dummy(i_digit:))
+          i_punc=scan(dummy,c_punc)
+          c_num2=dummy(1:i_punc-1)
+          read(c_num2,*,err=1201,end=1201) num2
+          dummy=adjustl(dummy(i_punc:))
+          range_size=abs(num2-num1)+1
+          do loop_r=1,range_size
+             counter=counter+1
+             if(.not. lcount) i_value(counter)=min(num1,num2)+loop_r-1
+          end do
+       else
+          counter=counter+1 
+          if(.not. lcount) i_value(counter)=num1
+       end if
+
+       if(scan(dummy,c_sep)==1) dummy=adjustl(dummy(2:))
+       if(scan(dummy,c_range)==1) call printerrormsg('Error parsing keyword '//trim(keyword)//' incorrect range') 
+       if(index(dummy,' ')==1) exit
+    end do
+
+    if(lcount) length=counter
+    if(.not.lcount) then
+       do loop=1,counter-1
+          do loop_r=loop+1,counter 
+             if(i_value(loop)==i_value(loop_r)) &
+                call printerrormsg('Error parsing keyword '//trim(keyword)//' duplicate values')
+          end do
+        end do
+    end if
+
+    return
+
+1201 call printerrormsg('Error parsing keyword '//trim(keyword))
+
+
+end  subroutine param_get_range_vector
+
+
+!> generate the POSCAR for slab system
+!> necessary input:
+!> Nslab
+!> SURFACE
+!> Vacuum_thickness_in_Angstrom
+subroutine generate_slab_poscar()
+   use para
+   implicit none
+
+   integer :: i, it, ia
+   real(dp) :: angle_t, ratio
+   real(dp) :: R1(3), R2(3), R3(3), R3_slab(3), R12_cross(3)
+   integer, allocatable :: Num_atoms_eachtype(:)
+   real(dp), allocatable :: pos_cart(:, :)
+   character(10), allocatable :: atom_name(:)
+   integer :: Num_atoms_slab, num_atoms_primitive_cell
+   real(dp), external :: norm, angle
+
+   R1=Cell_defined_by_surface%Rua
+   R2=Cell_defined_by_surface%Rub
+   R3=Cell_defined_by_surface%Ruc
+
+   !> R12_cross=R1xR2
+   call cross_product(R1, R2, R12_cross)
+
+   !> angle of R12_cross and R3
+   angle_t= angle (R12_cross, R3)
+   angle_t= angle_t*pi/180d0
+
+   ratio= Vacuum_thickness_in_Angstrom/cos(angle_t)/norm(R3)
+
+   R3_slab= (Nslab+ ratio)*R3
+
+
+   num_atoms_primitive_cell= Cell_defined_by_surface%Num_atoms
+   Num_atoms_slab= Cell_defined_by_surface%Num_atoms*Nslab
+   allocate(atom_name(Num_atoms_slab))
+   allocate(Num_atoms_eachtype(Cell_defined_by_surface%Num_atom_type))
+   Num_atoms_eachtype= Cell_defined_by_surface%Num_atoms_eachtype*Nslab
+
+   allocate(pos_cart(3, Num_atoms_slab))
+   pos_cart=0d0
+
+   it= 0
+   do ia=1, num_atoms_primitive_cell
+      do i=1, Nslab
+         it=it+1
+         pos_cart(:, it)= Cell_defined_by_surface%Atom_position_cart(:, ia)+ R3*(i-1d0+ratio/2d0)
+         atom_name(it)= Cell_defined_by_surface%atom_name(ia)
+      enddo
+   enddo
+
+   !> print out the new basis
+   outfileindex= outfileindex+ 1
+   if (cpuid.eq.0) then
+      open(outfileindex, file="POSCAR-slab")
+      write(outfileindex, '(a)')"POSCAR for slab defined by SURFACE card and Nslab and Vacuum_thickness_in_Angstrom in wt.in by WannierTools"
+      write(outfileindex, '(a)')"1.0"
+      write(outfileindex, '(3f12.6)') R1
+      write(outfileindex, '(3f12.6)') R2
+      write(outfileindex, '(3f12.6)') R3_slab
+      write(outfileindex, '(30A6)') Cell_defined_by_surface%Name_of_atomtype
+      write(outfileindex, '(30i6)') Num_atoms_eachtype
+      write(outfileindex, '(a)')"Cartesian"
+      do ia=1, Num_atoms_slab
+         if(cpuid==0)write(outfileindex, '(3f12.6, a9)')pos_cart(:, ia), trim(adjustl(atom_name(ia)))
+      enddo
+      close(outfileindex)
+   endif
+   return
+end subroutine generate_slab_poscar
 

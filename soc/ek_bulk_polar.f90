@@ -1,6 +1,8 @@
-! calculate bulk's energy band using wannier TB method
-! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
   subroutine ek_bulk_polar
+     ! Calculate bulk's energy band using wannier TB method. 
+     ! This subroutine is very useful for nodal-line materials. 
+     ! You have to define the center, k plane and radius
+     ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 
      use wmpi
      use para
@@ -71,7 +73,7 @@
      !> for IrF  TB
      !> xz plane, center is (0.5, 0.0, 0.5)
     !center_direct= (/ 0.5d0,  0.0d0,  0.5d0/)
-    !call direct_cart(center_direct, center_cart)
+    !call direct_cart_rec(center_direct, center_cart)
     !ik = 0
     !do i= 1, nktheta
     !   ktheta= 2d0*pi*(i-1)/dble(nktheta)
@@ -90,7 +92,7 @@
 
      !> For DFT yz plane, center is (0.5, 0.0, 0.5)
     !center_direct= (/ 0.5d0, 0.0d0, 0.5d0/)
-    !call direct_cart(center_direct, center_cart)
+    !call direct_cart_rec(center_direct, center_cart)
     !ik = 0
     !do i= 1, nktheta
     !   ktheta= 2d0*pi*(i-1)/dble(nktheta)
@@ -110,7 +112,7 @@
      !>> for TB
      !> xy plane, center is (0.0, 0.0, 0.0)
     !center_direct= (/ 0.0d0,  0.0d0, -0.0d0/)
-    !call direct_cart(center_direct, center_cart)
+    !call direct_cart_rec(center_direct, center_cart)
     !ik = 0
     !do i= 1, nktheta
     !   ktheta= 2d0*pi*(i-1)/dble(nktheta)
@@ -131,7 +133,7 @@
      !> xz plane, center is (0.5, 0.0, 0.5)
     !center_direct= (/ 0.5d0,  0.0d0,  0.5d0/)
     !center_direct= (/ 0.5d0,  0.0d0, -0.5d0/)
-    !call direct_cart(center_direct, center_cart)
+    !call direct_cart_rec(center_direct, center_cart)
     !ik = 0
     !do i= 1, nktheta
     !   ktheta= 2d0*pi*(i-1)/dble(nktheta)
@@ -152,7 +154,7 @@
      !> For yz plane, center is (0.0, 0.5, 0.5)
     !center_direct= (/ 0.0d0,-0.5d0,-0.5d0/)
     !center_direct= (/ 1.0d0, 0.5d0, 0.5d0/)
-    !call direct_cart(center_direct, center_cart)
+    !call direct_cart_rec(center_direct, center_cart)
     !ik = 0
     !do i= 1, nktheta
     !   ktheta= 2d0*pi*(i-1)/dble(nktheta)
@@ -173,7 +175,7 @@
      !>> for CuTlTe2
      !> 110 plane, center is X (0.0, 0.0, 0.5)
      center_direct= (/ 0.0d0,  0.0d0,  0.5d0/)
-     call direct_cart(center_direct, center_cart)
+     call direct_cart_rec(center_direct, center_cart)
 
      if (cpuid.eq.0) write(*, '(10f8.5)') center_direct
      if (cpuid.eq.0) write(*, '(10f8.5)') center_cart
@@ -194,7 +196,7 @@
      !>> for CuTlTe2
      !> 1-10 plane, center is U (0.5, 0.5, 0.0)
     !center_direct= (/ 0.5d0,  0.5d0,  0.0d0/)
-    !call direct_cart(center_direct, center_cart)
+    !call direct_cart_rec(center_direct, center_cart)
 
     !if (cpuid.eq.0) write(*, '(10f8.5)') center_direct
     !if (cpuid.eq.0) write(*, '(10f8.5)') center_cart
@@ -226,8 +228,8 @@
      endif
 
      i= 0
-     do ia=1, Num_atoms
-        do j=1, nprojs(ia)
+     do ia=1, Origin_cell%Num_atoms
+        do j=1, Origin_cell%nprojs(ia)
            i= i+ 1
            sigmax(i, i+nwan) = 1d0
            sigmax(i+nwan, i) = 1d0
@@ -242,15 +244,15 @@
      if (Numoccupied> Num_wann ) stop ' Numoccupied should less than Num_wann'
 
      do ik= 1+cpuid, knv3, num_cpu
-	     if (cpuid==0) print * , 'ik' , ik
+        if (cpuid==0) print * , 'ik' , ik
 
         k1= k123(:, ik)
         !> from cartisen coordinate to direct coordinate
-        call cart_direct(k1, k)
+        call cart_direct_rec(k1, k)
 
         ! calculation bulk hamiltonian
         Hamk_bulk= 0d0
-        call ham_bulk(k, Hamk_bulk)
+        call ham_bulk_atomicgauge(k, Hamk_bulk)
 
         !> diagonalization by call zheev in lapack
         W= 0d0
@@ -296,44 +298,18 @@
         enddo
      enddo
 
+     outfileindex= outfileindex+ 1
      if (cpuid==0)then
-        open(unit=14, file='bulkek_polar.dat')
+        open(unit=outfileindex, file='bulkek_polar.dat')
         do i=1, nktheta
-           write(14, '(1000f19.9)')gap(:, i)
+           write(outfileindex, '(1000f19.9)')gap(:, i)
         enddo
         do i=1, knv3
-        !  write(14, '(1000f19.9)')k123(:, i)
+        !  write(outfileindex, '(1000f19.9)')k123(:, i)
         enddo
-        close(14)
+        close(outfileindex)
      endif
 
    return
    end subroutine ek_bulk_polar
 
-   subroutine cart_direct(k1, k2)
-      use para
-      implicit none
-      real(dp), intent(in) :: k1(3)
-      real(dp), intent(inout) :: k2(3)
-      real(dp) :: mata(3, 3)
-
-      mata(1, :)= Kua
-      mata(2, :)= Kub
-      mata(3, :)= Kuc
-
-      call inv_r(3, mata)
-      K2= k1(1)*mata(1, :)+ k1(2)*mata(2, :)+ k1(3)*mata(3, :)
-
-      return
-   end subroutine cart_direct
-
-   subroutine direct_cart(k1, k2)
-      use para
-      implicit none
-      real(dp), intent(in) :: k1(3)
-      real(dp), intent(inout) :: k2(3)
-
-      K2= k1(1)*Kua+ k1(2)*Kub+ k1(3)*Kuc
-
-      return
-   end subroutine direct_cart
