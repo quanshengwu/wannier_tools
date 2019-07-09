@@ -1,0 +1,19 @@
+rm -f Berrycurvature-normalized.dat
+rm -f Berrycurvature-normalized.gnu
+rm -f Berrycurvature-normalized.png
+rm -f Berrycurvature.dat
+rm -f Berrycurvature.gnu
+rm -f Berrycurvature.png
+rm -f POSCAR-rotated
+rm -f POSCAR-slab
+rm -f WT.out
+rm -f bulkek.dat
+rm -f bulkek.dat-matlab
+rm -f bulkek.dat-segment1
+rm -f bulkek.dat-segment2
+rm -f bulkek.dat-segment3
+rm -f bulkek.gnu
+rm -f wcc-mirrorchernnumber.eps
+rm -f wcc-mirrorchernnumber.gnu
+rm -f wcc-mirrorm -finus.dat
+rm -f wcc-mirrorplus.dat

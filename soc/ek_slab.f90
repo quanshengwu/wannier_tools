@@ -73,18 +73,7 @@
         k= k2_path(i, :)
         chamk=0.0d0 
 
-        !> no magnetgic field
-        if (abs(Bx)<eps9.and. abs(By)<eps9.and. abs(Bz)<eps9)then
-           call ham_slab(k,Chamk)
-        !> in-plane magnetic field
-        elseif (abs(Bx)>eps9 .or. abs(By)>eps9)then
-           write(stdout, *)'>> magnetic field is larger than zero'
-           call ham_slab_parallel_B(k,Chamk)
-        !> vertical magnetic field
-        else
-           print *, 'Error: we only support in-plane magnetic field at present'
-           stop 'please set Bz= 0'
-        endif
+        call ham_slab(k,Chamk)
 
 
         eigenvalue=0.0d0

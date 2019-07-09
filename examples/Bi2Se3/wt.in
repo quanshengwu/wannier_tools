@@ -46,32 +46,31 @@ WireBand_calc            = T
 SlabSS_calc              = T
 SlabArc_calc             = T
 SlabQPI_calc             = T
-ArcQPI_calc              = T
 Z2_3D_calc               = T
 SlabSpintexture_calc     = T
 Wanniercenter_calc       = T
 /
 
 &SYSTEM
-NSLAB = 10              ! for thin film system
-NSLAB1= 4               ! nanowire system 
-NSLAB2= 4               ! nanowire system 
+NSLAB = 4               ! for thin film system
+NSLAB1= 2               ! nanowire system 
+NSLAB2= 2               ! nanowire system 
 NumOccupied = 18        ! NumOccupied
 SOC = 1                 ! soc
-E_FERMI = 4.4195        ! e-fermi
+E_FERMI = 4.4195        ! e-fermi, a global shift of the energy levels
 surf_onsite= 0.0        ! surf_onsite
 /
 
 &PARAMETERS
 Eta_Arc = 0.001     ! infinite small value, like brodening 
-E_arc = 0.0         ! energy for calculate Fermi Arc
+E_arc = 0.0         ! energy level for contour plot of spectrum
 OmegaNum = 400      ! omega number       
 OmegaMin = -0.6     ! energy interval
 OmegaMax =  0.5     ! energy interval
-Nk1 = 40           ! number k points  odd number would be better
-Nk2 = 40            ! number k points  odd number would be better
-Nk3 = 20            ! number k points  odd number would be better
-NP = 2              ! number of principle layers
+Nk1 = 10           ! number k points  odd number would be better
+Nk2 = 10            ! number k points  odd number would be better
+Nk3 = 10            ! number k points  odd number would be better
+NP = 1              ! number of principle layers
 Gap_threshold = 0.01 ! threshold for FindNodes_calc output
 /
 
@@ -119,8 +118,8 @@ Direct
 0.0  0.0  0.5
   
 SELECTED_BANDS
-4
-180 181 182 183
+4   ! howmany bands
+71 72  73  74   ! band indices
 
 SINGLEKPOINT_2D
 Direct

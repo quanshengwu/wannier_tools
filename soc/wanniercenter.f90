@@ -2310,7 +2310,10 @@
       wcc_sum_all= 0d0
 
       do i= 1, Num_Weyls
+         if (cpuid==0) write(stdout, '(a)')' '
+         if (cpuid==0) write(stdout, '(a, i3, a)')'>> We are calculation the chirality of the ', i, "'th Weyl point"
          k0= weyl_position_cart(:, i)
+         if (cpuid==0) write(stdout, '(a, 3f12.6)')'>> k (Cartesian coordinates): ', k0
          call wannier_center3D_weyl_func_sphere(k0, kr0, wcc, chirality)
          chirality_all(i)= chirality
          wcc_all(:, :, i) = wcc

@@ -15,7 +15,7 @@
 ! version     2.2.1  At EPFL, Switzerland, Sep. 14. 2017
 ! version     2.4.0  At EPFL, Switzerland, Aug. 31. 2018
 ! version     2.4.1  At EPFL, Switzerland, Oct. 15. 2018
-! version     2.4.2  At EPFL, Switzerland, Oct. 15. 2018
+! version     2.4.2  At EPFL, Switzerland, July. 9. 2019
 ! wuquansheng@gmail.com
 ! Copyright (c) 2017 QuanSheng Wu. All rights reserved.
 !--------+--------+--------+--------+--------+--------+--------+------!

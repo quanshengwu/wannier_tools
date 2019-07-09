@@ -57,8 +57,8 @@ E_arc = 0.0         ! energy for calculate Fermi Arc
 OmegaNum = 401      ! omega number       
 OmegaMin = -0.6     ! energy interval
 OmegaMax =  0.5     ! energy interval
-Nk1 = 401               ! number k points  odd number would be better
-Nk2 = 401            ! number k points  odd number would be better
+Nk1 = 101               ! number k points  odd number would be better
+Nk2 = 101            ! number k points  odd number would be better
 Nk3 = 11           ! number k points  odd number would be better
 NP = 1              ! number of principle layers
 Gap_threshold = 0.001 ! threshold for GapCube output
@@ -85,8 +85,8 @@ KPLANE_SLAB
  0.0  0.2      ! The second vector to define 2D k plane  for arc plots
 
 KPLANE_BULK
--1.0000000 -1.0000000 -0.00   ! Original point for 3D k plane  kz=0.5, bar{x}, along ky
- 2.0000000  0.0000000  0.00   ! The first vector to define 3d k space plane
+-1.00 -1.00 -0.00   ! Original point for 3D k plane  kz=0.5, bar{x}, along ky
+ 2.00  0.00  0.00   ! The first vector to define 3d k space plane
  0.00  2.00  0.00   ! The second vector to define 3d k space plane
 
 

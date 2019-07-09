@@ -1,7 +1,7 @@
 
 subroutine readinput
-   ! Read in the control paramters from input.dat,
-   ! and set default values if not specified in the input.dat
+   ! Read in the control paramters from wt.in,
+   ! and set default values if not specified in the wt.in
    !
    ! Constructed on 4/22/2010 by QS.Wu
 
@@ -9,7 +9,7 @@ subroutine readinput
    use para
    implicit none
 
-   character*12 :: fname='input.dat'
+   character*12 :: fname='wt.in'
    character*25 :: char_temp
    character*256 :: inline
    logical ::  exists
@@ -39,7 +39,7 @@ subroutine readinput
    inquire(file=fname,exist=exists)
    if (exists)then
       if(cpuid==0)write(stdout,*) '  '
-      if(cpuid==0)write(stdout,*) '>>>Read some paramters from input.dat'
+      if(cpuid==0)write(stdout,*) '>>>Read some paramters from wt.in'
       open(unit=1001,file=fname,status='old')
    else
       if(cpuid==0)write(stdout,*)'file' ,fname, 'dosnot exist'
@@ -63,7 +63,14 @@ subroutine readinput
       Hrfile='wannier90_hr.dat'
       Particle='electron'
       inquire(file='wannier90_hr.dat',exist=exists)
+
+      backspace(1001)
+      read(1001,fmt='(A)') inline
+      write(*,'(A)') &
+         '>>> ERROR : Invalid line in namelist TB_FILE : '//trim(inline)
+
       if (.not.exists) stop "TB_FIlE namelist should be given or wannier90_hr.dat should exist"
+
    endif
    if(cpuid==0)write(stdout,'(1x, a, a6, a)')"You are using : ", KPorTB, " model"
    Is_Sparse_Hr= (Is_Sparse_Hr.or.Is_Sparse)
@@ -192,6 +199,13 @@ subroutine readinput
       write(*, *)"Translate_to_WS_calc"
       write(*, *)"FermiLevel_calc"
       write(*, *)"The default Vaule is F"
+
+      backspace(1001)
+      read(1001,fmt='(A)') inline
+      write(*,'(A)') &
+         '>>> ERROR : Invalid line in namelist CONTROL : '//trim(inline)
+
+
       stop
    endif
 
@@ -290,7 +304,13 @@ subroutine readinput
    read(1001, SYSTEM, iostat=stat)
    if (stat/=0) then
       write(*, *)"ERROR: namelist SYSTEM is wrong and should be set correctly"
-      !stop
+
+      backspace(1001)
+      read(1001,fmt='(A)') inline
+      write(*,'(A)') &
+         '>>> ERROR : Invalid line in namelist SYSTEM : '//trim(inline)
+
+      stop
    endif
    SOC_in=SOC
 
@@ -349,12 +369,12 @@ subroutine readinput
       write(stdout, "(1x,a)") "by default we set Btheta=0, Bphi=0 which means B is along z direction."
    endif
 
-   !> check if Bmagnitude is specified in the input.dat/wt.in
+   !> check if Bmagnitude is specified in the wt.in/wt.in
    if (abs(Bmagnitude)>eps6 .and. (abs(Bx)+abs(By)+abs(Bz))>eps6) then
       if (cpuid==0) then
          write(stdout, *) " "
          write(stdout, *) " Warning: You specify Bmagnitude and Bx, By, Bz at the same time "
-         write(stdout, *) " in the SYSTEM namelist in the wt.in/input.dat."
+         write(stdout, *) " in the SYSTEM namelist in the wt.in/wt.in."
          write(stdout, *) " However, we will only take Bmagnitude and Btheta, Bphi but discard Bx,By,Bz. "
          write(stdout, *) " Bx,By,Bz will be calculated as Bx=Bmagnitude*sin(Btheta*pi/180)*cos(bphi/180*pi). "
          write(stdout, *) "  By=Bmagnitude*sin(Btheta*pi/180)*sin(bphi/180*pi), "
@@ -500,6 +520,15 @@ subroutine readinput
    if (Magp<1) Magp= 0
    if (Magp_max<1) Magp_max= Magp
    if (OmegaNum_unfold==0) OmegaNum_unfold= 4*OmegaNum
+
+   if (stat>0) then
+
+      backspace(1001)
+      read(1001,fmt='(A)') inline
+      write(*,'(A)') &
+         '>>> ERROR : Invalid line in namelist PARAMETERS : '//trim(inline)
+
+   endif
   
    projection_weight_mode= upper(projection_weight_mode)
    if (cpuid==0) then
@@ -925,7 +954,7 @@ subroutine readinput
    if (lfound) then
       if (cpuid==0) then
          write(stdout, *)" "
-         write(stdout, *)">> Wannier centers from input.dat, in unit of reciprocal lattice vector"
+         write(stdout, *)">> Wannier centers from wt.in, in unit of reciprocal lattice vector"
          write(stdout, '(a6, 4a10)')'iwann', 'R1', 'R2', 'R3'
          do i=1, NumberOfspinorbitals
             write(stdout, '(i6, 3f10.6)')i, Origin_cell%wannier_centers_direct(:, i)
@@ -2761,7 +2790,7 @@ subroutine readinput
       stop 'Errors happen in the WT.in, please check informations in the WT.out'
    endif
 
-   !> setup SelectedAtoms if not specified by input.dat
+   !> setup SelectedAtoms if not specified by wt.in
    if (.not.allocated(Selected_Atoms)) then
       NumberofSelectedAtoms_groups=1
       allocate(NumberofSelectedAtoms(NumberofSelectedAtoms_groups))
@@ -2848,7 +2877,7 @@ subroutine readinput
    endif
 
 
-   !> setup SelectedOrbitals if not specified by input.dat
+   !> setup SelectedOrbitals if not specified by wt.in
    !> by default we take the orbitals associated with Selected_Atoms
    if (.not.allocated(Selected_WannierOrbitals)) then
       NumberofSelectedOrbitals_groups= NumberofSelectedAtoms_groups
@@ -3104,7 +3133,7 @@ subroutine readinput
    if (lfound) then
       read(1001,*)Origin_cell%Num_atom_type
       if(cpuid==0)write(stdout,'(a,i10,a)')'There are', Origin_cell%Num_atom_type, 'kind of atoms'
-      allocate(Origin_cell%Num_atoms_eachtype(Origin_cell%Num_atom_type))
+      if (.not.allocated(Origin_cell%Num_atoms_eachtype))allocate(Origin_cell%Num_atoms_eachtype(Origin_cell%Num_atom_type))
       allocate(mass_temp(Origin_cell%Num_atom_type))
       allocate(ATOM_MASS(Origin_cell%Num_atoms))
       read(1001,*)Origin_cell%Num_atoms_eachtype(1:Origin_cell%Num_atom_type)
@@ -3199,12 +3228,12 @@ subroutine readinput
    endif
 
 
-   !> close input.dat
+   !> close wt.in
    close(1001)
 
    eta=(omegamax- omegamin)/omeganum*2d0
 
-   if(cpuid==0)write(stdout,*)'<<<Read input.dat file successfully'
+   if(cpuid==0)write(stdout,*)'<<<Read wt.in file successfully'
 
    contains
 

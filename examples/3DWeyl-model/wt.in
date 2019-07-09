@@ -1,0 +1,121 @@
+&TB_FILE
+Hrfile = "Weyl3D_hr.dat"
+/
+
+
+!> bulk band structure calculation flag
+&CONTROL
+AHC_calc              = F
+BulkBand_calc         = T
+BulkBand_plane_calc   = F
+FindNodes_calc        = T
+BulkFS_calc           = F
+BulkGap_cube_calc     = F
+BulkGap_plane_calc    = F
+SlabBand_calc         = F
+WireBand_calc         = F
+SlabSS_calc           = F
+SlabArc_calc          = F
+SlabSpintexture_calc  = F
+Wanniercenter_calc    = F
+Chern_3D_calc         = F
+BerryPhase_calc       = F
+BerryCurvature_calc   = T
+WeylChirality_calc    = T
+/
+
+&SYSTEM
+NSLAB = 51 
+NSLAB1= 4  
+NSLAB2= 4  
+NumOccupied = 1         ! NumOccupied
+SOC = 1                 ! soc
+E_FERMI = 0        ! e-fermi
+Bx= 0, By= 0, Bz= 0     ! Bx By Bz
+surf_onsite= 0.0        ! surf_onsite
+/
+
+&PARAMETERS
+Eta_Arc = 0.001     ! infinite small value, like brodening 
+E_arc =-0.0         ! energy for calculate Fermi Arc
+OmegaNum = 100  ! omega number       
+OmegaMin = -1.1     ! energy interval
+OmegaMax =  1.1     ! energy interval
+Nk1 = 20            ! number k points 
+Nk2 = 20            ! number k points 
+Nk3 = 20            ! number k points 
+NP = 2              ! number of principle layers
+Gap_threshold = 1.0 ! threshold for GapCube output
+/
+
+LATTICE
+Angstrom
+   1.0000000   000000000   000000000    
+   000000000   1.0000000   000000000    
+   000000000   000000000   1.0000000    
+
+ATOM_POSITIONS
+1                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+ A 0     0     0. 
+
+PROJECTORS
+ 1           ! number of projectors
+A s
+
+
+SURFACE            ! See doc for details
+ 0  0  1
+ 1  0  0
+ 0  1  0
+
+KPATH_BULK            ! k point path
+2              ! number of k line only for bulk band
+X 0.50000 0.00000 0.0000 G 0.00000 0.00000 0.0000
+G 0.00000 0.00000 0.0000 Z 0.00000 0.00000 0.5000  
+
+KPATH_SLAB
+3        ! numker of k line for 2D case
+X 0.50 0.00 G 0.0 0.0  ! k path for 2D case
+G 0.0 0.0 Y 0.0 0.5
+Y 0.00 0.50 M 0.5 0.5  ! k path for 2D case
+
+KPLANE_SLAB
+-0.1 -0.1      ! Original point for 2D k plane
+ 0.2  0.0      ! The first vector to define 2D k plane 
+ 0.0  0.2      ! The second vector to define 2D k plane  for arc plots
+
+KPLANE_BULK
+Direct
+ 0.00  0.00  0.00   ! Original point for 3D k plane 
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  0.00  1.00   ! The second vector to define 3d k space plane
+
+
+KCUBE_BULK
+-0.50 -0.50 -0.50   ! Original point for 3D k plane 
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  1.00  0.00   ! The second vector to define 3d k space plane
+ 0.00  0.00  1.00   ! The third vector to define 3d k cube
+
+
+SINGLEKPOINT_3D
+Direct
+0.0        0.0  0.0   
+
+SELECTEDORBITALS
+1
+1
+
+
+EFFECTIVE_MASS      ! optional
+2                   ! The i'th band to be calculated
+0.01                ! k step in unit of (1/Angstrom)
+0.0 0.0 0.0         ! k point where the effective mass calculated.
+
+WEYL_CHIRALITY
+2            ! Num_Weyls
+Cartesian    ! Direct or Cartesian coordinate
+0.004        ! Radius of the ball surround a Weyl point
+    0.00000000   -0.00000000    1.04719755    0.00000000   -0.00000000    0.00000000   -0.00000000    0.16666667
+    0.00000000    0.00000000   -1.04719755    0.00000000   -0.00000000    0.00000000    0.00000000   -0.16666667

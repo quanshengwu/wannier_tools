@@ -6,7 +6,7 @@ Particle = 'phonon'
 
 &CONTROL
 !> bulk band structure calculation flag
-BulkBand_calc         = F
+BulkBand_calc         = T
 SlabBand_calc         = F
 SlabSS_calc           = F
 SlabArc_calc          = F
@@ -34,8 +34,8 @@ E_arc = 14.38        ! energy for calculate Fermi Arc
 OmegaNum = 200      ! omega number       
 OmegaMin =  13.8   ! energy interval in unit of eV
 OmegaMax =  14.8  ! energy interval in unit of eV
-Nk1 = 200       ! number k points 
-Nk2 = 200      ! number k points 
+Nk1 = 40        ! number k points 
+Nk2 = 40       ! number k points 
 Nk3 = 5         ! number k points 
 NP = 2              ! number of principle layers
 Gap_threshold = 0.001 ! threshold for GapCube output

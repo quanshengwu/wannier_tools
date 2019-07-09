@@ -593,33 +593,35 @@
         enddo
         call now(time_end)
 
-        !>> calculate spin-resolved bulk energy spectrum
-        !> spin x
-        call mat_mul(Num_wann, Hamk_bulk, spin_sigma_x, ctemp)
-        do ig=1, NumberofSelectedOrbitals_groups
-           do i=1, NumberofSelectedOrbitals(ig)
-              io=Selected_WannierOrbitals(ig)%iarray(i)
-              sx_selected(ik, ig)= sx_selected(ik, ig)+ aimag(ctemp(io, io))/pi
+        if (SOC>0.and.BulkSpintexture_calc) then
+           !>> calculate spin-resolved bulk energy spectrum
+           !> spin x
+           call mat_mul(Num_wann, Hamk_bulk, spin_sigma_x, ctemp)
+           do ig=1, NumberofSelectedOrbitals_groups
+              do i=1, NumberofSelectedOrbitals(ig)
+                 io=Selected_WannierOrbitals(ig)%iarray(i)
+                 sx_selected(ik, ig)= sx_selected(ik, ig)+ aimag(ctemp(io, io))/pi
+              enddo
            enddo
-        enddo
-
-        !> spin y
-        call mat_mul(Num_wann, Hamk_bulk, spin_sigma_y, ctemp)
-        do ig=1, NumberofSelectedOrbitals_groups
-           do i=1, NumberofSelectedOrbitals(ig)
-              io=Selected_WannierOrbitals(ig)%iarray(i)
-              sy_selected(ik, ig)= sy_selected(ik, ig)+ aimag(ctemp(io, io))/pi
+   
+           !> spin y
+           call mat_mul(Num_wann, Hamk_bulk, spin_sigma_y, ctemp)
+           do ig=1, NumberofSelectedOrbitals_groups
+              do i=1, NumberofSelectedOrbitals(ig)
+                 io=Selected_WannierOrbitals(ig)%iarray(i)
+                 sy_selected(ik, ig)= sy_selected(ik, ig)+ aimag(ctemp(io, io))/pi
+              enddo
            enddo
-        enddo
-
-        !> spin z
-        call mat_mul(Num_wann, Hamk_bulk, spin_sigma_z, ctemp)
-        do ig=1, NumberofSelectedOrbitals_groups
-           do i=1, NumberofSelectedOrbitals(ig)
-              io=Selected_WannierOrbitals(ig)%iarray(i)
-              sz_selected(ik, ig)= sz_selected(ik, ig)+ aimag(ctemp(io, io))/pi
+   
+           !> spin z
+           call mat_mul(Num_wann, Hamk_bulk, spin_sigma_z, ctemp)
+           do ig=1, NumberofSelectedOrbitals_groups
+              do i=1, NumberofSelectedOrbitals(ig)
+                 io=Selected_WannierOrbitals(ig)%iarray(i)
+                 sz_selected(ik, ig)= sz_selected(ik, ig)+ aimag(ctemp(io, io))/pi
+              enddo
            enddo
-        enddo
+        endif
      enddo
 
 #if defined (MPI)
@@ -628,7 +630,7 @@
      call mpi_allreduce(dos_selected,dos_selected_mpi,size(dos_selected),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
 
-     if (BulkSpintexture_calc) then
+     if (SOC>0.and.BulkSpintexture_calc) then
         call mpi_allreduce(sx_selected,sx_selected_mpi,size(sx_selected),&
                           mpi_dp,mpi_sum,mpi_cmw,ierr)
         call mpi_allreduce(sy_selected,sy_selected_mpi,size(sy_selected),&
@@ -639,29 +641,31 @@
 #else
      dos_total_mpi= dos_total
      dos_selected_mpi= dos_selected
-     if (BulkSpintexture_calc) then
+     if (SOC>0.and.BulkSpintexture_calc) then
         sx_selected_mpi= sx_selected
         sy_selected_mpi= sy_selected
         sz_selected_mpi= sz_selected
      endif
 #endif
 
-     do ig=1, NumberofSelectedOrbitals_groups
-        dos_selected_max= maxval(dos_selected_mpi(:, ig))
-        do ik=1, knv3
-           if (dos_selected_mpi(ik, ig)<dos_selected_max/20d0) then
-              sx_selected_mpi(ik, ig)= eps12
-              sy_selected_mpi(ik, ig)= eps12
-              sz_selected_mpi(ik, ig)= eps12
-           endif
+     if (SOC>0.and.BulkSpintexture_calc) then
+        do ig=1, NumberofSelectedOrbitals_groups
+           dos_selected_max= maxval(dos_selected_mpi(:, ig))
+           do ik=1, knv3
+              if (dos_selected_mpi(ik, ig)<dos_selected_max/20d0) then
+                 sx_selected_mpi(ik, ig)= eps12
+                 sy_selected_mpi(ik, ig)= eps12
+                 sz_selected_mpi(ik, ig)= eps12
+              endif
+           enddo
         enddo
-     enddo
-
-     allocate(s1(3, NumberofSelectedOrbitals_groups))
-     s1= 0d0
+   
+        allocate(s1(3, NumberofSelectedOrbitals_groups))
+        s1= 0d0
+     endif
 
      outfileindex= outfileindex+ 1
-     if (BulkSpintexture_calc) then
+     if (SOC>0.and.BulkSpintexture_calc) then
         if (cpuid==0)then
            open(unit=outfileindex, file='bulkspintext.dat')
            write(outfileindex, &
@@ -709,7 +713,7 @@
      outfileindex= outfileindex+ 1
      !> write script for gnuplot
      if (cpuid==0) then
-        if (BulkSpintexture_calc) then
+        if (SOC>0.and.BulkSpintexture_calc) then
            open(unit=outfileindex, file='bulkspintext.gnu')
            write(outfileindex, '(a)')"set encoding iso_8859_1"
            write(outfileindex, '(3a)')'set terminal  pngcairo truecolor enhanced', &

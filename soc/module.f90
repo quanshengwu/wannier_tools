@@ -1,4 +1,4 @@
-!include 'mkl_dss.f90'
+include 'mkl_dss.f90'
   module prec
      !>> A module controls the precision. 
      !> when the nnzmax is larger than 2,147,483,647 then li=8,
@@ -437,13 +437,13 @@
                           BulkFS_plane_stack_calc,  BulkGap_plane_calc, &
                           BulkBand_unfold_line_calc, &
                           BulkBand_points_calc, BulkBand_cube_calc, BulkBand_line_calc, &
-                          BulkGap_cube_calc, SlabBand_calc, SlabBandWaveFunc_calc, WireBand_calc, &
+                          BulkGap_cube_calc, BulkSpintexture_calc,  BulkFatBand_calc, &
+                          SlabBand_calc, SlabBand_plane_calc, SlabBandWaveFunc_calc,&
                           SlabQPI_calc, SlabQPI_kpath_calc, SlabQPI_kplane_calc, &
-                          SlabSS_calc, SlabArc_calc, &
-                          SlabSpintexture_calc, BulkSpintexture_calc, &
-                          BulkFatBand_calc, &
-                          WannierCenter_calc,BerryPhase_calc,&
-                          BerryCurvature_calc, BerryCurvature_EF_calc, &
+                          SlabSS_calc, SlabArc_calc, SlabSpintexture_calc,&
+                          WireBand_calc, &
+                          WannierCenter_calc,BerryPhase_calc, &
+                          BerryCurvature_EF_calc, BerryCurvature_calc, &
                           BerryCurvature_slab_calc, MirrorChern_calc, BerryCurvature_Cube_calc, &
                           Z2_3D_calc, Chern_3D_calc, WeylChirality_calc, NLChirality_calc, &
                           Dos_calc, JDos_calc, EffectiveMass_calc, &
