@@ -24,4 +24,24 @@ The z axis of the new coordinate system is perpendicular to the kplane that defi
 The x axis is along the first vector in the kplane which is the second numerical line in the KPLANE_BULK.
 The spin vectors are defined in the new coordinate system.
 
+For bulk spin texture, you have to set the following necessary parameters:
+
+Bulkspintext_calc=T 
+
+Eta_Arc = 0.001     ! infinite small value, like brodening 
+E_arc =  0.3         ! energy for calculate Fermi Arc
+Nk1 = 101   ! number k points  odd number would be better
+Nk2 = 101   ! number k points  odd number would be better
+
+SELECTED_ATOMS
+2 ! number groups of selected atoms
+6 12 18 24 30  ! top surface's atoms
+1  7 13 19 25  ! bottom surface's atoms
+
+
+KPLANE_BULK
+ 0.00  0.00  0.00   ! center of 3D k plane 
+ 0.20  0.00  0.00   ! The first vector to define a k plane in 3D BZ
+ 0.00  0.20  0.00   ! The second vector to define a k plane in 3D BZ
+
 
