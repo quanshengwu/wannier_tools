@@ -12,7 +12,7 @@ OBJ =  module.o wt_aux.o math_lib.o symmetry.o readHmnR.o inverse.o proteus.o \
 # compiler
 f90  = gfortran -cpp                                              
 
-flag = -O3 #-g -Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=nan
+flag = -O3 -ffree-line-length-512  #-g -Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=nan
 
 
 # blas and lapack libraries

@@ -32,6 +32,7 @@ Main input file wt.in
 -  :ref:`kplane_bulk`
 -  :ref:`kcube_bulk`
 -  :ref:`effectivemass`
+-  :ref:`selectedatoms`
 -  :ref:`wanniercenter`
 
 Before executing wann_tools, you should cp the wt.in file 
@@ -664,6 +665,20 @@ This card is set for effective mass calculation ::
    2                   ! The i'th band to be calculated
    0.01                ! k step in unit of (1/Angstrom)
    0.0 0.0 0.0         ! k point where the effective mass calculated.
+
+.. _selectedatoms:
+
+SELECTED_ATOMS
+"""""""""""""""
+This card is useful if you want to get some energy spectrum that only projected on some specific atoms.
+For example, we can calculate the surface projected spin texture in the bulk system with vacuum.
+
+The example is listed in the example/Bi2Se3-6Qlayers ::
+
+   SELECTED_ATOMS
+   2 ! number groups of selected atoms
+   6 12 18 24 30  ! top surface's atoms
+   1  7 13 19 25  ! bottom surface's atoms
 
 .. _wanniercenter:
 

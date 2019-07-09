@@ -31,6 +31,8 @@
      allocate(psi (mdim, 1))
      allocate(W(mdim))
      allocate(hamk_slab(mdim,mdim), hamk_slab_t(mdim,mdim))
+     psi2=0d0;  psi=0d0; W=0d0
+     hamk_slab_t= 0d0; hamk_slab= 0d0
 
 
      !> Single_KPOINT_2D_DIRECT is provided in the wt.in or input.dat

@@ -1,0 +1,121 @@
+&TB_FILE
+Hrfile = 'wannier90_hr.dat'
+Package = 'VASP'
+/
+
+LATTICE
+Angstrom
+    -2.0690000    -3.5836140     0.0000000
+     2.0690000    -3.5836140     0.0000000
+     0.0000000    17.3374770    69.2800020
+
+ATOM_POSITIONS
+30                              ! number of atoms for projectors
+Cart                          ! Direct or Cartisen coordinate
+Bi       0.0000000     0.3069750    12.6540270
+Bi      -0.0000000     2.6960500    22.2006940
+Bi      -0.0000000     5.0851250    31.7473610
+Bi      -0.0000000     7.4742000    41.2940280
+Bi      -0.0000000     9.8632750    50.8406950
+Bi      -0.0000000    12.2523500    60.3873620
+Bi       0.0000000    -2.0821010     8.8926400
+Bi       0.0000000     0.3069740    18.4393070
+Bi      -0.0000000     2.6960490    27.9859740
+Bi       0.0000000     5.0851240    37.5326410
+Bi      -0.0000000     7.4741990    47.0793080
+Bi       0.0000000     9.8632740    56.6259750
+Se       0.0000000    -4.4711770    10.7733330
+Se       0.0000000    -2.0821020    20.3200000
+Se      -0.0000000     0.3069730    29.8666670
+Se      -0.0000000     2.6960480    39.4133340
+Se      -0.0000000     5.0851230    48.9600010
+Se       0.0000000     7.4741980    58.5066680
+Se       0.0000000     0.3069750     7.1265070
+Se       0.0000000     2.6960500    16.6731740
+Se      -0.0000000     5.0851250    26.2198410
+Se      -0.0000000     7.4742000    35.7665080
+Se       0.0000000     9.8632750    45.3131750
+Se       0.0000000    12.2523500    54.8598420
+Se      -0.0000000    -2.0821010    14.4201600
+Se       0.0000000     0.3069740    23.9668270
+Se      -0.0000000     2.6960490    33.5134940
+Se       0.0000000     5.0851240    43.0601610
+Se      -0.0000000     7.4741990    52.6068280
+Se      -0.0000000     9.8632740    62.1534950
+
+
+PROJECTORS
+30*3         ! number of projectors
+Bi pz px py         
+Bi pz px py
+Bi pz px py         
+Bi pz px py
+Bi pz px py         
+Bi pz px py
+Bi pz px py         
+Bi pz px py
+Bi pz px py         
+Bi pz px py
+Bi pz px py         
+Bi pz px py
+Se pz px py
+Se pz px py 
+Se pz px py
+Se pz px py
+Se pz px py 
+Se pz px py
+Se pz px py
+Se pz px py 
+Se pz px py
+Se pz px py
+Se pz px py 
+Se pz px py
+Se pz px py
+Se pz px py 
+Se pz px py
+Se pz px py
+Se pz px py 
+Se pz px py
+
+
+&CONTROL
+BulkBand_calc         = T
+BulkSpintexture_calc  = T
+/
+
+&SYSTEM
+NSLAB = 1               ! for thin film system
+NumOccupied = 144       ! NumOccupied
+SOC = 1                 ! soc
+E_FERMI = 2.5519        ! e-fermi
+/
+
+&PARAMETERS
+Eta_Arc = 0.001     ! infinite small value, like brodening 
+E_arc =  0.3         ! energy for calculate Fermi Arc
+OmegaNum = 601      ! omega number       
+OmegaMin = -0.6     ! energy interval
+OmegaMax =  0.5     ! energy interval
+Nk1 = 101            ! number k points  odd number would be better
+Nk2 = 101           ! number k points  odd number would be better
+/
+
+SURFACE            ! See doc for details
+ 1  0  0
+ 0  1  0
+ 0  0  1
+
+KPATH_BULK            ! k point path
+2              ! number of k line only for bulk band
+K 0.33333 0.66666 0.0000 G 0.00000 0.00000 0.0000
+G 0.00000 0.00000 0.0000 M 0.50000 0.50000 0.0000
+
+KPLANE_BULK
+ 0.00  0.00  0.00   ! Original point for 3D k plane  kz=0.5, bar{x}, along ky
+ 0.20  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  0.20  0.00   ! The second vector to define 3d k space plane
+
+SELECTED_ATOMS
+2 ! number groups of selected atoms
+6 12 18 24 30  ! top surface's atoms
+1  7 13 19 25  ! bottom surface's atoms

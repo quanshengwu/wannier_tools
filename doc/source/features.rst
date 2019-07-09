@@ -4,6 +4,7 @@ Capabilities of WannierTools
 -  :ref:`bulkbandcalculation`
 -  :ref:`bulkfscalculation`
 -  :ref:`bulkfsplanecalculation`
+-  :ref:`bulkspintexturecalculation` **New**
 -  :ref:`doscalculation`
 -  :ref:`findnodescalculation`
 -  :ref:`energygapcalculation`
@@ -240,6 +241,24 @@ to get the plot.
 
 .. image:: images/wanniertools-fermisurface.png
    :scale: 60 %
+
+
+.. _bulkspintexturecalculation:
+
+Bulk spin texture calculations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Calculate spin texture for bulk system that with vacuum or without inversion symmetry. For the bulk system with vacuum, 
+you can calculate the surface projected spin texture. This is useful for comparing with the ARPES experiments. if you 
+cut a slab system from a periodic tight binding model, then there is no charge relaxation on the surface which would 
+change the surface state a lot. In this case, you have to do the first-principle calculations for a finite thickness 
+slab system that with vacuum. Then you can construct Wannier functions for this system and use WannierTools to get the 
+iso-energy plot of the Fermi surface (BulkFS_plane_calc =T) and get the surface projected spin texture (Bulkspintext_calc=T). 
+
+There is one example in the examples/Bi2Se3-6Qlayers.
+
+
+
 
 
 .. _doscalculation:
@@ -638,9 +657,9 @@ Surface state QPI calculation
 Settings for this feature are almost the same as :ref:`fermiarccalculation`. Only difference is that 
 you should set  ::
 
-   # please set ArcQPI_calc = T from V2.4.1
+   # please set SlabQPI_kplane_calc = T from V2.4.2
    &CONTROL
-   SlabQPI_calc          = T
+   SlabQPI_kplane_calc          = T
    /
    
 Output

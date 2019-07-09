@@ -376,8 +376,6 @@
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the slab band wave function'
      endif
 
-
-
      !> slab band
      if (SlabBand_calc)then
         if(cpuid.eq.0)write(stdout, *)' '

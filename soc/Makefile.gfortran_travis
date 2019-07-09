@@ -13,7 +13,7 @@ OBJ =  module.o wt_aux.o math_lib.o symmetry.o readHmnR.o inverse.o proteus.o \
 # compiler
 f90  = gfortran -cpp -fprofile-arcs -ftest-coverage
 
-flag = -O2                              
+flag = -O2 -ffree-line-length-512                          
 
 # blas and lapack libraries
 libs = -llapack -lblas

@@ -10,7 +10,7 @@ OBJ =  module.o wt_aux.o math_lib.o symmetry.o readHmnR.o inverse.o proteus.o \
        main.o
 
 # compiler, here mpif90 should be comipled with gfortran
-F90  = mpif90 -cpp -DMPI
+F90  = mpif90 -cpp -DMPI -ffree-line-length-512                          
 
 INCLUDE =
 WFLAG = #-Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none \
