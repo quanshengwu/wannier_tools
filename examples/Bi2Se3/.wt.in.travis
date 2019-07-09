@@ -46,7 +46,6 @@ WireBand_calc         = T
 SlabSS_calc           = T
 SlabArc_calc          = T
 SlabQPI_calc          = T
-ArcQPI_calc           = T
 Z2_3D_calc            = T
 SlabSpintexture_calc  = T
 Wanniercenter_calc    = F
