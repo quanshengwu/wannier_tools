@@ -13,7 +13,7 @@ subroutine ek_bulk_line
 
    implicit none
 
-   integer :: ik, il, i, j, knv3, ierr
+   integer :: ik, il, ig, io, i, j, knv3, ierr
    real(dp) :: emin,  emax,  k(3)
    character*40 :: filename
    real(Dp), allocatable :: W(:)
@@ -30,8 +30,8 @@ subroutine ek_bulk_line
    allocate(Hamk_bulk(Num_wann, Num_wann))
    allocate( eigv    (Num_wann, knv3))
    allocate( eigv_mpi(Num_wann, knv3))
-   allocate( weight    (Num_wann,Num_wann, knv3))
-   allocate( weight_mpi(Num_wann,Num_wann, knv3))
+   allocate( weight    (NumberofSelectedOrbitals_groups,Num_wann, knv3))
+   allocate( weight_mpi(NumberofSelectedOrbitals_groups,Num_wann, knv3))
    allocate( weight_sum(Num_wann, knv3))
    eigv    = 0d0
    eigv_mpi= 0d0
@@ -62,19 +62,14 @@ subroutine ek_bulk_line
       !> diagonalization by call zheev in lapack
       W= 0d0
       call eigensystem_c('V', 'U', Num_wann ,Hamk_bulk, W)
-
       eigv(:, ik)= W
-      do i=1, Num_wann  !> band
-         if (soc==0) then
-            do j=1, Num_wann  !> projector
-               weight(j, i, ik)= abs(Hamk_bulk(j, i))**2
-            enddo ! j
-         else
-            do j=1, Num_wann/2  !> projector
-               weight(j, i, ik)= (abs(Hamk_bulk(j, i))**2+ &
-                  abs(Hamk_bulk(j+ Num_wann/2, i))**2)
-            enddo ! j
-         endif
+      do j=1, Num_wann  !> band
+           do ig=1, NumberofSelectedOrbitals_groups
+              do i=1, NumberofSelectedOrbitals(ig)
+                 io=Selected_WannierOrbitals(ig)%iarray(i)
+                 weight(ig, j, ik)= weight(ig, j, ik)+ abs(Hamk_bulk(io, j))**2 
+              enddo
+           enddo
       enddo ! i
    enddo ! ik
 
@@ -101,14 +96,6 @@ subroutine ek_bulk_line
          enddo
       enddo
    endif
-
-   do i=1, Num_wann
-      do ik=1, knv3
-         weight_sum(i, ik)= sum(weight_mpi(:, i, ik))
-      enddo
-   enddo
-
-   weight= weight_mpi/maxval(weight_sum)*255d0
 
    outfileindex= outfileindex+ 1
    if (cpuid==0)then
@@ -140,10 +127,14 @@ subroutine ek_bulk_line
    if (cpuid==0)then
       open(unit=outfileindex, file='bulkek.dat')
 
+      write(outfileindex, &
+         "('#', a12, a14, 1X, '| projection', 100(3X,'|group', i2, ': A '))")&
+         'klen', 'E', (i, i=1, NumberofSelectedOrbitals_groups)
+      write(outfileindex, "('#column', i5, 200i16)")(i, i=1, 2+NumberofSelectedOrbitals_groups)
       do i=1, Num_wann
          do ik=1, knv3
-            write(outfileindex, '(2f19.9, 10000i5)')k3len(ik),eigv_mpi(i, ik), &
-               int(weight(:, i, ik))
+            write(outfileindex, '(200f16.9)')k3len(ik),eigv_mpi(i, ik), &
+               weight_mpi(:, i, ik)
          enddo
          write(outfileindex, *)' '
       enddo
@@ -170,10 +161,10 @@ subroutine ek_bulk_line
    outfileindex= outfileindex+ 1
    if (cpuid==0) then
       open(unit=outfileindex, file='bulkek.gnu')
-      write(outfileindex, '(a)') 'set terminal  postscript enhanced color font ",30"'
-      write(outfileindex,'(2a)') '#set palette defined ( 0  "green", ', &
+      write(outfileindex, '(a)') 'set terminal pdf enhanced color font ",30"'
+      write(outfileindex,'(2a)') 'set palette defined ( 0  "green", ', &
          '5 "yellow", 10 "red" )'
-      write(outfileindex, '(a)')"set output 'bulkek.eps'"
+      write(outfileindex, '(a)')"set output 'bulkek.pdf'"
       write(outfileindex, '(a)')'set style data linespoints'
       write(outfileindex, '(a)')'unset ztics'
       write(outfileindex, '(a)')'unset key'
@@ -203,8 +194,13 @@ subroutine ek_bulk_line
             write(outfileindex, 204)k3line_stop(i+1), 'emin', k3line_stop(i+1), 'emax'
          endif
       enddo
+      write(outfileindex, '(2a)')"# please comment the following lines to plot the fatband "
       write(outfileindex, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
          " w lp lw 2 pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2"
+      write(outfileindex, '(2a)')" " 
+      write(outfileindex, '(2a)')"# uncomment the following lines to plot the fatband "
+      write(outfileindex, '(2a)')"#plot 'bulkek.dat' u 1:2:3 ",  &
+         " w lp lw 2 pt 7  ps 0.2 lc palette, 0 w l lw 2"
       close(outfileindex)
    endif
 
