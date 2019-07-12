@@ -2520,9 +2520,7 @@ subroutine readinput
        write(stdout, '(a)')'>>> ERROR: There are something wrong with the SURFACE_ATOMS card' 
        write(stdout, '(a)')'    It should like this:'
        write(stdout, '(a)')'SURFACE_ATOMS '
-       write(stdout, '(a)')'2 ! number of atoms on the top surface (large c fractional coordinate)'
        write(stdout, '(a)')"1 3 ! top surface's atom index '"
-       write(stdout, '(a)')'3 ! number of atoms on the bottom surface (small c fractional coordinate)'
        write(stdout, '(a)')"2 4 ! bottom surface's atom index '"
     endif
 
