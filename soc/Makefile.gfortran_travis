@@ -6,7 +6,8 @@ OBJ =  module.o wt_aux.o math_lib.o symmetry.o readHmnR.o inverse.o proteus.o \
        fermiarc.o berrycurvature.o \
   		 wanniercenter.o dos.o  orbital_momenta.o \
   		  berry.o wanniercenter_adaptive.o \
-  		 effective_mass.o findnodes.o sigma_AHC.o \
+  		 effective_mass.o findnodes.o \
+		 sigma_OHE.o sigma.o sigma_AHC.o \
        main.o
 
 

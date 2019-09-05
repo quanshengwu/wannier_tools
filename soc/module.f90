@@ -527,7 +527,7 @@
 
      !> magnetic field times time in units of Tesla*ps
      real(dp) :: BTauMax
-     integer :: NBTau
+     integer :: NBTau, BTauNum
      integer :: Nslice_BTau_Max
 
      !> cut of radial for summation over R vectors
@@ -551,7 +551,7 @@
      !> namelist parameters
      namelist /PARAMETERS/ Eta_Arc, OmegaNum, OmegaNum_unfold, OmegaMin, OmegaMax, &
         E_arc, Nk1, Nk2, Nk3, NP, Gap_threshold, Tmin, Tmax, NumT, &
-        NBTau, BTauMax, Rcut, Magp, Magp_min, Magp_max, Nslice_BTau_Max, &
+        NBTau, BTauNum, BTauMax, Rcut, Magp, Magp_min, Magp_max, Nslice_BTau_Max, &
         wcc_neighbour_tol, wcc_calc_tol, Beta,NumLCZVecs, &
         NumRandomConfs, NumSelectedEigenVals, projection_weight_mode
     
@@ -577,6 +577,7 @@
 
      !> Electric field along the stacking direction of a 2D system in eV/Angstrom
      real(dp) :: Electric_field_in_eVpA
+     real(dp) :: Symmetrical_Electric_field_in_eVpA
      logical :: Inner_symmetrical_Electric_Field
 
      !> a parameter to control the Vacumm thickness for the slab system 
@@ -588,7 +589,8 @@
      namelist / SYSTEM / Soc, E_fermi, Bx, By, Bz, Btheta, Bphi, surf_onsite, &
         Nslab, Nslab1, Nslab2, Numoccupied, Ntotch, Bmagnitude, &
         Add_Zeeman_Field, Effective_gfactor, Zeeman_energy_in_eV, &
-        Electric_field_in_eVpA, Inner_symmetrical_Electric_Field, ijmax, &
+        Electric_field_in_eVpA, Symmetrical_Electric_field_in_eVpA, &
+        Inner_symmetrical_Electric_Field, ijmax, &
         Vacuum_thickness_in_Angstrom
 
      real(dp),parameter :: alpha= 1.20736d0*1D-6  !> e/2/h*a*a   a=1d-10m, h is the planck constant then the flux equals alpha*B*s

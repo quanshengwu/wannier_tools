@@ -105,7 +105,7 @@
   !> print footer
   subroutine footer
      use wmpi
-     use para, only : stdout, cpuid
+     use para
      implicit none
      if (cpuid==0) then
         write(stdout, '(2x,a)') ''
@@ -119,6 +119,12 @@
         write(stdout, '(2x,a)') "QuanSheng Wu and ShengNan Zhang and Hai-Feng Song and Matthias Troyer and Alexey A. Soluyanov"
         write(stdout, '(2x,a)') "Computer Physics Communications 224, 405 (2018)"
         write(stdout, '(2x,a)') "https://doi.org/10.1016/j.cpc.2017.09.033"
+        if (Boltz_OHE_calc .or. Boltz_k_calc .or. Boltz_evolve_k) then
+           write(stdout, '(2x,a)') "Please also cite this paper for magnetoresistance calculation"
+           write(stdout, '(2x,a)') "Magnetoresistance from Fermi surface topology" 
+           write(stdout, '(2x,a)') "ShengNan Zhang, QuanSheng Wu, Yi Liu, and Oleg V. Yazyev"
+           write(stdout, '(2x,a)') "Phys. Rev. B 99, 035142 (2019) DOI:10.1103/PhysRevB.99.035142"
+        endif
         write(stdout, '(2x,a)') ''
         write(stdout, '(2x,a)') "For bugs, please report to wuquansheng@gmail.com                   "
         write(stdout, '(2x,a)') "or wanniertools@groups.google.com.                 "

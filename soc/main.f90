@@ -498,6 +498,40 @@
         if(cpuid.eq.0)write(stdout, *)'End of calculating the Berry phase'
      endif
 
+     !> calculate ordinary hall effect with Boltzmann transport
+     if (Boltz_evolve_k)then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start to calculate ordinary hall effects for different k'
+        call now(time_start)
+        call evolve_k_ohe
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'Boltz_evolve_k')
+        if(cpuid.eq.0)write(stdout, *)'End of OHE calculation'
+     endif
+  
+     !> calculate ordinary hall effect with Boltzmann transport
+     if (Boltz_k_calc)then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start to calculate ordinary hall effects for different k'
+        call now(time_start)
+        call sigma_k_ohe
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'Boltz_k_calc')
+        if(cpuid.eq.0)write(stdout, *)'End of OHE calculation'
+     endif
+  
+     !> calculate ordinary hall effect with Boltzmann transport
+     if (Boltz_OHE_calc)then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start to calculate ordinary hall effects'
+        call now(time_start)
+        call sigma_resistivity
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'Boltz_OHE_calc')
+        if(cpuid.eq.0)write(stdout, *)'End of OHE calculation'
+     endif
+
+
      !> calculate anomalouls hall conductivity
      if (AHC_calc)then
         if(cpuid.eq.0)write(stdout, *)' '

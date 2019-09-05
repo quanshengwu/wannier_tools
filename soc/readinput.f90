@@ -294,6 +294,7 @@ subroutine readinput
 
    !> by default, Electric_field_in_eVpA=0
    Electric_field_in_eVpA= 0d0
+   Symmetrical_Electric_field_in_eVpA= 0d0
    Inner_symmetrical_Electric_Field= .False.
 
    !> by default, Vacuum_thickness_in_Angstrom= 12 Angstrom
@@ -351,6 +352,7 @@ subroutine readinput
       write(stdout, '(1x, a, L)')"Add_Zeeman_Field: ", Add_Zeeman_Field
       write(stdout, '(1x, a, 3f16.6)')"Zeeman_energy_in_eV (eV): ",  Zeeman_energy_in_eV
       write(stdout, '(1x, a, 3f16.6)')"Electric_field_in_eVpA (eV/Angstrom): ",  Electric_field_in_eVpA
+      write(stdout, '(1x, a, 3f16.6)')"Symmetrical_Electric_field_in_eVpA (eV/Angstrom): ",  Symmetrical_Electric_field_in_eVpA
       write(stdout, '(1x, a, L)')"Inner_symmetrical_Electric_Field: ",  Inner_symmetrical_Electric_Field
       write(stdout, '(1x, a, i6 )')"ijmax :", ijmax
    endif
@@ -499,7 +501,8 @@ subroutine readinput
    Tmax = 100.  ! in Kelvin
    NumT= 1
    NBTau = 1
-   Nslice_BTau_Max = 5000
+   BTauNum = 1
+   Nslice_BTau_Max = 8000
    BTauMax = 0d0
    Rcut = 999999d0
    Magp= 1
@@ -529,6 +532,8 @@ subroutine readinput
          '>>> ERROR : Invalid line in namelist PARAMETERS : '//trim(inline)
 
    endif
+
+   NBTau= max(NBTau, BTauNum)
   
    projection_weight_mode= upper(projection_weight_mode)
    if (cpuid==0) then
