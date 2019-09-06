@@ -1,3 +1,6 @@
+Develop branch d4b0260  on Sep. 05 2019
+1. Added Boltz_OHE_calc flag to calculate the ordinary magnetoresistance. An example of Cu is added.
+
 Develop branch on Dec 11 2018
 1. Added the SlabBandWaveFunc_calc function to get the density profile of slab system at a given
 k point and given band index specified by SINGLEKPOINT_2D and SELECTED_BANDS respectively.
