@@ -13,15 +13,14 @@ subroutine readinput
    character*25 :: char_temp
    character*256 :: inline
    logical ::  exists
-   logical ::  lfound, lcount
+   logical ::  lfound
    real(dp) :: cell_volume
    real(dp) :: cell_volume2
 
    integer  :: stat
-   integer  :: i, ia, n, ik, ik1, ik2, ik3
+   integer  :: i, ia, ik
    integer  :: j, io, it, idummy, ig
    integer  :: NN
-   integer  :: knv3, knv3_mod
    integer  :: NumberOfspinorbitals, NumberOfspinorbitals_unfold
 
    integer, allocatable :: iarray_temp(:)
@@ -502,7 +501,7 @@ subroutine readinput
    NumT= 1
    NBTau = 1
    BTauNum = 1
-   Nslice_BTau_Max = 8000
+   Nslice_BTau_Max = 5000
    BTauMax = 0d0
    Rcut = 999999d0
    Magp= 1
@@ -3569,8 +3568,8 @@ end subroutine direct_cart_rec_unfold
 subroutine MillerIndicestoumatrix()
    use para
    implicit none
-   integer :: i1, i2, i3, j1, j2, j3, h, k, l, it
-   real(dp) :: R(3), R1(3), R2(3), R3(3), Rhkl(3), dot
+   integer :: i1, i2, i3, h, k, l, it
+   real(dp) :: R1(3), R2(3), R3(3), Rhkl(3), dot
 
    integer, allocatable :: vector_on_hkl_surface(:, :)
    integer :: Nvectors_on_hkl_surface
@@ -3790,15 +3789,15 @@ end subroutine MillerIndicestoumatrix
 subroutine FindTheThirdLatticeVector()
    use para
    implicit none
-   integer :: i1, i2, i3, j1, j2, j3, h, k, l, it
-   real(dp) :: R(3), R1(3), R2(3), R3(3), cross(3), dot
+   integer :: i1, i2, i3, h, k, l, it
+   real(dp) :: R1(3), R2(3), R3(3), cross(3), dot
 
    integer, allocatable :: vectors_parallel_umatrix1(:, :)
    integer, allocatable :: vectors_parallel_umatrix2(:, :)
    integer :: Nvectors_parallel_umatrix1, Nvectors_parallel_umatrix2
    real(dp) :: smallest_volume, cell_volume
    real(dp) :: smallest_length
-   real(dp) :: norm_1, norm_2, norm_3
+   real(dp) :: norm_3
 
    integer :: iRmax
    iRmax= 6
@@ -3972,7 +3971,7 @@ subroutine FindTheThirdLatticeVector()
       write(stdout, *)' Where R1, R2, R3 are in cartesian coordinates'
    else
       write(stdout, *) &
-         " Warning:  I am sorry that I can't proper unit cell with the first two vectors", &
+         " Warning:  I am sorry that I can't properly find unit cell with the first two vectors", &
          " defined in the SURFACE card that have the same volume as the original one." , &
          " Now, I will use my own method to choose the SURFACE card. But don't worry, ", &
          " The new surface card we found is just for the surface you defined. However, ", &
@@ -3987,6 +3986,8 @@ subroutine FindTheThirdLatticeVector()
       h=Umatrix(1, 2)*Umatrix(2, 3)-Umatrix(1, 3)*Umatrix(2, 2)
       k=Umatrix(1, 3)*Umatrix(2, 1)-Umatrix(1, 1)*Umatrix(2, 3)
       l=Umatrix(1, 1)*Umatrix(2, 2)-Umatrix(1, 2)*Umatrix(2, 1)
+
+      call gcd_reduce(h, k, l)
       MillerIndices(1)=h
       MillerIndices(2)=k
       MillerIndices(3)=l
@@ -4000,6 +4001,34 @@ subroutine FindTheThirdLatticeVector()
 
    return
 end subroutine FindTheThirdLatticeVector
+
+!> a function to reduce h, k, l by their GCD (Greatest common divisor)
+subroutine gcd_reduce(h, k, l)
+   use para, only : dp
+   implicit none
+
+   integer, intent(inout) :: h, k, l
+   integer :: i
+   real(dp) :: rmiller(3), r3(3), sumr
+   rmiller(1)= dble(h)
+   rmiller(2)= dble(k)
+   rmiller(3)= dble(l)
+
+   do i=1, 3
+      if (rmiller(i)<1E-3) cycle
+      r3= rmiller/rmiller(i)
+      sumr= abs(mod(sum(r3), 1d0))
+      sumr=min(abs(sumr-1d0), abs(sumr))
+      if (sumr<1E-3) then
+         h= int(r3(1)) 
+         k= int(r3(2)) 
+         l= int(r3(3)) 
+         return
+      endif
+   enddo
+
+   return
+end subroutine gcd_reduce
 
 
  !> move the atoms into the home unitcell [0, 1)*[0, 1)*[0, 1)
@@ -4057,7 +4086,7 @@ subroutine param_get_range_vector(keyword,inline,length,lcount,i_value)
     integer, intent(out)   :: i_value(length)
     !! States specified in range vector
 
-    integer   :: kl, in,loop,num1,num2,i_punc
+    integer   :: loop,num1,num2,i_punc
     integer   :: counter,i_digit,loop_r,range_size
     character(len=256) :: dummy
     character(len=10), parameter :: c_digit="0123456789"
