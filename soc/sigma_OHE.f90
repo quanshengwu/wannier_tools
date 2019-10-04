@@ -11,7 +11,7 @@
 !> resistivity under the band-resolved constantly relaxation time
 !> approximation.
 !> Implemented on Oct. 07 2017
-!> uploaded on Sep. 05. 2017
+!> uploaded on Sep. 05. 2019
 !> this subroutine will only give the conductivity/tau instead of conductivity
 !> This version impose symmetry constrain to get the conductivity.
    subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Level, bands_fermi_level, sigma_ohe_tensor)
@@ -569,12 +569,11 @@
                   do ibtau=1, NBTau
                      BTau= BTau_array(ibtau)
                      if (NBTau==1)then
-                        NSlice_Btau_local= NSlice_Btau
-                        DeltaBtau = 0
+                        NSlice_Btau_local= 2
                      else
                         NSlice_Btau_local= (ibtau-1)*NSlice_Btau_inuse/(NBTau-1)/2
                         if (NSlice_Btau_local==0)then
-                           DeltaBtau= 0
+                           NSlice_Btau_local= 2
                         else
                            DeltaBtau= 30d0/NSlice_Btau_local/2d0
                         endif
@@ -585,7 +584,7 @@
                         !> The core of Chamber formular is to get the average of velocity 
                         !> in the relaxation time approximation
                         v_k= klist_iband(ib)%velocity_k(:, 1+ishift)
-                        if (BTau>eps3) then
+                        if (BTau>eps3.and.NSlice_Btau_local>2) then
                            velocity_bar_k= 0d0
                            do it=1, NSlice_Btau_local
                              velocity_bar_k= velocity_bar_k+ &
@@ -1323,13 +1322,14 @@
 
                   do ibtau=1, NBTau
                      BTau= BTau_array(ibtau)
+
                      if (NBTau==1)then
-                        NSlice_Btau_local= NSlice_Btau
-                        DeltaBtau = 0
+                        !> it means there is no magnetic field
+                        NSlice_Btau_local= 2
                      else
                         NSlice_Btau_local= (ibtau-1)*NSlice_Btau/(NBTau-1)
                         if (NSlice_Btau_local==0)then
-                           DeltaBtau= 0
+                           NSlice_Btau_local= 2
                         else
                            DeltaBtau= 30d0/NSlice_Btau_local
                         endif
@@ -1338,7 +1338,7 @@
 
                      do ishift=0, NSlice_Btau_local/2-1
 
-                        if (BTau>eps3) then
+                        if (BTau>eps3 .and. NSlice_Btau_local>2) then
                            velocity_bar_k= 0d0
                            do it=1, NSlice_Btau_local/2
                              velocity_bar_k= velocity_bar_k+ &
