@@ -1,0 +1,11 @@
+  PAW_PBE Zr_sv 04Jan2005                
+   12.0000000000000     
+ parameters from PSCTR are:
+   VRHFIN =Zr: 4s4p5s4d
+   LEXCH  = PE
+  
+  PAW_PBE Si 05Jan2001                   
+   4.00000000000000     
+ parameters from PSCTR are:
+   VRHFIN =Si: s2p2
+   LEXCH  = PE

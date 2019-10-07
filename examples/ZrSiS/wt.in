@@ -1,0 +1,130 @@
+&TB_FILE
+Hrfile = 'wannier90_hr.dat_nsymm16'
+/
+
+
+!> bulk band structure calculation flag
+&CONTROL
+Boltz_OHE_calc        = T
+BulkBand_calc         = F
+BulkFS_calc           = F
+FindNodes_calc        = F
+BerryPhase_calc       = F
+Symmetry_Import_calc  = T
+/
+
+&SYSTEM
+NSLAB = 10 
+NumOccupied = 12        ! NumOccupied
+SOC = 0                 ! without soc : SOC=0; with soc : SOC=1
+E_FERMI = 9.6824        ! e-fermi
+Btheta= 90, Bphi= 120
+/
+
+&PARAMETERS
+Eta_Arc = 0.001     ! infinite small value, like brodening 
+E_arc = 0.0         ! energy for calculate Fermi Arc
+OmegaNum = 1        ! omega number       
+OmegaMin =  0.0     ! energy interval
+OmegaMax =  1.0     ! energy interval
+Nk1 = 101            ! number k points 
+Nk2 = 101            ! number k points 
+Nk3 = 61            ! number k points 
+NP = 2              ! number of principle layers
+Gap_threshold = 0.0010 ! threshold for GapCube output
+NBtau= 101
+BTauMax = 20  
+NSlice_Btau_Max = 10000
+Tmin  = 50
+Tmax  = 100
+NumT  = 2 
+/
+
+SELECTED_BANDS
+2 
+12 13
+
+LATTICE
+Angstrom
+  3.5496073769164020    0.0000000000000000    0.0000000000000000
+  0.0000000000000000    3.5496073769164020    0.0000000000000000
+  0.0000000000000000    0.0000000000000000    8.1636955490019929
+
+ATOM_POSITIONS
+6                                ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+Zr  0.5000000000000000  0.0000000000000000  0.2317361549757430
+Zr  0.0000000000000000  0.5000000000000000  0.7682638450242570
+Si  0.5000000000000000  0.5000000000000000  0.5000000000000000
+Si  0.0000000000000000  0.0000000000000000  0.5000000000000000
+S   0.0000000000000000  0.5000000000000000  0.1223761531972395
+S   0.5000000000000000  0.0000000000000000  0.8776238468027605
+
+PROJECTORS
+5 5 4 4 3 3         ! number of projectors
+Zr dz2 dxz dyz dx2-y2 dxy  
+Zr dz2 dxz dyz dx2-y2 dxy 
+Si s pz  px py  
+Si s pz  px py  
+S  pz px py 
+S  pz px py 
+
+SURFACE            ! WP2 conventional (001) surface
+ 1  0  0
+ 0  1  0
+ 0  0  1
+
+KPATH_BULK            ! k point path
+5              ! number of k line only for bulk band
+  L -0.5 0.0 0.5 M -0.5 -.5 0.5
+  M -0.5 -.5 0.5 A -0.5 0.0 0.0
+  A -0.5 0.0 0.0 G  0.0 0.0 0.0
+  G  0.0 0.0 0.0 Z  0.0 -.5 0.5
+  Z  0.0 -.5 0.5 V  0.0 0.0 0.5
+8              ! number of k line only for bulk band
+  T  0.5 0.5 0.0 G  0.0 0.0 0.0 
+  G  0.0 0.0 0.0 L -0.5 0.0 0.5
+  L -0.5 0.0 0.5 M -0.5 -.5 0.5
+  M -0.5 -.5 0.5 A -0.5 0.0 0.0
+  A -0.5 0.0 0.0 G  0.0 0.0 0.0
+  G  0.0 0.0 0.0 Z  0.0 -.5 0.5
+  Z  0.0 -.5 0.5 V  0.0 0.0 0.5
+  V  0.0 0.0 0.5 G  0.0 0.0 0.0
+3
+  Y  0.0 1.0 0.0 X  0.5 0.5 0.0
+  X  0.5 0.5 0.0 G  0.0 0.0 0.0
+  G  0.0 0.0 0.0 Y  0.5 -.5 0.0
+6
+  X -0.5 0.5 0.0 X  0.5 -0.5 0.0
+  X -0.4 0.6 0.0 X  0.6 -0.4 0.0
+  X -0.3 0.7 0.0 X  0.7 -0.3 0.0
+  X -0.2 0.8 0.0 X  0.8 -0.2 0.0
+  X -0.1 0.9 0.0 X  0.9 -0.1 0.0
+  X -0.0 1.0 0.0 X  1.0 -0.0 0.0
+             
+
+
+KPATH_SLAB
+4        ! numker of k line for 2D case
+X  0.5  0.0 G  0.0  0.0  ! k path for 2D case
+G  0.0  0.0 M -0.5  0.5
+M -0.5  0.5 Y  0.0  0.5 
+Y  0.0  0.5 G  0.0  0.0 
+
+KPLANE_SLAB
+-0.5 -0.5      ! Original point for 2D k plane
+ 1.0  0.0      ! The first vector to define 2D k plane 
+ 0.0  1.0      ! The second vector to define 2D k plane  for arc plots
+
+KPLANE_BULK
+-0.50 -0.50 -0.50   ! Original point for 3D k plane 
+ 1.00  1.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  0.00  1.00   ! The second vector to define 3d k space plane
+
+
+KCUBE_BULK
+ 0.00  0.00  0.00   ! Original point for 3D k plane 
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  1.00  0.00   ! The second vector to define 3d k space plane
+ 0.00  0.00  1.00   ! The third vector to define 3d k cube
+
