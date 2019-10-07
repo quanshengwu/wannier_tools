@@ -570,10 +570,13 @@ subroutine readinput
 
    !> 
    allocate(Omega_array(OmegaNum))
-   do i=1, OmegaNum
-      Omega_array(i)= OmegaMin+ (OmegaMax-OmegaMin)* (i-1d0)/dble(OmegaNum-1)
-   enddo ! i
-
+   if (OmegaNum==1) then
+      Omega_array(1)= OmegaMin
+   else
+      do i=1, OmegaNum
+         Omega_array(i)= OmegaMin+ (OmegaMax-OmegaMin)* (i-1d0)/dble(OmegaNum-1)
+      enddo ! i
+   endif
 !===============================================================================================================!
 !> LATTICE card
 !===============================================================================================================!
