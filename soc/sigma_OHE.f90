@@ -111,7 +111,7 @@
 
       !> file index
       !integer, allocatable  :: myfileindex(:)
-      character(40) :: sigmafilename, bandname, tname, muname
+      character(80) :: sigmafilename, bandname, tname, muname
 
 
       !> inverse of group operator
@@ -938,7 +938,7 @@
 
       !> file index
       !integer, allocatable  :: myfileindex(:)
-      character(40) :: sigmafilename, bandname, tname
+      character(80) :: sigmafilename, bandname, tname
 
       call set_kcube3d
 
