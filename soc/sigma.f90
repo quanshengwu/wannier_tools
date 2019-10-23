@@ -27,8 +27,8 @@
       !> file index
       integer, allocatable  :: myfileindex(:)
 
-      real(dp) :: KBT ! K_Boltzmann*Temperature in eV
-      real(dp) :: mu ! chemical potential relative to Fermi level in eV
+      !real(dp) :: KBT ! K_Boltzmann*Temperature in eV
+      !real(dp) :: mu ! chemical potential relative to Fermi level in eV
 
       !> In this method, we can't treat the magnetic field and relaxation time individually
       !> They always come together as Btau. Omega= eB/m*
@@ -40,8 +40,8 @@
       !> For GaAs, tau= 0.48ps
       !> For InAs, tau= 0.08ps 
       !> reference  http://www.iue.tuwien.ac.at/phd/palankovski/node51.html
-      real(dp) :: BTau
-      real(dp) :: BTau_max
+      !real(dp) :: BTau
+      !real(dp) :: BTau_max
       real(dp), allocatable :: BTau_array(:)
       real(dp), allocatable :: mu_array(:)
       real(dp), allocatable :: KBT_array(:)
@@ -161,7 +161,7 @@
       if (Symmetry_Import_calc) then
          call sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Level, bands_fermi_level, sigma_ohe_tensor)
       else
-         call sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Level, bands_fermi_level, sigma_ohe_tensor)
+         call sigma_ohe_calc     (mu_array, KBT_array, BTau_array, Nband_Fermi_Level, bands_fermi_level, sigma_ohe_tensor)
       endif
      !if (cpuid.eq.0) then
      !   if (NumT==1.and.OmegaNum==1)then

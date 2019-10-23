@@ -18,7 +18,8 @@
       use wmpi
       use para
       implicit none
-     
+
+
       integer, intent(inout) :: Nband_Fermi_Level
       integer, intent(inout) :: bands_fermi_level(Nband_Fermi_Level)
       real(dp), intent(in) :: KBT_array(NumT) ! K_Boltzmann*Temperature in eV
@@ -575,7 +576,7 @@
                         if (NSlice_Btau_local==0)then
                            NSlice_Btau_local= 2
                         else
-                           DeltaBtau= 30d0/NSlice_Btau_local/2d0
+                           DeltaBtau= 30d0/2d0/NSlice_Btau_local
                         endif
                      endif
 
@@ -591,7 +592,7 @@
                                 DeltaBtau*exp(-(it-1d0)*DeltaBtau)*klist_iband(ib)%velocity_k(:, it+ishift)
                            enddo
                            velocity_bar_k= velocity_bar_k &
-                           - 0.5d0*DeltaBtau*(exp(-(NSlice_Btau_local+ishift-1d0)*DeltaBtau)&
+                           - 0.5d0*DeltaBtau*(exp(-(NSlice_Btau_local-1d0)*DeltaBtau)&
                            * klist_iband(ib)%velocity_k(:, NSlice_Btau_local+ishift)  &
                            + klist_iband(ib)%velocity_k(:, 1+ishift))
                         else
@@ -1327,26 +1328,26 @@
                         !> it means there is no magnetic field
                         NSlice_Btau_local= 2
                      else
-                        NSlice_Btau_local= (ibtau-1)*NSlice_Btau/(NBTau-1)
+                        NSlice_Btau_local= (ibtau-1)*NSlice_Btau_inuse/(NBTau-1)/2
                         if (NSlice_Btau_local==0)then
                            NSlice_Btau_local= 2
                         else
-                           DeltaBtau= 30d0/NSlice_Btau_local
+                           DeltaBtau= 30d0/2d0/NSlice_Btau_local
                         endif
                      endif
 
 
-                     do ishift=0, NSlice_Btau_local/2-1
+                     do ishift=0, NSlice_Btau_local-1
 
                         if (BTau>eps3 .and. NSlice_Btau_local>2) then
                            velocity_bar_k= 0d0
-                           do it=1, NSlice_Btau_local/2
+                           do it=1, NSlice_Btau_local
                              velocity_bar_k= velocity_bar_k+ &
                                 DeltaBtau*exp(-(it-1d0)*DeltaBtau)*klist_iband(ib)%velocity_k(:, it+ishift)
                            enddo
                            velocity_bar_k= velocity_bar_k &
-                           - 0.5d0*DeltaBtau*(exp(-(NSlice_Btau_local/2+ishift-1d0)*DeltaBtau)&
-                           * klist_iband(ib)%velocity_k(:, NSlice_Btau_local/2+ishift)  &
+                           - 0.5d0*DeltaBtau*(exp(-(NSlice_Btau_local-1d0)*DeltaBtau)&
+                           * klist_iband(ib)%velocity_k(:, NSlice_Btau_local+ishift)  &
                            + klist_iband(ib)%velocity_k(:, 1+ishift))
                         else
                            velocity_bar_k= v_k
@@ -1392,7 +1393,7 @@
                            v_k(3)*velocity_bar_k(3)*minusdfde
                      enddo ! ishift
                      sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(:, ibtau, ie, ikt, ik_temp) = &
-                     sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(:, ibtau, ie, ikt, ik_temp)/NSlice_Btau_local*2d0
+                     sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(:, ibtau, ie, ikt, ik_temp)/NSlice_Btau_local
                   enddo ! ibtau  Btau
                enddo ! ie  mu
             enddo ! ikt KBT
@@ -1720,7 +1721,7 @@
       complex(dp), allocatable :: Hamk_bulk(:, :)
 
       !> number of steps used in the Runge-Kutta integration
-      integer, parameter :: NSlice_Btau= 2000
+      integer :: NSlice_Btau= 2000
       integer :: NSlice_Btau_inuse
 
       !> Btau slices for Runge-Kutta integration
@@ -1948,7 +1949,6 @@
       W= 0d0
       UU= 0d0
 
-
       ! calculation bulk hamiltonian
       call ham_bulk_latticegauge(k, Hamk_bulk)
 
@@ -1959,7 +1959,7 @@
          velocity_k= 0d0
          return
       endif
- 
+
       vx= 0d0
       vy= 0d0
       vz= 0d0
@@ -3143,7 +3143,7 @@ subroutine r8_rkf45 ( f, neqn, y, yp, t, tout, relerr, abserr, flag, iband)
 !
   if ( mflag /= 1 ) then
 
-    if ( t == tout .and. kflag /= 3 ) then
+    if ( abs(t- tout)<eps .and. kflag /= 3 ) then
       flag = 8
       return
     end if
@@ -3163,7 +3163,7 @@ subroutine r8_rkf45 ( f, neqn, y, yp, t, tout, relerr, abserr, flag, iband)
 
         nfe = 0
 
-      else if ( kflag == 5 .and. abserr == 0.0D+00 ) then
+      else if ( kflag == 5 .and. abserr <= eps ) then
 
         write ( *, '(a)' ) ' '
         write ( *, '(a)' ) 'R8_RKF45 - Fatal error!'
@@ -3273,7 +3273,7 @@ subroutine r8_rkf45 ( f, neqn, y, yp, t, tout, relerr, abserr, flag, iband)
     call f ( t, y, yp, iband )
     nfe = 1
 
-    if ( t == tout ) then
+    if ( abs(t- tout)<eps ) then
       flag = 2
       return
     end if
