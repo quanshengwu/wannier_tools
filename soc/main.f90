@@ -16,6 +16,7 @@
 ! version     2.4.0  At EPFL, Switzerland, Aug. 31. 2018
 ! version     2.4.1  At EPFL, Switzerland, Oct. 15. 2018
 ! version     2.4.2  At EPFL, Switzerland, July. 9. 2019
+! version     2.5.0  At EPFL, Switzerland, Dec. 9. 2019, magnetoresistance, band unfolding
 ! wuquansheng@gmail.com
 ! Copyright (c) 2017 QuanSheng Wu. All rights reserved.
 !--------+--------+--------+--------+--------+--------+--------+------!
@@ -36,7 +37,7 @@
 
 
      !> version of WannierTools
-     version='2.4.2'
+     version='2.5.0'
 
      ierr = 0
      cpuid= 0
