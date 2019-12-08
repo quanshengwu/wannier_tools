@@ -1,74 +1,84 @@
 
-!> unfolding the energy bands of the supercell
-!> calculate unfolded band at (k, \omega)
-subroutine unfolding
+subroutine unfolding_kpath
+   !> Unfold the energy bands of the supercell to a specified unit cell.
+   !> Calculate unfolded band at (k, \omega)
+   !> 
+   !> Implemented by QSWU 2019
    use para
-!  use sparse
+  !use sparse
    implicit none
-
 
    real(dp), allocatable :: omega(:), eta_array(:)
 
-   !> (nk3_band, omeganum_unfold, NumberofEta)
    real(dp), allocatable :: spectrum_unfold(:, :, :, :), spectrum_unfold_mpi(:, :, :, :)
+   !> unfolded spectrum, dimension (omeganum_unfold, NumberofEta, NumberofSelectedOrbitals_groups, nk3_band)
+
    real(dp) :: k_PBZ_direct(3), k_PBZ_direct_in_SBZ(3), k_cart(3), k_SBZ_direct(3)
 
-   !> dim= Num_wann*Num_wann
    integer :: nnzmax, nnz
-   complex(dp), allocatable :: acoo(:)
    integer, allocatable :: jcoo(:), icoo(:)
+   complex(dp), allocatable :: acoo(:)
+   !> Hamiltonian for sparse version
 
-   !> eigenvector of the sparse matrix acoo. Dim=(Num_wann, neval)
+   complex(dp), allocatable :: hamk_bulk(:, :)
+   !> Hamiltonian for dense version
+
    real(dp), allocatable :: W(:)
+
    complex(dp), allocatable :: psi(:), zeigv(:, :)
+   !> eigenvector of the sparse matrix acoo. Dim=(Num_wann, neval)
 
-   !number of ARPACK eigenvalues
    integer :: neval
+   !number of ARPACK eigenvalues
 
-   ! number of Arnoldi vectors
    integer :: nvecs
+   ! number of Arnoldi vectors
 
-   !> calculate eigenvector or not
    logical :: ritzvec
+   !> calculate eigenvector or not
 
-   !shift-invert sigma
    complex(dp) :: sigma=(0d0,0d0)
+   !> shift-invert sigma
 
    integer :: n, i, ie, ik, ig, ierr, ieta,NumberofEta
    
-   !> time measurement
+   ! time measurement
    real(dp) :: time1, time2, time3
 
    real(dp), allocatable :: weight(:)
    real(dp), external :: delta
-
-   return
-   neval=OmegaNum
-   if (neval>Num_wann-2) then
-      neval= Num_wann- 2
-      omeganum_unfold= 4*neval
-   endif
-
-   !> ncv
-   nvecs=int(2*neval)
-
-   if (nvecs<50) nvecs= 50
-   if (nvecs>Num_wann) nvecs= Num_wann
-
    NumberofEta = 9
 
    sigma=(1d0,0d0)*E_arc
-   nnzmax=splen+Num_wann
-   nnz=splen
-   allocate( acoo(nnzmax))
-   allocate( jcoo(nnzmax))
-   allocate( icoo(nnzmax))
+   if (Is_Sparse_Hr) then
+
+      neval=OmegaNum
+      if (neval>Num_wann-2) then
+         neval= Num_wann- 2
+      endif
+   
+      !> ncv
+      nvecs=int(2*neval)
+      if (nvecs<50) nvecs= 50
+      if (nvecs>Num_wann) nvecs= Num_wann
+   
+   
+      nnzmax=splen+Num_wann
+      nnz=splen
+      allocate( acoo(nnzmax))
+      allocate( jcoo(nnzmax))
+      allocate( icoo(nnzmax))
+   else
+      neval= Num_wann
+      nvecs= Num_wann
+      allocate( hamk_bulk(num_wann, num_wann))
+   endif
    allocate( W( neval))
    allocate( psi(Num_wann))
    allocate( zeigv(Num_wann,nvecs))
    allocate( weight(NumberofSelectedOrbitals_groups))
-   allocate( spectrum_unfold(nk3_band, omeganum_unfold, NumberofEta, NumberofSelectedOrbitals_groups)) 
-   allocate( spectrum_unfold_mpi(nk3_band, omeganum_unfold, NumberofEta, NumberofSelectedOrbitals_groups)) 
+   allocate( spectrum_unfold(omeganum_unfold, NumberofEta, NumberofSelectedOrbitals_groups, nk3_band)) 
+   allocate( spectrum_unfold_mpi(omeganum_unfold, NumberofEta, NumberofSelectedOrbitals_groups, nk3_band)) 
    spectrum_unfold= 0d0
    spectrum_unfold_mpi= 0d0
 
@@ -77,7 +87,7 @@ subroutine unfolding
    eta_array=(/0.1d0, 0.2d0, 0.4d0, 0.8d0, 1.0d0, 2d0, 4d0, 8d0, 10d0/)
    eta_array= eta_array*Eta_Arc
 
-   allocate(omega( omeganum_unfold))
+   allocate(omega(omeganum_unfold))
    omega= 0d0
    do i= 1, omeganum_unfold
       omega(i)=omegamin+(i-1)*(omegamax-omegamin)/dble(omeganum_unfold)
@@ -85,33 +95,41 @@ subroutine unfolding
 
    !> first unfold the kpoints from the kpath of the supercell
    do ik= 1+cpuid, nk3_band, num_cpu
-      if (cpuid==0) write(stdout, '(a, 2i10)') 'BulkBand_unfold_calc in sparse mode:', ik,nk3_band
+      if (cpuid==0.and.mod(ik, 40)==1) write(stdout, '(a, i8," /", i8)') 'BulkBand unfolding at :', ik, nk3_band
       k_PBZ_direct= k3points(:, ik)
       call direct_cart_rec_unfold(k_PBZ_direct, k_cart)
       call cart_direct_rec(k_cart, k_PBZ_direct_in_SBZ)
 
       k_SBZ_direct= k_PBZ_direct_in_SBZ- floor(k_PBZ_direct_in_SBZ)
 
-      !>> sparse hr
-      call now(time1)
-     !call ham_bulk_coo_sparsehr(k_SBZ_direct,acoo,icoo,jcoo)
-      nnz= splen
-      call now(time2)
-      
-      !> diagonalization by call zheev in lapack
-      W= 0d0
-      !> after arpack_sparse_coo_eigs, nnz will be updated.
-      ritzvec= .true.
-     !call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
-      call now(time3)
-
+      zeigv=0d0
+      if (Is_Sparse_Hr) then
+         stop " we don't support sparse hr.dat yet"
+         ! sparse hr
+         call ham_bulk_coo_sparsehr(k_SBZ_direct,acoo,icoo,jcoo)
+         nnz= splen
+ 
+         !> diagonalization by call zheev in lapack
+         W= 0d0
+         !> after arpack_sparse_coo_eigs, nnz will be updated.
+         ritzvec= .true.
+        !call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
+         call now(time3)
+      else
+         ! dense hr
+         call ham_bulk_atomicgauge(k_SBZ_direct, zeigv)
+         
+         ! diagonalize the Hamiltonian, zeigv is the Hamiltonian matrix before eigensystem_c calling.
+         ! It will be replaced by the eigenvectors after eigensystem_c calling. 
+         call eigensystem_c('V', 'U', Num_wann ,zeigv, W)
+      endif
       do n= 1, neval
          psi= zeigv(:, n)
          call get_projection_weight_bulk_unfold(k_SBZ_direct, k_PBZ_direct, psi, weight)
          do ig=1, NumberofSelectedOrbitals_groups
             do ieta= 1, NumberofEta
                do ie=1, omeganum_unfold
-                  spectrum_unfold(ik, ie, ieta, ig)= spectrum_unfold(ik, ie, ieta, ig) + &
+                  spectrum_unfold(ie, ieta, ig, ik)= spectrum_unfold(ie, ieta, ig, ik) + &
                      weight(ig)*delta(eta_array(ieta), W(n)-omega(ie))
                enddo ! ie
             enddo ! ieta
@@ -128,16 +146,17 @@ subroutine unfolding
 
    outfileindex= outfileindex+ 1
    if (cpuid.eq.0)then
-      open (unit=outfileindex, file='spectrum_unfold.dat')
+      open (unit=outfileindex, file='spectrum_unfold_kpath.dat')
+      write(outfileindex, "('#column', i5, 3000i12)")(i, i=1, 2+NumberofSelectedOrbitals_groups*NumberofEta)
       do ik=1, nk3_band
          do ie=1, omeganum_unfold
-            write(outfileindex, '(300f16.8)')k3len(ik), omega(ie), &
-               ((spectrum_unfold_mpi(ik, ie, ieta, ig), ieta=1, NumberofEta), ig=1, NumberofSelectedOrbitals_groups)
+            write(outfileindex, '(300f12.6)')k3len(ik), omega(ie), &
+               ((spectrum_unfold_mpi(ie, ieta, ig, ik), ieta=1, NumberofEta), ig=1, NumberofSelectedOrbitals_groups)
          enddo
          write(outfileindex, *) ' '
       enddo
       close(outfileindex)
-      write(stdout,*)'Unfold bands successfully'    
+      write(stdout,*)'<<< Unfold bands successfully'    
    endif
      
 #if defined (MPI)
@@ -146,12 +165,12 @@ subroutine unfolding
 
    outfileindex= outfileindex+ 1
    if (cpuid==0) then
-      open(unit=outfileindex, file='spectrum_unfold.gnu')
+      open(unit=outfileindex, file='spectrum_unfold_kpath.gnu')
       write(outfileindex, '(a)') '#set terminal  postscript enhanced color font ",30"'
       write(outfileindex, '(a)')"#set output 'spectrum_unfold.eps'"
       write(outfileindex, '(a)') 'set terminal pngcairo enhanced color font ",60" size 1920,1680'
-      write(outfileindex, '(a)') 'set palette defined (-10 "#194eff", 0 "white", 10 "red" )'
-      write(outfileindex, '(a)')"set output 'spectrum_unfold.png'"
+      write(outfileindex, '(a)') 'set palette defined ( 0 "white", 1  "#D72F01" )'
+      write(outfileindex, '(a)')"set output 'spectrum_unfoldz_kpath.png'"
       write(outfileindex, '(a)')'set style data linespoints'
       write(outfileindex, '(a)')'set size 0.9, 1'
       write(outfileindex, '(a)')'set origin 0.05,0'
@@ -185,7 +204,7 @@ subroutine unfolding
 
       write(outfileindex, '(a)')"set colorbox"
       write(outfileindex, '(a)')'set pm3d interpolate 2,2'
-      write(outfileindex, '(2a)')"splot 'spectrum_unfold.dat' u 1:2:(log($9+0.001)) ",  &
+      write(outfileindex, '(2a)')"splot 'spectrum_unfold_kpath.dat' u 1:2:(($11)) ",  &
          " w pm3d"
       close(outfileindex)
    endif
@@ -200,7 +219,218 @@ subroutine unfolding
 #endif
 
    return
-end subroutine unfolding
+end subroutine unfolding_kpath
+
+
+subroutine unfolding_kplane
+   !> Unfold the energy bands of the supercell to a specified unit cell.
+   !> Calculate unfolded band at (k1, k2) at a given energy E_arc.
+   !> Implemented by QSWU 2019
+   use para
+  !use sparse
+   implicit none
+
+   real(dp), allocatable :: eta_array(:)
+
+   real(dp), allocatable :: spectrum_unfold(:, :, :), spectrum_unfold_mpi(:, :, :)
+   !> unfolded spectrum, dimension (omeganum_unfold, NumberofEta, NumberofSelectedOrbitals_groups, nk3_band)
+
+   real(dp) :: k_PBZ_direct(3), k_PBZ_direct_in_SBZ(3), k_cart(3), k_SBZ_direct(3)
+
+
+   integer :: nnzmax, nnz, knv3
+   integer, allocatable :: jcoo(:), icoo(:)
+   complex(dp), allocatable :: acoo(:)
+   !> Hamiltonian for sparse version
+
+   complex(dp), allocatable :: hamk_bulk(:, :)
+   !> Hamiltonian for dense version
+
+   real(dp), allocatable :: W(:)
+
+   complex(dp), allocatable :: psi(:), zeigv(:, :)
+   !> eigenvector of the sparse matrix acoo. Dim=(Num_wann, neval)
+
+   integer :: neval
+   !number of ARPACK eigenvalues
+
+   integer :: nvecs
+   ! number of Arnoldi vectors
+
+   logical :: ritzvec
+   !> calculate eigenvector or not
+
+   complex(dp) :: sigma=(0d0,0d0)
+   !> shift-invert sigma
+
+   real(dp), allocatable :: kxy(:,:), kxy_shape(:,:), kxy_plane(:,:)
+
+   integer :: n, i, j, ie, ik, ig, ierr, ieta,NumberofEta
+    
+   
+   ! time measurement
+   real(dp) :: time1, time2, time3
+
+   real(dp), allocatable :: weight(:)
+   real(dp), external :: delta
+   NumberofEta = 9
+
+   knv3= Nk1*Nk2
+   allocate( kxy(3, knv3))
+   allocate( kxy_shape(3, knv3))
+   allocate( kxy_plane(3, knv3))
+   kxy=0d0
+   kxy_shape=0d0
+   kxy_plane=0d0
+   
+   ik =0
+   do i= 1, Nk1
+      do j= 1, Nk2
+         ik =ik +1
+         kxy(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(Nk1-1)+ K3D_vec2*(j-1)/dble(Nk2-1) &
+            -(K3D_vec1+K3D_vec2)/2d0
+         kxy_shape(:, ik)= kxy(1, ik)* Origin_cell%Kua+ kxy(2, ik)* Origin_cell%Kub+ kxy(3, ik)* Origin_cell%Kuc 
+         call rotate_k3_to_kplane(kxy_shape(:, ik), kxy_plane(:, ik))
+      enddo
+   enddo
+
+
+   sigma=(1d0,0d0)*E_arc
+   if (Is_Sparse_Hr) then
+
+      neval=OmegaNum
+      if (neval>Num_wann-2) then
+         neval= Num_wann- 2
+      endif
+   
+      !> ncv
+      nvecs=int(2*neval)
+      if (nvecs<50) nvecs= 50
+      if (nvecs>Num_wann) nvecs= Num_wann
+   
+   
+      nnzmax=splen+Num_wann
+      nnz=splen
+      allocate( acoo(nnzmax))
+      allocate( jcoo(nnzmax))
+      allocate( icoo(nnzmax))
+   else
+      neval= Num_wann
+      nvecs= Num_wann
+      allocate( hamk_bulk(num_wann, num_wann))
+   endif
+   allocate( W( neval))
+   allocate( psi(Num_wann))
+   allocate( zeigv(Num_wann,nvecs))
+   allocate( weight(NumberofSelectedOrbitals_groups))
+   allocate( spectrum_unfold(NumberofEta, NumberofSelectedOrbitals_groups, knv3)) 
+   allocate( spectrum_unfold_mpi(NumberofEta, NumberofSelectedOrbitals_groups, knv3)) 
+   spectrum_unfold= 0d0
+   spectrum_unfold_mpi= 0d0
+
+   NumberofEta=9
+   allocate(eta_array(NumberofEta))
+   eta_array=(/0.1d0, 0.2d0, 0.4d0, 0.8d0, 1.0d0, 2d0, 4d0, 8d0, 10d0/)
+   eta_array= eta_array*Eta_Arc
+
+   !> first unfold the kpoints from the kpath of the supercell
+   do ik= 1+cpuid, knv3, num_cpu
+      if (cpuid==0.and.mod(ik, 40)==1) write(stdout, '(a, i10," /", i10)') 'BulkBand unfolding at :', ik, knv3
+      k_PBZ_direct= kxy(:, ik)
+      call direct_cart_rec_unfold(k_PBZ_direct, k_cart)
+      call cart_direct_rec(k_cart, k_PBZ_direct_in_SBZ)
+
+      k_SBZ_direct= k_PBZ_direct_in_SBZ- floor(k_PBZ_direct_in_SBZ)
+
+      if (Is_Sparse_Hr) then
+         stop " we don't support sparse hr.dat yet"
+         ! sparse hr
+         call ham_bulk_coo_sparsehr(k_SBZ_direct,acoo,icoo,jcoo)
+         nnz= splen
+ 
+         !> diagonalization by call zheev in lapack
+         W= 0d0
+         !> after arpack_sparse_coo_eigs, nnz will be updated.
+         ritzvec= .true.
+        !call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
+         call now(time3)
+      else
+         ! dense hr
+         call ham_bulk_atomicgauge(k_SBZ_direct, zeigv)
+         
+         ! diagonalize the Hamiltonian, zeigv is the Hamiltonian matrix before eigensystem_c calling.
+         ! It will be replaced by the eigenvectors after eigensystem_c calling. 
+         call eigensystem_c('V', 'U', Num_wann ,zeigv, W)
+      endif
+      do n= 1, neval
+         psi= zeigv(:, n)
+         call get_projection_weight_bulk_unfold(k_SBZ_direct, k_PBZ_direct, psi, weight)
+         do ig=1, NumberofSelectedOrbitals_groups
+            do ieta= 1, NumberofEta
+               spectrum_unfold(ieta, ig, ik)= spectrum_unfold(ieta, ig, ik) + &
+                  weight(ig)*delta(eta_array(ieta), W(n)-E_arc)
+            enddo ! ieta
+         enddo ! ig
+      enddo ! sum over n
+   enddo !ik
+
+#if defined (MPI)
+   call mpi_allreduce(spectrum_unfold, spectrum_unfold_mpi,size(spectrum_unfold),&
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+   spectrum_unfold_mpi= spectrum_unfold
+#endif
+
+   outfileindex= outfileindex+ 1
+   if (cpuid.eq.0)then
+      open (unit=outfileindex, file='spectrum_unfold_kplane.dat')
+      write(outfileindex, "('#', a8, 5a12, 3X, '| A(k,E)', a6, 100(8X,'group ', i2))")&
+         'kx', 'ky', 'kz', 'kp1', 'kp2', 'kp3', 'total',&
+         (i, i=1, NumberofSelectedOrbitals_groups)
+      write(outfileindex, "('#column', i5, 3000i12)")(i, i=1, 7+NumberofSelectedOrbitals_groups*NumberofEta)
+      do ik=1, knv3
+         write(outfileindex, '(3000f12.5)')kxy_shape(:, ik), kxy_plane(:, ik), &
+              ((spectrum_unfold_mpi(ieta, ig, ik), ieta=1, NumberofEta), ig=1, NumberofSelectedOrbitals_groups)
+         if (mod(ik, nk2)==0) write(outfileindex, *)' '
+      enddo
+      close(outfileindex)
+      write(stdout,*)'<<< Unfold bands successfully'    
+   endif
+     
+#if defined (MPI)
+     call mpi_barrier(mpi_cmw, ierr)
+#endif
+
+   outfileindex= outfileindex+ 1
+   if (cpuid==0) then
+      open(unit=outfileindex, file='spectrum_unfold_kplane.gnu')
+      write(outfileindex, '(a)') 'set terminal pngcairo enhanced color font ",60" size 1920,1680'
+      write(outfileindex, '(a)') 'set palette defined ( 0 "white", 1  "#D72F01" )'
+      write(outfileindex, '(a)')"set output 'spectrum_unfoldz_kplane.png'"
+      write(outfileindex, '(a)')'set size 0.9, 1'
+      write(outfileindex, '(a)')'set origin 0.05,0'
+      write(outfileindex, '(a)')'set border lw 3'
+      write(outfileindex, '(a)')'set pm3d'
+      write(outfileindex, '(a)')'unset key'
+      write(outfileindex, '(a)')'set view map'
+      write(outfileindex, '(a)')'#set xtics font ",24"'
+      write(outfileindex, '(a)')'#set ytics font ",24"'
+      write(outfileindex, '(a)')'#set ylabel font ",24"'
+      write(outfileindex, '(a)')'#set ylabel offset 1.5,0'
+      write(outfileindex, '(a)')'set size ratio -1'
+      write(outfileindex, '(a)')"set colorbox"
+      write(outfileindex, '(a)')'set pm3d interpolate 2,2'
+      write(outfileindex, '(2a)')"splot 'spectrum_unfold_kplane.dat' u 4:5:($11) ",  &
+         " w pm3d"
+      close(outfileindex)
+   endif
+
+#if defined (MPI)
+     call mpi_barrier(mpi_cmw, ierr)
+#endif
+
+   return
+end subroutine unfolding_kplane
 
 
 subroutine get_projection_weight_bulk_unfold(k_SBZ_direct, k_PBZ_direct, psi, weight)
@@ -210,6 +440,7 @@ subroutine get_projection_weight_bulk_unfold(k_SBZ_direct, k_PBZ_direct, psi, we
    !> For the first mode, numk should be one.
    !> SBZ : Supercell Brillouin zone, usually, this is the Origin_cell.
    !> PBZ : primitive cell Brillouin zone, usually, this is the Folded_cell.
+   !> Implemented by QSWU 2019
    use para, only : dp, num_wann, NumberofSelectedOrbitals_groups, projection_weight_mode, &
       NumberofSelectedOrbitals, Selected_WannierOrbitals, cpuid, stdout, Nrpts, irvec, &
       Origin_cell, Folded_cell, pi2zi, eps3

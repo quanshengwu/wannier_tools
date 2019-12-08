@@ -369,6 +369,7 @@
      logical :: BulkBand_calc    ! Flag for bulk energy band calculation
      logical :: BulkBand_line_calc    ! Flag for bulk energy band calculation
      logical :: BulkBand_unfold_line_calc    ! Flag for bulk energy band calculation
+     logical :: BulkBand_unfold_plane_calc    ! Flag for bulk energy band calculation
      logical :: BulkFatBand_calc    ! Flag for bulk energy band calculation
      logical :: BulkBand_plane_calc    ! Flag for bulk energy band calculation for a fixed k plane 
      logical :: BulkBand_cube_calc    ! Flag for bulk energy band calculation for a fixed k plane 
@@ -436,6 +437,7 @@
      namelist / Control / BulkBand_calc, BulkFS_calc,  BulkFS_Plane_calc, &
                           BulkFS_plane_stack_calc,  BulkGap_plane_calc, &
                           BulkBand_unfold_line_calc, &
+                          BulkBand_unfold_plane_calc, &
                           BulkBand_points_calc, BulkBand_cube_calc, BulkBand_line_calc, &
                           BulkGap_cube_calc, BulkSpintexture_calc,  BulkFatBand_calc, &
                           SlabBand_calc, SlabBand_plane_calc, SlabBandWaveFunc_calc,&
@@ -460,6 +462,7 @@
      integer :: Nslab  ! Number of slabs for 2d Slab system
      integer :: Nslab1 ! Number of slabs for 1D wire system
      integer :: Nslab2 ! Number of slabs for 1D wire system
+     integer :: Nslab3 ! Number of slabs for 1D wire system
 
      integer :: Np !> Number of princple layers for surface green's function
      

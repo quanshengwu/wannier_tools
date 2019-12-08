@@ -181,15 +181,27 @@
    call symmetry
 
 
-   !> bulk band
+   !> unfold bulk band line mode
    if (BulkBand_unfold_line_calc) then
       if(cpuid.eq.0)write(stdout, *)' '
       if(cpuid.eq.0)write(stdout, *)'>> Start of unfolding bulk band'
       call now(time_start)
-      call unfolding
+      call unfolding_kpath
       call now(time_end)
       call print_time_cost(time_start, time_end, 'BulkBand_unfold_line_calc')
       if(cpuid.eq.0)write(stdout, *)'<< End of unfolding bulk band'
+   endif
+
+
+   !> unfold bulk band kplane mode
+   if (BulkBand_unfold_plane_calc) then
+      if(cpuid.eq.0)write(stdout, *)' '
+      if(cpuid.eq.0)write(stdout, *)'>> Start of unfolding bulk band in plane mode'
+      call now(time_start)
+      call unfolding_kplane
+      call now(time_end)
+      call print_time_cost(time_start, time_end, 'BulkBand_unfold_plane_calc')
+      if(cpuid.eq.0)write(stdout, *)'<< End of unfolding bulk band in plane mode'
    endif
 
      !> bulk band

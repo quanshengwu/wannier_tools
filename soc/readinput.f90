@@ -101,6 +101,7 @@ subroutine readinput
    BulkBand_calc         = .FALSE.
    BulkBand_line_calc    = .FALSE.
    BulkBand_unfold_line_calc    = .FALSE.
+   BulkBand_unfold_plane_calc    = .FALSE.
    BulkFatBand_calc      = .FALSE.
    BulkBand_plane_calc   = .FALSE.
    BulkBand_cube_calc    = .FALSE.
@@ -162,6 +163,7 @@ subroutine readinput
       write(*, *)"BulkBand_calc, BulkBand_plane_calc, BulkFS_calc"
       write(*, *)"BulkBand_line_calc, BulkBand_cube_calc"
       write(*, *)"BulkBand_unfold_line_calc, "
+      write(*, *)"BulkBand_unfold_plane_calc, "
       write(*, *)"BulkFatBand_calc, "
       write(*, *)"BulkGap_cube_calc,BulkGap_plane_calc"
       write(*, *)"SlabBand_calc,SlabBandWaveFunc_calc"
@@ -219,6 +221,8 @@ subroutine readinput
       write(stdout, *) "BulkFatBand_calc                  : ",  BulkFatBand_calc
       write(stdout, *) "BulkBand_plane_calc               : ",  BulkBand_plane_calc
       write(stdout, *) "BulkBand_cube_calc                : ",  BulkBand_cube_calc
+      write(stdout, *) "BulkBand_unfold_line_calc         : ",  BulkBand_unfold_line_calc
+      write(stdout, *) "BulkBand_unfold_plane_calc        : ",  BulkBand_unfold_plane_calc
       write(stdout, *) "BulkFS_calc                       : ",  BulkFS_calc
       write(stdout, *) "BulkFS_Plane_calc                 : ",  BulkFS_Plane_calc
       write(stdout, *) "BulkFS_plane_stack_calc           : ",  BulkFS_plane_stack_calc
@@ -521,8 +525,12 @@ subroutine readinput
    read(1001, PARAMETERS, iostat= stat)
    if (Magp<1) Magp= 0
    if (Magp_max<1) Magp_max= Magp
-   if (OmegaNum_unfold==0) OmegaNum_unfold= 4*OmegaNum
-
+   if (Is_Sparse_Hr) then
+      if (OmegaNum_unfold==0) OmegaNum_unfold= 4*OmegaNum
+   else
+      if (OmegaNum_unfold==0) OmegaNum_unfold= 200
+   endif
+  
    if (stat>0) then
 
       backspace(1001)
