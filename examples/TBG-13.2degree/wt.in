@@ -5,9 +5,9 @@
  
  !> bulk band structure calculation flag
  &CONTROL
- BulkBand_calc         = T
- BulkBand_plane_calc   = F
- BulkBand_Unfold_line_calc          = T
+ BulkBand_calc         = F
+ BulkFS_plane_calc   = T
+ BulkBand_Unfold_line_calc          = F
  BulkBand_Unfold_plane_calc         = F
  /
  
@@ -23,8 +23,8 @@
  OmegaNum_unfold =600       ! omega number
  OmegaMin = -13.0     ! energy interval
  OmegaMax =  7.0     ! energy interval
- Nk1 =200           ! number k points
- Nk2 =200          ! number k points
+ Nk1 =401           ! number k points
+ Nk2 =401          ! number k points
  /
  
   
