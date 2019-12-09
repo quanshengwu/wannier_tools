@@ -714,6 +714,9 @@
      real(dp), allocatable :: k3points_unfold_pointmode_cart(:, :)
      real(dp), allocatable :: k3points_unfold_pointmode_direct(:, :)
 
+     !> kpath for unfoled lattice
+     real(dp), allocatable :: k3len_folded(:)
+     real(dp), allocatable :: k3line_folded_stop(:)
 
      !> kpath for magnetic supercell
      real(dp),allocatable :: K3len_mag(:)  ! put all k points in a line in order to plot the bands 

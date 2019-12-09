@@ -150,7 +150,7 @@ subroutine unfolding_kpath
       write(outfileindex, "('#column', i5, 3000i12)")(i, i=1, 2+NumberofSelectedOrbitals_groups*NumberofEta)
       do ik=1, nk3_band
          do ie=1, omeganum_unfold
-            write(outfileindex, '(300f12.6)')k3len(ik), omega(ie), &
+            write(outfileindex, '(300f12.6)')k3len_folded(ik), omega(ie), &
                ((spectrum_unfold_mpi(ie, ieta, ig, ik), ieta=1, NumberofEta), ig=1, NumberofSelectedOrbitals_groups)
          enddo
          write(outfileindex, *) ' '
@@ -183,7 +183,7 @@ subroutine unfolding_kpath
       write(outfileindex, '(a)')'#set ylabel offset 1.5,0'
       write(outfileindex, '(a,f12.6)')'emin=', omegamin
       write(outfileindex, '(a,f12.6)')'emax=', omegamax
-      write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
+      write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len_folded), ']'
       if (index(Particle,'phonon')/=0) then
          write(outfileindex, '(a, f10.5, a)')'set yrange [0: emax ]'
          write(outfileindex, '(a)')'set ylabel "Frequency (THz)"'
@@ -191,14 +191,14 @@ subroutine unfolding_kpath
          write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
          write(outfileindex, '(a)')'set yrange [ emin : emax ]'
       endif
-      write(outfileindex, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
-      write(outfileindex, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
+      write(outfileindex, 202, advance="no") (k3line_name(i), k3line_folded_stop(i), i=1, nk3lines)
+      write(outfileindex, 203)k3line_name(nk3lines+1), k3line_folded_stop(nk3lines+1)
 
       do i=1, nk3lines-1
          if (index(Particle,'phonon')/=0) then
-            write(outfileindex, 204)k3line_stop(i+1), '0.0', k3line_stop(i+1), 'emax'
+            write(outfileindex, 204)k3line_folded_stop(i+1), '0.0', k3line_folded_stop(i+1), 'emax'
          else
-            write(outfileindex, 204)k3line_stop(i+1), 'emin', k3line_stop(i+1), 'emax'
+            write(outfileindex, 204)k3line_folded_stop(i+1), 'emin', k3line_folded_stop(i+1), 'emax'
          endif
       enddo
 
@@ -289,7 +289,7 @@ subroutine unfolding_kplane
          ik =ik +1
          kxy(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(Nk1-1)+ K3D_vec2*(j-1)/dble(Nk2-1) &
             -(K3D_vec1+K3D_vec2)/2d0
-         kxy_shape(:, ik)= kxy(1, ik)* Origin_cell%Kua+ kxy(2, ik)* Origin_cell%Kub+ kxy(3, ik)* Origin_cell%Kuc 
+         kxy_shape(:, ik)= kxy(1, ik)* Folded_cell%Kua+ kxy(2, ik)* Folded_cell%Kub+ kxy(3, ik)* Folded_cell%Kuc 
          call rotate_k3_to_kplane(kxy_shape(:, ik), kxy_plane(:, ik))
       enddo
    enddo

@@ -1679,7 +1679,9 @@ subroutine readinput
    allocate(k3line_end(3, nk3lines))
    allocate(k3line_name(nk3lines+1))
    allocate(k3line_stop(nk3lines+1))
+   allocate(k3line_folded_stop(nk3lines+1))
    allocate(k3line_mag_stop(nk3lines+1))
+   k3line_folded_stop= 0d0
    k3line_mag_stop= 0d0
    k3line_stop= 0d0
    k3line_start= 0d0
@@ -1711,9 +1713,11 @@ subroutine readinput
    nk3_band= NN*nk3lines
    allocate(k3len(nk3_band))
    allocate(k3len_mag(nk3_band))
+   allocate(k3len_folded(nk3_band))
    allocate(k3points(3, nk3_band))
    k3len=0d0
    k3len_mag=0d0
+   k3len_folded=0d0
    k3points= 0d0
    t1= 0d0
    do j=1, nk3lines
@@ -1758,6 +1762,28 @@ subroutine readinput
          k3len_mag(i+(j-1)*NN)= t1
       enddo
       k3line_mag_stop(j+1)= t1
+   enddo
+
+
+   !> for folded cell
+   t1=0
+   do j=1, nk3lines
+      do i=1, NN
+         kstart= k3line_start(:, j)
+         kend  = k3line_end(:, j)
+         k1= kstart(1)*Folded_cell%Kua+ kstart(2)*Folded_cell%Kub+ kstart(3)*Folded_cell%Kuc
+         k2= kend(1)*Folded_cell%Kua+ kend(2)*Folded_cell%Kub+ kend(3)*Folded_cell%Kuc
+
+         temp= dsqrt((k2(1)- k1(1))**2 &
+            +(k2(2)- k1(2))**2  &
+            +(k2(3)- k1(3))**2)/dble(NN-1)
+
+         if (i.gt.1) then
+            t1=t1+temp
+         endif
+         k3len_folded(i+(j-1)*NN)= t1
+      enddo
+      k3line_folded_stop(j+1)= t1
    enddo
 
 104 continue
