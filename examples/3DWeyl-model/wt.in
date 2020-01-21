@@ -5,10 +5,10 @@ Hrfile = "Weyl3D_hr.dat"
 
 !> bulk band structure calculation flag
 &CONTROL
-AHC_calc              = F
-BulkBand_calc         = T
+AHC_calc              = T
+BulkBand_calc         = F
 BulkBand_plane_calc   = F
-FindNodes_calc        = T
+FindNodes_calc        = F
 BulkFS_calc           = F
 BulkGap_cube_calc     = F
 BulkGap_plane_calc    = F
@@ -20,8 +20,8 @@ SlabSpintexture_calc  = F
 Wanniercenter_calc    = F
 Chern_3D_calc         = F
 BerryPhase_calc       = F
-BerryCurvature_calc   = T
-WeylChirality_calc    = T
+BerryCurvature_calc   = F
+WeylChirality_calc    = F
 /
 
 &SYSTEM
@@ -38,12 +38,12 @@ surf_onsite= 0.0        ! surf_onsite
 &PARAMETERS
 Eta_Arc = 0.001     ! infinite small value, like brodening 
 E_arc =-0.0         ! energy for calculate Fermi Arc
-OmegaNum = 100  ! omega number       
-OmegaMin = -1.1     ! energy interval
-OmegaMax =  1.1     ! energy interval
-Nk1 = 20            ! number k points 
-Nk2 = 20            ! number k points 
-Nk3 = 20            ! number k points 
+OmegaNum = 800  ! omega number       
+OmegaMin = -1.6     ! energy interval
+OmegaMax =  1.6     ! energy interval
+Nk1 = 60            ! number k points 
+Nk2 = 60            ! number k points 
+Nk3 = 60            ! number k points 
 NP = 2              ! number of principle layers
 Gap_threshold = 1.0 ! threshold for GapCube output
 /
@@ -93,7 +93,7 @@ Direct
 
 
 KCUBE_BULK
--0.50 -0.50 -0.50   ! Original point for 3D k plane 
+ 0.00  0.00  0.00   ! Original point for 3D k plane 
  1.00  0.00  0.00   ! The first vector to define 3d k space plane
  0.00  1.00  0.00   ! The second vector to define 3d k space plane
  0.00  0.00  1.00   ! The third vector to define 3d k cube

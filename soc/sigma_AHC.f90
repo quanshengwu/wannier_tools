@@ -324,7 +324,6 @@
         !> diagonalization by call zheev in lapack
         UU=Hamk_bulk
         call eigensystem_c( 'V', 'U', Num_wann, UU, W)
-       !call zhpevx_pack(hamk_bulk,Num_wann, W, UU)
   
         vx= 0d0; vy= 0d0; vz= 0d0
         UU_dag= conjg(transpose(UU))
@@ -346,7 +345,7 @@
         Omega_x=0d0;Omega_y=0d0; Omega_z=0d0
         do m= 1, Num_wann
            do n= 1, Num_wann
-              if (m==n) cycle
+              if (abs(W(m)-W(n))<eps9) cycle
               Omega_x(m)= Omega_x(m)+ vy(n, m)*vz(m, n)/((W(m)-W(n))**2)
               Omega_y(m)= Omega_y(m)+ vz(n, m)*vx(m, n)/((W(m)-W(n))**2)
               Omega_z(m)= Omega_z(m)+ vx(n, m)*vy(m, n)/((W(m)-W(n))**2)
@@ -379,7 +378,8 @@
 #else
      sigma_tensor_ahc= sigma_tensor_ahc_mpi
 #endif
-     sigma_tensor_ahc= sigma_tensor_ahc/dble(knv3)/Origin_cell%CellVolume*24341d0  ! in (Omega*cm)^-1
+
+     sigma_tensor_ahc= sigma_tensor_ahc/dble(knv3)/Origin_cell%CellVolume*24341d0*kCubeVolume/Origin_cell%ReciprocalCellVolume ! in (Omega*cm)^-1
 
      outfileindex= outfileindex+ 1
      if (cpuid.eq.0) then
