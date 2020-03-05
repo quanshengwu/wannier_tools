@@ -2,37 +2,24 @@
 Hrfile = "Weyl3D_hr.dat"
 /
 
-
 !> bulk band structure calculation flag
 &CONTROL
-AHC_calc              = T
-BulkBand_calc         = F
-BulkBand_plane_calc   = F
+BulkBand_calc         = T
 FindNodes_calc        = F
-BulkFS_calc           = F
-BulkGap_cube_calc     = F
-BulkGap_plane_calc    = F
 SlabBand_calc         = F
 WireBand_calc         = F
 SlabSS_calc           = F
 SlabArc_calc          = F
-SlabSpintexture_calc  = F
-Wanniercenter_calc    = F
-Chern_3D_calc         = F
-BerryPhase_calc       = F
 BerryCurvature_calc   = F
-WeylChirality_calc    = F
+WeylChirality_calc    = T
+AHC_calc              = F
 /
 
 &SYSTEM
 NSLAB = 51 
-NSLAB1= 4  
-NSLAB2= 4  
 NumOccupied = 1         ! NumOccupied
 SOC = 1                 ! soc
 E_FERMI = 0        ! e-fermi
-Bx= 0, By= 0, Bz= 0     ! Bx By Bz
-surf_onsite= 0.0        ! surf_onsite
 /
 
 &PARAMETERS

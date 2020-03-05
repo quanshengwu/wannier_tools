@@ -21,7 +21,7 @@ First Check out the repository by ::
 
 Or download the .zip file directly from https://github.com/quanshengwu/wannier_tools, then uncompress it
 
-Then Go into wannier_tools/soc directory, Choose and Edit Makefile, Change the blas library " libs= " to your lapack+blas library
+Then Go into wannier_tools/src directory, Choose and Edit Makefile, Change the blas library " libs= " to your lapack+blas library
 
 At present, we prepared 3 typical Makefiles, which are squential+gfotran, sequential+ifort and mpi+ifort. 
 

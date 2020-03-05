@@ -4,3 +4,4 @@
 4. TiB2, a nodal net semimetal
 5. WC, triple point and nodal line
 6. WTe2, a type-II Weyl semimetal
+7. Haldane_model, Haldane model, QAHE

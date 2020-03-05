@@ -9,7 +9,7 @@ addons:
          - liblapack-dev 
 
 install:
-   - cd soc
+   - cd src
    - cp Makefile.gfortran_travis Makefile
    - make 
    - cd ..
@@ -17,10 +17,10 @@ install:
 script:
    - cd examples
    - sh run_test_Bi2Se3.sh
-   - cd ../soc
+   - cd ../src
 
 after_success:
    - bash <(curl -s https://codecov.io/bash)
 
 fixes:
-     - "build/::soc/"
+     - "build/::src/"

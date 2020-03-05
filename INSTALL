@@ -7,12 +7,12 @@ git clone https://github.com/quanshengwu/wannier_tools.git
 b. You could also download the release version on page
 https://github.com/quanshengwu/wannier_tools/releases
 
-2. After the download, uncompress it if necessary. The source file is included in the soc/ folder.
+2. After the download, uncompress it if necessary. The source file is included in the src/ folder.
 The executable binary will be copied to bin/ folder after compilation. There are several examples
 in the examples/ folder. The symmetrization module is in the wannhr_symm/ folder which is an
 independent python package.
 
-3. Go into the folder soc/ for the compilation. We prepared several Makefiles for different usage.
+3. Go into the folder src/ for the compilation. We prepared several Makefiles for different usage.
 Please copy the one that you need into Makefile like
 
 cp Makefile.intel-mpi Makefile

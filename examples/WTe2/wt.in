@@ -44,10 +44,7 @@ PROJECTORS
 !> 
 &CONTROL
 BulkBand_calc         = F
-BulkGap_plane_calc    = F
-BulkFS_plane_calc     = F
 FindNodes_calc        = F
-SlabBand_calc         = F
 SlabSS_calc           = F
 SlabArc_calc          = F
 SlabSpintexture_calc  = F
