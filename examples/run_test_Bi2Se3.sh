@@ -1,4 +1,4 @@
 cd ./Bi2Se3/
 cp ./.wt.in.travis wt.in
 tar xzvf Bi2Se3_hr.tar.gz
-../../soc/wt.x
+../../src/wt.x
