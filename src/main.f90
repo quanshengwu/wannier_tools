@@ -8,8 +8,6 @@
 ! constructed by Q.S.Wu on 4/9/2010
 ! change      by Q.S.Wu on 4/22/2010
 ! changed     by Q.S.wu on July/15/2010
-! version     HmnR.data  contains soc
-! mpi-version is not test yet, take you own risk.
 ! mpi-version is  tested , please report bugs to QSWU
 ! Jan 25 2015 by Q.S.Wu at ETH Zurich
 ! version     2.2.1  At EPFL, Switzerland, Sep. 14. 2017
@@ -17,6 +15,7 @@
 ! version     2.4.1  At EPFL, Switzerland, Oct. 15. 2018
 ! version     2.4.2  At EPFL, Switzerland, July. 9. 2019
 ! version     2.5.0  At EPFL, Switzerland, Dec. 9. 2019, magnetoresistance, band unfolding
+! version     2.5.1  At EPFL, Switzerland, Mar. 6. 2020, For WannierTools tutorial 2020
 ! wuquansheng@gmail.com
 ! Copyright (c) 2017 QuanSheng Wu. All rights reserved.
 !--------+--------+--------+--------+--------+--------+--------+------!
@@ -37,7 +36,7 @@
 
 
      !> version of WannierTools
-     version='2.5.0'
+     version='2.5.1'
 
      ierr = 0
      cpuid= 0
