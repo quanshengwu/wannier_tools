@@ -173,7 +173,7 @@ subroutine ek_bulk_line
       write(outfileindex, '(a)')'set xtics font ",24"'
       write(outfileindex, '(a)')'set ytics font ",24"'
       write(outfileindex, '(a)')'set ylabel font ",24"'
-      write(outfileindex, '(a)')'set ylabel offset 1.5,0'
+      write(outfileindex, '(a)')'set ylabel offset 0.5,0'
       write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
       write(outfileindex, '(a,f12.6)')'emin=', emin
       write(outfileindex, '(a,f12.6)')'emax=', emax
@@ -478,7 +478,7 @@ subroutine ek_bulk_plane
       write(outfileindex, '(a)')'set autoscale fix'
       write(outfileindex, '(a)')'set pm3d interpolate 4,4'
       write(outfileindex, '(2a)')"splot 'bulkek_plane.dat' u 4:5:8 w pm3d, \"
-      write(outfileindex, '(2a)')"      'bulkek_plane.dat' u 4:5:9 w pm3d"
+      write(outfileindex, '(2a)')"      'bulkek_plane.dat' u 4:5:7 w pm3d"
 
       close(outfileindex)
 
