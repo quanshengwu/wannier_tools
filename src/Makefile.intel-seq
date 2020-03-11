@@ -23,8 +23,8 @@ libs = -L/opt/intel/mkl/lib/ \
 		-lmkl_intel_lp64 -lmkl_sequential \
 		-lmkl_core -liomp5
  
-main :  $(obj)
-	$(f90) $(obj) -o wt.x $(libs) 
+main :  $(OBJ)
+	$(f90) $(OBJ) -o wt.x $(libs) 
 	cp -f wt.x ../bin
 
 .SUFFIXES: .o .f90
