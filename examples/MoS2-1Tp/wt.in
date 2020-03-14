@@ -7,41 +7,26 @@ Package = 'VASP'
 !> bulk band structure calculation flag
 &CONTROL
 BulkBand_calc         = T
-BulkFS_calc           = F
-Z2_3D_calc            = T
-DOS_calc              = T
-BulkFS_plane_calc     = F
-BulkGap_cube_calc     = F
-BulkGap_plane_calc    = F
+DOS_calc              = F
 SlabBand_calc         = F
-WireBand_calc         = F
 SlabSS_calc           = T
-SlabArc_calc          = T
-SlabSpintexture_calc  = F
-wanniercenter_calc    = F
-BerryPhase_calc       = F
-BerryCurvature_calc   = F
+wanniercenter_calc    = T
 /
 
 &SYSTEM
 NSLAB = 20 
-NumOccupied = 36        ! NumOccupied
+NumOccupied = 28        ! NumOccupied
 SOC = 1                 ! soc
-E_FERMI =  -3.9151        ! e-fermi
-surf_onsite= 0.0        ! surf_onsite
+E_FERMI =  -3.60        ! e-fermi
 /
 
 &PARAMETERS
-Eta_Arc = 0.001     ! infinite small value, like brodening 
-E_arc = -0.05         ! energy for calculate Fermi Arc
 OmegaNum = 401     ! omega number       
-OmegaMin = -0.8     ! energy interval
-OmegaMax =  0.4     ! energy interval
+OmegaMin = -0.6     ! energy interval
+OmegaMax =  0.2     ! energy interval
 Nk1 = 101          ! number k points 
 Nk2 = 101          ! number k points 
-Nk3 = 3            ! number k points 
-NP = 2              ! number of principle layers
-Gap_threshold = 0.10 ! threshold for GapCube output
+NP = 1              ! number of principle layers
 /
 
 LATTICE
@@ -61,18 +46,15 @@ Direct                          ! Direct or Cartisen coordinate
   S   0.5000000049999969  0.8016452854598629  0.5460646648816858
 
 PROJECTORS
-6 6 4 4 4 4        ! number of projectors
-Mo s dxy dyz dxz dx2-y2 dz2         ! projectors
-Mo s dxy dyz dxz dx2-y2 dz2         ! projectors
-S  s px py pz
-S  s px py pz
-S  s px py pz
-S  s px py pz
+2*6 4*3        ! number of projectors
+Mo s dz2 dxz dyz dx2-y2 dxy         ! projectors
+Mo s dz2 dxz dyz dx2-y2 dxy         ! projectors
+S pz px py
+S pz px py
+S pz px py
+S pz px py
 
-MILLER_INDEX        ! this is equal to the SURFACE card
-1 0 0
-
-!SURFACE            ! MoS2 conventional (010) surface
+SURFACE            ! MoS2 conventional (010) surface
  0  1  0
  0  0  1
  1  0  0
@@ -86,81 +68,61 @@ KPATH_BULK            ! k point path
 
 KPATH_SLAB
 2        ! numker of k line for 2D case
-X  0.5  0.0 G  0.0  0.0  ! k path for 2D case
+X -0.5  0.0 G  0.0  0.0  ! k path for 2D case
 G  0.0  0.0 X  0.5  0.0 
 
-KPLANE_SLAB
--0.5 -0.5      ! Original point for 2D k plane
- 1.0  0.0      ! The first vector to define 2D k plane 
- 0.0  1.0      ! The second vector to define 2D k plane  for arc plots
-
 KPLANE_BULK
--0.50 -0.50  0.00   ! Original point for 3D k plane 
+ 0.00  0.00  0.00   ! Original point for 3D k plane 
  1.00  0.00  0.00   ! The first vector to define 3d k space plane
- 0.00  1.00  0.00   ! The second vector to define 3d k space plane
-
-KCUBE_BULK
--0.50 -0.50 -0.50   ! Original point for 3D k plane 
- 1.00  0.00  0.00   ! The first vector to define 3d k space plane
- 0.00  1.00  0.00   ! The second vector to define 3d k space plane
- 0.00  0.00  1.00   ! The third vector to define 3d k cube
-
+ 0.00  0.50  0.00   ! The second vector to define 3d k space plane
 
 WANNIER_CENTRES 
 Cartesian
-    1.582112  2.389848 17.807782
-    1.588504  2.609305 17.734627
-    1.588512  2.615066 17.729182
-    1.588518  2.627199 17.745843
-    1.588498  2.598550 17.729411
-    1.588498  2.629729 17.732881
-   -0.004616  0.781697 17.681791
-   -0.000012  0.362382 17.901360
-    0.000001  0.357923 17.918636
-   -0.000009  0.350028 17.898957
-   -0.000005  0.365927 17.908526
-   -0.000007  0.366124 17.901329
-    1.588504  1.034466 19.413821
-    1.588523  1.032565 19.619308
-    1.588472  1.012794 19.497202
-    1.588484  1.034341 19.536688
-   -0.000085  3.898045 19.004023
-   -0.000043  3.932819 19.131844
-   -0.000018  3.905334 19.041137
-    0.000028  3.922253 19.122079
-   -0.000005  1.945318 16.239885
-   -0.000014  1.949702 16.018513
-   -0.000042  1.987244 16.143671
-   -0.000004  1.954899 16.130450
-    1.588449  4.785448 16.618078
-    1.588486  4.728185 16.486681
-    1.588469  4.865486 16.580409
-    1.588453  4.810723 16.489254
-    1.595220  2.389977 17.807534
-    1.588525  2.609305 17.734627
-    1.588517  2.615065 17.729183
-    1.588510  2.627201 17.745844
-    1.588530  2.598543 17.729408
-    1.588531  2.629735 17.732878
-    0.004808  0.781415 17.681511
-    0.000013  0.362387 17.901363
-   -0.000001  0.357918 17.918638
-    0.000009  0.350028 17.898959
-    0.000005  0.365927 17.908525
-    0.000007  0.366134 17.901324
-    1.588524  1.034460 19.413819
-    1.588506  1.032552 19.619299
-    1.588559  1.012789 19.497215
-    1.588545  1.034346 19.536661
-    0.000087  3.898051 19.004022
-    0.000044  3.932824 19.131846
-    0.000018  3.905353 19.041145
-   -0.000027  3.922253 19.122048
-    0.000005  1.945317 16.239895
-    0.000014  1.949708 16.018506
-    0.000043  1.987240 16.143659
-    0.000006  1.954899 16.130433
-    1.588582  4.785446 16.618079
-    1.588543  4.728170 16.486695
-    1.588562  4.865497 16.580411
-    1.588575  4.810739 16.489208
+    1.595691  2.949042 -12.122169 
+    1.588842  2.202581 -12.466249 
+    1.588542  2.218443 -12.449699 
+    1.588403  2.243434 -12.504088 
+    1.587637  2.233855 -12.483723 
+    1.589396  2.253629 -12.480790 
+    0.115237 -0.761048 -12.642465 
+   -0.000064  0.021667 -12.321385 
+    0.000566  0.005794 -12.337935 
+    0.001443 -0.019289 -12.283649 
+   -0.001912 -0.009869 -12.304449 
+    0.000386 -0.028701 -12.307493 
+    1.591698  0.643691 -10.580432 
+    1.589985  0.637799 -10.728310 
+    1.589042  0.633222 -10.683319 
+    0.000198  3.526919 -10.950549 
+    0.000025  3.598293 -11.067700 
+   -0.001831  3.511211 -11.075422 
+   -0.001109  1.579759 -14.206983 
+    0.000082  1.587494 -14.060551 
+   -0.000638  1.590548 -14.102768 
+    1.590791  4.424435 -13.853977 
+    1.589668  4.354163 -13.737266 
+    1.591297  4.441142 -13.726215 
+    1.580618  2.958236 -12.087841 
+    1.588949  2.203309 -12.465671 
+    1.588625  2.218213 -12.448834 
+    1.588038  2.243772 -12.503439 
+    1.587917  2.233562 -12.483640 
+    1.589368  2.254144 -12.481115 
+    0.113275 -0.722085 -12.639437 
+   -0.000104  0.021681 -12.321841 
+    0.000783  0.005568 -12.337311 
+    0.001641 -0.018186 -12.283299 
+   -0.001757 -0.009912 -12.304815 
+    0.000462 -0.028432 -12.307805 
+    1.591754  0.643697 -10.578784 
+    1.590109  0.638245 -10.725365 
+    1.589053  0.632171 -10.682500 
+   -0.000169  3.528217 -10.951210 
+   -0.000280  3.600934 -11.065724 
+   -0.001928  3.512521 -11.076095 
+   -0.001045  1.581769 -14.205941 
+   -0.000119  1.588883 -14.056914 
+   -0.000529  1.590780 -14.103087 
+    1.590859  4.425666 -13.853488 
+    1.589699  4.356033 -13.735306 
+    1.591172  4.437500 -13.726221 
