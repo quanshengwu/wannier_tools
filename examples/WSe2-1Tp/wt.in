@@ -1,0 +1,78 @@
+&TB_FILE
+Hrfile = 'wannier90_hr.dat'
+Package = 'VASP'
+/
+
+
+!> bulk band structure calculation flag
+&CONTROL
+BulkBand_calc         = T
+SlabBand_calc         = F
+SlabSS_calc           = T
+wanniercenter_calc    = T
+/
+
+&SYSTEM
+NSLAB = 10 
+NumOccupied = 28        ! NumOccupied
+SOC = 1                 ! soc
+E_FERMI = -2.9600       ! e-fermi
+/
+
+&PARAMETERS
+OmegaNum = 301     ! omega number       
+OmegaMin = -1.0     ! energy interval
+OmegaMax =  0.5     ! energy interval
+Nk1 = 61          ! number k points 
+Nk2 = 101          ! number k points 
+NP = 1              ! number of principle layers
+/
+
+LATTICE
+Angstrom
+     3.2981915     0.0000000     0.0000000
+     0.0000000     5.9443957    -0.0465052
+     0.0000000    -0.0987512    28.0482181
+
+ATOM_POSITIONS
+6                               ! number of atoms for projectors
+Cartisen                          ! Direct or Cartisen coordinate
+W        1.6490957     2.3786520    16.4406451
+W        0.0000000     0.1332231    16.6311989
+Se       1.6490957     0.7737841    18.4325241
+Se       0.0000000     3.7846718    17.9156060
+Se       0.0000000     1.7381028    14.6392263
+Se       1.6490957     4.6716096    15.1096395
+
+PROJECTORS
+2*6 4*3        ! number of projectors
+W s dz2 dxz dyz dx2-y2 dxy
+W s dz2 dxz dyz dx2-y2 dxy
+Se  pz px py 
+Se  pz px py 
+Se  pz px py 
+Se  pz px py 
+
+SURFACE      
+ 0  1  0
+ 0  0  1
+ 1  0  0
+
+KPATH_BULK            ! k point path
+4              ! number of k line only for bulk band
+  X 0.50000  0.00000  0.00000   G   0.00000  0.00000  0.00000   
+  G 0.00000  0.00000  0.00000   Y   0.00000  0.50000  0.00000   
+  Y 0.00000  0.50000  0.00000   M   0.50000  0.50000  0.00000   
+  M 0.50000  0.50000  0.00000   G   0.00000  0.00000  0.00000   
+
+KPATH_SLAB
+2        ! numker of k line for 2D case
+X  0.5  0.0 G  0.0  0.0  ! k path for 2D case
+G  0.0  0.0 M  0.5  0.5 
+
+KPLANE_BULK
+ 0.00  0.00  0.00   ! Original point for 3D k plane 
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  0.50  0.00   ! The second vector to define 3d k space plane
+
+
