@@ -1,4 +1,4 @@
-obj =  module.o wt_aux.o math_lib.o symmetry.o readHmnR.o inverse.o proteus.o \
+OBJ =  module.o wt_aux.o math_lib.o symmetry.o readHmnR.o inverse.o proteus.o \
        eigen.o ham_qlayer2qlayer.o psi.o unfolding.o \
   		 ham_slab.o ham_bulk.o ek_slab.o ek_bulk_polar.o ek_bulk.o \
        readinput.o fermisurface.o surfgreen.o surfstat.o \
