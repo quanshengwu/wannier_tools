@@ -916,7 +916,7 @@
                   ia= AtomIndex_orbital(m+(l-1)*Num_wann)
                   br= b(1)*AtomsPosition_supercell(1, ia)+ &
                       b(2)*AtomsPosition_supercell(2, ia)
-                  ratio= cos(br)- zi* sin(br)
+                  ratio= cos(2d0*pi*br)- zi* sin(2d0*pi*br)
             
                   do i=1, nfill
                      do j=1, nfill
