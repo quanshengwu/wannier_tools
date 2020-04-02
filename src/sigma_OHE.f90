@@ -282,7 +282,6 @@
             endif
          enddo ! ik
       enddo ! ib
-
       !> try to get the total number of k points left for each band 
       do ib=1, Nband_Fermi_Level
 #if defined (MPI)
@@ -361,6 +360,14 @@
                              info(:, ib), Displs(:, ib), mpi_dp, mpi_cmw, ierr)
       enddo ! ib
 #else
+      do ib=1, Nband_Fermi_Level
+         KCube3D_left(ib)%IKleft_array= KCube3D_left(ib)%ik_array
+         KCube3D_left(ib)%Ek_total= KCube3D_left(ib)%Ek_local
+         KCube3D_left(ib)%vx_total= KCube3D_left(ib)%vx_local
+         KCube3D_left(ib)%vy_total= KCube3D_left(ib)%vy_local
+         KCube3D_left(ib)%vz_total= KCube3D_left(ib)%vz_local
+         KCube3D_left(ib)%weight_k= KCube3D_left(ib)%weight_k_local
+      enddo ! ib
 #endif
 
       !> redistribute all those k points into different cpus
@@ -406,7 +413,7 @@
 
 
          allocate(KCube3D_left(ib)%k_direct(3, KCube3D_left(ib)%Nk_start:KCube3D_left(ib)%Nk_end))
-    
+   
          do ik= KCube3D_left(ib)%Nk_start, KCube3D_left(ib)%Nk_end
             i= KCube3D_left(ib)%IKleft_array(ik)
             ik1= (i-1)/(Nk2*Nk3)+1
@@ -533,13 +540,13 @@
 
             if (NSlice_Btau_inuse==1) then
                write(stdout, '(a, i6, a, i4, a, i6, a, 3f12.6)')&
-                  '>>> NSlice_Btau_inuse=1 at cpuid=', cpuid, ' ib=', ib, ' ik', ik, ' k', k_start
+                  '>>> NSlice_Btau_inuse=1 at cpuid=', cpuid, ' ib=', bands_fermi_level(ib), ' ik', ik, ' k', k_start
             endif
 
             !> we omit the 
             if (fail) then
                write(stdout, '(a, i6, a, i4, a, i6, a, 3f12.6)')&
-                  '>>> Runge-Kutta integration fails at cpuid=', cpuid, ' ib=', ib, ' ik', ik, ' k', k_start
+                  '>>> Runge-Kutta integration fails at cpuid=', cpuid, ' ib=', bands_fermi_level(ib), ' ik', ik, ' k', k_start
                write(stdout, *)' '
                cycle
             endif
