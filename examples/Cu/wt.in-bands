@@ -5,29 +5,20 @@ Hrfile = 'wannier90_hr.dat_nsymm48'
 
 !> bulk band structure calculation flag
 &CONTROL
-Boltz_OHE_calc        = T
-Symmetry_Import_calc = T ! please set it to be true for magnetoresistance calculation
+BulkBand_calc         = T
+BulkFS_calc           = T
 /
 
 &SYSTEM
 SOC = 0                ! without soc : SOC=0; with soc : SOC=1
 E_FERMI = 7.7083       ! e-fermi
-Btheta= 18, Bphi= 90     ! magnetic field direction, Btheta is the angle with z axial, Bphi is the angle with respect to x axial in the x-y plane
 NumOccupied = 6        ! set it anyway even don't use it.
 /
 
 &PARAMETERS
-OmegaNum = 1        ! omega number       
-OmegaMin =  0.0     ! energy interval
-OmegaMax =  0.0     ! energy interval
-Nk1 = 16            ! Kmesh(1) for KCUBE_BULK
-Nk2 = 16            ! Kmesh(2) for KCUBE_BULK
-Nk3 = 16            ! Kmesh(3) for KCUBE_BULK
-BTauNum= 100        ! Number of B*tau we calculate
-BTauMax = 40.0      ! The maximum B*tau, starting from Btau=0.
-Tmin = 30           ! Temperature in Kelvin
-Tmax = 330          ! Temperature in Kelvin
-NumT = 11           ! number temperature we calculate
+Nk1 = 51            ! Kmesh(1) for KCUBE_BULK
+Nk2 = 51            ! Kmesh(2) for KCUBE_BULK
+Nk3 = 51            ! Kmesh(3) for KCUBE_BULK
 /
 
 LATTICE
@@ -45,13 +36,17 @@ PROJECTORS
 9            ! number of projectors
 Cu s s s  s s dxy dyz dzx dx2-y2 dz2 
 
-SURFACE            ! should be given even don't use
+SURFACE            ! should be given even is not used
  1  0  0
  0  1  0
 
-SELECTEDBANDS
-1
-6
+KPATH_BULK            ! k point path
+5
+W  0.50000   0.25000   0.75000   L  0.50000   0.50000   0.50000   
+L  0.50000   0.50000   0.50000   G  0.00000   0.00000   0.00000   
+G  0.00000   0.00000   0.00000   W  0.50000   0.00000   0.50000  
+X  0.50000   0.00000   0.50000   W  0.50000   0.25000   0.75000
+W  0.50000   0.25000   0.75000   K  0.37500   0.37500   0.37500   
 
 KCUBE_BULK
  0.00  0.00  0.00   ! Original point for 3D k plane 

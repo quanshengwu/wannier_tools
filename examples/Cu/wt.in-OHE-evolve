@@ -1,0 +1,47 @@
+&TB_FILE
+Hrfile = 'wannier90_hr.dat_nsymm48'
+/
+
+&CONTROL
+Boltz_evolve_k = T
+/
+
+&SYSTEM
+SOC = 0                ! without soc : SOC=0; with soc : SOC=1
+E_FERMI = 7.7083       ! e-fermi
+Btheta= 0, Bphi= 0    ! magnetic field direction, Btheta is the angle with z axial, Bphi is the angle with respect to x axial in the x-y plane
+NumOccupied = 6        ! set it anyway even don't use it.
+/
+
+&PARAMETERS
+Nk1 = 51            ! Kmesh(1) for KCUBE_BULK
+BTauNum= 100        ! Number of B*tau we calculate
+BTauMax = 40.0      ! The maximum B*tau, starting from Btau=0.
+/
+
+LATTICE
+Angstrom
+   0.0000000   1.8075000   1.8075000
+   1.8075000   0.0000000   1.8075000
+   1.8075000   1.8075000   0.0000000
+
+ATOM_POSITIONS
+1                               ! number of atoms for projectors
+Cartisen                          ! Direct or Cartisen coordinate
+Cu    0.000000      0.000000      0.000000     
+
+PROJECTORS
+9            ! number of projectors
+Cu s s s  s s dxy dyz dzx dx2-y2 dz2 
+
+SURFACE            ! should be given even don't use
+ 1  0  0
+ 0  1  0
+
+SELECTEDBANDS
+1
+6
+
+KPATH_BULK            ! k point path
+1
+G  0.00000   0.00000   0.00000   W  0.50000   0.00000   0.50000  

@@ -40,7 +40,7 @@
 
       real(dp) :: v_t(3), v_k(3)
       real(dp) :: k(3), k_start(3)
-      real(dp) :: sigma_symm_t(9)
+      real(dp) :: sigma_symm_t(9), rho(3, 3)
       
       real(dp) :: time_start, time_end
       real(dp) :: time_start0, time_end0
@@ -796,23 +796,38 @@
                write(sigmafilename, '(7a)')'sigma_band_', trim(adjustl(bandname)),'_mu_',&
                   trim(adjustl(muname)),'eV_T_', trim(adjustl(tname)), 'K.dat'
                open(unit=outfileindex, file=sigmafilename)
-               write(outfileindex, '(a20, i5, 2(a, f16.4, a))')'# Conductivity tensor for band  ', & 
+               write(outfileindex, '(a, i5, 2(a, f16.4, a))')'# Conductivity tensor \sigma/\tau for band  ', & 
                   bands_fermi_level(ib), ' temperature at ', KBT, ' K', ' chemical potential at ', mu_array(ie), ' eV'
                write(outfileindex, '("#",20a16)')'BTau (T.ps)', 'OmegaTau (eV.ps)', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
-            endif
-            
-            
-            if (cpuid.eq.0) then
+               
                !> write out the conductivity/tau into file
                do i=1, NBTau
                   write(outfileindex, '(20E16.6)')BTau_array(i), BTau_array(i)*0.175874356d0, sigma_ohe_tensor(:, i, ie, ikt, ib)
                enddo ! i, NBTau
+               close(outfileindex)
+            endif ! cpuid=0
+
+            outfileindex= outfileindex+ 1
+            if (cpuid.eq.0) then
+               write(bandname, '(i10)')bands_fermi_level(ib)
+               write(sigmafilename, '(7a)')'rho_band_', trim(adjustl(bandname)),'_mu_',&
+                  trim(adjustl(muname)),'eV_T_', trim(adjustl(tname)), 'K.dat'
+               open(unit=outfileindex, file=sigmafilename)
+               write(outfileindex, '(a, i5, 2(a, f16.4, a))')'# \tau*\rho is the inverse of Conductivity tensor \sigma/\tau for band  ', & 
+                  bands_fermi_level(ib), ' temperature at ', KBT, ' K', ' chemical potential at ', mu_array(ie), ' eV'
+               write(outfileindex, '("#",20a16)')'BTau (T.ps)', 'OmegaTau (eV.ps)', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
+               
+               !> write out the inverse of conductivity/tau into file
+               do i=1, NBTau
+                  rho(1, 1:3)=sigma_ohe_tensor(1:3, i, ie, ikt, ib)
+                  rho(2, 1:3)=sigma_ohe_tensor(4:6, i, ie, ikt, ib)
+                  rho(3, 1:3)=sigma_ohe_tensor(7:9, i, ie, ikt, ib)
+                  call inv_r(3, rho)
+                  write(outfileindex, '(20E16.6)')BTau_array(i), BTau_array(i)*0.175874356d0, rho(1, 1:3), rho(2, 1:3), rho(3, 1:3)
+               enddo ! i, NBTau
+               close(outfileindex)
             endif ! cpuid=0
             
-            
-            if (cpuid.eq.0) then
-               close(outfileindex)
-            endif
 #if defined (MPI)
             call mpi_barrier(mpi_cmw, ierr)
 #endif
@@ -1535,7 +1550,7 @@
                write(bandname, '(i10)')bands_fermi_level(ib)
                write(sigmafilename, '(5a)')'sigma_band_', trim(adjustl(bandname)),'_T_', trim(adjustl(tname)), 'K.dat'
                open(unit=outfileindex, file=sigmafilename)
-               write(outfileindex, '(a, i5, a, f16.4, a)')'# Conductivity tensor for band ', &
+               write(outfileindex, '(a, i5, a, f16.4, a)')'# Conductivity tensor \sigma/\tau for band ', &
                   bands_fermi_level(ib), ' temperature at ', KBT, ' K'
                write(outfileindex, '("#",20a16)')'BTau (T.ps)', 'OmegaTau', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
             endif
@@ -2253,37 +2268,34 @@
       allocate( velocity_k(3, Nband_Fermi_Level))
       velocity_k= 0d0
    
-   
-      k= Single_KPOINT_3D_DIRECT
-      call velocity_calc(Nband_Fermi_Level, bands_fermi_level, k, velocity_k, Ek)
- 
-      !> file index for different bands
-      do ib=1, Nband_Fermi_Level
-         outfileindex= outfileindex+ 1
-         myfileindex(ib)= outfileindex
-      enddo
-
-      do ib=1, Nband_Fermi_Level
-         if (cpuid.eq.0) then
-            write(bandname, '(i10)')bands_fermi_level(ib)
-            write(evolvefilename, '(3a)')'evolve_band_', trim(adjustl(bandname)), '.dat'
-            open(unit=myfileindex(ib), file=evolvefilename)
-            write(myfileindex(ib), '(a10, i5, a16, f16.8)')'# evolve k ', bands_fermi_level(ib), 'energy level', Ek(ib)
-            write(myfileindex(ib), '("#", a13, 20a16)')'BTau (T.ps)', &
-               'OmegaTau', 'kx', 'ky', 'kz', 'vx', 'vy', 'vz', 'k1', 'k2','k3'
-         endif
-      enddo
 #if defined (MPI)
       call mpi_barrier(mpi_cmw, ierr)
 #endif
-
   
-      !> exclude all kpoints with zero velocity x B and large energy away from Fermi level
+     !> exclude all kpoints with zero velocity x B and large energy away from Fermi level
      do ib= 1, Nband_Fermi_Level 
+         !> file index for different bands
+         outfileindex= outfileindex+ 1
+         myfileindex(ib)= outfileindex
+        if (cpuid.eq.0) then
+           write(bandname, '(i10)')bands_fermi_level(ib)
+           write(evolvefilename, '(3a)')'evolve_band_', trim(adjustl(bandname)), '.dat'
+           open(unit=myfileindex(ib), file=evolvefilename)
+        endif
 
         do ik= 1, nk3_band
            k_start = k3points(:, ik)
-
+           call velocity_calc(Nband_Fermi_Level, bands_fermi_level, k_start, velocity_k, Ek)
+           if (cpuid.eq.0) then
+              write(myfileindex(ib), '(a)')" "
+              write(myfileindex(ib), '(a)')"# Quasi-particle's trajectory under magnetic field"
+              write(myfileindex(ib), '(a, 3f12.5)')'# Magnetic field is along (cartesian coordinates)', Bdirection
+              write(myfileindex(ib), '(1X, a, 3f12.5, a, i8)')"# Starting k point (fractional coordinates) :", k_start, ' ith-band ', bands_fermi_level(ib)
+              write(myfileindex(ib), '(a, f16.8, a)')'# At energy level', Ek(ib), ' eV'
+              write(myfileindex(ib), '("#", a13, 20a16)')'BTau (T.ps)', &
+                 'Omega*Tau', 'kx', 'ky', 'kz', 'vx', 'vy', 'vz', 'k1', 'k2','k3'
+           endif
+ 
            !> start to get the evolution of k points under magnetic field using Runge-Kutta method
            !k_start= Single_KPOINT_3D_DIRECT
            kout= 0d0
@@ -2295,7 +2307,6 @@
            !> if the magnetic field is zero. 
            icycle = 0
            if (BTauMax>eps3) then
-             !call RKF45_pack(ib+bands_fermi_level(1)-1,  
               call RKF45_pack(bands_fermi_level(ib),  &
                  NSlice_Btau, k_start, Btau_start, Btau_final, kout, icycle, fail)
            else
@@ -2303,13 +2314,10 @@
                  kout(:, ibtau)= k_start(:)
               enddo
            endif
-          !print *, 'ik icycle', ik, icycle
        
            if (cpuid.eq.0) then
-              write(myfileindex(ib), '(a)')" "
-              write(myfileindex(ib), '(1X, a, 3f16.8, a, i8)')"Kstart :", k_start, ' iband ', ib
               if (NSlice_Btau==1) then
-                 write(myfileindex(ib), '(a)')" VxB=0 or far away from Fermi level" 
+                 write(myfileindex(ib), '(a)')">> No data for output since VxB=0 or far away from Fermi level |E-E_F|>0.05eV" 
                  write(myfileindex(ib), '(a)')" "
               else
                  do it=1, NSlice_Btau
@@ -2318,7 +2326,7 @@
                     call velocity_calc_iband2(bands_fermi_level(ib), k, v_t, E_iband)
                     BTau = -(it-1.0)/NSlice_Btau*15d0*BTauMax
                     call direct_cart_rec(kout(:, it), k)
-                    write(myfileindex(ib), '(100f16.8)')Btau, Btau*0.175874356d0, k, v_t, kout(:, it), E_iband
+                    write(myfileindex(ib), '(100f16.8)')Btau, Btau*0.175874356d0, k, v_t, kout(:, it)
                  enddo
               endif
            endif

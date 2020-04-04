@@ -12,22 +12,22 @@ Symmetry_Import_calc = T ! please set it to be true for magnetoresistance calcul
 &SYSTEM
 SOC = 0                ! without soc : SOC=0; with soc : SOC=1
 E_FERMI = 7.7083       ! e-fermi
-Btheta= 18, Bphi= 90     ! magnetic field direction, Btheta is the angle with z axial, Bphi is the angle with respect to x axial in the x-y plane
+Btheta= 0, Bphi= 90    ! magnetic field direction, Btheta is the angle with z axial, Bphi is the angle with respect to x axial in the x-y plane
 NumOccupied = 6        ! set it anyway even don't use it.
 /
 
 &PARAMETERS
-OmegaNum = 1        ! omega number       
-OmegaMin =  0.0     ! energy interval
+OmegaNum = 2        ! omega number       
+OmegaMin = -0.1     ! energy interval
 OmegaMax =  0.0     ! energy interval
-Nk1 = 16            ! Kmesh(1) for KCUBE_BULK
-Nk2 = 16            ! Kmesh(2) for KCUBE_BULK
-Nk3 = 16            ! Kmesh(3) for KCUBE_BULK
+Nk1 = 21            ! Kmesh(1) for KCUBE_BULK
+Nk2 = 21            ! Kmesh(2) for KCUBE_BULK
+Nk3 = 21            ! Kmesh(3) for KCUBE_BULK
 BTauNum= 100        ! Number of B*tau we calculate
 BTauMax = 40.0      ! The maximum B*tau, starting from Btau=0.
 Tmin = 30           ! Temperature in Kelvin
 Tmax = 330          ! Temperature in Kelvin
-NumT = 11           ! number temperature we calculate
+NumT = 11           ! number temperature we calculate. T=Tmin+(Tmax-Tmin)/(NumT-1)
 /
 
 LATTICE
