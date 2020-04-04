@@ -1,0 +1,48 @@
+&TB_FILE
+Hrfile = "Weyl3D_hr.dat"
+/
+
+!> bulk band structure calculation flag
+&CONTROL
+FindNodes_calc        = T
+/
+
+&SYSTEM
+NumOccupied = 1         ! NumOccupied
+SOC = 1                 ! soc
+E_FERMI = 0        ! e-fermi
+/
+
+&PARAMETERS
+Nk1 = 6             ! number k points 
+Nk2 = 6             ! number k points 
+Nk3 = 6             ! number k points 
+Gap_threshold = 0.0001 ! threshold for GapCube output
+/
+
+LATTICE
+Angstrom
+   1.0000000   000000000   000000000    
+   000000000   1.0000000   000000000    
+   000000000   000000000   1.0000000    
+
+ATOM_POSITIONS
+1                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+ A 0     0     0. 
+
+PROJECTORS
+ 1           ! number of projectors
+A s
+
+SURFACE            ! See doc for details
+ 0  0  1
+ 1  0  0
+ 0  1  0
+
+KCUBE_BULK
+ 0.00  0.00  0.00   ! Original point for 3D k plane 
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  1.00  0.00   ! The second vector to define 3d k space plane
+ 0.00  0.00  1.00   ! The third vector to define 3d k cube
+

@@ -1,11 +1,10 @@
-! 2-band 3D WSM model from PhysRevB.94.121105
+! 2-band 3D WSM model
 ! usage:
 ! compile and run
 ! gfortran writeHmnR.f90 -o writehmnr
 ! ./writehmnr
+! > H=A(kx*s_x+ky*s_y)+(M0-M1(kx*kx+ky*ky+kz*kz))*s_z
    program writeHmnR
-      !> model in https://arxiv.org/pdf/1607.08474.pdf
-      !> or 10.1103/PhysRevB.94.121105
 
       implicit none
 
@@ -109,7 +108,7 @@
 
       !> write to new_hr.dat
       open(unit=105, file='Weyl3D_hr.dat')
-      write(105, *)'2-band 3D WSM model from PhysRevB.94.121105'
+      write(105, *)'2-band 3D WSM toy model'
       write(105, *)nwann*2
       write(105, *)nrpts
       write(105, '(15I5)')(ndegen(i), i=1, nrpts)

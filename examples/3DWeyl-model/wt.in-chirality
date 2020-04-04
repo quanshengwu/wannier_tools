@@ -1,0 +1,47 @@
+&TB_FILE
+Hrfile = "Weyl3D_hr.dat"
+/
+
+!> bulk band structure calculation flag
+&CONTROL
+WeylChirality_calc    = T
+/
+
+&SYSTEM
+NumOccupied = 1         ! NumOccupied
+SOC = 1                 ! soc
+E_FERMI = 0        ! e-fermi
+/
+
+&PARAMETERS
+Nk1 = 60            ! number k points 
+Nk2 = 60            ! number k points 
+/
+
+LATTICE
+Angstrom
+   1.0000000   000000000   000000000    
+   000000000   1.0000000   000000000    
+   000000000   000000000   1.0000000    
+
+ATOM_POSITIONS
+1                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+ A 0     0     0. 
+
+PROJECTORS
+ 1           ! number of projectors
+A s
+
+
+SURFACE            ! See doc for details
+ 0  0  1
+ 1  0  0
+ 0  1  0
+
+WEYL_CHIRALITY
+2            ! Num_Weyls
+Cartesian    ! Direct or Cartesian coordinate
+0.004        ! Radius of the ball surround a Weyl point
+    0.00000000   -0.00000000    1.04719755    0.00000000   -0.00000000    0.00000000   -0.00000000    0.16666667
+    0.00000000    0.00000000   -1.04719755    0.00000000   -0.00000000    0.00000000    0.00000000   -0.16666667

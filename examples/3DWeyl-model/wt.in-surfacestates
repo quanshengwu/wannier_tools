@@ -1,0 +1,56 @@
+&TB_FILE
+Hrfile = "Weyl3D_hr.dat"
+/
+
+!> bulk band structure calculation flag
+&CONTROL
+SlabSS_calc           = T
+SlabArc_calc          = T
+/
+
+&SYSTEM
+NumOccupied = 1         ! NumOccupied
+SOC = 1                 ! soc
+E_FERMI = 0        ! e-fermi
+/
+
+&PARAMETERS
+Eta_Arc = 0.001     ! infinite small value, like brodening 
+E_arc = 0.0         ! energy for calculate Fermi Arc
+OmegaNum = 400  ! omega number       
+OmegaMin = -1.6     ! energy interval
+OmegaMax =  1.6     ! energy interval
+Nk1 = 201            ! number k points 
+Nk2 = 201           ! number k points 
+NP = 2              ! number of principle layers
+/
+
+LATTICE
+Angstrom
+   1.0000000   000000000   000000000    
+   000000000   1.0000000   000000000    
+   000000000   000000000   1.0000000    
+
+ATOM_POSITIONS
+1                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+A   0    0    0. 
+
+PROJECTORS
+ 1           ! number of projectors
+A s
+
+
+SURFACE            ! See doc for details
+ 1  0  0
+ 0  0  1
+
+KPATH_SLAB
+1        ! numker of k line for 2D case
+-X -0.50 0.0 X 0.5 0.0  ! k path for 2D case
+
+KPLANE_SLAB
+-0.5 -0.5      ! Original point for 2D k plane
+ 1.0  0.0      ! The first vector to define 2D k plane 
+ 0.0  1.0      ! The second vector to define 2D k plane  for arc plots
+
