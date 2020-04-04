@@ -1,22 +1,20 @@
 &TB_FILE
-Hrfile = "haldane_hr.dat"
+Hrfile = "Haldane_hr.dat"
 /
 
 
 !> bulk band structure calculation flag
 &CONTROL
-BulkBand_calc         = T
-BulkBand_plane_calc   = F
-SlabBand_calc         = F
-SlabSS_calc           = T
-Wanniercenter_calc    = T
-BerryCurvature_calc   = T
+BulkBand_calc         = T  ! calculate band structure in kpath mode
+BulkBand_plane_calc   = T  ! calculate band structure in kplane mode
+SlabBand_calc         = T  ! Calculate slab band structure in kpath mode
+SlabSS_calc           = F  ! Calculate surface states in kpath mode
+Wanniercenter_calc    = T  ! calculate Wilson loop
+BerryCurvature_calc   = T  ! 
 /
 
 &SYSTEM
-NSLAB =10  
-NSLAB1= 4  
-NSLAB2= 4  
+NSLAB =60  
 NumOccupied = 1         ! NumOccupied
 SOC = 0                 ! soc
 E_FERMI = 0        ! e-fermi
@@ -30,7 +28,7 @@ OmegaMin = -5.0     ! energy interval
 OmegaMax =  5.0     ! energy interval
 Nk1 = 60            ! number k points 
 Nk2 = 60            ! number k points 
-NP = 2              ! number of principle layers
+NP = 1              ! number of principle layers
 /
 
 LATTICE
@@ -42,13 +40,13 @@ Angstrom
 ATOM_POSITIONS
 2                               ! number of atoms for projectors
 Direct                          ! Direct or Cartisen coordinate
-C 0.333333 0.666667 0.500000 C
-C 0.666667 0.333333 0.500000 C
+C 0.333333 0.666667 0.500000 
+C 0.666667 0.333333 0.500000 
 
 PROJECTORS
 1 1          ! number of projectors
-C s
-C s
+C pz
+C pz
 
 
 SURFACE            ! See doc for details
@@ -58,14 +56,13 @@ SURFACE            ! See doc for details
 
 KPATH_BULK            ! k point path
 3              ! number of k line only for bulk band
-  M   0.50000  0.00000  0.00000   K  0.33333   0.33333  0.00000
-  K   0.33333  0.33333  0.00000   G  0.00000   0.00000  0.00000
+  M   0.50000  0.00000  0.00000   K' -.33333   -.33333  0.00000
+  K'  -.33333  -.33333  0.00000   G  0.00000   0.00000  0.00000
   G   0.00000  0.00000  0.00000   K  0.33333   0.33333  0.00000
 
 KPATH_SLAB
-2        ! numker of k line for 2D case
-X 0. -0.5 G 0.0 0.0  ! k path for 2D case
-G 0.0 0.0 Y 0.0 0.5
+1        ! numker of k line for 2D case
+0 0.0 0.0 1 0. 1.0  ! k path for 2D case
 
 KPLANE_SLAB
 -0.5 -0.5      ! Original point for 2D k plane

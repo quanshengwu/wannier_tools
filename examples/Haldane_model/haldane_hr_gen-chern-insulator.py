@@ -25,6 +25,8 @@ Direct                          ! Direct or Cartisen coordinate
 C 0.333333 0.666667 0.500000
 C 0.666667 0.333333 0.500000
 
+
+
 """
 # Define tight-binding parameters
 # You can find phase diagram in PRL 61,2015 (1988)
@@ -33,16 +35,7 @@ C 0.666667 0.333333 0.500000
 # Gapless phase
 #m=0.2; phi= np.pi/2.0; t1=1.0; t2=m/3.0/np.sqrt(3);
 # Chern = 1
-#m=0.2; phi= np.pi/2.0; t1=1.0; t2=m/3.0/np.sqrt(3)*2.0;
-
-# Gapless phase-> Chern
-#m=0.2; phi= np.pi/2.0; t1=1.0; t2=m/3.0/np.sqrt(3)+0.01;
-
-# Gapless phase-> trivial
-# m=0.2; phi= np.pi/2.0; t1=1.0; t2=m/3.0/np.sqrt(3)-0.01;
-
-# Graphene
-m=0.0; phi= np.pi/2.0; t1=1.0; t2=0;
+m=0.2; phi= np.pi/2.0; t1=1.0; t2=m/3.0/np.sqrt(3)*2.0;
 
 
 # maximum dimension for hr matrix
