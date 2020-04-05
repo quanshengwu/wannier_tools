@@ -6,3 +6,4 @@
 6. WTe2, a type-II Weyl semimetal
 7. Haldane_model, Haldane model, QAHE
 8. band_unfolding, unfold energy bands from a supercell Hamiltonian
+9. TaAs, a type-I Weyl semimetal

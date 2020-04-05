@@ -1,0 +1,56 @@
+&TB_FILE
+Hrfile = "Wannier90_hr.dat"
+Package='VASP'
+/
+
+
+!> bulk band structure calculation flag
+&CONTROL
+BulkBand_calc         = T
+/
+
+&SYSTEM
+NumOccupied = 16        ! NumOccupied
+SOC = 1                 ! without soc : SOC=0; with soc : SOC=1
+E_FERMI = 6.8549         ! e-fermi
+/
+
+&PARAMETERS
+Nk1 = 61           ! number k points 
+/
+
+LATTICE
+Angstrom
+3.437000 -0.000000 -0.000000
+-0.000000 3.437000 0.000000
+-1.718500 -1.718500 5.828000
+
+ATOM_POSITIONS
+4                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+ Ta    0.25000   0.75000   0.50000 
+ Ta    0.00000   0.00000   0.00000 
+ As    0.66700   0.16700   0.33400 
+ As    0.41700   0.41700   0.83400 
+
+
+PROJECTORS
+5 5 3 3            ! number of projectors
+Ta dz2 dxz dyz dx2-y2 dxy
+Ta dz2 dxz dyz dx2-y2 dxy
+As pz px py 
+As pz px py 
+
+SURFACE     
+ 1  0  0
+ 0  1  0
+
+KPATH_BULK            ! k point path
+6              ! number of k line only for bulk band
+G  0.0 0.0 0.0    X 0.0 0.0 0.5   
+X  0.0 0.0 0.5    G 0.0 0.0 0.0   
+G  0.0 0.0 0.0    Z 0.5 0.5 -0.5  
+Z  0.5 0.5 -0.5   N 0.0 0.5 0.0   
+N  0.0 0.5 0.0    P 0.25 0.25 0.25
+P  0.25 0.25 0.25 Z 0.5 0.5 -0.5  
+
