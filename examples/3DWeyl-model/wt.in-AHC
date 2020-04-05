@@ -1,0 +1,49 @@
+&TB_FILE
+Hrfile = "Weyl3D_hr.dat"
+/
+
+!> bulk band structure calculation flag
+&CONTROL
+AHC_calc = T
+/
+
+&SYSTEM
+NumOccupied = 1         ! NumOccupied here we don't use it but need to specify
+SOC = 1                 ! soc
+E_FERMI = 0        ! e-fermi
+/
+
+&PARAMETERS
+Eta_arc=0.1         ! a brodening factor for Delta function
+Nk1 =101            ! number k points 
+Nk2 =101            ! number k points 
+Nk3 =101            ! number k points 
+OmegaNum=401
+OmegaMin=-6
+OmegaMax=6
+/
+
+LATTICE
+Angstrom
+   1.0000000   000000000   000000000    
+   000000000   1.0000000   000000000    
+   000000000   000000000   1.0000000    
+
+ATOM_POSITIONS
+1                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+A  0     0     0. 
+
+PROJECTORS
+ 1           ! number of projectors
+A s
+
+SURFACE            ! See doc for details
+ 0  0  1
+ 1  0  0
+
+KCUBE_BULK
+0 0 0
+1 0 0
+0 1 0
+0 0 1

@@ -53,3 +53,8 @@ $ ./writehmnr
    $ evince wcc-kz0.eps
    $ evince wcc-kz0.5.eps
 
+7. Calculate anomalous hall conductivity
+   $ cp wt.in-AHC
+   $ mpiexec -np 4 wt.x &
+   $ gnuplot sigma_ahc.gnu
+   $ evince sigma_ahc.pdf

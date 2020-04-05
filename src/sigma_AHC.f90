@@ -384,7 +384,7 @@
      outfileindex= outfileindex+ 1
      if (cpuid.eq.0) then
         open(unit=outfileindex, file='sigma_ahc.txt')
-        write(outfileindex, '("#",a)')' Anomalous hall conductivity in unit of (Omega*cm)^-1'
+        write(outfileindex, '("#",a)')' Anomalous hall conductivity in unit of (Ohm*cm)^-1 (Omega*cm)^-1, and e^2/h'
         write(outfileindex, '("#",a13, 20a16)')'Eenergy (eV)', '\sigma_xy', '\sigma_yz', '\sigma_zx'
         do ie=1, OmegaNum
            write(outfileindex, '(200E16.8)')energy(ie), sigma_tensor_ahc(3, ie), &
@@ -394,6 +394,28 @@
         enddo
         close(outfileindex)
      endif
+
+     !> write script for gnuplot
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+        open(unit=outfileindex, file='sigma_ahc.gnu')
+        write(outfileindex, '(a)') 'set terminal pdf enhanced color font ",20"'
+        write(outfileindex, '(a)')"set output 'sigma_ahc.pdf'"
+        write(outfileindex, '(a)')'set key samplen 0.8'
+        write(outfileindex, '(a)')'set ylabel offset 0.0,0'
+        write(outfileindex, '(a, f10.5, a, f10.5, a)')'set xrange [', OmegaMin, ':', OmegaMax, ']'
+        write(outfileindex, '(a)')'set xlabel "Energy (eV)"'
+        write(outfileindex, '(a)')'set ylabel "\sigma (1/(Ohm*cm))"'
+        write(outfileindex, '(2a)')"plot 'sigma_ahc.txt' u 1:2 w l title '\sigma_{xy}' lc rgb 'red' lw 4, \"
+        write(outfileindex, '(2a)')"     'sigma_ahc.txt' u 1:3 w l title '\sigma_{yz}' lc rgb 'blue' lw 4, \"
+        write(outfileindex, '(2a)')"     'sigma_ahc.txt' u 1:4 w l title '\sigma_{zx}' lc rgb 'orange' lw 4 "
+        close(outfileindex)
+     endif
+
+202 format('set xtics (',20('"',A3,'" ',F10.5,','))
+203 format(A3,'" ',F10.5,')')
+204 format('set arrow from ',F10.5,',',A5,' to ',F10.5,',',A5, ' nohead')
+
 
      deallocate( W , vx, vy, vz, Hamk_bulk, Amat, UU, UU_dag, energy)
      deallocate( sigma_tensor_ahc, sigma_tensor_ahc_mpi)

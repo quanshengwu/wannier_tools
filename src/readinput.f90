@@ -4007,6 +4007,7 @@ subroutine FindTheThirdLatticeVector()
       write(stdout, '(a,3f10.3)')' R3=', R3
       write(stdout, *)' Where R1, R2, R3 are in cartesian coordinates'
    else
+      if (cpuid==0) &
       write(stdout, *) &
          " Warning:  I am sorry that I can't properly find unit cell with the first two vectors", &
          " defined in the SURFACE card that have the same volume as the original one." , &
