@@ -1,0 +1,61 @@
+&TB_FILE
+Hrfile = 'Si_dopped_Diamond_hr.dat'
+/
+
+
+!> bulk band structure calculation flag
+&CONTROL
+BulkBand_calc         = T
+/
+
+&SYSTEM
+NumOccupied = 1         ! NumOccupied is not used here but need to be set
+SOC = 0                 ! soc
+E_FERMI =  11.8545        ! e-fermi
+/
+
+&PARAMETERS
+Nk1 = 101          ! number k points 
+/
+
+LATTICE
+Angstrom
+3.5666899681         0.0000000000         0.0000000000
+0.0000000000         3.5666899681         0.0000000000
+0.0000000000         0.0000000000         3.5666899681
+
+ATOM_POSITIONS
+8                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+C    0.250000000         0.250000000         0.250000000
+C    0.000000000         0.000000000         0.000000000
+C    0.000000000         0.500000000         0.500000000
+C    0.500000000         0.500000000         0.000000000
+C    0.500000000         0.000000000         0.500000000
+C    0.749999967         0.250000000         0.749999967
+C    0.250000000         0.749999967         0.749999967
+C    0.749999967         0.749999967         0.250000000
+
+PROJECTORS
+8*4        ! number of projectors
+C s pz px py
+C s pz px py
+C s pz px py
+C s pz px py
+C s pz px py
+C s pz px py
+C s pz px py
+C s pz px py
+
+SURFACE    ! not used but need to be set
+ 1  0  0
+ 0  1  0
+
+KPATH_BULK            ! k point path
+5              ! number of k line only for bulk band
+G 0.0 0.0 0.0  X  0.5 0.0 0.0  
+X 0.5 0.0 0.0  L  0.5 0.5 0.5  
+L 0.5 0.5 0.5  G  0.0 0.0 0.0  
+G 0.0 0.0 0.0  M  0.5 0.5 0.0  
+M 0.5 0.5 0.0  X  0.5 0.0 0.0  
+

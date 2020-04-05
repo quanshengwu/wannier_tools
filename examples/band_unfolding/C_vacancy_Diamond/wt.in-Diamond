@@ -1,0 +1,46 @@
+&TB_FILE
+Hrfile = 'Diamond_hr.dat'
+/
+
+!> bulk band structure calculation flag
+&CONTROL
+BulkBand_calc         = T
+/
+
+&SYSTEM
+NumOccupied = 1         ! NumOccupied
+SOC = 0                 ! soc
+E_FERMI =  10.0032       ! e-fermi
+/
+
+&PARAMETERS
+Nk1 = 101          ! number k points 
+/
+
+LATTICE
+Angstrom
+1.783345 1.783345 0.000000
+1.783345 0.000000 -1.783345
+0.000000 1.783345 -1.783345
+
+ATOM_POSITIONS
+2 
+Direct
+C 0.250000 0.250000 0.250000 
+C 0.000000 0.000000 0.000000
+
+PROJECTORS
+2*4         ! number of projectors
+C s pz px py
+C s pz px py
+
+SURFACE            ! TaAs2 conventional (010) surface
+ 1  0  0
+ 0  1  0
+
+KPATH_BULK            ! k point path
+4
+L 0.5 0.5 0.5  G 0.0 0.0 0.0 
+G 0.0 0.0 0.0  X 0.5 0.0 0.5  
+X 0.5 0.0 0.5  G 0.375 0.375 0.75
+K 0.375 0.375 0.75 G 0.0 0.0 0.0 
