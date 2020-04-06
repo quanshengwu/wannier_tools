@@ -796,7 +796,7 @@
                write(sigmafilename, '(7a)')'sigma_band_', trim(adjustl(bandname)),'_mu_',&
                   trim(adjustl(muname)),'eV_T_', trim(adjustl(tname)), 'K.dat'
                open(unit=outfileindex, file=sigmafilename)
-               write(outfileindex, '(a, i5, 2(a, f16.4, a))')'# Conductivity tensor \sigma/\tau for band  ', & 
+               write(outfileindex, '(a, i5, 2(a, f16.4, a))')'# Conductivity tensor \sigma/\tau with unit 1/(Ohm*m*s) for band  ', & 
                   bands_fermi_level(ib), ' temperature at ', KBT, ' K', ' chemical potential at ', mu_array(ie), ' eV'
                write(outfileindex, '("#",20a16)')'BTau (T.ps)', 'OmegaTau (eV.ps)', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
                
@@ -813,7 +813,7 @@
                write(sigmafilename, '(7a)')'rho_band_', trim(adjustl(bandname)),'_mu_',&
                   trim(adjustl(muname)),'eV_T_', trim(adjustl(tname)), 'K.dat'
                open(unit=outfileindex, file=sigmafilename)
-               write(outfileindex, '(a, i5, 2(a, f16.4, a))')'# \tau*\rho is the inverse of Conductivity tensor \sigma/\tau for band  ', & 
+               write(outfileindex, '(a, i5, 2(a, f16.4, a))')'# \tau*\rho with unit (Ohm*m*s) is the inverse of Conductivity tensor \sigma/\tau for band  ', & 
                   bands_fermi_level(ib), ' temperature at ', KBT, ' K', ' chemical potential at ', mu_array(ie), ' eV'
                write(outfileindex, '("#",20a16)')'BTau (T.ps)', 'OmegaTau (eV.ps)', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
                
