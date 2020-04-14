@@ -1,17 +1,20 @@
 # WannierTools [![Build Status](https://travis-ci.org/quanshengwu/wannier_tools.svg?branch=master)](https://travis-ci.org/quanshengwu/wannier_tools)  [![codecov](https://codecov.io/gh/quanshengwu/wannier_tools/branch/master/graph/badge.svg)](https://codecov.io/gh/quanshengwu/wannier_tools)
 
-[**More examples in Wiki for WannierTools**](https://github.com/quanshengwu/wannier_tools/wiki)
+[**More examples and a Forum for WannierTools**](https://www.wanniertools.org)
 
 [**Full documentation for WannierTools**](http://quanshengwu.github.io/wannier_tools/)
 
 ![](https://lh3.googleusercontent.com/-NGkPcF7iUDY/Vy-34BbICBI/AAAAAAAAASY/e2YiWSnQJD4jpHh-kDWceThf2jKKSGAxwCCo/s526/wannier_tools-logo-purple.jpg)
 
-**Authorship**
+**Authors and contributors**
 -------------
+WannierTools was initialized by QuanSheng Wu (EPFL CH) and Shengnan Zhang (EPFL CH) at IOP CAS Beijing in 2012. 
+Now, it's an open-source software, there are serveral contributors including
 
-Written by QuanSheng Wu in Fortran 90 parallelized with Message Passing Interface (MPI)(wuquansheng@gmail.com  quansheng.wu@epfl.ch)
-
-Copyright (c) 2016 QuanSheng Wu and ShengNan Zhang. All rights reserved.
+* Changming Yue (UniFR CH): symmetrization of Wannier tight-binding Hamiltonian.
+* Yifei Guan (EPFL CH): Landau level calculation.
+* Tiantian Zhang (Tokyo Institute of Technology): LOTO correction in phonon systems.
+* Yi Liu (BNU Beijing): Ruge-Kutta integration.
 
 **Pull down the package**
 -------------------------
@@ -69,7 +72,7 @@ Sancho1985: [Highly convergent schemes for the calculation of bulk and surface G
 
 [Full list of citations from the ADS Databases](http://adsabs.harvard.edu/abs/2018CoPhC.224..405W)
 
-* Non-Abelian band topology in noninteracting metals, QuanSheng Wu, Alexey A. Soluyanov, and Tomas Bzdusek, Science 365, 1273 (2019)
+* Non-Abelian band topology in noninteracting metals, **QuanSheng Wu**, Alexey A. Soluyanov, and Tomas Bzdusek, Science 365, 1273 (2019)
 * Phonon-Induced Topological Transition to a Type-II Weyl Semimetal, Lin-Lin Wang, Na Hyun Jo, Yun Wu, QuanSheng Wu, Adam Kaminski, Paul C. Canfield, Duane D. Johnson, [arXiv:1703.07292] (https://128.84.21.199/abs/1703.07292)
 * Unique topological surface states of full-Heusler topological crystalline insulators, Anh Pham and Sean Li, [Phys. Rev. B 95, 115124 (2017)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.95.115124)
 * Saddle-like topological surface states on the TT'X family of compounds (T, T' = Transition metal, X= Si, Ge) Bahadur Singh, Xiaoting Zhou, Hsin Lin, Arun Bansil, [arXiv:1703.04048] (https://arxiv.org/abs/1703.04048)
