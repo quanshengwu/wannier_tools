@@ -1538,7 +1538,7 @@ subroutine readinput
    enddo
 
    !> generate POSCAR for slab system 
-   call generate_slab_poscar()
+  !call generate_slab_poscar()
 
 
 
@@ -4098,6 +4098,39 @@ subroutine transformtohomecell(pos)
 
    return
 end subroutine transformtohomecell
+
+subroutine reduce_norm3(pos)
+   ! > find the value that the norm is the smallest
+   ! > For example
+   ! > 0.9 -> -0.1
+   ! > 0.6 -> -0.4
+   ! By QuanSheng Wu
+   ! wuquansheng@gmail.com
+   ! July 21 2020 During the COVID-19 pendamic
+
+   use para, only : dp
+
+   integer :: i
+   real(dp), intent(inout) :: pos(3)
+
+   real(dp) :: r_t
+
+   call transformtohomecell(pos)
+   do i=1, 3
+      if (abs(r_t)<0.5d0) then
+         r_t= pos(i)
+      elseif (abs(r_t+1d0)<0.5d0) then
+         r_t= pos(i)+1d0
+      elseif (abs(r_t-1d0)<0.5d0) then
+         r_t= pos(i)-1d0
+      endif
+
+      pos(i)=r_t
+   enddo
+
+   return
+end subroutine reduce_norm3
+
 
 !====================================================================!
 subroutine param_get_range_vector(keyword,inline,length,lcount,i_value)

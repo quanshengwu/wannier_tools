@@ -24,7 +24,7 @@ function angle(R1, R2)
    real(dp), external :: norm
  
    adotb=dot_product(R1, R2)
-   angle= acos(adotb/norm(R1)/norm(R2))*180/pi
+   angle= acos(adotb/norm(R1)/norm(R2))*180d0/pi
 
    return
 end function angle

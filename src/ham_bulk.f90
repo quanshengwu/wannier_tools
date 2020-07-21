@@ -280,24 +280,18 @@ subroutine ham_bulk_latticegauge(k,Hamk_bulk)
    !
    !        May/29/2011 by Quansheng Wu
 
-   use para
+   use para, only : dp, pi2zi, HmnR, ndegen, nrpts, irvec, Num_wann, stdout
    implicit none
 
-! loop index
-   integer :: i1,i2,ia,ib,ic,iR
+   ! loop index
+   integer :: i1,i2,iR
    integer :: nwann
 
-   real(dp) :: kdotr
-
-! wave vector in 2d
-   real(Dp) :: k(3)
-
-   ! coordinates of R vector
-   real(Dp) :: R(3), R1(3), R2(3)
+   real(dp) :: kdotr, k(3)
 
    complex(dp) :: factor
 
-! Hamiltonian of bulk system
+   ! Hamiltonian of bulk system
    complex(Dp),intent(out) ::Hamk_bulk(Num_wann, Num_wann)
    ! complex(dp), allocatable :: mat1(:, :)
    ! complex(dp), allocatable :: mat2(:, :)
@@ -306,14 +300,7 @@ subroutine ham_bulk_latticegauge(k,Hamk_bulk)
 
    Hamk_bulk=0d0
    do iR=1, Nrpts
-      ia=irvec(1,iR)
-      ib=irvec(2,iR)
-      ic=irvec(3,iR)
-
-      R(1)=dble(ia)
-      R(2)=dble(ib)
-      R(3)=dble(ic)
-      kdotr=k(1)*R (1) + k(2)*R (2) + k(3)*R (3)
+      kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
       factor= exp(pi2zi*kdotr)
 
       Hamk_bulk(:, :)=&
