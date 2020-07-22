@@ -293,10 +293,6 @@ subroutine ham_bulk_latticegauge(k,Hamk_bulk)
 
    ! Hamiltonian of bulk system
    complex(Dp),intent(out) ::Hamk_bulk(Num_wann, Num_wann)
-   ! complex(dp), allocatable :: mat1(:, :)
-   ! complex(dp), allocatable :: mat2(:, :)
-   ! allocate(mat1(Num_wann, Num_wann))
-   ! allocate(mat2(Num_wann, Num_wann))
 
    Hamk_bulk=0d0
    do iR=1, Nrpts
@@ -307,10 +303,6 @@ subroutine ham_bulk_latticegauge(k,Hamk_bulk)
          Hamk_bulk(:, :) &
          + HmnR(:, :, iR)*factor/ndegen(iR)
    enddo ! iR
-
-   !call mat_mul(Num_wann, mirror_z, Hamk_bulk, mat1)
-   !call mat_mul(Num_wann, mat1, mirror_z, mat2)
-   !Hamk_bulk= (Hamk_bulk+ mat2)/2d0
 
    ! check hermitcity
    do i1=1, Num_wann
