@@ -539,8 +539,8 @@
             endif
 
             if (NSlice_Btau_inuse==1) then
-               write(stdout, '(a, i6, a, i4, a, i6, a, 3f12.6)')&
-                  '>>> NSlice_Btau_inuse=1 at cpuid=', cpuid, ' ib=', bands_fermi_level(ib), ' ik', ik, ' k', k_start
+              !write(stdout, '(a, i6, a, i4, a, i6, a, 3f12.6)')&
+              !   '>>> NSlice_Btau_inuse=1 at cpuid=', cpuid, ' ib=', bands_fermi_level(ib), ' ik', ik, ' k', k_start
             endif
 
             !> we omit the 

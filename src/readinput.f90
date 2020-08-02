@@ -1386,12 +1386,15 @@ subroutine readinput
 103 continue
 
    if (.not.lfound.and.sum(abs(MillerIndices))==0) then
-      print *, inline
-      write(stdout, *) 'ERROR: please set surface information by setting SURFACE card or', &
-         'MILLER_INDEX card'
-      write(*, *) 'ERROR: please set surface information by setting SURFACE card or', &
-         'MILLER_INDEX card'
-      stop
+      Umatrix(1, :)=(/1d0, 0d0, 0d0/)
+      Umatrix(2, :)=(/0d0, 1d0, 0d0/)
+      Umatrix(3, :)=(/0d0, 0d0, 1d0/)
+      if (cpuid==0) then
+         write(stdout, *) "Warnning: You didn't set SURFACE card, by default, it's (001) surface."
+         write(stdout, '(a, 3f12.6)')' The 1st vector on surface     :', Umatrix(1, :)
+         write(stdout, '(a, 3f12.6)')' The 2nd vector on surface     :', Umatrix(2, :)
+         write(stdout, '(a, 3f12.6)')' The 3rd vector out of surface :', Umatrix(3, :)
+      endif
    endif
 
    if (lfound) then

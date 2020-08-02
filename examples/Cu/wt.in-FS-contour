@@ -1,0 +1,44 @@
+&TB_FILE
+Hrfile = 'wannier90_hr.dat_nsymm48'
+/
+
+&CONTROL
+BulkFS_Plane_calc           = T
+/
+
+&SYSTEM
+SOC = 0                ! without soc : SOC=0; with soc : SOC=1
+E_FERMI = 7.7083       ! e-fermi
+NumOccupied = 6        ! set it anyway even don't use it.
+/
+
+&PARAMETERS
+Nk1 =201            ! Kmesh(1) 
+Nk2 =201            ! Kmesh(2) 
+/
+
+LATTICE
+Angstrom
+   0.0000000   1.8075000   1.8075000
+   1.8075000   0.0000000   1.8075000
+   1.8075000   1.8075000   0.0000000
+
+ATOM_POSITIONS
+1                               ! number of atoms for projectors
+Cartisen                          ! Direct or Cartisen coordinate
+Cu    0.000000      0.000000      0.000000     
+
+PROJECTORS
+9            ! number of projectors
+Cu  s pz px py dz2 dxz dyz dx2-y2 dxy 
+
+SURFACE            ! should be given even is not used
+ 1  0  0
+ 0  1  0
+
+KPLANE_BULK
+Cartesian
+ 0.00  0.00  0.00   ! Center point for 3D k plane 
+ 8.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  8.00  0.00   ! The second vector to define 3d k space plane
+

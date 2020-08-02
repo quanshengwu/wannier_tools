@@ -14,7 +14,7 @@ subroutine ham_bulk_atomicgauge(k,Hamk_bulk)
    complex(Dp),intent(out) ::Hamk_bulk(Num_wann, Num_wann)
 
    ! temporary integers
-   integer :: i1,i2,ia,ib,ic,iR, ia1, ia2, nwann
+   integer :: i1,i2,iR, ia1, ia2, nwann
 
    real(dp) :: kdotr, R(3)
 
