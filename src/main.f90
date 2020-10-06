@@ -415,7 +415,7 @@
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Berry curvature'
         call now(time_start)
-        call berry_curvarture_plane
+        call berry_curvarture_plane_full
         call now(time_end)
         call print_time_cost(time_start, time_end, 'BerryCurvature')
         if(cpuid.eq.0)write(stdout, *)'End of calculating the Berry curvature'

@@ -87,7 +87,7 @@ class poswan():
         try: 
             # read in wann.in
             with open(fname,'r') as f:
-               orb_dim = {'s':1, 'p':3, 'd':5, 'f':7, 't2g':3}
+               orb_dim = {'s':1, 'pz':1, 'p':3, 'd':5, 'f':7, 't2g':3}
                type_orbs = []
                num_orbs = []
                atom_num=[]

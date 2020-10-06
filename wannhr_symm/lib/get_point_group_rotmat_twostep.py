@@ -1,206 +1,434 @@
 #!/usr/bin/env python
 '''
-get rotation matrices of all symmetry opreations defined in symmop.dat file.
+get rotation matrix for a given rotation matrix in basis of s, p, d, f and t2g
+orbitals.
 '''
-from numpy import matrix, complex,array,transpose,dot,cross,zeros,reshape,transpose
-from numpy.linalg import inv, det,eigh, norm
+
+import sympy, sys
+from numpy.linalg import inv, det
 import numpy as np
-from math import sqrt, cos, sin
+from sympy import *
 
-from get_orb_rotmat_twostep import get_any_rot_orb_twostep
-import rotate as rot_spin
-from get_euler_angle import *
+x = sympy.Symbol('x')
+y = sympy.Symbol('y')
+z = sympy.Symbol('z')
 
-np.set_printoptions(precision=10,linewidth=200)
+def ss(x,y,z):
+    return 1+0*(x+y+z)
 
-lst_prec = np.zeros((3),dtype=np.float64) 
-hsq2 = 0.5 * 2.0**0.5
-hsq3 = 0.5 * 3.0**0.5
-hsq1 = 0.5
-lst_prec[0]=hsq1
-lst_prec[1]=hsq2
-lst_prec[2]=hsq3
+def pz(x,y,z):
+    return z
 
-# get rotation matrix in terms of all projected wannier orbitals
-def get_rotation_matrix_in_wannorbs(myposwan, nsymm, nptrans, symop, wann_atom_rotmap):
-    Amat        = myposwan.Amat
-    natom_pos   = myposwan.natom_pos     
-    atoms_frac  = myposwan.atoms_frac    
-    atoms_cart  = myposwan.atoms_cart    
-    atoms_symbol= myposwan.atoms_symbol  
-    ispinor     = myposwan.ispinor       
-    natom_wan   = myposwan.natom_wan     
-    type_orbs   = myposwan.type_orbs     
-    num_orbs    = myposwan.num_orbs      
-    atom_num    = myposwan.atom_num      
-    axis        = myposwan.axis          
-    nband       = myposwan.nband
-    norbs       = myposwan.norbs
+def px(x,y,z):
+    return x
 
-    # rot matrix in terms of primitive cell basis
-    rot = zeros((3,3),np.float64)
-    
-    # rot matrix in terms of cartecian axis
-    rot_glb = zeros((3,3),np.float64)
-    
-    # rot matrix in terms of local axis
-    rot_loc = zeros((3,3),np.float64)
-    
-    gtrans = zeros((3),np.float64)
-    ptrans = zeros((3),np.float64)
-    new_vec = zeros((3),np.float64)
-    old_vec = zeros((3),np.float64)
-    
-    # rot map for atoms
-    rotmap = zeros((natom_wan),np.int32)
-    
-    # all orbitals' rot map 
-    vec_shift  = zeros((nsymm,nptrans,natom_wan,3),np.float64)
-    
-    nors = np.zeros((natom_wan),dtype=np.int32)
-    offs = np.zeros((natom_wan),dtype=np.int32)
-    # get off set of each atom. get number of orbitals 
-    print "----------To get rot mat(protmat)in wann orbs------"
-    print "########See ./protmat.log file for details#########"
-    print "" 
-    f = open('protmat.log', 'w')
-    print >>f, "offset of each atoms in protmat:"
-    for jatom in range(natom_wan):
-       nors[jatom] = sum(num_orbs[jatom][:])
-       offs[jatom] = sum(nors[0:jatom])
-       print >>f, "atom", jatom+1, "off", offs[jatom]+1,  "norb", nors[jatom]
-        
-    print >>f, ""
-    invAmat=inv(Amat)
-    
-    # rot matrix: {\hat P}_{R} |j,atom B>=\sum_{i}P_{R|i,j}|i,atom B'>
-    prottmp=np.zeros((nband,nband,nptrans,nsymm),dtype=np.complex128)
-    protmat=np.zeros((norbs,norbs,nptrans,nsymm),dtype=np.complex128)
-    dmat   =np.zeros((2,2,nsymm),dtype=np.complex128)
-    for isymm in range(nsymm):
-        print >>f, "============================================symm i=",isymm+1
-        rot = symop[isymm][0]
-        print >>f, "rot(Bravis)\n", rot
-    
-    # if avec is written in A=(a1,a2,a3) 
-    #  a1  a2  a3
-    # a11 a12 a13
-    # a21 a22 a23 
-    # a31 a32 a33
-    # then rot_glb=R'=A.R.A^-1. if you act R' on an vector written in cartetian axis, you
-    # get new vector also written in cartician axis
-        cmat = dot(Amat,rot)
-        rot_glb = dot(cmat,invAmat)
+def py(x,y,z):
+    return y
 
-  # rot_glb often is 1 or -1. if too small, it may arise from number error, and force it
-  # to be zero in this case
-        print >>f, "rot_glb before forecing symm =\n", rot_glb	
-	rgb = rot_glb * 1.0
-	for i in range(3):
-	    for j in range(3):
-	        a = rot_glb[j,i]
-		if abs(a) < 0.01: 
-		    rot_glb[j,i] = 0.0
-		else: 
-		    for k in range(3):
-		        m = lst_prec[k]
-                        if abs(abs(a)-m)<0.01 : rot_glb[j,i] = (a/abs(a)) * m
+def dz2(x,y,z):
+    return (2*z*z-x*x-y*y)/(2*sympy.sqrt(3))
 
+def dxz(x,y,z):
+    return x*z
 
-        print >>f, "rot_glb after  forecing symm =\n", rot_glb
-	print >>f, "diffs\n", rgb - rot_glb
+def dyz(x,y,z):
+    return y*z
 
-        print >>f, "det of rot_glb=",det(rot_glb)
-    
-    # get dmat
-        if ispinor: 
-            euler_ang = np.zeros((3),dtype=np.float64)
-            euler_ang[0],euler_ang[1],euler_ang[2] = rmat2euler(det(rot_glb)*rot_glb)
-            dmat[:,:,isymm] = rot_spin.dmat_spinor(euler_ang[0],euler_ang[1],euler_ang[2])
-	    print>>f, "euler angles pi", euler_ang/np.pi
-            tmp = rot_spin.euler_to_rmat(euler_ang[0],euler_ang[1],euler_ang[2])
-	    print>>f, "error of rot_glb and that by euler2rmat\n", rot_glb - det(rot_glb)*tmp
-	    print>>f, "euler2rmat sum abs error:", sum(sum(abs(rot_glb-det(rot_glb)*tmp)))
+def dx2_y2(x,y,z):
+    return (x*x-y*y)/2
 
-	    #dmat[:,:,isymm]= spin_reps(rot_glb) # G Winker's 
-         
-            print>>f, "dmat before forcing symm = \n", dmat[:,:,isymm]
-            # correct numerical errors
-	    dtmp = dmat[:,:,isymm] * 1.0
-            for i in range(2):
-                for j in range(2):
-		    a = dmat[j,i,isymm]
-		    if abs(a) < 0.01: 
-		        dmat[j,i,isymm] = 0.0
-		    else: 
-		        for k in range(3):
-		            m = lst_prec[k]
-                            if abs(abs(a)-m)<0.0001 : dmat[j,i,isymm] = (a/abs(a)) * m
+def dxy(x,y,z):
+    return x*y
 
-            print>>f, "dmat after  forcing symm = \n", dmat[:,:,isymm]
-	    print>>f, "diffs\n", dtmp - dmat[:,:,isymm]
-     
-        gtrans = np.float64(symop[isymm][1])
-        print >>f, "gtrans\n", gtrans
-    
-        for iptr in range(nptrans):
-            ptrans = np.float64(symop[isymm][3][iptr])
-            print >>f, "ptrans", iptr+1, "\n", ptrans
-    
-            for ii in range(0,natom_wan):
-                rotmap[ii]=wann_atom_rotmap[isymm][iptr][ii]
-        
-            print >>f, "wann atom rotmap=\n", 
-            for i in range(natom_wan):
-                print >>f, i+1, "->", rotmap[i]+1
-       
-        # loop over all atoms, determine each one's orbital rot map
-            offj = 0
-            for jatom in range(0,natom_wan):
-                iatom = rotmap[jatom]
-                print >>f, "--------------------------------"
-                print >>f, "jatom->iatom", jatom+1, iatom+1
-        
-                old_vec = atoms_frac[:,atom_num[jatom]-1]
-                new_vec = dot(rot,old_vec) + gtrans + ptrans
-                print >>f, "old_vec = atoms_frac[:,atom_num[jatom]-1]   ", old_vec
-                print >>f, "new_vec = dot(rot,old_vec) + gtrans + ptrans", new_vec
-                print >>f, "          atoms_frac[:,atom_num[iatom]-1]   ", atoms_frac[:,atom_num[iatom]-1]
-                vec_shift[isymm,iptr,jatom] = new_vec - atoms_frac[:,atom_num[iatom]-1]
-    
-                # round it to make integers
-                for jj in range(3):
-                    vec_shift[isymm,iptr,jatom,jj] = np.round(vec_shift[isymm,iptr,jatom,jj])
-                print >>f, "isymm", isymm+1, "iptr",iptr+1, "jatom", jatom+1, "vec_shift            ", vec_shift[isymm,iptr,jatom]
-        
-               #G_vec[isymm][jatom] = new_vec + gtrans - atoms_frac[:,iatom]
-                axs_loc_jatom = axis[:,:,jatom]
-                axs_loc_iatom = axis[:,:,iatom]
-        
-        # loop over jatom's all kind of orbitals. e.g. Ce-f,d
-                for k in range(len(type_orbs[jatom])):
-                    norb = num_orbs[jatom][k] 
-                    print >>f, "jatom",jatom+1,"orbital",type_orbs[jatom][k], "offj", offj+1, "norb", norb, "-------"
-        
-        # first step, P_{rot_glb} |phi a jatom> = \sum_a' P_{a'a} | phi a' iatom> with jatom local axis
-                    rot_axs1 = dot(dot(inv(axs_loc_jatom),rot_glb),axs_loc_jatom)
-                    rot_axs2 = dot(transpose(axs_loc_iatom),axs_loc_jatom)
-                    rot_axs = dot(rot_axs2,rot_axs1)
-                    rot_orb  = get_any_rot_orb_twostep(type_orbs[jatom][k],rot_axs)
-                    #print  "FUCK ALL T2G", type_orbs[jatom][k]
-                    #rot_orb  = get_any_rot_orb_twostep('t2g',rot_axs)
-        
-                    print >>f, "protrotmat_orb\n", rot_orb 
-                    prottmp[offj:offj+norb,offj:offj+norb,iptr,isymm] = rot_orb
-                    offj = offj + norb
-            if ispinor:
-                # P_{rot} for spinors: up dn up dn ...
-                protmat[:,:,iptr,isymm] = np.kron(prottmp[:,:,iptr,isymm],dmat[:,:,isymm])
+def fz3(x,y,z):
+    return z*(2*z*z-3*x*x-3*y*y)/(2*sympy.sqrt(15))
+
+def fxz2(x,y,z):
+    return x*(4*z*z-x*x-y*y)/(2*sympy.sqrt(10))
+
+def fyz2(x,y,z):
+    return y*(4*z*z-x*x-y*y)/(2*sympy.sqrt(10))
+
+def fzx2_zy2(x,y,z):
+    return z*(x*x-y*y)/2
+
+def fxyz(x,y,z):
+    return x*y*z
+
+def fx3_3xy2(x,y,z):
+    return x*(x*x-3*y*y)/(2*sympy.sqrt(6))
+
+def f3yx2_y3(x,y,z):
+    return y*(3*x*x-y*y)/(2*sympy.sqrt(6))
+
+ft2g=[dxz,dyz,dxy]
+fs=[ss]
+fp=[pz,px,py]
+fd=[dz2,dxz,dyz,dx2_y2,dxy]
+ff=[fz3,fxz2,fyz2,fzx2_zy2,fxyz,fx3_3xy2,f3yx2_y3]
+# new 2020-09-09
+fpz=[pz]
+forb=[fs,fp,fd,ff,ft2g,fpz]
+#      0  1  2  3  4    5
+
+def get_orb_map_s(xp,yp,zp,ndim,orbi):
+    if ndim!=1 or orbi!=0: 
+       print "Error: local rot matrix for s orbital is of dim 1 !"
+       sys.exit(0)
+
+    rmat=np.zeros((ndim,ndim),dtype=np.float64)
+
+    for j in range(ndim):
+        e=(forb[orbi][j](xp,yp,zp)).expand()
+        rmat[j,0] = e.subs(x,0).subs(y,0).subs(z,0).evalf()
+    return rmat
+
+def get_orb_map_p(xp,yp,zp,ndim,orbi):
+    if ndim!=3 or orbi!=1: 
+       print "Error: local rot matrix for p orbital is of dim 3 !"
+       sys.exit(0)
+
+    fst=[x,y,z]
+    #    0 1 2
+
+    rmat=np.zeros((ndim,ndim),dtype=np.float64)
+    for j in range(ndim):
+        e=(forb[orbi][j](xp,yp,zp)).expand()
+
+        # " get coefficients of pz "
+        t=e
+        for st in fst:
+            if st != z: 
+               t = t.subs(st,0)
             else:
-                protmat[:,:,iptr,isymm] = prottmp[:,:,iptr,isymm]
-            #for i in range(norbs):
-            #    for j in range(norbs):
-            #        if (abs(protmat[j,i,isymm])>1.0E-8): print "{:6d}{:6d}{:12.8f}{:12.8f}".format(j+1, i+1, protmat[j,i,isymm].real, protmat[j,i,isymm].imag)
-            print >>f, "+++++++++++++++++++++++++++++++++++++++++++++++++"    
-    f.close() 
-    return nors, offs, vec_shift, protmat
+               t = t.subs(st,1)
+        c0=t
+        rmat[0,j]=c0.evalf()
+        
+        # " get coefficients of px "
+        t=e
+        for st in fst:
+            if st != x: 
+               t = t.subs(st,0)
+            else:
+               t = t.subs(st,1)
+        c1=t
+        rmat[1,j]=c1.evalf()
+        
+        # " get coefficients of py "
+        t=e
+        for st in fst:
+            if st != y: 
+               t = t.subs(st,0)
+            else:
+               t = t.subs(st,1)
+        c2=t
+        rmat[2,j]=c2.evalf()
+        
+        #print pretty([c0,c1,c2])
+    return rmat
+
+def get_orb_map_d(xp,yp,zp,ndim,orbi):
+    if ndim!=5 or orbi!=2: 
+       print "Error: local rot matrix for d orbital is of dim 5 !"
+       sys.exit(0)
+
+    x2 =x*x; xy=x*y; xz=x*z; yz=y*z; y2=y*y; z2=z*z;
+    fst=[x2,xy,xz,y2,yz,z2]
+    #    0  1  2  3  4  5
+
+    rmat=np.zeros((ndim,ndim),dtype=np.float64)
+    for j in range(ndim):
+        e=(forb[orbi][j](xp,yp,zp)).expand()
+
+        # " get coefficients of dz2 "
+        t=e
+        for st in fst:
+            if st != z2: 
+               t = t.subs(st,0)
+            else:
+               t = t.subs(st,1)
+        c0=t*(sympy.sqrt(3))
+        rmat[0,j]=c0.evalf()
+        # " get coefficients of dxz "
+        t=e
+        for st in fst:
+            if st != xz: 
+               t = t.subs(st,0)
+            else:
+               t = t.subs(st,1)
+        c1=t
+        rmat[1,j]=c1.evalf()
+        
+        # " get coefficients of dyz "
+        t=e
+        for st in fst:
+            if st != yz: 
+               t = t.subs(st,0)
+            else:
+               t = t.subs(st,1)
+        c2=t
+        rmat[2,j]=c2.evalf()
+
+        # " get coefficients of dx2-y2 "
+        t=e
+        for st in fst:
+            if st != x2: 
+               t = t.subs(st,0)
+            else:
+               t = t.subs(st,1)
+        c3=2*t+c0/(sympy.sqrt(3))
+        rmat[3,j]=c3.evalf()
+        
+        # " get coefficients of dxy "
+        t=e
+        for st in fst:
+            if st != xy: 
+               t = t.subs(st,0)
+            else:
+               t = t.subs(st,1)
+        c4=t
+        rmat[4,j]=c4.evalf()
+        
+        #print pretty([c0,c1,c2,c3,c4])
+    return rmat
+
+def get_orb_map_f(xp,yp,zp,ndim,orbi):
+    if ndim!=7 or orbi!=3: 
+       print "Error: local rot matrix for f orbital is of dim 7 !"
+       sys.exit(0)
+
+    x3 =x*x*x; xy2=x*y*y; xz2=x*z*z;
+    yx2=y*x*x; y3 =y*y*y; yz2=y*z*z;
+    zx2=z*x*x; zy2=z*y*y; z3 =z*z*z; 
+    xyz=x*y*z;
+    fst=[x3,xy2,xz2,yx2,y3,yz2,zx2,zy2,z3,xyz]
+    #    0   1   2   3  4   5  6   7   8  9
+
+    rmat=np.zeros((ndim,ndim),dtype=np.float64)
+    for j in range(ndim):
+        e=(forb[orbi][j](xp,yp,zp)).expand()
+
+        # " get coefficients of fz3 "
+        t=e
+        for st in fst:
+            if st != z3: 
+               t = t.subs(st,0)
+            else:
+               t = t.subs(st,1)
+        c0=t*sympy.sqrt(15)
+        rmat[0,j]=c0.evalf()
+        
+        # " get coefficients of fxz2 "
+        t=e
+        for st in fst:
+            if st != xz2: 
+               t = t.subs(st,0)
+            else:
+               t = t.subs(st,1)
+        c1=t*sympy.sqrt(10)/2
+        rmat[1,j]=c1.evalf()
+        
+        # " get coefficients of fyz2 "
+        t=e
+        for st in fst:
+            if st != yz2: 
+               t = t.subs(st,0)
+            else:
+               t = t.subs(st,1)
+        c2=t*sympy.sqrt(10)/2
+        rmat[2,j]=c2.evalf()
+
+        # " get coefficients of fz(x2-y2) "
+        t=e
+        for st in fst:
+            if st != zx2 :
+               t = t.subs(st,0)
+            else:
+               t = t.subs(st,1)
+        c3=2*t+3*c0/(sympy.sqrt(15))
+        rmat[3,j]=c3.evalf()
+        
+        # " get coefficients of fxyz "
+        t=e
+        for st in fst:
+            if st != xyz: 
+               t = t.subs(st,0)
+            else:
+               t = t.subs(st,1)
+        c4=t
+        rmat[4,j]=c4.evalf()
+        
+        # " get coefficients of fx(x2-3y2) "
+        t=e
+        for st in fst:
+            if st != x3: 
+               t = t.subs(st,0)
+            else:
+               t = t.subs(st,1)
+        c5=(2*t+c1/(sympy.sqrt(10)))*sympy.sqrt(6) 
+        rmat[5,j]=c5.evalf()
+        
+        # " get coefficients of fy(3x2-y2) "
+        t=e
+        for st in fst:
+            if st != y3: 
+               t = t.subs(st,0)
+            else:
+               t = t.subs(st,1)
+        c6=(-2*t-c2/(sympy.sqrt(10)))*sympy.sqrt(6) 
+        rmat[6,j]=c6.evalf()
+        
+        #print pretty([c0,c1,c2,c3,c4,c5,c6])
+    return rmat
+
+def get_orb_map_t2g(xp,yp,zp,ndim,orbi):
+    if ndim!=3 or orbi!=4: 
+       print "Error: local rot matrix for t2g orbital is of dim 3 !"
+       sys.exit(0)
+
+    xy=x*y; xz=x*z; yz=y*z; xx=x*x; yy=y*y; zz=z*z
+    fst=[xz,yz,xy,xx,yy,zz]
+    #    0  1  2
+
+    rmat=np.zeros((ndim,ndim),dtype=np.float64)
+    for j in range(ndim):
+        e=(forb[orbi][j](xp,yp,zp)).expand()
+
+        # " get coefficients of dxz "
+        print "e", e
+        t=e
+        for st in fst:
+            if st != xz: 
+               t = t.subs(st,0)
+            else:
+               t = t.subs(st,1)
+        c0=t
+        #print "c0",c0
+        rmat[0,j]=c0.evalf()
+        
+        # " get coefficients of dyz "
+        t=e
+        for st in fst:
+            if st != yz: 
+               t = t.subs(st,0)
+            else:
+               t = t.subs(st,1)
+        c1=t
+        rmat[1,j]=c1.evalf()
+        
+        # " get coefficients of dxy "
+        t=e
+        for st in fst:
+            if st != xy: 
+               t = t.subs(st,0)
+            else:
+               t = t.subs(st,1)
+        c2=t
+        rmat[2,j]=c2.evalf()
+        
+        #print pretty([c0,c1,c2])
+    return rmat
+
+# new 2020-09-09
+def get_orb_map_pz(xp,yp,zp,ndim,orbi):
+    if ndim!=1 or orbi!=5: 
+       print "Error: local rot matrix for pz orbital is of dim 1 !"
+       sys.exit(0)
+
+    fst=[x,y,z]
+    #    0 1 2
+
+    rmat=np.zeros((ndim,ndim),dtype=np.float64)
+    for j in range(ndim):
+        e=(forb[orbi][j](xp,yp,zp)).expand()
+
+        # " get coefficients of pz "
+        t=e
+        for st in fst:
+            if st != z: 
+               t = t.subs(st,0)
+            else:
+               t = t.subs(st,1)
+        c0=t
+        rmat[0,j]=c0.evalf()
+         
+        # " get coefficients of px "
+        t=e
+        for st in fst:
+            if st != x: 
+               t = t.subs(st,0)
+            else:
+               t = t.subs(st,1)
+        c1=t
+        xval=c1.evalf()
+        
+        # " get coefficients of py "
+        t=e
+        for st in fst:
+            if st != y: 
+               t = t.subs(st,0)
+            else:
+               t = t.subs(st,1)
+        c2=t
+        yval=c2.evalf()
+
+    if (abs(xval)>1.0E-3 or abs(yval)>1.0E-3):
+        print "ERROR ! pz only is not complete sinze it is rotated to px or py ! STOP"     
+        sys.exit(0)
+        #print pretty([c0,c1,c2])
+
+    return rmat
+
+
+def get_any_rot_orb_twostep(case,rot):
+    """
+    
+    Args:
+        case: label for different kinds of orbitals
+        rot: rotation matrix in local coordinates defined as Rloc(wB,xA)=wB*e_wB*Rg*e_xA
+    """
+
+    invrot = np.zeros((3,3),dtype=np.float64)
+    invrot = inv(np.float64(rot))
+       
+    # map of variables in function f(x,y,z)->f(xp,yp,zp)
+    xp=np.dot(invrot[0,:],np.transpose([x,y,z]))
+    yp=np.dot(invrot[1,:],np.transpose([x,y,z]))
+    zp=np.dot(invrot[2,:],np.transpose([x,y,z]))
+
+    if case.strip() == 's': 
+        ndim = 1
+        orbi = 0
+        rmat = get_orb_map_s(xp,yp,zp,ndim,orbi)
+    elif case.strip() == 'p': 
+        ndim = 3
+        orbi = 1
+        rmat = get_orb_map_p(xp,yp,zp,ndim,orbi)
+    elif case.strip() == 'd': 
+        ndim = 5
+        orbi = 2
+        rmat = get_orb_map_d(xp,yp,zp,ndim,orbi)
+    elif case.strip() == 'f': 
+        ndim = 7
+        orbi = 3
+        rmat = get_orb_map_f(xp,yp,zp,ndim,orbi)
+    elif case.strip() == 't2g':
+        ndim = 3
+        orbi = 4
+        rmat = get_orb_map_t2g(xp,yp,zp,ndim,orbi)
+# new 2020-09-09
+    elif case.strip() == 'pz': 
+        ndim = 1
+        orbi = 5
+        rmat = get_orb_map_pz(xp,yp,zp,ndim,orbi)
+    else:
+        print "don't support orbitals for this case: ", case
+        return
+# make infinite small element zero
+    for i in range(ndim):
+        for j in range(ndim):
+            if abs(rmat[j,i])<1.0E-6:
+                rmat[j,i]=0.0
+    return rmat
+

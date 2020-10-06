@@ -101,7 +101,7 @@
       if (cpuid==0) write(stdout,*)
 
       call inv_r(3, Emass)
-      Emass= Emass*bohr2atomic*bohr2atomic
+      Emass= Emass*bohr2angstrom*bohr2angstrom
       if (cpuid==0) write(stdout,'(a, i5, a)') ">> The effective mass tensor for ", iband_mass, " 'th band"
       if (cpuid==0) write(stdout,*) ">> Effective mass tensor (in unit of bare electron mass):"
       if (cpuid==0) write(stdout,"(3F15.8)") ((Emass(i,j), j=1,3),i=1,3)

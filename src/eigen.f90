@@ -67,7 +67,7 @@
               W, work, lwork, rwork, info )
 
      if (info.ne.0) then
-        write(stdout, *) 'ERROR : something wrong with zheev'
+        write(stdout, *) 'ERROR : something wrong with zheev', info
         stop
      endif
 

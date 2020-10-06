@@ -1544,6 +1544,32 @@ subroutine fermisurface_stack
       return
    end function fermi
 
+
+   function dfde(omega, Beta_fake) result(value)
+      ! This function sets the Fermi-Dirac distribution
+
+      use para
+      implicit none
+
+      ! >> inout variables
+      real(dp), intent(in) :: omega
+      real(dp), intent(in) :: Beta_fake
+
+      ! return value
+      real(dp) :: value
+    
+      ! avoid numerical instability 
+      if (Beta_fake*omega .ge. 20d0) then
+         value = zero
+      elseif (Beta_fake*omega.le. -20d0)then
+         value = one
+      else
+         value= one/(one+exp(Beta_fake*omega))
+      endif
+
+      return
+   end function dfde
+
    subroutine rotate_k3_to_kplane_mag(k3, kplane)
       use para, only : dp, K3D_vec1, K3D_vec2, Kua_mag, Kub_mag, Kuc_mag
       implicit none

@@ -1,118 +1,3 @@
-  subroutine berry_curvarture_singlek_EF_old(k, Omega_x, Omega_y, Omega_z)
-     !> Calculate Berry curvature for a sigle k point
-     !> The Fermi distribution is determined by the Fermi level E_arc
-     !> ref : Physical Review B 74, 195118(2006)
-     !
-     !> eqn (34)
-     !
-     !> Jun. 11 2018 by Quansheng Wu @ ETHZ
-     !> Try to write some simple subroutines. 
-     !> on the output, only the real part is meaningfull.
-     ! Copyright (c) 2018 QuanSheng Wu. All rights reserved.
-
-     use wmpi
-     use para
-     implicit none
-
-     !> input parameter, k is in unit of reciprocal lattice vectors
-     real(dp), intent(in) :: k(3)
-     complex(dp), intent(out) :: Omega_x(Num_wann)
-     complex(dp), intent(out) :: Omega_y(Num_wann)
-     complex(dp), intent(out) :: Omega_z(Num_wann)
-
-     integer :: iR, m, n, i
-     real(dp), allocatable :: W(:)
-     real(dp) :: kdotr
-     complex(dp), allocatable :: Amat(:, :), DHDk(:, :, :), DHDkdag(:, :, :)
-     complex(dp), allocatable :: UU(:, :), UU_dag(:, :), Hamk_bulk(:, :)
-     complex(dp), allocatable :: vx(:, :), vy(:, :), vz(:, :)
-
-     allocate(W(Num_wann))
-     allocate(vx(Num_wann, Num_wann), vy(Num_wann, Num_wann), vz(Num_wann, Num_wann))
-     allocate(UU(Num_wann, Num_wann), UU_dag(Num_wann, Num_wann), Hamk_bulk(Num_wann, Num_wann))
-     allocate(Amat(Num_wann, Num_wann), DHDk(Num_wann, Num_wann, 3), DHDkdag(Num_wann, Num_wann, 3))
-     W=0d0; vx= 0d0; vy= 0d0; vz= 0d0; UU= 0d0; UU_dag= 0d0
-
-     ! calculation bulk hamiltonian by a direct Fourier transformation of HmnR
-     call ham_bulk_latticegauge(k, Hamk_bulk)
-
-     !> diagonalization by call zheev in lapack
-     UU=Hamk_bulk
-     call eigensystem_c( 'V', 'U', Num_wann, UU, W)
-    !call zhpevx_pack(hamk_bulk,Num_wann, W, UU)
-
-     UU_dag= conjg(transpose(UU))
-     do iR= 1, Nrpts
-        kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
-        vx= vx+ zi*crvec(1, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
-        vy= vy+ zi*crvec(2, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
-        vz= vz+ zi*crvec(3, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
-     enddo ! iR
-
-     !> unitility rotate velocity
-     call mat_mul(Num_wann, vx, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vx) 
-     call mat_mul(Num_wann, vy, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vy) 
-     call mat_mul(Num_wann, vz, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vz) 
-
-     DHDk= 0d0
-     DHDkdag= 0d0
-     do m= 1, Num_wann
-        do n= 1, Num_wann
-           if (W(n) > E_arc .and. W(m)<E_arc) then
-              DHDk(n, m, 1)= zi*vx(n, m)/(W(m)-W(n))
-              DHDk(n, m, 2)= zi*vy(n, m)/(W(m)-W(n))
-              DHDk(n, m, 3)= zi*vz(n, m)/(W(m)-W(n))
-           else
-              DHDk(n, m, 1)= 0d0
-              DHDk(n, m, 2)= 0d0
-              DHDk(n, m, 3)= 0d0
-           endif
-        enddo ! m
-     enddo ! n
-
-     do m= 1, Num_wann
-        do n= 1, Num_wann
-           if (W(m) > E_arc .and. W(n)< E_arc) then
-              DHDkdag(n, m, 1)= zi*vx(n, m)/(W(m)-W(n))
-              DHDkdag(n, m, 2)= zi*vy(n, m)/(W(m)-W(n))
-              DHDkdag(n, m, 3)= zi*vz(n, m)/(W(m)-W(n))
-           else              
-              DHDkdag(n, m, 1)= 0d0
-              DHDkdag(n, m, 2)= 0d0
-              DHDkdag(n, m, 3)= 0d0
-           endif
-        enddo ! m
-     enddo ! n
-
-     !> rotate DHDk and DHDkdag to diagonal basis
-     do i=1, 3
-        call mat_mul(Num_wann, DHDk(:, :, i), UU_dag, Amat) 
-        call mat_mul(Num_wann, UU, Amat, DHDk(:, :, i)) 
-        call mat_mul(Num_wann, DHDkdag(:, :, i), UU_dag, Amat) 
-        call mat_mul(Num_wann, UU, Amat, DHDkdag(:, :, i)) 
-     enddo
-
-     call mat_mul(Num_wann, DHDk(:, :, 1), DHDkdag(:, :, 2), vz)
-     call mat_mul(Num_wann, DHDk(:, :, 2), DHDkdag(:, :, 3), vx)
-     call mat_mul(Num_wann, DHDk(:, :, 3), DHDkdag(:, :, 1), vy)
-
-     do i=1, Num_wann
-        Omega_x(i)= -2d0*zi*vx(i, i)
-        Omega_y(i)= -2d0*zi*vy(i, i)
-        Omega_z(i)= -2d0*zi*vz(i, i)
-     enddo
-
-     !> add a factor of 2
-     Omega_x= Omega_x*2d0
-     Omega_y= Omega_y*2d0
-     Omega_z= Omega_z*2d0
-
-     return
-  end subroutine berry_curvarture_singlek_EF_old
-
   subroutine berry_curvarture_singlek_EF(k, mu, Omega_x, Omega_y, Omega_z)
      !> Calculate Berry curvature for a sigle k point
      !> The Fermi distribution is determined by the Fermi level E_arc
@@ -136,21 +21,21 @@
      complex(dp), intent(out) :: Omega_y(Num_wann)
      complex(dp), intent(out) :: Omega_z(Num_wann)
 
-     integer :: iR, m, n
+     integer :: m, n, i
      real(dp), allocatable :: W(:)
-     real(dp) :: kdotr, Beta_fake
+     real(dp) :: beta_fake
      complex(dp), allocatable :: Amat(:, :), DHDk(:, :, :), DHDkdag(:, :, :)
      complex(dp), allocatable :: UU(:, :), UU_dag(:, :), Hamk_bulk(:, :)
-     complex(dp), allocatable :: vx(:, :), vy(:, :), vz(:, :)
+     complex(dp), allocatable :: velocity_wann(:, :, :), velocity_Ham(:, :, :)
 
      !> Fermi-Dirac distribution
      real(dp), external :: fermi
 
      allocate(W(Num_wann))
-     allocate(vx(Num_wann, Num_wann), vy(Num_wann, Num_wann), vz(Num_wann, Num_wann))
+     allocate(velocity_wann(Num_wann, Num_wann, 3), velocity_Ham(Num_wann, Num_wann, 3))
      allocate(UU(Num_wann, Num_wann), UU_dag(Num_wann, Num_wann), Hamk_bulk(Num_wann, Num_wann))
      allocate(Amat(Num_wann, Num_wann), DHDk(Num_wann, Num_wann, 3), DHDkdag(Num_wann, Num_wann, 3))
-     W=0d0; vx= 0d0; vy= 0d0; vz= 0d0; UU= 0d0; UU_dag= 0d0
+     W=0d0; velocity_wann= 0d0; UU= 0d0; UU_dag= 0d0; velocity_Ham= 0d0
 
      ! calculation bulk hamiltonian by a direct Fourier transformation of HmnR
      call ham_bulk_atomicgauge(k, Hamk_bulk)
@@ -161,23 +46,21 @@
     !call zhpevx_pack(hamk_bulk,Num_wann, W, UU)
 
      UU_dag= conjg(transpose(UU))
-     call dHdk_atomicgauge(k, vx, vy, vz)
+     call dHdk_atomicgauge(k, velocity_wann)
 
      !> unitility rotate velocity
-     call mat_mul(Num_wann, vx, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vx) 
-     call mat_mul(Num_wann, vy, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vy) 
-     call mat_mul(Num_wann, vz, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vz) 
+     do i=1, 3
+        call mat_mul(Num_wann, velocity_wann(:, :, i), UU, Amat) 
+        call mat_mul(Num_wann, UU_dag, Amat, velocity_Ham(:, :, i)) 
+     enddo
 
      Omega_x=0d0;Omega_y=0d0; Omega_z=0d0
      do m= 1, Num_wann
         do n= 1, Num_wann
            if (abs(W(m)-W(n))<eps6) cycle
-           Omega_x(m)= Omega_x(m)+ vy(n, m)*vz(m, n)/((W(m)-W(n))**2)
-           Omega_y(m)= Omega_y(m)+ vz(n, m)*vx(m, n)/((W(m)-W(n))**2)
-           Omega_z(m)= Omega_z(m)+ vx(n, m)*vy(m, n)/((W(m)-W(n))**2)
+           Omega_x(m)= Omega_x(m)+ velocity_Ham(n, m, 2)*velocity_Ham(m, n, 3)/((W(m)-W(n))**2)
+           Omega_y(m)= Omega_y(m)+ velocity_Ham(n, m, 3)*velocity_Ham(m, n, 1)/((W(m)-W(n))**2)
+           Omega_z(m)= Omega_z(m)+ velocity_Ham(n, m, 1)*velocity_Ham(m, n, 2)/((W(m)-W(n))**2)
         enddo ! m
      enddo ! n
 
@@ -187,130 +70,15 @@
 
      !> consider the Fermi-distribution according to the brodening Earc_eta
      if (Eta_Arc<eps6) Eta_Arc= eps6
-     Beta_fake= 1d0/Eta_Arc
+     beta_fake= 1d0/Eta_Arc
      do m= 1, Num_wann
-        Omega_x(m)= Omega_x(m)*fermi(W(m)-mu, Beta_fake)
-        Omega_y(m)= Omega_y(m)*fermi(W(m)-mu, Beta_fake)
+        Omega_x(m)= Omega_x(m)*fermi(W(m)-mu, beta_fake)
+        Omega_y(m)= Omega_y(m)*fermi(W(m)-mu, beta_fake)
         Omega_z(m)= Omega_z(m)*fermi(W(m)-mu, Beta_fake)
      enddo
 
      return
   end subroutine berry_curvarture_singlek_EF
-
-
-
-  subroutine berry_curvarture_singlek_numoccupied_old(k, Omega_x, Omega_y, Omega_z)
-     !> Calculate Berry curvature for a sigle k point
-     !> The Fermi distribution is determined by the NumOccupied bands, not the Fermi level
-     !> ref : Physical Review B 74, 195118(2006)
-     !
-     !> eqn (34)
-     !
-     !> Jun. 11 2018 by Quansheng Wu @ ETHZ
-     !> Try to write some simple subroutines. 
-     ! Copyright (c) 2018 QuanSheng Wu. All rights reserved.
-
-     use wmpi
-     use para
-     implicit none
-
-     !> input parameter, k is in unit of reciprocal lattice vectors
-     real(dp), intent(in) :: k(3)
-     complex(dp), intent(out) :: Omega_x(Num_wann)
-     complex(dp), intent(out) :: Omega_y(Num_wann)
-     complex(dp), intent(out) :: Omega_z(Num_wann)
-
-     integer :: iR, m, n, i
-     real(dp), allocatable :: W(:)
-     real(dp) :: kdotr
-     complex(dp), allocatable :: Amat(:, :), DHDk(:, :, :), DHDkdag(:, :, :)
-     complex(dp), allocatable :: UU(:, :), UU_dag(:, :), Hamk_bulk(:, :)
-     complex(dp), allocatable :: vx(:, :), vy(:, :), vz(:, :)
-
-     allocate(W(Num_wann))
-     allocate(vx(Num_wann, Num_wann), vy(Num_wann, Num_wann), vz(Num_wann, Num_wann))
-     allocate(UU(Num_wann, Num_wann), UU_dag(Num_wann, Num_wann), Hamk_bulk(Num_wann, Num_wann))
-     allocate(Amat(Num_wann, Num_wann), DHDk(Num_wann, Num_wann, 3), DHDkdag(Num_wann, Num_wann, 3))
-     W=0d0; vx= 0d0; vy= 0d0; vz= 0d0; UU= 0d0; UU_dag= 0d0
-
-     ! calculation bulk hamiltonian by a direct Fourier transformation of HmnR
-     call ham_bulk_latticegauge(k, Hamk_bulk)
-
-     !> diagonalization by call zheev in lapack
-     UU=Hamk_bulk
-     call eigensystem_c( 'V', 'U', Num_wann, UU, W)
-    !call zhpevx_pack(hamk_bulk,Num_wann, W, UU)
-
-     UU_dag= conjg(transpose(UU))
-     do iR= 1, Nrpts
-        kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
-        vx= vx+ zi*crvec(1, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
-        vy= vy+ zi*crvec(2, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
-        vz= vz+ zi*crvec(3, iR)*HmnR(:,:,iR)*Exp(pi2zi*kdotr)/ndegen(iR)
-     enddo ! iR
-
-     !> unitility rotate velocity
-     call mat_mul(Num_wann, vx, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vx) 
-     call mat_mul(Num_wann, vy, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vy) 
-     call mat_mul(Num_wann, vz, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vz) 
-
-     DHDk= 0d0
-     DHDkdag= 0d0
-     do m= 1, Num_wann
-        do n= 1, Num_wann
-           if (n> Numoccupied .and. m<= Numoccupied) then 
-              DHDk(n, m, 1)= zi*vx(n, m)/(W(m)-W(n))
-              DHDk(n, m, 2)= zi*vy(n, m)/(W(m)-W(n))
-              DHDk(n, m, 3)= zi*vz(n, m)/(W(m)-W(n))
-           else
-              DHDk(n, m, 1)= 0d0
-              DHDk(n, m, 2)= 0d0
-              DHDk(n, m, 3)= 0d0
-           endif
-        enddo ! m
-     enddo ! n
-
-     do m= 1, Num_wann
-        do n= 1, Num_wann
-           if (m>Numoccupied .and. n<=Numoccupied) then
-              DHDkdag(n, m, 1)= zi*vx(n, m)/(W(m)-W(n))
-              DHDkdag(n, m, 2)= zi*vy(n, m)/(W(m)-W(n))
-              DHDkdag(n, m, 3)= zi*vz(n, m)/(W(m)-W(n))
-           else              
-              DHDkdag(n, m, 1)= 0d0
-              DHDkdag(n, m, 2)= 0d0
-              DHDkdag(n, m, 3)= 0d0
-           endif
-        enddo ! m
-     enddo ! n
-
-     !> rotate DHDk and DHDkdag to diagonal basis
-     do i=1, 3
-        call mat_mul(Num_wann, DHDk(:, :, i), UU_dag, Amat) 
-        call mat_mul(Num_wann, UU, Amat, DHDk(:, :, i)) 
-        call mat_mul(Num_wann, DHDkdag(:, :, i), UU_dag, Amat) 
-        call mat_mul(Num_wann, UU, Amat, DHDkdag(:, :, i)) 
-     enddo
-
-     call mat_mul(Num_wann, DHDk(:, :, 1), DHDkdag(:, :, 2), vz)
-     call mat_mul(Num_wann, DHDk(:, :, 2), DHDkdag(:, :, 3), vx)
-     call mat_mul(Num_wann, DHDk(:, :, 3), DHDkdag(:, :, 1), vy)
-
-     do i=1, Num_wann
-        Omega_x(i)= -2d0*zi*vx(i, i)
-        Omega_y(i)= -2d0*zi*vy(i, i)
-        Omega_z(i)= -2d0*zi*vz(i, i)
-     enddo
-
-     Omega_x= real(Omega_x*2d0)
-     Omega_y= real(Omega_y*2d0)
-     Omega_z= real(Omega_z*2d0)
-
-     return
-  end subroutine berry_curvarture_singlek_numoccupied_old
 
   subroutine berry_curvarture_singlek_numoccupied_slab_total(k, Omega_z)
      !> Calculate Berry curvature for a sigle k point
@@ -397,6 +165,7 @@
      !> The Fermi distribution is determined by the NumOccupied bands, not the Fermi level
      !> ref : Physical Review B 74, 195118(2006)
      !
+
      !> eqn (11), we only calculate yz, zx, xy
      !
      !> Jun. 25 2018 by Quansheng Wu @ airplane CA781 from Beijing to Zurich
@@ -413,17 +182,17 @@
      complex(dp), intent(out) :: Omega_y
      complex(dp), intent(out) :: Omega_z
 
-     integer :: m, n
+     integer :: m, n, i
      real(dp), allocatable :: W(:)
-     complex(dp), allocatable :: Amat(:, :), DHDk(:, :, :), DHDkdag(:, :, :)
+     complex(dp), allocatable :: Amat(:, :)
      complex(dp), allocatable :: UU(:, :), UU_dag(:, :), Hamk_bulk(:, :)
-     complex(dp), allocatable :: vx(:, :), vy(:, :), vz(:, :)
+     complex(dp), allocatable :: velocity_wann(:, :, :), velocity_Ham(:, :, :)
 
      allocate(W(Num_wann))
-     allocate(vx(Num_wann, Num_wann), vy(Num_wann, Num_wann), vz(Num_wann, Num_wann))
+     allocate(velocity_wann(Num_wann, Num_wann, 3), velocity_Ham(Num_wann, Num_wann, 3))
      allocate(UU(Num_wann, Num_wann), UU_dag(Num_wann, Num_wann), Hamk_bulk(Num_wann, Num_wann))
-     allocate(Amat(Num_wann, Num_wann), DHDk(Num_wann, Num_wann, 3), DHDkdag(Num_wann, Num_wann, 3))
-     W=0d0; vx= 0d0; vy= 0d0; vz= 0d0; UU= 0d0; UU_dag= 0d0
+     allocate(Amat(Num_wann, Num_wann))
+     W=0d0; velocity_wann= 0d0; UU= 0d0; UU_dag= 0d0; velocity_Ham= 0d0
 
      ! calculation bulk hamiltonian by a direct Fourier transformation of HmnR
      !call ham_bulk_latticegauge(k, Hamk_bulk)
@@ -437,28 +206,29 @@
      UU_dag= conjg(transpose(UU))
 
      !call dHdk_latticegauge(k, vx, vy, vz)
-     call dHdk_atomicgauge(k, vx, vy, vz)
+     call dHdk_atomicgauge(k, velocity_wann)
 
      !> unitility rotate velocity
-     call mat_mul(Num_wann, vx, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vx) 
-     call mat_mul(Num_wann, vy, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vy) 
-     call mat_mul(Num_wann, vz, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vz) 
+     do i=1, 3
+        call mat_mul(Num_wann, velocity_wann(:, :, i), UU, Amat) 
+        call mat_mul(Num_wann, UU_dag, Amat, velocity_Ham(:, :, i)) 
+     enddo
 
      Omega_x=0d0; Omega_y=0d0; Omega_z=0d0
      do m= 1, NumOccupied !> sum over valence band
         do n= NumOccupied+1, Num_wann !> sum over conduction band
-           Omega_x= Omega_x+ vy(n, m)*vz(m, n)/((W(m)-W(n))**2)
-           Omega_y= Omega_y+ vz(n, m)*vx(m, n)/((W(m)-W(n))**2)
-           Omega_z= Omega_z+ vx(n, m)*vy(m, n)/((W(m)-W(n))**2)
+           Omega_x= Omega_x+ velocity_Ham(n, m, 2)*velocity_Ham(m, n, 3)/((W(m)-W(n))**2)
+           Omega_y= Omega_y+ velocity_Ham(n, m, 3)*velocity_Ham(m, n, 1)/((W(m)-W(n))**2)
+           Omega_z= Omega_z+ velocity_Ham(n, m, 1)*velocity_Ham(m, n, 2)/((W(m)-W(n))**2)
         enddo ! m
      enddo ! n
 
      Omega_x= -aimag(Omega_x*2d0)  
      Omega_y= -aimag(Omega_y*2d0)  
      Omega_z= -aimag(Omega_z*2d0)  
+
+     deallocate(W, UU, UU_dag, hamk_bulk)
+     deallocate(Amat, velocity_wann, velocity_Ham)
 
      return
   end subroutine berry_curvarture_singlek_numoccupied_total
@@ -484,21 +254,20 @@
      complex(dp), intent(out) :: Omega_y(Num_wann)
      complex(dp), intent(out) :: Omega_z(Num_wann)
 
-     integer :: m, n      
+     integer :: m, n, i
      real(dp), allocatable :: W(:)
      complex(dp), allocatable :: Amat(:, :), DHDk(:, :, :), DHDkdag(:, :, :)
      complex(dp), allocatable :: UU(:, :), UU_dag(:, :), Hamk_bulk(:, :)
-     complex(dp), allocatable :: vx(:, :), vy(:, :), vz(:, :)
+     complex(dp), allocatable :: velocity_wann(:, :, :), velocity_Ham(:, :, :)
 
      allocate(W(Num_wann))
-     allocate(vx(Num_wann, Num_wann), vy(Num_wann, Num_wann), vz(Num_wann, Num_wann))
+     allocate(velocity_wann(Num_wann, Num_wann, 3), velocity_Ham(Num_wann, Num_wann, 3))
      allocate(UU(Num_wann, Num_wann), UU_dag(Num_wann, Num_wann), Hamk_bulk(Num_wann, Num_wann))
      allocate(Amat(Num_wann, Num_wann), DHDk(Num_wann, Num_wann, 3), DHDkdag(Num_wann, Num_wann, 3))
-     W=0d0; vx= 0d0; vy= 0d0; vz= 0d0; UU= 0d0; UU_dag= 0d0
+     W=0d0; velocity_wann= 0d0; UU= 0d0; UU_dag= 0d0; velocity_Ham= 0d0
 
      ! calculation bulk hamiltonian by a direct Fourier transformation of HmnR
      call ham_bulk_atomicgauge    (k, Hamk_bulk)
-     !call ham_bulk_latticegauge(k, Hamk_bulk)
 
      !> diagonalization by call zheev in lapack
      UU=Hamk_bulk
@@ -508,15 +277,13 @@
      UU_dag= conjg(transpose(UU))
 
      !call dHdk_latticegauge(k, vx, vy, vz)
-     call dHdk_atomicgauge(k, vx, vy, vz)
+     call dHdk_atomicgauge(k, velocity_wann)
 
      !> unitility rotate velocity
-     call mat_mul(Num_wann, vx, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vx) 
-     call mat_mul(Num_wann, vy, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vy) 
-     call mat_mul(Num_wann, vz, UU, Amat) 
-     call mat_mul(Num_wann, UU_dag, Amat, vz) 
+     do i=1, 3
+        call mat_mul(Num_wann, velocity_wann(:, :, i), UU, Amat) 
+        call mat_mul(Num_wann, UU_dag, Amat, velocity_Ham(:, :, i)) 
+     enddo
 
      Omega_x=0d0;Omega_y=0d0; Omega_z=0d0
     !do m= NumOccupied  , NumOccupied
@@ -524,9 +291,9 @@
      do m= 1, NumOccupied
         do n= 1, Num_wann
            if (m==n) cycle
-           Omega_x(m)= Omega_x(m)+ vy(n, m)*vz(m, n)/((W(m)-W(n))**2)
-           Omega_y(m)= Omega_y(m)+ vz(n, m)*vx(m, n)/((W(m)-W(n))**2)
-           Omega_z(m)= Omega_z(m)+ vx(n, m)*vy(m, n)/((W(m)-W(n))**2)
+           Omega_x(m)= Omega_x(m)+ velocity_Ham(n, m, 2)*velocity_Ham(m, n, 3)/((W(m)-W(n))**2)
+           Omega_y(m)= Omega_y(m)+ velocity_Ham(n, m, 3)*velocity_Ham(m, n, 1)/((W(m)-W(n))**2)
+           Omega_z(m)= Omega_z(m)+ velocity_Ham(n, m, 1)*velocity_Ham(m, n, 2)/((W(m)-W(n))**2)
         enddo ! m
      enddo ! n
 
@@ -536,6 +303,149 @@
 
      return
   end subroutine berry_curvarture_singlek_numoccupied
+
+  subroutine berry_curvarture_singlek_allbands(Dmn_Ham, Omega_BerryCurv)
+     !> Calculate Berry curvature for a sigle k point and all bands
+     !> ref : eqn (30) Physical Review B 74, 195118(2006)
+     !> \Omega_n^{\gamma}(k)=i\sum_{\alpha\beta}\epsilon_{\gamma\alpha\beta}(D^{\alpha\dag}D^{\beta})_{nn}
+     !> Dec. 30 2019 by Quansheng Wu
+     !> Copyright (c) 2019 QuanSheng Wu. All rights reserved.
+
+     use wmpi
+     use para
+     implicit none
+
+     !> D_mn^H=V_mn/(En-Em) for m!=n
+     !> D_nn^H=0 
+     complex(dp), intent(in) :: Dmn_Ham(Num_wann, Num_wann, 3)
+
+     !> Berry curvature vectors for all bands
+     real(dp), intent(out) :: Omega_BerryCurv(Num_wann, 3)
+
+     integer :: m, n, i, alphai(3), betai(3)
+     complex(dp), allocatable :: Amat(:, :)
+     complex(dp), allocatable :: Dmn_Ham_dag(:, :, :)
+
+     allocate(Amat(Num_wann, Num_wann))
+     allocate(Dmn_Ham_dag(Num_wann, Num_wann, 3))
+     Amat= 0d0
+     Dmn_Ham_dag=-Dmn_Ham
+
+     Omega_BerryCurv= 0d0
+     alphai(1)=2;alphai(2)=3;alphai(3)=1;
+     betai(1)=3;betai(2)=1;betai(3)=2;
+
+     do i=1, 3
+        call mat_mul(Num_wann, Dmn_Ham_dag(:, :, alphai(i)), Dmn_Ham(:, :, betai(i)), Amat)
+        do m=1, Num_wann
+           Omega_BerryCurv(m, i)= Omega_BerryCurv(m, i)- aimag(Amat(m, m))
+        enddo
+        call mat_mul(Num_wann, Dmn_Ham_dag(:, :, betai(i)), Dmn_Ham(:, :, alphai(i)), Amat)
+        do m=1, Num_wann
+           Omega_BerryCurv(m, i)= Omega_BerryCurv(m, i)+ aimag(Amat(m, m))
+        enddo
+     enddo
+
+     return
+  end subroutine berry_curvarture_singlek_allbands
+
+
+  subroutine orbital_magnetization_singlek_allbands(Dmn_Ham, Vmn_Ham_nondiag, m_OrbMag)
+     !> Calculate orbital magnetization for a sigle k point and all bands
+     !> m_n^{\gamma}(k)=-i*e/2/\hbar\sum_{\alpha\beta}\epsilon_{\gamma\alpha\beta}(D^{\alpha\dag}V^{\beta})_{nn}
+     !> Dec. 30 2019 by Quansheng Wu
+     !> Copyright (c) 2019 QuanSheng Wu. All rights reserved.
+
+     use wmpi
+     use para
+     implicit none
+
+     !> D_mn^H=V_mn/(En-Em) for m!=n
+     !> D_nn^H=0 
+     complex(dp), intent(in) :: Dmn_Ham(Num_wann, Num_wann, 3)
+
+     !> Vmn_Ham_nondiag(m, n, i)= Vmn_Ham(m, n, i) for m!=n
+     !> Vmn_Ham_nondiag(n, n, i)= 0
+     complex(dp), intent(in) :: Vmn_Ham_nondiag(Num_wann, Num_wann, 3)
+
+     !> Berry curvature vectors for all bands
+     real(dp), intent(out) :: m_OrbMag(Num_wann, 3)
+
+     integer :: m, i, ialpha(3), ibeta(3)
+     complex(dp), allocatable :: Amat(:, :)
+     complex(dp), allocatable :: Dmn_Ham_dag(:, :, :)
+
+     allocate(Amat(Num_wann, Num_wann))
+     allocate(Dmn_Ham_dag(Num_wann, Num_wann, 3))
+     Amat=0d0
+     Dmn_Ham_dag = -Dmn_Ham
+
+     m_OrbMag= 0d0
+     ialpha(1)=2;ialpha(2)=3;ialpha(3)=1;
+     ibeta(1)=3;ibeta(2)=1;ibeta(3)=2;
+
+     do i=1, 3
+        call mat_mul(Num_wann, Dmn_Ham_dag(:, :, ialpha(i)), Vmn_Ham_nondiag(:, :, ibeta(i)), Amat)
+        do m=1, Num_wann
+           m_OrbMag(m, i)= m_OrbMag(m, i)+ aimag(Amat(m, m))
+        enddo
+        call mat_mul(Num_wann, Dmn_Ham_dag(:, :, ibeta(i)), Vmn_Ham_nondiag(:, :, ialpha(i)), Amat)
+        do m=1, Num_wann
+           m_OrbMag(m, i)= m_OrbMag(m, i)- aimag(Amat(m, m))
+        enddo
+     enddo
+
+     !> 1/2d0 comes from e/\hbar/2d0, here we use atomic unit
+     m_OrbMag= m_OrbMag/2d0
+
+     !> if we want to use Bohr magneton \mu_B as unit, we need multiply it by two.
+
+     return
+  end subroutine orbital_magnetization_singlek_allbands
+
+  subroutine get_Vmn_Ham_nondiag(velocity_Ham, velocity_Ham_nondiag)
+     !> the diagonal of velocity_Ham_nondiag is zero
+     !> and velocity_Ham_nondiag(m, n)= -velocity_Ham(m, n)
+     use para, only : dp, Num_wann
+     implicit none
+
+     complex(dp), intent(in) :: velocity_Ham(Num_wann, Num_wann, 3)
+     complex(dp), intent(out) :: velocity_Ham_nondiag(Num_wann, Num_wann, 3)
+     integer :: n
+
+     velocity_Ham_nondiag= -velocity_Ham
+     do n=1, Num_wann
+        velocity_Ham_nondiag(n, n, :)=0d0
+     enddo
+
+     return
+  end subroutine get_Vmn_Ham_nondiag
+
+  subroutine get_Dmn_Ham(W, velocity_Ham, Dmn_Ham)
+     !> define D matrix 
+     !> Eq (24) Phys.Rev.B 74, 195118(2006)
+     !> Dmn_Ham_dag=-Dmn_Ham
+     use para, only : dp, Num_wann, eps12, zzero
+     implicit none
+
+     real(dp), intent(in) :: W(Num_wann)
+     complex(dp), intent(in) :: velocity_Ham(Num_wann, Num_wann, 3)
+     complex(dp), intent(out) :: Dmn_Ham(Num_wann, Num_wann, 3)
+
+     integer :: m, n, i
+
+     Dmn_Ham = zzero 
+     do i=1, 3
+        do n=1, Num_wann
+           do m=1, Num_wann
+              Dmn_Ham(m,n,i)=velocity_Ham(m,n,i)/(W(n)-W(m)+eps12)
+           enddo
+           Dmn_Ham(n, n, i)=zzero
+        enddo
+     enddo
+
+     return
+  end subroutine get_Dmn_Ham
 
   subroutine berry_curvarture_slab
      !> Calculate Berry curvature 
@@ -556,7 +466,7 @@
 
      !> k points slice
      real(dp), allocatable :: k12(:, :)
-     real(dp), allocatable :: k12_shape(:, :)
+     real(dp), allocatable :: k12_xyz(:, :)
    
      real(dp), external :: norm
 
@@ -568,12 +478,12 @@
      Mdim = Num_wann*Nslab
 
      allocate( k12(2, Nk1*Nk2))
-     allocate( k12_shape(2, Nk1*Nk2))
+     allocate( k12_xyz(2, Nk1*Nk2))
      allocate( Omega_z(Mdim))
      allocate( Omega    (Nk1*Nk2))
      allocate( Omega_mpi(Nk1*Nk2))
      k12=0d0
-     k12_shape=0d0
+     k12_xyz=0d0
      omega= 0d0
      omega_mpi= 0d0
     
@@ -584,7 +494,7 @@
            ik=ik+1
            k12(:, ik)=K2D_start+ (i-1)*K2D_vec1/dble(nk1-1) &
                       + (j-1)*K2D_vec2/dble(nk2-1)- (K2D_vec1+K2D_vec2)/2d0
-           k12_shape(:, ik)= k12(1, ik)* Ka2+ k12(2, ik)* Kb2
+           k12_xyz(:, ik)= k12(1, ik)* Ka2+ k12(2, ik)* Kb2
         enddo
      enddo
 
@@ -621,7 +531,7 @@
         do i= 1, nk1
            do j= 1, nk2
               ik= ik+ 1
-              write(outfileindex, '(20E28.10)')k12_shape(:, ik), real(Omega_mpi(ik))
+              write(outfileindex, '(20E28.10)')k12_xyz(:, ik), real(Omega_mpi(ik))
            enddo
            write(outfileindex, *) ' '
         enddo
@@ -668,7 +578,7 @@
 #endif
 
      deallocate( k12)
-     deallocate( k12_shape)
+     deallocate( k12_xyz)
      deallocate( Omega_z)
      deallocate( Omega, Omega_mpi)
  
@@ -842,104 +752,1115 @@
      use para
      implicit none
     
-     integer :: ik, ierr, ikx, iky, ikz
+     integer :: ik, ierr, ikx, iky, ikz, knv3, i, m, n
 
      real(dp) :: k(3), o1(3), k_cart(3)
      real(dp) :: time_start, time_end, time_start0
 
      real(dp), external :: norm
 
-     !> Berry curvature  (3, bands, k)
-     complex(dp), allocatable :: Omega_x(:), Omega_y(:), Omega_z(:)
-     real(dp), allocatable :: Omega(:, :), Omega_mpi(:, :)
+     !> Berry curvature and orbital magnetization (3, bands, k)
+     real(dp), allocatable :: Omega_allk(:, :, :), Omega_allk_mpi(:, :, :)
+     real(dp), allocatable :: m_OrbMag_allk(:, :, :), m_OrbMag_allk_mpi(:, :, :)
+     real(dp), allocatable :: Omega_BerryCurv(:, :), m_OrbMag(:, :)
 
-     allocate( Omega_x(Num_wann))
-     allocate( Omega_y(Num_wann))
-     allocate( Omega_z(Num_wann))
-     allocate( Omega    (3, Nk1*Nk2*Nk3))
-     allocate( Omega_mpi(3, Nk1*Nk2*Nk3))
-     omega= 0d0
-     omega_mpi= 0d0
+     !> velocity matrix in Wannier basis 
+     complex(dp), allocatable :: Vmn_wann(:, :, :)
+
+     !> velocity matrix in Hamiltonian basis 
+     complex(dp), allocatable :: Vmn_Ham(:, :, :), Vmn_Ham_nondiag(:, :, :)
+
+     complex(dp), allocatable :: Dmn_Ham(:, :, :)
+
+     !> Hamiltonian, eigenvalue and eigenvectors
+     complex(dp), allocatable :: UU(:, :)
+     real(dp), allocatable :: W(:)
+     real(dp), allocatable :: eigval_allk(:, :), eigval_allk_mpi(:, :)
+
+     knv3=Nk1*Nk2*Nk3
+
+     allocate(Vmn_wann(Num_wann, Num_wann, 3), Vmn_Ham(Num_wann, Num_wann, 3))
+     allocate(Dmn_Ham(Num_wann,Num_wann,3), Vmn_Ham_nondiag(Num_wann, Num_wann, 3))
+     allocate(W(Num_wann))
+     allocate(UU(Num_wann, Num_wann))
+     allocate(eigval_allk(Num_wann, knv3))
+     allocate(eigval_allk_mpi(Num_wann, knv3))
+     allocate( Omega_BerryCurv(Num_wann, 3), m_OrbMag(Num_wann, 3))
+     allocate( Omega_allk    (Num_wann, 3, knv3))
+     allocate( Omega_allk_mpi(Num_wann, 3, knv3))
+     allocate( m_OrbMag_allk    (Num_wann, 3, knv3))
+     allocate( m_OrbMag_allk_mpi(Num_wann, 3, knv3))
+     Omega_BerryCurv= 0d0
+     m_OrbMag=0d0
+     
+     Omega_allk= 0d0
+     eigval_allk= 0d0
+     m_OrbMag_allk=0d0
+     Omega_allk_mpi= 0d0
+     eigval_allk_mpi= 0d0
+     m_OrbMag_allk_mpi=0d0
     
      time_start= 0d0
      time_start0= 0d0
      call now(time_start0)
      time_start= time_start0
      time_end  = time_start0
-     do ik= 1+ cpuid, Nk1*Nk2*Nk3, num_cpu
+     do ik= 1+ cpuid, knv3, num_cpu
         if (cpuid==0.and. mod(ik/num_cpu, 100)==0) &
            write(stdout, '(a, i9, "  /", i10, a, f10.1, "s", a, f10.1, "s")') &
-           ' Berry curvature: ik', ik, Nk1*Nk2*Nk3, ' time left', &
-           (Nk1*Nk2*Nk3-ik)*(time_end- time_start)/num_cpu, &
+           ' Berry curvature: ik', ik, knv3, ' time left', &
+           (knv3-ik)*(time_end- time_start)/num_cpu, &
            ' time elapsed: ', time_end-time_start0 
         ikx= (ik-1)/(nk2*nk3)+1
         iky= ((ik-1-(ikx-1)*Nk2*Nk3)/nk3)+1
         ikz= (ik-(iky-1)*Nk3- (ikx-1)*Nk2*Nk3)
         k= K3D_start_cube+ K3D_vec1_cube*(ikx-1)/dble(nk1)  &
            + K3D_vec2_cube*(iky-1)/dble(nk2)  &
-           + K3D_vec3_cube*(ikz-1)/dble(nk3) &
-           - (K3D_vec1_cube+ K3D_vec2_cube+ K3D_vec3_cube)/2d0
+           + K3D_vec3_cube*(ikz-1)/dble(nk3) 
+           !- (K3D_vec1_cube+ K3D_vec2_cube+ K3D_vec3_cube)/2d0
 
         call now(time_start)
- 
-        Omega_x= 0d0
-        Omega_y= 0d0
-        Omega_z= 0d0
+        
+        !> calculation bulk hamiltonian by a direct Fourier transformation of HmnR
+        call ham_bulk_atomicgauge(k, UU)
+   
+        !> diagonalization by call zheev in lapack
+        call eigensystem_c( 'V', 'U', Num_wann, UU, W)
+        eigval_allk(:, ik) = W
 
-        !call berry_curvarture_singlek_numoccupied_old(k, Omega_x, Omega_y, Omega_z)
-        call berry_curvarture_singlek_numoccupied(k, Omega_x, Omega_y, Omega_z)
-        !call berry_curvarture_singlek_numoccupied_total(k, Omega_x(1), Omega_y(1), Omega_z(1))
-        !call berry_curvarture_singlek_EF(k, 0d0, Omega_x, Omega_y, Omega_z)
-        Omega(1, ik) = real(sum(Omega_x))
-        Omega(2, ik) = real(sum(Omega_y))
-        Omega(3, ik) = real(sum(Omega_z))
+        !> get velocity operator in Wannier basis
+        call dHdk_atomicgauge(k, Vmn_wann)
+        
+        !> Rotate Vmn_wann from Wannier basis to Hamiltonian basis
+        do i=1, 3
+           call rotation_to_Ham_basis(UU, Vmn_wann(:, :, i), Vmn_Ham(:, :, i))
+        enddo
+
+        call get_Dmn_Ham(W, Vmn_Ham, Dmn_Ham)
+        call get_Vmn_Ham_nondiag(Vmn_Ham, Vmn_Ham_nondiag)
+
+        call berry_curvarture_singlek_allbands(Dmn_Ham, Omega_BerryCurv)
+        call orbital_magnetization_singlek_allbands(Dmn_Ham, Vmn_Ham_nondiag, m_OrbMag)
+        Omega_allk(:, :, ik) = real(Omega_BerryCurv)
+        m_OrbMag_allk(:, :, ik) = real(m_OrbMag)
+
         call now(time_end)
      enddo ! ik
 
-     Omega_mpi= 0d0
-
 #if defined (MPI)
-     call mpi_allreduce(Omega,Omega_mpi,size(Omega_mpi),&
+     call mpi_allreduce(Omega_allk,Omega_allk_mpi,size(Omega_allk_mpi),&
+                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+     call mpi_allreduce(eigval_allk,eigval_allk_mpi,size(eigval_allk_mpi),&
+                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+     call mpi_allreduce(m_OrbMag_allk,m_OrbMag_allk_mpi,size(m_OrbMag_allk_mpi),&
                        mpi_dp,mpi_sum,mpi_cmw,ierr)
 #else
-     Omega_mpi= Omega
+     Omega_allk_mpi= Omega_allk
+     eigval_allk_mpi= eigval_allk
+     m_OrbMag_allk_mpi= m_OrbMag_allk
 #endif
 
-     !> output the Berry curvature to file
+     !> write out Berry curvature and orbital magnetization to a file which
+     !> can be open by software Fermisurfer.
      outfileindex= outfileindex+ 1
      if (cpuid==0) then
-        open(unit=outfileindex, file='Berrycurvature_cube-matlab.dat')
-        write(outfileindex, '(20a28)')'% kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
-           'Omega_x', 'Omega_y', 'Omega_z' 
-
-        do ik= 1, Nk1*Nk2*Nk3
-           ikx= (ik-1)/(nk2*nk3)+1
-           iky= ((ik-1-(ikx-1)*Nk2*Nk3)/nk3)+1
-           ikz= (ik-(iky-1)*Nk3- (ikx-1)*Nk2*Nk3)
-
-           k= K3D_start_cube+ K3D_vec1_cube*(ikx-1)/dble(nk1-1)  &
-           + K3D_vec2_cube*(iky-1)/dble(nk2-1)  &
-           + K3D_vec3_cube*(ikz-1)/dble(nk3-1) &
-           -(K3D_vec3_cube+K3D_vec2_cube+K3D_vec1_cube)/2d0
-           call direct_cart_rec(k, k_cart)
-           o1= real(Omega_mpi(:, ik))
-           if (norm(o1)>eps9) o1= o1/norm(o1)
-           write(outfileindex, '(20E28.10)')k_cart, o1
+        open(unit=outfileindex, file='Berrycurvature_norm.frmsf')
+        write(outfileindex, *) Nk1, Nk2, Nk3
+        write(outfileindex, *) 1
+        write(outfileindex, *) Num_wann
+        write(outfileindex, '(3f12.6)') Origin_cell%Kua
+        write(outfileindex, '(3f12.6)') Origin_cell%Kub
+        write(outfileindex, '(3f12.6)') Origin_cell%Kuc
+        do m=1, Num_wann
+           do ik= 1, knv3
+              write(outfileindex, '(E18.10)') eigval_allk_mpi(m, ik)-E_arc
+           enddo
         enddo
-
+        do m=1, Num_wann
+           do ik= 1, knv3
+              o1= Omega_allk_mpi(m, :, ik)
+              write(outfileindex, '(E18.10)') norm(o1)
+           enddo
+        enddo
         close(outfileindex)
      endif
+
+
+     !> write out Berry curvature and orbital magnetization to a file which
+     !> can be open by software Fermisurfer.
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+        open(unit=outfileindex, file='Berrycurvature_x.frmsf')
+        write(outfileindex, *) Nk1, Nk2, Nk3
+        write(outfileindex, *) 1
+        write(outfileindex, *) Num_wann
+        write(outfileindex, '(3f12.6)') Origin_cell%Kua
+        write(outfileindex, '(3f12.6)') Origin_cell%Kub
+        write(outfileindex, '(3f12.6)') Origin_cell%Kuc
+        do m=1, Num_wann
+           do ik= 1, knv3
+              write(outfileindex, '(E18.10)') eigval_allk_mpi(m, ik)-E_arc
+           enddo
+        enddo
+        do m=1, Num_wann
+           do ik= 1, knv3
+              o1= Omega_allk_mpi(m, :, ik)
+              write(outfileindex, '(E18.10)') o1(1)
+           enddo
+        enddo
+        close(outfileindex)
+     endif
+
+
+     !> write out Berry curvature and orbital magnetization to a file which
+     !> can be open by software Fermisurfer.
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+        open(unit=outfileindex, file='Berrycurvature_z.frmsf')
+        write(outfileindex, *) Nk1, Nk2, Nk3
+        write(outfileindex, *) 1
+        write(outfileindex, *) Num_wann
+        write(outfileindex, '(3f12.6)') Origin_cell%Kua
+        write(outfileindex, '(3f12.6)') Origin_cell%Kub
+        write(outfileindex, '(3f12.6)') Origin_cell%Kuc
+        do m=1, Num_wann
+           do ik= 1, knv3
+              write(outfileindex, '(E18.10)') eigval_allk_mpi(m, ik)-E_arc
+           enddo
+        enddo
+        do m=1, Num_wann
+           do ik= 1, knv3
+              o1= Omega_allk_mpi(m, :, ik)
+              write(outfileindex, '(E18.10)') o1(3)
+           enddo
+        enddo
+        close(outfileindex)
+     endif
+
+     !> orbital_magnetization
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+        open(unit=outfileindex, file='Orbital_magnetization_norm.frmsf')
+        write(outfileindex, *) Nk1, Nk2, Nk3
+        write(outfileindex, *) 1
+        write(outfileindex, *) Num_wann
+        write(outfileindex, '(3f12.6)') Origin_cell%Kua
+        write(outfileindex, '(3f12.6)') Origin_cell%Kub
+        write(outfileindex, '(3f12.6)') Origin_cell%Kuc
+        do m=1, Num_wann
+           do ik= 1, knv3
+              write(outfileindex, '(E18.10)') eigval_allk_mpi(m, ik)-E_arc
+           enddo
+        enddo
+        do m=1, Num_wann
+           do ik= 1, knv3
+              o1= m_OrbMag_allk_mpi(m, :, ik)
+              write(outfileindex, '(E18.10)') norm(o1)
+           enddo
+        enddo
+        close(outfileindex)
+     endif
+
+     !> orbital_magnetization
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+        open(unit=outfileindex, file='Orbital_magnetization_z.frmsf')
+        write(outfileindex, *) Nk1, Nk2, Nk3
+        write(outfileindex, *) 1
+        write(outfileindex, *) Num_wann
+        write(outfileindex, '(3f12.6)') Origin_cell%Kua
+        write(outfileindex, '(3f12.6)') Origin_cell%Kub
+        write(outfileindex, '(3f12.6)') Origin_cell%Kuc
+        do m=1, Num_wann
+           do ik= 1, knv3
+              write(outfileindex, '(E18.10)') eigval_allk_mpi(m, ik)-E_arc
+           enddo
+        enddo
+        do m=1, Num_wann
+           do ik= 1, knv3
+              o1= m_OrbMag_allk_mpi(m, :, ik)
+              write(outfileindex, '(E18.10)') o1(3)
+           enddo
+        enddo
+        close(outfileindex)
+     endif
+
+     !> orbital_magnetization
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+        open(unit=outfileindex, file='Orbital_magnetization_x.frmsf')
+        write(outfileindex, *) Nk1, Nk2, Nk3
+        write(outfileindex, *) 1
+        write(outfileindex, *) Num_wann
+        write(outfileindex, '(3f12.6)') Origin_cell%Kua
+        write(outfileindex, '(3f12.6)') Origin_cell%Kub
+        write(outfileindex, '(3f12.6)') Origin_cell%Kuc
+        do m=1, Num_wann
+           do ik= 1, knv3
+              write(outfileindex, '(E18.10)') eigval_allk_mpi(m, ik)-E_arc
+           enddo
+        enddo
+        do m=1, Num_wann
+           do ik= 1, knv3
+              o1= m_OrbMag_allk_mpi(m, :, ik)
+              write(outfileindex, '(E18.10)') o1(1)
+           enddo
+        enddo
+        close(outfileindex)
+     endif
+
+
 
 #if defined (MPI)
      call mpi_barrier(mpi_cmw, ierr)
 #endif
 
-     deallocate( Omega_x, Omega_y, Omega_z)
-     deallocate( Omega, Omega_mpi)
- 
      return
 
   end subroutine berry_curvarture_cube
+
+  subroutine berry_curvarture_plane_full
+     !> Calculate Berry curvature and orbital magnetization for the selected bands
+     !> ref : Physical Review B 74, 195118(2006)
+     !> eqn (34)
+     !
+     !> August 20 2020 by Quansheng Wu @ EPFL
+     !
+     ! Copyright (c) 2020 QuanSheng Wu. All rights reserved.
+
+     use wmpi
+     use para
+     implicit none
+    
+     integer :: ik, i, j, m, n, ierr, nkmesh2
+
+     real(dp) :: k(3), o1(3), vmin, vmax
+
+     !> k points slice
+     real(dp), allocatable :: kslice(:, :), kslice_xyz(:, :)
+   
+     real(dp) :: time_start, time_end, time_start0
+
+     real(dp), allocatable :: W(:)
+     !> Berry curvature and orbital magnetization (3, bands, k)
+     real(dp), allocatable :: Omega_allk_Occ(:, :, :), Omega_allk_Occ_mpi(:, :, :)
+     real(dp), allocatable :: m_OrbMag_allk_Occ(:, :, :), m_OrbMag_allk_Occ_mpi(:, :, :)
+     real(dp), allocatable :: Omega_allk_EF(:, :, :), Omega_allk_EF_mpi(:, :, :)
+     real(dp), allocatable :: m_OrbMag_allk_EF(:, :, :), m_OrbMag_allk_EF_mpi(:, :, :)
+     real(dp), allocatable :: Omega_BerryCurv(:, :), m_OrbMag(:, :)
+     real(dp) :: beta_fake, fermi, delta, norm
+
+     nkmesh2= Nk1*Nk2
+     allocate( Omega_BerryCurv(Num_wann, 3), m_OrbMag(Num_wann, 3))
+     allocate( Omega_allk_Occ    (2, 3, nkmesh2))
+     allocate( Omega_allk_Occ_mpi(2, 3, nkmesh2))
+     allocate( m_OrbMag_allk_Occ    (2, 3, nkmesh2))
+     allocate( m_OrbMag_allk_Occ_mpi(2, 3, nkmesh2))
+     allocate( Omega_allk_EF    (2, 3, nkmesh2))
+     allocate( Omega_allk_EF_mpi(2, 3, nkmesh2))
+     allocate( m_OrbMag_allk_EF    (2, 3, nkmesh2))
+     allocate( m_OrbMag_allk_EF_mpi(2, 3, nkmesh2))
+     allocate( kslice(3, nkmesh2))
+     allocate( kslice_xyz(3, nkmesh2))
+     allocate( W(Num_wann))
+     W=0d0
+     m_OrbMag=0d0
+     Omega_BerryCurv= 0d0
+     Omega_allk_Occ= 0d0
+     m_OrbMag_allk_Occ=0d0
+     Omega_allk_Occ_mpi= 0d0
+     m_OrbMag_allk_Occ_mpi=0d0
+     Omega_allk_EF= 0d0
+     m_OrbMag_allk_EF=0d0
+     Omega_allk_EF_mpi= 0d0
+     m_OrbMag_allk_EF_mpi=0d0
+
+     kslice=0d0
+     kslice_xyz=0d0
+    
+     !> kslice is centered at K3d_start
+     ik =0
+     do i= 1, nk1
+        do j= 1, nk2
+           ik =ik +1
+           kslice(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(nk1-1)  &
+                     + K3D_vec2*(j-1)/dble(nk2-1) - (K3D_vec1+ K3D_vec2)/2d0
+           kslice_xyz(:, ik)= kslice(1, ik)* Origin_cell%Kua+ kslice(2, ik)* Origin_cell%Kub+ kslice(3, ik)* Origin_cell%Kuc 
+        enddo
+     enddo
+
+     time_start= 0d0
+     time_start0= 0d0
+     call now(time_start0)
+     time_start= time_start0
+     time_end  = time_start0
+     do ik= 1+ cpuid, nkmesh2, num_cpu
+        if (cpuid==0.and. mod((ik-1)/num_cpu, 100)==0) &
+           write(stdout, '(a, i9, "  /", i10, a, f10.1, "s", a, f10.1, "s")') &
+           ' Berry curvature: ik', ik, nkmesh2, ' time left', &
+           (nkmesh2-ik)*(time_end- time_start)/num_cpu, &
+           ' time elapsed: ', time_end-time_start0 
+
+
+        call now(time_start)
+ 
+        !> diagonalize hamiltonian
+        k= kslice(:, ik)
+
+        call now(time_start)
+        call berry_curvarture_orb_mag_singlek_allbands_pack(k, Omega_BerryCurv, m_OrbMag, W)
+       
+        do i=1, 3
+           Omega_allk_Occ(1, i, ik) = sum(Omega_BerryCurv(1:NumOccupied, i))
+           m_OrbMag_allk_Occ(1, i, ik) = sum(m_OrbMag(1:NumOccupied, i))
+           Omega_allk_Occ(2, i, ik) = Omega_BerryCurv(NumOccupied, i)
+           m_OrbMag_allk_Occ(2, i, ik) = m_OrbMag(NumOccupied, i)
+        enddo
+
+        !> consider the Fermi-distribution according to the brodening Earc_eta
+        if (Eta_Arc<eps6) Eta_Arc= eps6
+        beta_fake= 1d0/Eta_Arc
+        do i=1, 3
+           do m= 1, Num_wann
+              Omega_allk_EF(1, i, ik)= Omega_allk_EF(1, i, ik)+ Omega_BerryCurv(m, i)*fermi(W(m)-E_arc, beta_fake)
+              m_OrbMag_allk_EF(1, i, ik)= m_OrbMag_allk_EF(1, i, ik)+ m_OrbMag(m, i)*fermi(W(m)-E_arc, beta_fake)
+              Omega_allk_EF(2, i, ik)= Omega_allk_EF(2, i, ik)+ Omega_BerryCurv(m, i)*delta(Eta_arc, W(m)-E_arc)
+              m_OrbMag_allk_EF(2, i, ik)= m_OrbMag_allk_EF(2, i, ik)+ m_OrbMag(m, i)*delta(Eta_arc, W(m)-E_arc)
+           enddo
+        enddo
+
+
+        call now(time_end)
+     enddo ! ik
+
+#if defined (MPI)
+     call mpi_allreduce(Omega_allk_Occ,Omega_allk_Occ_mpi,size(Omega_allk_Occ_mpi),&
+                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+     call mpi_allreduce(m_OrbMag_allk_Occ,m_OrbMag_allk_Occ_mpi,size(m_OrbMag_allk_Occ_mpi),&
+                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+     call mpi_allreduce(Omega_allk_EF,Omega_allk_EF_mpi,size(Omega_allk_EF_mpi),&
+                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+     call mpi_allreduce(m_OrbMag_allk_EF,m_OrbMag_allk_EF_mpi,size(m_OrbMag_allk_EF_mpi),&
+                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     Omega_allk_Occ_mpi= Omega_allk_Occ
+     m_OrbMag_allk_Occ_mpi= m_OrbMag_allk_Occ
+     Omega_allk_EF_mpi= Omega_allk_EF
+     m_OrbMag_allk_EF_mpi= m_OrbMag_allk_EF
+#endif
+
+     !> write the Berry curvature to file
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+        open(unit=outfileindex, file='Berrycurvature.dat')
+        write(outfileindex, '(a)')'# Berry curvature in unit of (Angstrom^2)  '
+        write(outfileindex, '("#", 30X,4a36)')'Sum over 1-NumOccupied bands', &
+           "values at NumOccupied'th band", &
+           ' Sum below Fermi level','values at Fermi level'
+        write(outfileindex, '(a10,2000a12)')'# kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
+            'Omega_x', 'Omega_y', 'Omega_z', &
+            'Omega_x', 'Omega_y', 'Omega_z', &
+            'Omega_x', 'Omega_y', 'Omega_z', &
+            'Omega_x', 'Omega_y', 'Omega_z'
+        write(outfileindex, '("#col ", i5, 200i12)')(i, i=1,15)
+
+        ik= 0
+        do i= 1, nk1
+           do j= 1, nk2
+              ik= ik+ 1
+              write(outfileindex, '(3f12.6,2000E12.4)')kslice_xyz(:, ik), &
+                 Omega_allk_Occ_mpi(1, :, ik), Omega_allk_Occ_mpi(2, :, ik), &
+                 Omega_allk_EF_mpi(1, :, ik),  Omega_allk_EF_mpi(2, :, ik)
+           enddo
+           write(outfileindex, *) ' '
+        enddo
+
+        close(outfileindex)
+
+     endif
+
+     !> Convert to unit of Bohr magneton
+     m_OrbMag_allk_EF_mpi= m_OrbMag_allk_EF_mpi*eV2Hartree*Ang2Bohr**2*2
+     m_OrbMag_allk_Occ_mpi= m_OrbMag_allk_Occ_mpi*eV2Hartree*Ang2Bohr**2*2
+
+
+     !> write the orbital magnetization to file
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+        open(unit=outfileindex, file='Orbitalmagnetization.dat')
+        write(outfileindex, '(a)')'# Orbital magnetization in unit of Bohr magneton \mu_B'
+        write(outfileindex, '("#col ", i5, 200i12)')(i, i=1, 15)
+        write(outfileindex, '("#", 30X,4a36)')'Sum over 1-NumOccupied bands', &
+           "values at NumOccupied'th band", &
+           ' Sum below Fermi level','values at Fermi level'
+        write(outfileindex, '(a10,2000a12)')'# kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
+              'm_x', 'm_y', 'm_z', 'm_x', 'm_y', 'm_z', &
+              'm_x', 'm_y', 'm_z', 'm_x', 'm_y', 'm_z'
+
+        ik= 0
+        do i= 1, nk1
+           do j= 1, nk2
+              ik= ik+ 1
+              write(outfileindex, '(3f12.6,2000E12.4)')kslice_xyz(:, ik), &
+                 m_OrbMag_allk_Occ_mpi(1, :, ik),  m_OrbMag_allk_Occ_mpi(2, :, ik), &
+                 m_OrbMag_allk_EF_mpi(1, :, ik), m_OrbMag_allk_EF_mpi(2, :, ik)
+           enddo
+           write(outfileindex, *) ' '
+        enddo
+
+        close(outfileindex)
+
+     endif
+
+     !> generate gnuplot script to plot the Berry curvature
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+
+        open(unit=outfileindex, file='Berrycurvature.gnu')
+        write(outfileindex, '(a)')"set encoding iso_8859_1"
+        write(outfileindex, '(a)')'set terminal  pngcairo  truecolor enhanced size 3680, 1920 font ",40"'
+        write(outfileindex, '(a)')'#set terminal  png       truecolor enhanced size 3680, 1920 font ",40"'
+        write(outfileindex, '(a)')"set output 'Berrycurvature.png'"
+        write(outfileindex, '(a)')'if (!exists("MP_LEFT"))   MP_LEFT = .12'
+        write(outfileindex, '(a)')'if (!exists("MP_RIGHT"))  MP_RIGHT = .92'
+        write(outfileindex, '(a)')'if (!exists("MP_BOTTOM")) MP_BOTTOM = .12'
+        write(outfileindex, '(a)')'if (!exists("MP_TOP"))    MP_TOP = .88'
+        write(outfileindex, '(a)')'if (!exists("MP_GAP"))    MP_GAP = 0.08'
+        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \'
+        write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
+        write(outfileindex, '(a)')" "
+        write(outfileindex, '(a)')"set palette rgbformulae 33,13,10"
+        write(outfileindex, '(a)')"unset ztics"
+        write(outfileindex, '(a)')"unset key"
+        write(outfileindex, '(a)')"set pm3d"
+        write(outfileindex, '(a)')"#set zbrange [ -10: 10] "
+        write(outfileindex, '(a)')"#set cbrange [  -100 : 100 ] "
+        write(outfileindex, '(a)')"set view map"
+        write(outfileindex, '(a)')"set size ratio -1"
+        write(outfileindex, '(a)')"set border lw 3"
+        write(outfileindex, '(a)')"set xlabel 'k (1/{\305})'"
+        write(outfileindex, '(a)')"set ylabel 'k (1/{\305})'"
+        write(outfileindex, '(a)')"unset colorbox"
+        write(outfileindex, '(a)')"#unset xtics"
+        write(outfileindex, '(a)')"#unset xlabel"
+        write(outfileindex, '(a)')"set xrange [] noextend"
+        write(outfileindex, '(a)')"set yrange [] noextend"
+        write(outfileindex, '(a)')"set ytics 0.5 nomirror scale 0.5"
+        write(outfileindex, '(a)')"set pm3d interpolate 2,2"
+        write(outfileindex, '(a)')"set title 'Berry Curvature {/Symbol W}_x ({\305}^2)'"
+        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:4 w pm3d"
+        write(outfileindex, '(a)')"unset ylabel"
+        write(outfileindex, '(a)')"unset ytics"
+        write(outfileindex, '(a)')"set title 'Berry Curvature {/Symbol W}_y ({\305}^2)'"
+        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:5 w pm3d"
+        write(outfileindex, '(a)')"set title 'Berry Curvature {/Symbol W}_z ({\305}^2)'"
+        write(outfileindex, '(a)')"set colorbox"
+        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:6 w pm3d"
+        close(outfileindex)
+     endif
+
+     !> generate gnuplot script to plot the Berry curvature
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+
+        open(unit=outfileindex, file='Orbitalmagnetization.gnu')
+        write(outfileindex, '(a)')"set encoding iso_8859_1"
+        write(outfileindex, '(a)')'set terminal  pngcairo  truecolor enhanced size 3680, 1920 font ",40"'
+        write(outfileindex, '(a)')'#set terminal  png       truecolor enhanced size 3680, 1920 font ",40"'
+        write(outfileindex, '(a)')"set output 'Orbitalmagnetization.png'"
+        write(outfileindex, '(a)')'if (!exists("MP_LEFT"))   MP_LEFT = .12'
+        write(outfileindex, '(a)')'if (!exists("MP_RIGHT"))  MP_RIGHT = .92'
+        write(outfileindex, '(a)')'if (!exists("MP_BOTTOM")) MP_BOTTOM = .12'
+        write(outfileindex, '(a)')'if (!exists("MP_TOP"))    MP_TOP = .88'
+        write(outfileindex, '(a)')'if (!exists("MP_GAP"))    MP_GAP = 0.08'
+        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \'
+        write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
+        write(outfileindex, '(a)')" "
+        write(outfileindex, '(a)')"set palette rgbformulae 33,13,10"
+        write(outfileindex, '(a)')"unset ztics"
+        write(outfileindex, '(a)')"unset key"
+        write(outfileindex, '(a)')"set pm3d"
+        write(outfileindex, '(a)')"#set zbrange [ -10: 10] "
+        write(outfileindex, '(a)')"#set cbrange [  -100 : 100 ] "
+        write(outfileindex, '(a)')"set view map"
+        write(outfileindex, '(a)')"set size ratio -1"
+        write(outfileindex, '(a)')"set border lw 3"
+        write(outfileindex, '(a)')"set xlabel 'k (1/{\305})'"
+        write(outfileindex, '(a)')"set ylabel 'k (1/{\305})'"
+        write(outfileindex, '(a)')"unset colorbox"
+        write(outfileindex, '(a)')"#unset xtics"
+        write(outfileindex, '(a)')"#unset xlabel"
+        write(outfileindex, '(a)')"set xrange [] noextend"
+        write(outfileindex, '(a)')"set yrange [] noextend"
+        write(outfileindex, '(a)')"set ytics 0.5 nomirror scale 0.5"
+        write(outfileindex, '(a)')"set pm3d interpolate 2,2"
+        write(outfileindex, '(a)')"set title 'Orbital magnetization m_x ({/Symbol m}_B)'"
+        write(outfileindex, '(a)')"splot 'Orbitalmagnetization.dat' u 1:2:4 w pm3d"
+        write(outfileindex, '(a)')"unset ylabel"
+        write(outfileindex, '(a)')"unset ytics"
+        write(outfileindex, '(a)')"set title 'Orbital magnetization m_y ({/Symbol m}_B)'"
+        write(outfileindex, '(a)')"splot 'Orbitalmagnetization.dat' u 1:2:5 w pm3d"
+        write(outfileindex, '(a)')"set title 'Orbital magnetization m_{z} ({/Symbol m}_B)'"
+        write(outfileindex, '(a)')"set colorbox"
+        write(outfileindex, '(a)')"splot 'Orbitalmagnetization.dat' u 1:2:6 w pm3d"
+        close(outfileindex)
+     endif
+
+
+     !> write the normalized Berry curvature to file in order to generate vector plot
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+        open(unit=outfileindex, file='Berrycurvature-normalized.dat')
+        write(outfileindex, '(a)')'# Omega(k)/|Omega(k)|, Omega(k) comes from the 4,5,6 columns of Berrycurvature.dat.'
+        write(outfileindex, '("#col ", i5, 200i12)')(i, i=1, 6)
+        write(outfileindex, '(20a12)')'# kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
+           'Omega_x', 'Omega_y', 'Omega_z'
+
+        ik= 0
+        do i= 1, nk1
+           do j= 1, nk2
+              ik= ik+ 1
+              o1= Omega_allk_Occ_mpi(1, :, ik)
+              if (norm(o1)>eps4) o1= o1/norm(o1)
+              write(outfileindex, '(20f12.6)')kslice_xyz(:, ik), o1
+           enddo
+           write(outfileindex, *) ' '
+        enddo
+        close(outfileindex)
+     endif
+
+
+     !> generate gnuplot script to plot the Berry curvature
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+
+        open(unit=outfileindex, file='Berrycurvature-normalized.gnu')
+        write(outfileindex, '(a)')"set encoding iso_8859_1"
+        write(outfileindex, '(a)')'#set terminal  pngcairo  truecolor enhanced size 1920, 1680 font ",40"'
+        write(outfileindex, '(a)')'set terminal  png       truecolor enhanced size 1920, 1680 font ",40"'
+        write(outfileindex, '(a)')"set output 'Berrycurvature-normalized.png'"
+        write(outfileindex, '(a)')"unset ztics"
+        write(outfileindex, '(a)')"unset key"
+        write(outfileindex, '(a)')"set border lw 3"
+        write(outfileindex, '(a)')"set xlabel 'k (1/{\305})'"
+        write(outfileindex, '(a)')"set ylabel 'k (1/{\305})'"
+        write(outfileindex, '(a)')"unset colorbox"
+        write(outfileindex, '(a)')"#unset xtics"
+        write(outfileindex, '(a)')"#unset xlabel"
+        write(outfileindex, '(a)')"set xrange [] noextend"
+        write(outfileindex, '(a)')"set yrange [] noextend"
+        write(outfileindex, '(a)')"set ytics 0.5 nomirror scale 0.5"
+        write(outfileindex, '(a)')"set pm3d interpolate 2,2"
+        write(outfileindex, '(a)')"set title '({/Symbol W}_x, {/Symbol W}_y)'"
+        write(outfileindex, '(a)')"plot 'Berrycurvature-normalized.dat' u 1:2:($4/10):($5/10) w vec"
+        close(outfileindex)
+     endif
+
+
+
+
+#if defined (MPI)
+     call mpi_barrier(mpi_cmw, ierr)
+#endif
+
+     deallocate( kslice)
+     deallocate( kslice_xyz)
+
+     return
+
+  end subroutine berry_curvarture_plane_full
+
+  subroutine berry_curvarture_orb_mag_singlek_allbands_pack(k, Omega_BerryCurv, m_OrbMag, W)
+     !> Calculate Berry curvature and orbital magnetization for the selected bands
+     !> ref : Physical Review B 74, 195118(2006)
+     !> eqn (34)
+     !
+     !> Sep 29 2020 by Quansheng Wu @ EPFL
+     !
+     ! Copyright (c) 2020 QuanSheng Wu. All rights reserved.
+
+     use para, only : Num_wann, dp
+     implicit none
+
+     !> Input:  the k point coordinate in fractional coordinate
+     real(dp), intent(in) :: k(3)
+     
+     !> Output: Berry curvature and orbital magnetization (3, bands)
+     real(dp), intent(out) :: m_OrbMag(Num_wann, 3)
+     real(dp), intent(out) :: Omega_BerryCurv(Num_wann, 3)
+
+     !> Ouput: eigenvalue
+     real(dp), intent(out) :: W(Num_wann)
+    
+     integer :: i
+
+     !> velocity matrix in Wannier basis 
+     complex(dp), allocatable :: Vmn_wann(:, :, :)
+
+     !> velocity matrix in Hamiltonian basis 
+     complex(dp), allocatable :: Vmn_Ham(:, :, :), Vmn_Ham_nondiag(:, :, :)
+     complex(dp), allocatable :: Dmn_Ham(:, :, :)
+
+     !> Hamiltonian, eigenvalue and eigenvectors
+     complex(dp), allocatable :: UU(:, :)
+
+     allocate(Vmn_wann(Num_wann, Num_wann, 3), Vmn_Ham(Num_wann, Num_wann, 3))
+     allocate(Dmn_Ham(Num_wann,Num_wann,3), Vmn_Ham_nondiag(Num_wann, Num_wann, 3))
+     allocate(UU(Num_wann, Num_wann))
+     W=0d0
+     m_OrbMag=0d0
+     Omega_BerryCurv= 0d0
+
+     !> calculation bulk hamiltonian by a direct Fourier transformation of HmnR
+     call ham_bulk_atomicgauge(k, UU)
+
+     !> diagonalization by call zheev in lapack
+     call eigensystem_c( 'V', 'U', Num_wann, UU, W)
+
+     !> get velocity operator in Wannier basis
+     call dHdk_atomicgauge(k, Vmn_wann)
+     
+     !> Rotate Vmn_wann from Wannier basis to Hamiltonian basis
+     do i=1, 3
+        call rotation_to_Ham_basis(UU, Vmn_wann(:, :, i), Vmn_Ham(:, :, i))
+     enddo
+
+     call get_Dmn_Ham(W, Vmn_Ham, Dmn_Ham)
+     call get_Vmn_Ham_nondiag(Vmn_Ham, Vmn_Ham_nondiag)
+
+     call berry_curvarture_singlek_allbands(Dmn_Ham, Omega_BerryCurv)
+     call orbital_magnetization_singlek_allbands(Dmn_Ham, Vmn_Ham_nondiag, m_OrbMag)
+
+     deallocate(Vmn_wann, Vmn_Ham, Vmn_Ham_nondiag)
+     deallocate(UU, Dmn_Ham)
+     return
+
+  end subroutine berry_curvarture_orb_mag_singlek_allbands_pack
+
+
+
+
+  subroutine berry_curvarture_plane_EF
+     !> Calculate Berry curvature and orbital magnetization for the selected bands
+     !> ref : Physical Review B 74, 195118(2006)
+     !> eqn (34)
+     !
+     !> August 20 2020 by Quansheng Wu @ EPFL
+     !
+     ! Copyright (c) 2020 QuanSheng Wu. All rights reserved.
+
+     use wmpi
+     use para
+     implicit none
+    
+     integer :: ik, i, j, n, ierr, nkmesh2
+
+     real(dp) :: k(3), o1(3), vmin, vmax
+
+     !> k points slice
+     real(dp), allocatable :: kslice(:, :), kslice_xyz(:, :)
+   
+     real(dp), external :: norm
+     
+     real(dp) :: time_start, time_end, time_start0
+
+     !> Berry curvature and orbital magnetization (3, bands, k)
+     real(dp), allocatable :: Omega_allk(:, :, :), Omega_allk_mpi(:, :, :)
+     real(dp), allocatable :: m_OrbMag_allk(:, :, :), m_OrbMag_allk_mpi(:, :, :)
+     real(dp), allocatable :: Omega_BerryCurv(:, :), m_OrbMag(:, :)
+
+     !> velocity matrix in Wannier basis 
+     complex(dp), allocatable :: Vmn_wann(:, :, :)
+
+     !> velocity matrix in Hamiltonian basis 
+     complex(dp), allocatable :: Vmn_Ham(:, :, :), Vmn_Ham_nondiag(:, :, :)
+
+     complex(dp), allocatable :: Dmn_Ham(:, :, :)
+
+     !> Hamiltonian, eigenvalue and eigenvectors
+     complex(dp), allocatable :: UU(:, :)
+     real(dp), allocatable :: W(:)
+
+     nkmesh2= Nk1*Nk2
+     allocate(Vmn_wann(Num_wann, Num_wann, 3), Vmn_Ham(Num_wann, Num_wann, 3))
+     allocate(Dmn_Ham(Num_wann,Num_wann,3), Vmn_Ham_nondiag(Num_wann, Num_wann, 3))
+     allocate(W(Num_wann))
+     allocate(UU(Num_wann, Num_wann))
+     allocate( Omega_BerryCurv(Num_wann, 3), m_OrbMag(Num_wann, 3))
+     allocate( Omega_allk    (Num_wann, 3, nkmesh2))
+     allocate( Omega_allk_mpi(Num_wann, 3, nkmesh2))
+     allocate( m_OrbMag_allk    (Num_wann, 3, nkmesh2))
+     allocate( m_OrbMag_allk_mpi(Num_wann, 3, nkmesh2))
+     allocate( kslice(3, nkmesh2))
+     allocate( kslice_xyz(3, nkmesh2))
+     m_OrbMag=0d0
+     Omega_allk= 0d0
+     m_OrbMag_allk=0d0
+     Omega_allk_mpi= 0d0
+     Omega_BerryCurv= 0d0
+     m_OrbMag_allk_mpi=0d0
+
+     kslice=0d0
+     kslice_xyz=0d0
+    
+     !> kslice is centered at K3d_start
+     ik =0
+     do i= 1, nk1
+        do j= 1, nk2
+           ik =ik +1
+           kslice(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(nk1-1)  &
+                     + K3D_vec2*(j-1)/dble(nk2-1) - (K3D_vec1+ K3D_vec2)/2d0
+           kslice_xyz(:, ik)= kslice(1, ik)* Origin_cell%Kua+ kslice(2, ik)* Origin_cell%Kub+ kslice(3, ik)* Origin_cell%Kuc 
+        enddo
+     enddo
+
+     time_start= 0d0
+     time_start0= 0d0
+     call now(time_start0)
+     time_start= time_start0
+     time_end  = time_start0
+     do ik= 1+ cpuid, nkmesh2, num_cpu
+        if (cpuid==0.and. mod(ik/num_cpu, 100)==0) &
+           write(stdout, '(a, i9, "  /", i10, a, f10.1, "s", a, f10.1, "s")') &
+           ' Berry curvature: ik', ik, nkmesh2, ' time left', &
+           (nkmesh2-ik)*(time_end- time_start)/num_cpu, &
+           ' time elapsed: ', time_end-time_start0 
+
+
+        call now(time_start)
+ 
+        !> diagonalize hamiltonian
+        k= kslice(:, ik)
+
+        call now(time_start)
+        
+        !> calculation bulk hamiltonian by a direct Fourier transformation of HmnR
+        call ham_bulk_atomicgauge(k, UU)
+   
+        !> diagonalization by call zheev in lapack
+        call eigensystem_c( 'V', 'U', Num_wann, UU, W)
+
+        !> get velocity operator in Wannier basis
+        call dHdk_atomicgauge(k, Vmn_wann)
+        
+        !> Rotate Vmn_wann from Wannier basis to Hamiltonian basis
+        do i=1, 3
+           call rotation_to_Ham_basis(UU, Vmn_wann(:, :, i), Vmn_Ham(:, :, i))
+        enddo
+
+        call get_Dmn_Ham(W, Vmn_Ham, Dmn_Ham)
+        call get_Vmn_Ham_nondiag(Vmn_Ham, Vmn_Ham_nondiag)
+
+        call berry_curvarture_singlek_allbands(Dmn_Ham, Omega_BerryCurv)
+        call orbital_magnetization_singlek_allbands(Dmn_Ham, Vmn_Ham_nondiag, m_OrbMag)
+        Omega_allk(:, :, ik) = Omega_BerryCurv
+        m_OrbMag_allk(:, :, ik) = m_OrbMag
+
+        call now(time_end)
+     enddo ! ik
+
+#if defined (MPI)
+     call mpi_allreduce(Omega_allk,Omega_allk_mpi,size(Omega_allk_mpi),&
+                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+     call mpi_allreduce(m_OrbMag_allk,m_OrbMag_allk_mpi,size(m_OrbMag_allk_mpi),&
+                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     Omega_allk_mpi= Omega_allk
+     m_OrbMag_allk_mpi= m_OrbMag_allk
+#endif
+
+     !> output the Berry curvature to file
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+        open(unit=outfileindex, file='Berrycurvature_Orbitalmagnetization.dat')
+        write(outfileindex, '("#col ", i5, 200i12)')(i, i=1, NumberofSelectedBands*6+3)
+        write(outfileindex, '(a10,2000a12)')'# kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
+           'Omega_x', 'Omega_y', 'Omega_z' , 'm_x', 'm_y', 'm_z'
+
+        ik= 0
+        do i= 1, nk1
+           do j= 1, nk2
+              ik= ik+ 1
+              write(outfileindex, '(3f12.6,2000E12.4)')kslice_xyz(:, ik), &
+                 (Omega_allk_mpi(Selected_band_index(n), :, ik), m_OrbMag_allk_mpi(Selected_band_index(n), :, ik), n=1, NumberofSelectedBands)   
+           enddo
+           write(outfileindex, *) ' '
+        enddo
+
+        close(outfileindex)
+
+     endif
+
+     !> generate gnuplot script to plot the Berry curvature
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+
+        open(unit=outfileindex, file='Berrycurvature.gnu')
+        write(outfileindex, '(a)')"set encoding iso_8859_1"
+        write(outfileindex, '(a)')'set terminal  pngcairo  truecolor enhanced size 3680, 1920 font ",40"'
+        write(outfileindex, '(a)')'#set terminal  png       truecolor enhanced size 3680, 1920 font ",40"'
+        write(outfileindex, '(a)')"set output 'Berrycurvature.png'"
+        write(outfileindex, '(a)')'if (!exists("MP_LEFT"))   MP_LEFT = .12'
+        write(outfileindex, '(a)')'if (!exists("MP_RIGHT"))  MP_RIGHT = .92'
+        write(outfileindex, '(a)')'if (!exists("MP_BOTTOM")) MP_BOTTOM = .12'
+        write(outfileindex, '(a)')'if (!exists("MP_TOP"))    MP_TOP = .88'
+        write(outfileindex, '(a)')'if (!exists("MP_GAP"))    MP_GAP = 0.08'
+        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \'
+        write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
+        write(outfileindex, '(a)')" "
+        write(outfileindex, '(a)')"set palette rgbformulae 33,13,10"
+        write(outfileindex, '(a)')"unset ztics"
+        write(outfileindex, '(a)')"unset key"
+        write(outfileindex, '(a)')"set pm3d"
+        write(outfileindex, '(a)')"#set zbrange [ -10: 10] "
+        write(outfileindex, '(a, f10.3, a, f10.3, a)')"#set cbrange [ ", vmin, ':', vmax, " ] "
+        write(outfileindex, '(a)')"set view map"
+        write(outfileindex, '(a)')"set size ratio -1"
+        write(outfileindex, '(a)')"set border lw 3"
+        write(outfileindex, '(a)')"set xlabel 'k (1/{\305})'"
+        write(outfileindex, '(a)')"set ylabel 'k (1/{\305})'"
+        write(outfileindex, '(a)')"unset colorbox"
+        write(outfileindex, '(a)')"#unset xtics"
+        write(outfileindex, '(a)')"#unset xlabel"
+        write(outfileindex, '(a)')"set xrange [] noextend"
+        write(outfileindex, '(a)')"set yrange [] noextend"
+        write(outfileindex, '(a)')"set ytics 0.5 nomirror scale 0.5"
+        write(outfileindex, '(a)')"set pm3d interpolate 2,2"
+        write(outfileindex, '(a)')"set title 'Berry Curvature {/Symbol W}_x'"
+        write(outfileindex, '(a)')"splot 'Berrycurvature_Orbitalmagnetization.dat' u 1:2:4 w pm3d"
+        write(outfileindex, '(a)')"unset ylabel"
+        write(outfileindex, '(a)')"unset ytics"
+        write(outfileindex, '(a)')"set title 'Berry Curvature {/Symbol W}_y'"
+        write(outfileindex, '(a)')"splot 'Berrycurvature_Orbitalmagnetization.dat' u 1:2:5 w pm3d"
+        write(outfileindex, '(a)')"set title 'Berry Curvature {/Symbol W}_z'"
+        write(outfileindex, '(a)')"set colorbox"
+        write(outfileindex, '(a)')"splot 'Berrycurvature_Orbitalmagnetization.dat' u 1:2:6 w pm3d"
+        close(outfileindex)
+     endif
+
+
+#if defined (MPI)
+     call mpi_barrier(mpi_cmw, ierr)
+#endif
+
+     deallocate( kslice)
+     deallocate( kslice_xyz)
+ 
+     return
+
+  end subroutine berry_curvarture_plane_EF
+
+
+
+  subroutine berry_curvarture_plane_selectedbands
+     !> Calculate Berry curvature and orbital magnetization for the selected bands
+     !> ref : Physical Review B 74, 195118(2006)
+     !> eqn (34)
+     !
+     !> August 20 2020 by Quansheng Wu @ EPFL
+     !
+     ! Copyright (c) 2020 QuanSheng Wu. All rights reserved.
+
+     use wmpi
+     use para
+     implicit none
+    
+     integer :: ik, i, j, n, ierr, nkmesh2
+
+     real(dp) :: k(3), o1(3), vmin, vmax
+
+     !> k points slice
+     real(dp), allocatable :: kslice(:, :), kslice_xyz(:, :)
+   
+     real(dp), external :: norm
+     
+     real(dp) :: time_start, time_end, time_start0
+
+     !> Berry curvature and orbital magnetization (3, bands, k)
+     real(dp), allocatable :: Omega_allk(:, :, :), Omega_allk_mpi(:, :, :)
+     real(dp), allocatable :: m_OrbMag_allk(:, :, :), m_OrbMag_allk_mpi(:, :, :)
+     real(dp), allocatable :: Omega_BerryCurv(:, :), m_OrbMag(:, :)
+
+     !> velocity matrix in Wannier basis 
+     complex(dp), allocatable :: Vmn_wann(:, :, :)
+
+     !> velocity matrix in Hamiltonian basis 
+     complex(dp), allocatable :: Vmn_Ham(:, :, :), Vmn_Ham_nondiag(:, :, :)
+
+     complex(dp), allocatable :: Dmn_Ham(:, :, :)
+
+     !> Hamiltonian, eigenvalue and eigenvectors
+     complex(dp), allocatable :: UU(:, :)
+     real(dp), allocatable :: W(:)
+
+     nkmesh2= Nk1*Nk2
+     allocate(Vmn_wann(Num_wann, Num_wann, 3), Vmn_Ham(Num_wann, Num_wann, 3))
+     allocate(Dmn_Ham(Num_wann,Num_wann,3), Vmn_Ham_nondiag(Num_wann, Num_wann, 3))
+     allocate(W(Num_wann))
+     allocate(UU(Num_wann, Num_wann))
+     allocate( Omega_BerryCurv(Num_wann, 3), m_OrbMag(Num_wann, 3))
+     allocate( Omega_allk    (Num_wann, 3, nkmesh2))
+     allocate( Omega_allk_mpi(Num_wann, 3, nkmesh2))
+     allocate( m_OrbMag_allk    (Num_wann, 3, nkmesh2))
+     allocate( m_OrbMag_allk_mpi(Num_wann, 3, nkmesh2))
+     allocate( kslice(3, nkmesh2))
+     allocate( kslice_xyz(3, nkmesh2))
+     m_OrbMag=0d0
+     Omega_allk= 0d0
+     m_OrbMag_allk=0d0
+     Omega_allk_mpi= 0d0
+     Omega_BerryCurv= 0d0
+     m_OrbMag_allk_mpi=0d0
+
+     kslice=0d0
+     kslice_xyz=0d0
+    
+     !> kslice is centered at K3d_start
+     ik =0
+     do i= 1, nk1
+        do j= 1, nk2
+           ik =ik +1
+           kslice(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(nk1-1)  &
+                     + K3D_vec2*(j-1)/dble(nk2-1) - (K3D_vec1+ K3D_vec2)/2d0
+           kslice_xyz(:, ik)= kslice(1, ik)* Origin_cell%Kua+ kslice(2, ik)* Origin_cell%Kub+ kslice(3, ik)* Origin_cell%Kuc 
+        enddo
+     enddo
+
+     time_start= 0d0
+     time_start0= 0d0
+     call now(time_start0)
+     time_start= time_start0
+     time_end  = time_start0
+     do ik= 1+ cpuid, nkmesh2, num_cpu
+        if (cpuid==0.and. mod(ik/num_cpu, 100)==0) &
+           write(stdout, '(a, i9, "  /", i10, a, f10.1, "s", a, f10.1, "s")') &
+           ' Berry curvature: ik', ik, nkmesh2, ' time left', &
+           (nkmesh2-ik)*(time_end- time_start)/num_cpu, &
+           ' time elapsed: ', time_end-time_start0 
+
+
+        call now(time_start)
+ 
+        !> diagonalize hamiltonian
+        k= kslice(:, ik)
+
+        call now(time_start)
+        
+        !> calculation bulk hamiltonian by a direct Fourier transformation of HmnR
+        call ham_bulk_atomicgauge(k, UU)
+   
+        !> diagonalization by call zheev in lapack
+        call eigensystem_c( 'V', 'U', Num_wann, UU, W)
+
+        !> get velocity operator in Wannier basis
+        call dHdk_atomicgauge(k, Vmn_wann)
+        
+        !> Rotate Vmn_wann from Wannier basis to Hamiltonian basis
+        do i=1, 3
+           call rotation_to_Ham_basis(UU, Vmn_wann(:, :, i), Vmn_Ham(:, :, i))
+        enddo
+
+        call get_Dmn_Ham(W, Vmn_Ham, Dmn_Ham)
+        call get_Vmn_Ham_nondiag(Vmn_Ham, Vmn_Ham_nondiag)
+
+        call berry_curvarture_singlek_allbands(Dmn_Ham, Omega_BerryCurv)
+        call orbital_magnetization_singlek_allbands(Dmn_Ham, Vmn_Ham_nondiag, m_OrbMag)
+        Omega_allk(:, :, ik) = Omega_BerryCurv
+        m_OrbMag_allk(:, :, ik) = m_OrbMag
+
+        call now(time_end)
+     enddo ! ik
+
+#if defined (MPI)
+     call mpi_allreduce(Omega_allk,Omega_allk_mpi,size(Omega_allk_mpi),&
+                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+     call mpi_allreduce(m_OrbMag_allk,m_OrbMag_allk_mpi,size(m_OrbMag_allk_mpi),&
+                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     Omega_allk_mpi= Omega_allk
+     m_OrbMag_allk_mpi= m_OrbMag_allk
+#endif
+
+     !> output the Berry curvature to file
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+        open(unit=outfileindex, file='Berrycurvature_Orbitalmagnetization.dat')
+        write(outfileindex, '("#col ", i5, 200i12)')(i, i=1, NumberofSelectedBands*6+3)
+        write(outfileindex, '(a10,2000a12)')'# kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
+           'Omega_x', 'Omega_y', 'Omega_z' , 'm_x', 'm_y', 'm_z'
+
+        ik= 0
+        do i= 1, nk1
+           do j= 1, nk2
+              ik= ik+ 1
+              write(outfileindex, '(3f12.6,2000E12.4)')kslice_xyz(:, ik), &
+                 (Omega_allk_mpi(Selected_band_index(n), :, ik), m_OrbMag_allk_mpi(Selected_band_index(n), :, ik), n=1, NumberofSelectedBands)   
+           enddo
+           write(outfileindex, *) ' '
+        enddo
+
+        close(outfileindex)
+
+     endif
+
+     !> generate gnuplot script to plot the Berry curvature
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+
+        open(unit=outfileindex, file='Berrycurvature.gnu')
+        write(outfileindex, '(a)')"set encoding iso_8859_1"
+        write(outfileindex, '(a)')'set terminal  pngcairo  truecolor enhanced size 3680, 1920 font ",40"'
+        write(outfileindex, '(a)')'#set terminal  png       truecolor enhanced size 3680, 1920 font ",40"'
+        write(outfileindex, '(a)')"set output 'Berrycurvature.png'"
+        write(outfileindex, '(a)')'if (!exists("MP_LEFT"))   MP_LEFT = .12'
+        write(outfileindex, '(a)')'if (!exists("MP_RIGHT"))  MP_RIGHT = .92'
+        write(outfileindex, '(a)')'if (!exists("MP_BOTTOM")) MP_BOTTOM = .12'
+        write(outfileindex, '(a)')'if (!exists("MP_TOP"))    MP_TOP = .88'
+        write(outfileindex, '(a)')'if (!exists("MP_GAP"))    MP_GAP = 0.08'
+        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \'
+        write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
+        write(outfileindex, '(a)')" "
+        write(outfileindex, '(a)')"set palette rgbformulae 33,13,10"
+        write(outfileindex, '(a)')"unset ztics"
+        write(outfileindex, '(a)')"unset key"
+        write(outfileindex, '(a)')"set pm3d"
+        write(outfileindex, '(a)')"#set zbrange [ -10: 10] "
+        write(outfileindex, '(a, f10.3, a, f10.3, a)')"#set cbrange [ ", vmin, ':', vmax, " ] "
+        write(outfileindex, '(a)')"set view map"
+        write(outfileindex, '(a)')"set size ratio -1"
+        write(outfileindex, '(a)')"set border lw 3"
+        write(outfileindex, '(a)')"set xlabel 'k (1/{\305})'"
+        write(outfileindex, '(a)')"set ylabel 'k (1/{\305})'"
+        write(outfileindex, '(a)')"unset colorbox"
+        write(outfileindex, '(a)')"#unset xtics"
+        write(outfileindex, '(a)')"#unset xlabel"
+        write(outfileindex, '(a)')"set xrange [] noextend"
+        write(outfileindex, '(a)')"set yrange [] noextend"
+        write(outfileindex, '(a)')"set ytics 0.5 nomirror scale 0.5"
+        write(outfileindex, '(a)')"set pm3d interpolate 2,2"
+        write(outfileindex, '(a)')"set title 'Berry Curvature {/Symbol W}_x'"
+        write(outfileindex, '(a)')"splot 'Berrycurvature_Orbitalmagnetization.dat' u 1:2:4 w pm3d"
+        write(outfileindex, '(a)')"unset ylabel"
+        write(outfileindex, '(a)')"unset ytics"
+        write(outfileindex, '(a)')"set title 'Berry Curvature {/Symbol W}_y'"
+        write(outfileindex, '(a)')"splot 'Berrycurvature_Orbitalmagnetization.dat' u 1:2:5 w pm3d"
+        write(outfileindex, '(a)')"set title 'Berry Curvature {/Symbol W}_z'"
+        write(outfileindex, '(a)')"set colorbox"
+        write(outfileindex, '(a)')"splot 'Berrycurvature_Orbitalmagnetization.dat' u 1:2:6 w pm3d"
+        close(outfileindex)
+     endif
+
+
+#if defined (MPI)
+     call mpi_barrier(mpi_cmw, ierr)
+#endif
+
+     deallocate( kslice)
+     deallocate( kslice_xyz)
+ 
+     return
+
+  end subroutine berry_curvarture_plane_selectedbands
 
 
 
@@ -963,7 +1884,7 @@
      real(dp) :: k(3), o1(3), vmin, vmax
 
      !> k points slice
-     real(dp), allocatable :: kslice(:, :), kslice_shape(:, :)
+     real(dp), allocatable :: kslice(:, :), kslice_xyz(:, :)
    
      real(dp), external :: norm
      
@@ -974,14 +1895,14 @@
      complex(dp), allocatable :: Omega(:, :), Omega_mpi(:, :)
 
      allocate( kslice(3, Nk1*Nk2))
-     allocate( kslice_shape(3, Nk1*Nk2))
+     allocate( kslice_xyz(3, Nk1*Nk2))
      allocate( Omega_x(Num_wann))
      allocate( Omega_y(Num_wann))
      allocate( Omega_z(Num_wann))
      allocate( Omega    (3, Nk1*Nk2))
      allocate( Omega_mpi(3, Nk1*Nk2))
      kslice=0d0
-     kslice_shape=0d0
+     kslice_xyz=0d0
      omega= 0d0
      omega_mpi= 0d0
     
@@ -992,7 +1913,7 @@
            ik =ik +1
            kslice(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(nk1-1)  &
                      + K3D_vec2*(j-1)/dble(nk2-1) - (K3D_vec1+ K3D_vec2)/2d0
-           kslice_shape(:, ik)= kslice(1, ik)* Origin_cell%Kua+ kslice(2, ik)* Origin_cell%Kub+ kslice(3, ik)* Origin_cell%Kuc 
+           kslice_xyz(:, ik)= kslice(1, ik)* Origin_cell%Kua+ kslice(2, ik)* Origin_cell%Kub+ kslice(3, ik)* Origin_cell%Kuc 
         enddo
      enddo
 
@@ -1002,7 +1923,7 @@
      time_start= time_start0
      time_end  = time_start0
      do ik= 1+ cpuid, Nk1*Nk2, num_cpu
-        if (cpuid==0.and. mod(ik/num_cpu, 100)==0) &
+        if (cpuid==0.and. mod((ik-1)/num_cpu, 100)==0) &
            write(stdout, '(a, i9, "  /", i10, a, f10.1, "s", a, f10.1, "s")') &
            ' Berry curvature: ik', ik, Nk1*Nk2, ' time left', &
            (nk1*nk2-ik)*(time_end- time_start)/num_cpu, &
@@ -1048,13 +1969,13 @@
         open(unit=outfileindex, file='Berrycurvature.dat')
         write(outfileindex, '(20a28)')'# Please take the real part for your use'
         write(outfileindex, '(20a28)')'# kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
-           'real(Omega_x)', 'real(Omega_y)', 'real(Omega_z)' 
+           'Omega_x', 'Omega_y', 'Omega_z' 
 
         ik= 0
         do i= 1, nk1
            do j= 1, nk2
               ik= ik+ 1
-              write(outfileindex, '(20E28.10)')kslice_shape(:, ik), real(Omega_mpi(:, ik))
+              write(outfileindex, '(20E28.10)')kslice_xyz(:, ik), real(Omega_mpi(:, ik))
            enddo
            write(outfileindex, *) ' '
         enddo
@@ -1077,7 +1998,7 @@
               ik= ik+ 1
               o1= real(Omega_mpi(:,ik))
               if (norm(o1)>eps9) o1= o1/norm(o1)
-              write(outfileindex, '(20f28.10)')kslice_shape(:, ik), o1
+              write(outfileindex, '(20f28.10)')kslice_xyz(:, ik), o1
            enddo
            write(outfileindex, *) ' '
         enddo
@@ -1090,8 +2011,8 @@
 
         open(unit=outfileindex, file='Berrycurvature.gnu')
         write(outfileindex, '(a)')"set encoding iso_8859_1"
-        write(outfileindex, '(a)')'#set terminal  pngcairo  truecolor enhanced size 3680, 1920 font ",40"'
-        write(outfileindex, '(a)')'set terminal  png       truecolor enhanced size 3680, 1920 font ",40"'
+        write(outfileindex, '(a)')'set terminal  pngcairo  truecolor enhanced size 3680, 1920 font ",40"'
+        write(outfileindex, '(a)')'#set terminal  png       truecolor enhanced size 3680, 1920 font ",40"'
         write(outfileindex, '(a)')"set output 'Berrycurvature.png'"
         write(outfileindex, '(a)')'if (!exists("MP_LEFT"))   MP_LEFT = .12'
         write(outfileindex, '(a)')'if (!exists("MP_RIGHT"))  MP_RIGHT = .92'
@@ -1131,7 +2052,6 @@
         close(outfileindex)
      endif
 
-
      !> generate gnuplot script to plot the Berry curvature
      outfileindex= outfileindex+ 1
      if (cpuid==0) then
@@ -1163,7 +2083,7 @@
 #endif
 
      deallocate( kslice)
-     deallocate( kslice_shape)
+     deallocate( kslice_xyz)
      deallocate( Omega_x, Omega_y, Omega_z)
      deallocate( Omega, Omega_mpi)
  

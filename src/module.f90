@@ -599,7 +599,8 @@
      real(dp),parameter :: alpha= 1.20736d0*1D-6  !> e/2/h*a*a   a=1d-10m, h is the planck constant then the flux equals alpha*B*s
 
      !> some parameters related to atomic units
-     real(dp),parameter :: bohr2atomic=0.529177211d0  ! Bohr to atomic length unit
+     real(dp),parameter :: bohr2angstrom=0.529177211d0  ! atomic length unit to Angstrom 
+     real(dp),parameter :: Ang2Bohr=1d0/0.529177211d0  ! Angstrom to atomic length unit 
      real(dp),parameter :: eV2Hartree= 1d0/27.211385d0 ! electron Voltage to Hartree unit
      real(dp),parameter :: Echarge= 1.602189E-19    ! electron charge in SI unit
      real(dp),parameter :: hbar= 1.054589E-34    ! electron charge in SI unit
@@ -610,10 +611,11 @@
      real(dp),parameter :: zero= 0.0d0  ! 0
      real(dp),parameter :: one = 1.0d0  ! 1
      real(dp),parameter :: eps3= 1e-3   ! 0.001
+     real(dp),parameter :: eps4= 1e-4   ! 0.0001
      real(dp),parameter :: eps6= 1e-6   ! 0.000001
-     real(dp),parameter :: eps8= 1e-8   ! 0.000001
+     real(dp),parameter :: eps8= 1e-8   ! 0.00000001
      real(dp),parameter :: eps9= 1e-9   ! 0.000000001
-     real(dp),parameter :: eps12= 1e-12   ! 0.000000000001
+     real(dp),parameter :: eps12= 1e-12 ! 0.000000000001
      complex(dp),parameter :: zzero= 0.0d0  ! 0
 
      real(Dp),parameter :: Ka(2)=(/1.0d0,0.0d0/)  
