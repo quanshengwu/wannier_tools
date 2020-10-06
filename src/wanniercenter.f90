@@ -428,7 +428,7 @@
          gap_sum= gap_sum+ gap_step
       enddo
 
-      if (cpuid==0) write(stdout, '(1X, a, i5)')'MCN for ky=0 mirror +i : ', nint(gap_sum)
+      if (cpuid==0) write(stdout, '(1X, a, f6.2)')'MCN for ky=0 mirror +i : ', (gap_sum)
 
 
       wcc_sum= dmod(sum(WannierCenterKy_minus_mpi, dim=1), 1d0)
@@ -444,7 +444,7 @@
          gap_sum= gap_sum+ gap_step
       enddo
 
-      if (cpuid==0) write(stdout, '(1X, a, i5)')'MCN for ky=0 mirror -i : ', nint(gap_sum)
+      if (cpuid==0) write(stdout, '(1X, a, f6.2)')'MCN for ky=0 mirror -i : ', (gap_sum)
 
       return
    end subroutine  wannier_center3D_plane_mirror
@@ -2174,12 +2174,12 @@
       implicit none
 
       integer :: i, ik2, j
-      integer :: chirality
+      real(dp) :: chirality
 
       character(40) :: epsfilename, wccfilename
 
       real(dp) :: k0(3)
-      integer, allocatable :: chirality_all(:)
+      real(dp), allocatable :: chirality_all(:)
       real(dp), allocatable :: wcc(:, :)
       real(dp), allocatable :: wcc_all(:, :, :)
       real(dp), allocatable :: wcc_sum_all(:, :)
@@ -2213,7 +2213,7 @@
       outfileindex= outfileindex+ 1
       if (cpuid==0) then
          open(unit=outfileindex, file='wanniercenter3D_NL.dat')
-         write(outfileindex, '(a16, 10000i16)')'# Chirality', chirality_all
+         write(outfileindex, '(a16, 10000f16.2)')'# Chirality', chirality_all
          write(outfileindex, '(10000a16)')'# k ', ('phase', j=1, Num_NLs)
          do ik2=1, Nk2
             write(outfileindex, '(10000f16.8)') (ik2-1d0)/(Nk2-1), &
@@ -2289,12 +2289,12 @@
       implicit none
 
       integer :: i, ik2, j
-      integer :: chirality
+      real(dp) :: chirality
 
       character(40) :: epsfilename, wccfilename
 
       real(dp) :: k0(3)
-      integer, allocatable :: chirality_all(:)
+      real(dp), allocatable :: chirality_all(:)
       real(dp), allocatable :: wcc(:, :)
       real(dp), allocatable :: wcc_all(:, :, :)
       real(dp), allocatable :: wcc_sum_all(:, :)
@@ -2331,7 +2331,7 @@
       outfileindex= outfileindex+ 1
       if (cpuid==0) then
          open(unit=outfileindex, file='wanniercenter3D_Weyl.dat')
-         write(outfileindex, '(a16, 10000i16)')'# Chirality', chirality_all
+         write(outfileindex, '(a16, 10000f16.2)')'# Chirality', chirality_all
          write(outfileindex, '(10000a16)')'# k ', ('phase', j=1, Num_Weyls)
          do ik2=1, Nk2
             write(outfileindex, '(10000f16.8)') (ik2-1d0)/(Nk2-1), &
@@ -2414,7 +2414,7 @@
       !> the WCCs are calculated along the second k line
       real(dp), intent(in) :: kpoints(3, Nk1, Nk2)
       real(dp), intent(out) :: wcc(Numoccupied, Nk2)
-      integer , intent(out) :: chirality
+      real(dp) , intent(out) :: chirality
 
       !> hamiltonian for each k point
       !> and also the eigenvector of hamiltonian after eigensystem_c
@@ -2593,7 +2593,7 @@
          gap_sum= gap_sum+ gap_step
       enddo
       
-      chirality= nint(gap_sum)
+      chirality= (gap_sum)
 
       return
    end subroutine  wannier_center3D_weyl_func_kpoints
@@ -2614,7 +2614,7 @@
       !> inout variables
       real(dp), intent(in) :: k0(3)
       real(dp), intent(in) :: r0
-      integer, intent(out) :: chirality
+      real(dp), intent(out) :: chirality
       real(dp), intent(out) :: wcc(Numoccupied, Nk2)
 
       !> k points in kx-ky plane
@@ -2670,7 +2670,7 @@
       real(dp), intent(in) :: k0(3)
       real(dp), intent(in) :: Rbig
       real(dp), intent(in) :: rsmall
-      integer, intent(out) :: chirality
+      real(dp), intent(out) :: chirality
       real(dp), intent(out) :: wcc(Numoccupied, Nk2)
 
       real(dp) :: k_cart(3), k_direct(3)
