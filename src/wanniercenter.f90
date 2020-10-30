@@ -2206,7 +2206,7 @@
       if (cpuid==0) write(stdout, '(a, a8, 5a10,a15)')'#', 'k1', 'k2', 'k3', 'kx', 'ky', 'kz', 'Chirality'
       if (cpuid==0) then
          do i=1, Num_NLs
-            write(stdout, '(6f10.5,i8)')NL_center_position_direct(:, i), NL_center_position_cart(:,i),chirality_all(i)
+            write(stdout, '(7f10.5)')NL_center_position_direct(:, i), NL_center_position_cart(:,i),chirality_all(i)
          enddo
       endif
 
@@ -2324,7 +2324,7 @@
       if (cpuid==0) write(stdout, '(a, a8, 5a10,a15)')'#', 'k1', 'k2', 'k3', 'kx', 'ky','kz', 'Chirality'
       if (cpuid==0) then
          do i=1, Num_Weyls
-            write(stdout, '(6f10.5,i8)')weyl_position_direct(:, i), weyl_position_cart(:,i), chirality_all(i)
+            write(stdout, '(7f10.5)')weyl_position_direct(:, i), weyl_position_cart(:,i), chirality_all(i)
          enddo
       endif
 
