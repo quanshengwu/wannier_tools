@@ -12,7 +12,7 @@
      integer :: i,j,iR
 
      ! index used to sign irvec     
-     integer :: ia,ib,ic
+     real(dp) :: ia,ib,ic
 
      ! new index used to sign irvec     
      real(dp) :: new_ia,new_ib,new_ic
@@ -116,7 +116,7 @@
      integer :: i,j,iR
 
      ! index used to sign irvec     
-     integer :: ia,ib,ic
+     real(dp) :: ia,ib,ic
      integer  :: ii,jj,pp,qq
 
      ! new index used to sign irvec     
@@ -279,7 +279,8 @@
      implicit none
 
      ! loop index
-     integer :: iR, ia, ib, ic, inew_ic
+     real(dp) :: ia, ib, ic
+     integer :: iR,  inew_ic
 
      ! new index used to sign irvec     
      real(dp) :: new_ia,new_ib,new_ic
@@ -338,7 +339,8 @@
      implicit none
 
      ! loop index
-     integer :: iR, ia, ib, ic, inew_ic
+     integer :: iR, inew_ic
+     real(dp) :: ia, ib, ic
 
      ! new index used to sign irvec     
      real(dp) :: new_ia,new_ib,new_ic
@@ -393,7 +395,7 @@
      integer :: iR
 
      ! index used to sign irvec     
-     integer :: ia,ib,ic
+     real(dp) :: ia,ib,ic
      integer  :: ii,jj,pp,qq
 
      ! 
@@ -512,7 +514,7 @@
      integer :: iR
 
      ! index used to sign irvec     
-     integer :: ia,ib,ic
+     real(dp) :: ia,ib,ic
 
      ! new index used to sign irvec     
      real(dp) :: new_ia,new_ib,new_ic
@@ -564,7 +566,7 @@
      use para
      implicit none
 
-     integer, intent(in)  :: a, b, c
+     real(dp), intent(in)  :: a, b, c
      real(dp), intent(out) :: x, y, z
 
      real(dp), allocatable :: Uinv(:, :)

@@ -11,10 +11,8 @@
      complex(Dp) :: ALPHA
      complex(Dp) :: BETA 
  
-
      complex(Dp), intent(in)  :: A(nmatdim ,nmatdim)
      complex(Dp), intent(in)  :: B(nmatdim ,nmatdim)
-     !complex(Dp) :: mat_mul(nmatdim,nmatdim)
      complex(Dp), intent(out) :: C(nmatdim,nmatdim)
 
      ALPHA=1.0d0 

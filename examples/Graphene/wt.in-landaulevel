@@ -1,0 +1,56 @@
+&TB_FILE
+Hrfile = 'Graphene_hr.dat'
+/
+
+&CONTROL
+LandauLevel_B_dos_calc = T   ! Hofstadter butterfly by Lanczos method
+LandauLevel_B_calc = F  ! Hofstadter butterfly by diagonalization
+LandauLevel_k_calc = F  ! energy bands at a fixed magnetic flux magp/Nslab*\Phi_0 using diagonalization method
+LandauLevel_k_dos_calc = F  ! energy bands at a fixed magnetic flux magp/Nslab*\Phi_0 using Laczos method
+/
+
+&SYSTEM
+NSLAB = 400   ! magnetic supercell size
+NumOccupied = 1         ! NumOccupied, not used here but set it anyway.
+SOC = 0                 ! There is no SOC in the hr.dat
+E_FERMI =  -1.2533        ! e-fermi
+/
+
+&PARAMETERS
+Eta_Arc = 0.1     ! infinite small value, like brodening 
+E_arc = 0.00         ! energy for calculate Fermi Arc
+OmegaNum = 1001     ! omega number       
+OmegaMin = -8.      ! energy interval
+OmegaMax =  12.     ! energy interval
+Nk1 = 11          ! number k points 
+Magp= 100   ! magnetic field flux=Magp/Nslab*\Phi_0
+NumRandomConfs = 10   ! Number of random initial Lanczos vectors used in the Lanczos method.
+/
+
+LATTICE
+Angstrom
+2.1377110  -1.2342080   0.0000000        
+0.0000000   2.4684160   0.0000000        
+0.0000000   0.0000000   10.000000        
+
+ATOM_POSITIONS
+2                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+C 0.333333 0.666667 0.500000 C
+C 0.666667 0.333333 0.500000 C
+
+PROJECTORS
+1 1        ! number of projectors
+C  pz
+C  pz
+
+SURFACE          
+ 0  0  1   ! magnetic field direction along the third lattice vector
+ 1  0  0
+ 0  1  0
+
+KPATH_BULK            ! k point path
+2              ! number of k line only for bulk band
+  Z   0.50000  0.00000  0.00000   G   0.00000  0.00000  0.00000 
+  G   0.00000  0.00000  0.00000   X   0.00000  0.50000  0.00000 
+

@@ -1,0 +1,52 @@
+&TB_FILE
+Hrfile = "wannier90_hr.dat"
+Package = "VASP"
+/
+
+
+&CONTROL
+!> bulk band structure calculation flag
+FindNodes_calc        = T
+/
+
+&SYSTEM
+NSLAB = 30 
+NumOccupied = 8        ! NumOccupied
+SOC = 1                 ! soc
+E_FERMI = 7.4680        ! e-fermi
+/
+
+&PARAMETERS
+Nk1 = 11             ! number k points 
+Nk2 = 11             ! number k points 
+Nk3 = 11            ! number k points 
+Gap_threshold = 0.01 ! threshold for GapCube output
+/
+
+LATTICE
+Angstrom
+ 3.7994265556         0.0000000000         0.0000000000
+-1.8997132778         3.2903999170         0.0000000000
+ 0.0000000000         0.0000000000         3.8985691071
+
+ATOM_POSITIONS
+2                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+Zr       0.0000000     0.0000000     0.0000000
+Te       0.3333333     0.6666667     0.5000000
+
+PROJECTORS
+ 9 3  ! number of projectors for each atom
+ Zr s pz px py dz2 dxz dyz dx2-y2 dxy
+ Te pz px py 
+
+SURFACE            ! See doc for details
+ 1  0  0
+ 0  1  0
+ 0  0  1
+
+KCUBE_BULK
+ 0.00  0.00  0.00   ! Original point for 3D k plane 
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  1.00  0.00   ! The second vector to define 3d k space plane
+ 0.00  0.00  1.00   ! The third vector to define 3d k cube

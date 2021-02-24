@@ -404,8 +404,8 @@
          write(outfileindex, '(a)')'set ylabel "WCC"'
          write(outfileindex, '(a)')'set xrange [0: 1]'
          write(outfileindex, '(a)')'set yrange [0:1]'
-         write(outfileindex, '(a)')"plot 'wcc-mirrorminus.dat' u 1:2 w p pt 7 ps 2  lc 'blue' title 'M=-i', \"   
-         write(outfileindex, '(a)')"     'wcc-mirrorplus.dat'  u 1:2 w p pt 7 ps 2  lc 'red'  title 'M=+i'"   
+         write(outfileindex, '(a)')"plot 'wcc-mirrorminus.dat' u 1:2 w p pt 7 ps 0.8  lc 'blue' title 'M=-i', \"   
+         write(outfileindex, '(a)')"     'wcc-mirrorplus.dat'  u 1:2 w p pt 7 ps 0.8  lc 'red'  title 'M=+i'"   
          write(outfileindex, '(a)')'#unset key '
          write(outfileindex, '(a)')"#plot  \"   
          write(outfileindex, '(a, i5, a)')"# for [i=3: ", Numoccupied/2+2, &

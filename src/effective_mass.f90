@@ -1,17 +1,21 @@
-!>-------------------------------------------------------------------------------<!
-!> this subroutine is used for effective mass calculation for a
-!> specified  band index in the framework of Wannier tight binding
-!> QuanSheng Wu (wuquansheng@gmail.com)
-!> Aug 30 2016 @ ETH Zurich
-!> refs: 
-!> The effective mass calculation with VASP has been done with Alexandr Fonari
-!> see https://afonari.com/emc.html
-!> Abramowitz, M.; Stegun, I. Handbook of Mathematical Functions: with Formulas, Graphs, and
-!> Mathematical Tables; Dover, 1972.
-!> here we implement the TB version
-!>-------------------------------------------------------------------------------<!
    subroutine effective_mass_calc()
-
+      !> effective_mass_calc calculates effective mass for a
+      !> specified  band index in the framework of Wannier tight binding
+      !
+      !> QuanSheng Wu (wuquansheng@gmail.com)
+      !
+      !> Aug 30 2016 @ ETH Zurich
+      !
+      !> refs: 
+      !
+      !> The effective mass calculation with VASP has been done with Alexandr Fonari
+      !
+      !> see https://afonari.com/emc.html
+      !
+      !> Abramowitz, M.; Stegun, I. Handbook of Mathematical Functions: with Formulas, Graphs, and
+      !> Mathematical Tables; Dover, 1972.
+      !
+      !> here we implement the TB version
       use wmpi
       use para
       implicit none
@@ -101,12 +105,16 @@
       if (cpuid==0) write(stdout,*)
 
       call inv_r(3, Emass)
-      Emass= Emass*bohr2angstrom*bohr2angstrom
+      Emass= Emass/Angstrom2atomic/Angstrom2atomic
       if (cpuid==0) write(stdout,'(a, i5, a)') ">> The effective mass tensor for ", iband_mass, " 'th band"
       if (cpuid==0) write(stdout,*) ">> Effective mass tensor (in unit of bare electron mass):"
       if (cpuid==0) write(stdout,"(3F15.8)") ((Emass(i,j), j=1,3),i=1,3)
       if (cpuid==0) write(stdout,*)
 
+      deallocate(W)
+      deallocate(Emass)
+      deallocate(eigval)
+      deallocate(Hamk_bulk)
       return
    end subroutine effective_mass_calc
 

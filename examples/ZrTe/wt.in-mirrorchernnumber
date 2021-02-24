@@ -1,0 +1,83 @@
+&TB_FILE
+Hrfile = "wannier90_hr.dat"
+Package = "VASP"
+/
+
+
+&CONTROL
+!> bulk band structure calculation flag
+BulkBand_calc         = T
+MirrorChern_calc      = T
+/
+
+&SYSTEM
+NSLAB = 30 
+NumOccupied = 8        ! NumOccupied
+SOC = 1                 ! soc
+E_FERMI = 7.4680        ! e-fermi in eV
+/
+
+&PARAMETERS
+Nk1 = 81             ! number k points along the integration direction
+Nk2 =201             ! number k slice of wcc 
+/
+
+LATTICE
+Angstrom
+ 3.7994265556         0.0000000000         0.0000000000
+-1.8997132778         3.2903999170         0.0000000000
+ 0.0000000000         0.0000000000         3.8985691071
+
+ATOM_POSITIONS
+2                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+Zr       0.0000000     0.0000000     0.0000000
+Te       0.3333333     0.6666667     0.5000000
+
+PROJECTORS
+ 9 3  ! number of projectors for each atom
+ Zr s pz px py dz2 dxz dyz dx2-y2 dxy
+ Te pz px py 
+
+SURFACE            ! See doc for details
+ 1  0  0
+ 0  1  0
+ 0  0  1
+
+KPATH_BULK            ! k point path
+3             ! number of k line
+M  0.00000    0.50000   0.0  K  0.33333    0.33333   0.0               
+K  0.33333    0.33333   0.0  G  0.00000    0.00000   0.0               
+G  0.00000    0.00000   0.0  A  0.00000    0.00000   0.5               
+
+KPLANE_BULK  ! used in mirror Chern number calculation
+ 0.00  0.00  0.00   ! Original point for 3D k plane 
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  1.00  0.00   ! The second vector to define 3d k space plane
+
+WANNIER_CENTRES     ! copy from wannier90.wout
+Cartesian
+   -0.000001  0.001773 -0.000000 
+   -0.000001  0.002528 -0.000000 
+    0.000000  0.028135 -0.000000 
+    0.000000 -0.030464 -0.000000 
+    0.000000  0.000260  0.000000 
+   -0.000000  0.000665  0.000000 
+    0.000000 -0.001143  0.000000 
+    0.000000  0.003698  0.000000 
+    0.000000 -0.005225  0.000000 
+   -0.000002  2.194779  1.949285 
+   -0.000000  2.047722  1.949285 
+   -0.000003  2.338031  1.949285 
+   -0.000001  0.001773  0.000000 
+   -0.000001  0.002528 -0.000000 
+   -0.000000  0.028135 -0.000000 
+    0.000000 -0.030464  0.000000 
+    0.000000  0.000260  0.000000 
+   -0.000000  0.000665  0.000000 
+    0.000000 -0.001143  0.000000 
+    0.000000  0.003698  0.000000 
+    0.000000 -0.005225 -0.000000 
+   -0.000002  2.194779  1.949285 
+   -0.000000  2.047722  1.949285 
+   -0.000003  2.338031  1.949285 

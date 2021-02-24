@@ -325,26 +325,43 @@
      integer :: m, n, i, alphai(3), betai(3)
      complex(dp), allocatable :: Amat(:, :)
      complex(dp), allocatable :: Dmn_Ham_dag(:, :, :)
+     complex(dp) :: zz(3)
 
      allocate(Amat(Num_wann, Num_wann))
      allocate(Dmn_Ham_dag(Num_wann, Num_wann, 3))
      Amat= 0d0
-     Dmn_Ham_dag=-Dmn_Ham
+     do i=1, 3
+        Dmn_Ham_dag(:, :, i)=conjg(transpose(Dmn_Ham(:, :, i)))
+     !  Dmn_Ham_dag(:, :, i)=-(Dmn_Ham(:, :, i))
+     enddo
+    !print *, Dmn_Ham_dag(1, 2, 2)
+    !print *, Dmn_Ham(2, 1, 3)
 
      Omega_BerryCurv= 0d0
      alphai(1)=2;alphai(2)=3;alphai(3)=1;
-     betai(1)=3;betai(2)=1;betai(3)=2;
+     betai(1) =3; betai(2)=1; betai(3)=2;
 
+     zz=0d0
      do i=1, 3
         call mat_mul(Num_wann, Dmn_Ham_dag(:, :, alphai(i)), Dmn_Ham(:, :, betai(i)), Amat)
         do m=1, Num_wann
-           Omega_BerryCurv(m, i)= Omega_BerryCurv(m, i)- aimag(Amat(m, m))
+          !Omega_BerryCurv(m, i)= Omega_BerryCurv(m, i)- aimag(Amat(m, m))
+           do n=1, Num_wann
+              Omega_BerryCurv(m, i)= Omega_BerryCurv(m, i)- &
+                 aimag(Dmn_Ham_dag(m, n, alphai(i))*Dmn_Ham(n, m, betai(i)))
+           enddo
         enddo
         call mat_mul(Num_wann, Dmn_Ham_dag(:, :, betai(i)), Dmn_Ham(:, :, alphai(i)), Amat)
         do m=1, Num_wann
-           Omega_BerryCurv(m, i)= Omega_BerryCurv(m, i)+ aimag(Amat(m, m))
+          !Omega_BerryCurv(m, i)= Omega_BerryCurv(m, i)+ aimag(Amat(m, m))
+           do n=1, Num_wann
+              Omega_BerryCurv(m, i)= Omega_BerryCurv(m, i)+ &
+                 aimag(Dmn_Ham_dag(m, n, betai(i))*Dmn_Ham(n, m, alphai(i)))
+           enddo
         enddo
      enddo
+    !print *, zz*zi
+    !pause
 
      return
   end subroutine berry_curvarture_singlek_allbands
@@ -438,7 +455,7 @@
      do i=1, 3
         do n=1, Num_wann
            do m=1, Num_wann
-              Dmn_Ham(m,n,i)=velocity_Ham(m,n,i)/(W(n)-W(m)+eps12)
+              Dmn_Ham(m,n,i)=velocity_Ham(m,n,i)/(W(n)-W(m))
            enddo
            Dmn_Ham(n, n, i)=zzero
         enddo
@@ -841,8 +858,8 @@
 
         call berry_curvarture_singlek_allbands(Dmn_Ham, Omega_BerryCurv)
         call orbital_magnetization_singlek_allbands(Dmn_Ham, Vmn_Ham_nondiag, m_OrbMag)
-        Omega_allk(:, :, ik) = real(Omega_BerryCurv)
-        m_OrbMag_allk(:, :, ik) = real(m_OrbMag)
+        Omega_allk(:, :, ik) = Omega_BerryCurv
+        m_OrbMag_allk(:, :, ik) = m_OrbMag
 
         call now(time_end)
      enddo ! ik
@@ -1190,7 +1207,7 @@
         open(unit=outfileindex, file='Orbitalmagnetization.dat')
         write(outfileindex, '(a)')'# Orbital magnetization in unit of Bohr magneton \mu_B'
         write(outfileindex, '("#col ", i5, 200i12)')(i, i=1, 15)
-        write(outfileindex, '("#", 30X,4a36)')'Sum over 1-NumOccupied bands', &
+        write(outfileindex, '("#", 30X,4a36)')'Sum over 1~NumOccupied bands', &
            "values at NumOccupied'th band", &
            ' Sum below Fermi level','values at Fermi level'
         write(outfileindex, '(a10,2000a12)')'# kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
@@ -1215,7 +1232,8 @@
      !> generate gnuplot script to plot the Berry curvature
      outfileindex= outfileindex+ 1
      if (cpuid==0) then
-
+        vmin=minval(Omega_allk_Occ_mpi(1, :, :))
+        vmax=maxval(Omega_allk_Occ_mpi(1, :, :))
         open(unit=outfileindex, file='Berrycurvature.gnu')
         write(outfileindex, '(a)')"set encoding iso_8859_1"
         write(outfileindex, '(a)')'set terminal  pngcairo  truecolor enhanced size 3680, 1920 font ",40"'
@@ -1226,6 +1244,8 @@
         write(outfileindex, '(a)')'if (!exists("MP_BOTTOM")) MP_BOTTOM = .12'
         write(outfileindex, '(a)')'if (!exists("MP_TOP"))    MP_TOP = .88'
         write(outfileindex, '(a)')'if (!exists("MP_GAP"))    MP_GAP = 0.08'
+        write(outfileindex, '(3a)')'set label 1 "Sum over all bands below Occupied', &
+          "'th band", ' " at screen 0.5 ,0.98 center'
         write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \'
         write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
         write(outfileindex, '(a)')" "
@@ -1234,7 +1254,7 @@
         write(outfileindex, '(a)')"unset key"
         write(outfileindex, '(a)')"set pm3d"
         write(outfileindex, '(a)')"#set zbrange [ -10: 10] "
-        write(outfileindex, '(a)')"#set cbrange [  -100 : 100 ] "
+        write(outfileindex, '(a, E10.3, a, E10.3, a)')"set cbrange [ ", vmin, ':', vmax, " ] "
         write(outfileindex, '(a)')"set view map"
         write(outfileindex, '(a)')"set size ratio -1"
         write(outfileindex, '(a)')"set border lw 3"
@@ -1256,6 +1276,29 @@
         write(outfileindex, '(a)')"set title 'Berry Curvature {/Symbol W}_z ({\305}^2)'"
         write(outfileindex, '(a)')"set colorbox"
         write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:6 w pm3d"
+
+        write(outfileindex, '(a)')"unset multiplot"
+        write(outfileindex, '(a)')"unset label 1"
+        write(outfileindex, '(3a)')'set label 2 "Sum over all bands below Fermi level', &
+          ' E\\\_arc" at screen 0.5 ,0.98 center'
+        write(outfileindex, '(a)')"set output 'Berrycurvature_EF.png'"
+        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \'
+        write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
+        vmin=minval(Omega_allk_EF_mpi(1, :, :))
+        vmax=maxval(Omega_allk_EF_mpi(1, :, :))
+        open(unit=outfileindex, file='Berrycurvature.gnu')
+        write(outfileindex, '(a, E10.3, a, E10.3, a)')"set cbrange [ ", vmin, ':', vmax, " ] "
+        write(outfileindex, '(a)')"set title 'Berry Curvature {/Symbol W}_x ({\305}^2)'"
+        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:10 w pm3d"
+        write(outfileindex, '(a)')"unset ylabel"
+        write(outfileindex, '(a)')"unset ytics"
+        write(outfileindex, '(a)')"set title 'Berry Curvature {/Symbol W}_y ({\305}^2)'"
+        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:11 w pm3d"
+        write(outfileindex, '(a)')"set title 'Berry Curvature {/Symbol W}_z ({\305}^2)'"
+        write(outfileindex, '(a)')"set colorbox"
+        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:12 w pm3d"
+
+
         close(outfileindex)
      endif
 
@@ -1379,7 +1422,7 @@
      !
      ! Copyright (c) 2020 QuanSheng Wu. All rights reserved.
 
-     use para, only : Num_wann, dp
+     use para, only : Num_wann, dp, zi, NumOccupied
      implicit none
 
      !> Input:  the k point coordinate in fractional coordinate
@@ -1403,7 +1446,7 @@
 
      !> Hamiltonian, eigenvalue and eigenvectors
      complex(dp), allocatable :: UU(:, :)
-
+    
      allocate(Vmn_wann(Num_wann, Num_wann, 3), Vmn_Ham(Num_wann, Num_wann, 3))
      allocate(Dmn_Ham(Num_wann,Num_wann,3), Vmn_Ham_nondiag(Num_wann, Num_wann, 3))
      allocate(UU(Num_wann, Num_wann))

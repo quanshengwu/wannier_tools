@@ -43,7 +43,7 @@ subroutine ek_bulk_line
    do ik= 1+cpuid, knv3, num_cpu
 
       k = k3points(:, ik)
-
+      
       ! calculation bulk hamiltonian
       Hamk_bulk= 0d0
 
@@ -56,6 +56,8 @@ subroutine ek_bulk_line
             call ham_bulk_LOTO(k, Hamk_bulk)
          else
             call ham_bulk_latticegauge(k, Hamk_bulk)
+           !call ham_bulk_atomicgauge(k, Hamk_bulk)
+            Hamk_bulk= Hamk_bulk/eV2Hartree
          endif
       endif
 
@@ -107,6 +109,7 @@ subroutine ek_bulk_line
          elseif (il>=100.and.il<1000) then
             write(filename, '(a,i3)')'bulkek.dat-segment', il
          endif
+         write(filename, '(5a)')'bulkek.dat-', trim(adjustl(k3line_name(il))), '-', trim(adjustl(k3line_name(il+1)))
          outfileindex= outfileindex+ 1
          open(unit=outfileindex, file=filename)
          write(outfileindex, '(a, a6, a, a6)')'# segment between', k3line_name(il), ' and ',  k3line_name(il+1)
@@ -173,7 +176,7 @@ subroutine ek_bulk_line
       write(outfileindex, '(a)')'set xtics font ",24"'
       write(outfileindex, '(a)')'set ytics font ",24"'
       write(outfileindex, '(a)')'set ylabel font ",24"'
-      write(outfileindex, '(a)')'set ylabel offset 0.5,0'
+      write(outfileindex, '(a)')'set ylabel offset 1.5,0'
       write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
       write(outfileindex, '(a,f12.6)')'emin=', emin
       write(outfileindex, '(a,f12.6)')'emax=', emax
@@ -260,6 +263,7 @@ end subroutine ek_bulk_line
         !> calculation bulk hamiltonian
         Hamk_bulk= 0d0
         call ham_bulk_latticegauge(k, Hamk_bulk)
+        Hamk_bulk= Hamk_bulk/eV2Hartree
        !call ham_bulk    (k, Hamk_bulk)
 
         !> diagonalization by call zheev in lapack
@@ -314,6 +318,306 @@ end subroutine ek_bulk_line
      return
    end subroutine ek_bulk_point_mode
 
+
+
+subroutine ek_bulk_plane_C2yT
+   ! Calculate bulk's energy band using wannier TB method for a given k plane
+   ! Copyright (c) 2017 QuanSheng Wu. All rights reserved.
+   ! Revised by QS.Wu on Sep 19 2017 @EPFL, Switzerland
+
+   use wmpi
+   use para
+
+   implicit none
+
+   integer :: ik, i, j, ib, ik1, ik2
+   integer :: knv3
+   integer :: ierr
+   integer :: nwann
+
+   integer :: nband_min
+   integer :: nband_max
+   integer :: nband_store
+
+   real(dp) :: time_start, time_end
+
+   real(Dp) :: k(3), kxyz(3)
+   real(Dp), allocatable :: W(:), D(:)
+   real(dp) :: kxmin, kxmax, kymin, kymax
+   real(dp), allocatable :: kxy(:,:)
+   real(dp), allocatable :: kxy_shape(:,:)
+   real(dp), allocatable :: kxy_plane(:,:)
+   
+   ! Hamiltonian of bulk system
+   complex(Dp), allocatable :: Hamk_bulk(:, :)
+   real(Dp), allocatable :: eigenvectors(:, :, :)
+   real(Dp), allocatable :: eigenvectors_mpi(:, :, :)
+
+   ! eigen value of H
+   real(dp), allocatable :: gap(:)
+   real(dp), allocatable :: gap_mpi(:)
+   real(dp), allocatable :: eigv(:,:)
+   real(dp), allocatable :: eigv_mpi(:,:)
+
+   complex(dp), allocatable :: U(:, :)
+   complex(dp), allocatable :: sqrt_C2yT(:, :)
+   complex(dp), allocatable :: psi_tilde(:, :)
+
+   allocate(D(Num_wann), U(Num_wann, Num_wann))
+   D=0d0; U=0d0
+
+
+  !call TakagiFactor(Num_wann, C2yT, num_wann, D, U, num_wann, 0, 1)
+  !write(*, *)'real(C2yT)'
+  !do i=1, num_wann
+  !   write(*, '(100f6.2)') real(C2yT(i, :))
+  !enddo
+
+  !write(*, *)'imag(C2yT)'
+  !do i=1, num_wann
+  !   write(*, '(100f6.2)') aimag(C2yT(i, :))
+  !enddo
+
+  !write(*, *)'D'
+  !do i=1, num_wann
+  !   write(*, '(100f6.2)') D(i)
+  !enddo
+
+  !write(*, *)'real(U)'
+  !do i=1, num_wann
+  !   write(*, '(100f6.2)') real(U(i, :))
+  !enddo
+
+  !write(*, *)'imag(U)'
+  !do i=1, num_wann
+  !   write(*, '(100f6.2)') aimag(U(i, :))
+  !enddo
+  !stop
+
+
+   if (.not.Symmetry_Import_calc) stop "Please set Symmetry_Import_calc=T in the input.dat"
+
+   allocate(sqrt_C2yT(Num_wann, Num_wann))
+   allocate(psi_tilde(Num_wann, Num_wann))
+   psi_tilde= 0d0
+   sqrt_C2yT= 0d0
+
+   do i=1, Num_wann
+      sqrt_C2yT(i, i)= sqrt(C2yT(i, i))
+   enddo
+
+   nband_min= Numoccupied- 1
+   nband_max= Numoccupied+ 2
+   if (nband_min< 1) nband_min= 1
+   if (nband_max> Num_wann) nband_max= Num_wann
+   nband_store= nband_max- nband_min+ 1
+
+
+   knv3= nk1*Nk2
+   allocate(W(Num_wann))
+   allocate(Hamk_bulk(Num_wann, Num_wann))
+   allocate(eigenvectors(Num_wann, 2, knv3))
+   allocate(eigenvectors_mpi(Num_wann, 2, knv3))
+   allocate( kxy(3, nk1*Nk2))
+   allocate( kxy_shape(3, nk1*Nk2))
+   allocate( kxy_plane(3, nk1*Nk2))
+   allocate( eigv    (nband_store, knv3))
+   allocate( eigv_mpi(nband_store, knv3))
+
+   eigv    = 0d0
+   eigv_mpi= 0d0
+   eigenvectors= 0d0
+   eigenvectors_mpi= 0d0
+
+   kxy=0d0
+   kxy_shape=0d0
+   kxy_plane=0d0
+  
+   if (Nk1<2 .or. Nk2<2) stop 'ERROR: I refuse to do this job because you give me so small Nk1 and Nk2'      
+   if (Numoccupied> Num_wann) stop 'ERROR: please set correct Numoccupied, it should be small than num_wann'
+   
+   ik =0
+   do i= 1, Nk1
+      do j= 1, Nk2
+         ik =ik +1
+         kxy(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(Nk1-1)+ K3D_vec2*(j-1)/dble(Nk2-1) &
+            -(K3D_vec1+K3D_vec2)/2d0
+         kxy_shape(:, ik)= kxy(1, ik)* Origin_cell%Kua+ kxy(2, ik)* Origin_cell%Kub+ kxy(3, ik)* Origin_cell%Kuc 
+         call rotate_k3_to_kplane(kxy_shape(:, ik), kxy_plane(:, ik))
+      enddo
+   enddo
+
+   time_start= 0d0
+   time_end= 0d0
+   do ik= 1+cpuid, knv3, num_cpu
+      if (cpuid==0.and. mod(ik/num_cpu, 500)==0) &
+         write(stdout, '(a, i12, a, i12, a, f10.2, a)') &
+         'ek_bulk_plane, ik ', ik, ' knv3',knv3, ' time left', &
+         (knv3-ik)*(time_end- time_start)/num_cpu, ' s'
+      call now(time_start)
+
+      k = kxy(:, ik)
+      call direct_cart_rec(k, kxyz)
+
+      ! calculation bulk hamiltonian
+      Hamk_bulk= 0d0
+      call ham_bulk_atomicgauge(k, Hamk_bulk)
+      Hamk_bulk= Hamk_bulk/eV2Hartree
+
+      !> diagonalization by call zheev in lapack
+      W= 0d0
+      call eigensystem_c( 'V', 'U', Num_wann ,Hamk_bulk, W)
+      call mat_mul(Num_wann, sqrt_C2yT, Hamk_bulk, psi_tilde)
+      eigenvectors(:, 1:2, ik)= real(psi_tilde(:, Numoccupied:Numoccupied+1))
+
+     !write(*, *)'psi real'
+     !do i=1, num_wann
+     !   write(*, '(100f6.2)') real(Hamk_bulk(i, :))
+     !enddo
+   
+     !write(*, *)'psi imag'
+     !do i=1, num_wann
+     !   write(*, '(100f6.2)') aimag(Hamk_bulk(i, :))
+     !enddo
+    
+
+     !write(*, *)'psi_tilde real'
+     !do i=1, num_wann
+     !   write(*, '(100f6.2)') real(psi_tilde(i, :))
+     !enddo
+   
+     !write(*, *)'psi_tilde imag'
+     !do i=1, num_wann
+     !   write(*, '(100f6.2)') aimag(psi_tilde(i, :))
+     !enddo
+     !stop
+
+
+      eigv(:, ik)= W(nband_min:nband_max)
+
+      call now(time_end)
+   enddo ! ik
+
+#if defined (MPI)
+   call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
+                     mpi_dp,mpi_sum,mpi_cmw,ierr)
+   call mpi_allreduce(eigenvectors, eigenvectors_mpi,size(eigenvectors),&
+                     mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+   eigv_mpi= eigv
+#endif
+
+   !> write out the data in gnuplot format
+   outfileindex= outfileindex+ 1
+   if (cpuid==0)then
+      open(unit=outfileindex, file='eigenvectors_plane_band1.txt')
+      do i=1, num_wann
+         ik=0
+         do ik1=1, Nk1
+            do ik2=1, Nk2-1
+               ik=ik+1
+               write(outfileindex, '(2000f19.9)', advance='no')eigenvectors_mpi(i, 1, ik)
+            enddo
+            ik=ik+1
+            write(outfileindex, '(2000f19.9)', advance='yes')eigenvectors_mpi(i, 1, ik)
+         enddo
+         write(outfileindex, *)' '
+      enddo
+      close(outfileindex)
+   endif
+
+   !> write out the data in gnuplot format
+   outfileindex= outfileindex+ 1
+   if (cpuid==0)then
+      open(unit=outfileindex, file='eigenvectors_plane_band2.txt')
+      do i=1, num_wann
+         ik=0
+         do ik1=1, Nk1
+            do ik2=1, Nk2-1
+               ik=ik+1
+               write(outfileindex, '(2000f19.9)', advance='no')eigenvectors_mpi(i, 2, ik)
+            enddo
+            ik=ik+1
+            write(outfileindex, '(2000f19.9)', advance='yes')eigenvectors_mpi(i, 2, ik)
+         enddo
+         write(outfileindex, *)' '
+      enddo
+      close(outfileindex)
+   endif
+
+
+   !> write out the data in gnuplot format
+   outfileindex= outfileindex+ 1
+   if (cpuid==0)then
+      open(unit=outfileindex, file='bulkek_plane.dat')
+      write(outfileindex, '(1000a19)')'# kx', 'ky', 'kz', 'k1', 'k2', 'k3', &
+         'E(Numoccupied-1)', 'E(Numoccupied)' , 'E(Numoccupied+1)', 'E(Numoccupied+2)'
+      do ik=1, knv3
+         write(outfileindex, '(1000f19.9)')kxy_shape(:, ik), &
+            kxy_plane(:, ik), eigv_mpi(:, ik)  
+         if (mod(ik, nk2)==0) write(outfileindex, *)' '
+      enddo
+      close(outfileindex)
+   endif
+
+   !> write out the data in gnuplot format
+   outfileindex= outfileindex+ 1
+   if (cpuid==0)then
+      open(unit=outfileindex, file='bulkek_plane-matlab.dat')
+      write(outfileindex, '(1000a19)')'% kx', 'ky', 'kz', 'k1', 'k2', &
+         'E(Numoccupied-1)', 'E(Numoccupied)' , 'E(Numoccupied+1)', 'E(Numoccupied+2)'
+      do ik=1, knv3
+         write(outfileindex, '(1000f19.9)')kxy_shape(:, ik), &
+            kxy_plane(:, ik), eigv_mpi(:, ik)  
+      enddo
+      close(outfileindex)
+   endif
+
+   !> write out a script that can be used for gnuplot
+   outfileindex= outfileindex+ 1
+   if (cpuid==0)then
+      open(unit=outfileindex, file='bulkek_plane.gnu')
+      write(outfileindex, '(a)')"set encoding iso_8859_1"
+      write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
+      write(outfileindex, '(a)')"#set output 'bulkek_plane.eps'"
+      write(outfileindex, '(3a)')'set terminal  png truecolor enhanced', &
+         ' size 1920, 1680 font ",36"'
+      write(outfileindex, '(a)')"set output 'bulkek_plane.png'"
+      write(outfileindex, '(a)')'set palette rgbformulae 33,13,10'
+      write(outfileindex, '(a)')'unset key'
+      write(outfileindex, '(a)')'set pm3d'
+      write(outfileindex, '(a)')'set origin 0.2, 0'
+      write(outfileindex, '(a)')'set size 0.8, 1'
+      write(outfileindex, '(a)')'set border lw 3'
+      write(outfileindex, '(a)')'#set xtics font ",24"'
+      write(outfileindex, '(a)')'#set ytics font ",24"'
+      write(outfileindex, '(a)')'set size ratio -1'
+      write(outfileindex, '(a)')'set xtics'
+      write(outfileindex, '(a)')'set ytics'
+      write(outfileindex, '(a)')'set view 80,60'
+      write(outfileindex, '(a)')'set xlabel "k_1"'
+      write(outfileindex, '(a)')'set ylabel "k_2"'
+      write(outfileindex, '(a)')'set zlabel "Energy (eV)" rotate by 90'
+      write(outfileindex, '(a)')'unset colorbox'
+      write(outfileindex, '(a)')'set autoscale fix'
+      write(outfileindex, '(a)')'set pm3d interpolate 4,4'
+      write(outfileindex, '(2a)')"splot 'bulkek_plane.dat' u 4:5:8 w pm3d, \"
+      write(outfileindex, '(2a)')"      'bulkek_plane.dat' u 4:5:9 w pm3d"
+
+      close(outfileindex)
+
+   endif ! cpuid
+
+   deallocate(W)
+   deallocate(Hamk_bulk)
+   deallocate( kxy)
+   deallocate( kxy_shape)
+   deallocate( kxy_plane)
+   deallocate( eigv    )
+   deallocate( eigv_mpi)
+
+   return
+end subroutine ek_bulk_plane_C2yT
 
 
 subroutine ek_bulk_plane
@@ -405,6 +709,7 @@ subroutine ek_bulk_plane
       ! calculation bulk hamiltonian
       Hamk_bulk= 0d0
       call ham_bulk_atomicgauge(k, Hamk_bulk)
+      Hamk_bulk= Hamk_bulk/eV2Hartree
 
       !> diagonalization by call zheev in lapack
       W= 0d0
@@ -478,7 +783,7 @@ subroutine ek_bulk_plane
       write(outfileindex, '(a)')'set autoscale fix'
       write(outfileindex, '(a)')'set pm3d interpolate 4,4'
       write(outfileindex, '(2a)')"splot 'bulkek_plane.dat' u 4:5:8 w pm3d, \"
-      write(outfileindex, '(2a)')"      'bulkek_plane.dat' u 4:5:7 w pm3d"
+      write(outfileindex, '(2a)')"      'bulkek_plane.dat' u 4:5:9 w pm3d"
 
       close(outfileindex)
 
@@ -575,6 +880,7 @@ subroutine ek_bulk_cube
       ! calculation bulk hamiltonian
       Hamk_bulk= 0d0
       call ham_bulk_atomicgauge(k, Hamk_bulk)
+      Hamk_bulk= Hamk_bulk/eV2Hartree
 
       !> diagonalization by call zheev in lapack
       W= 0d0
@@ -613,6 +919,634 @@ subroutine ek_bulk_cube
 
    return
 end subroutine ek_bulk_cube
+
+
+
+#if defined (INTELMKL)
+subroutine sparse_ekbulk
+   use sparse
+   use para
+   implicit none
+
+
+   !> some temporary integers
+   integer :: ik, i, j, ierr, ib, ig, numk
+
+   ! wave vector
+   real(dp) :: k3(3)
+
+   !> dim= Num_wann, knv3
+   real(dp), allocatable :: W(:)
+   real(dp), allocatable :: eigv(:, :)
+   real(dp), allocatable :: eigv_mpi(:, :)
+
+   real(dp) :: emin, emax
+
+   !> dim= Num_wann*Num_wann
+   integer :: nnzmax, nnz
+   complex(dp), allocatable :: acoo(:)
+   integer, allocatable :: jcoo(:)
+   integer, allocatable :: icoo(:)
+
+   !> eigenvector of the sparse matrix acoo. Dim=(Num_wann, neval)
+   complex(dp), allocatable :: psi(:)
+   complex(dp), allocatable :: psi_project(:)
+   complex(dp), allocatable :: zeigv(:, :)
+
+   !> print the weight for the Selected_WannierOrbitals
+   real(dp), allocatable :: weight(:, :)
+   real(dp), allocatable :: dos_selected(:, :, :, :)
+   real(dp), allocatable :: dos_selected_mpi(:, :, :, :)
+
+   !number of ARPACK eigenvalues
+   integer :: neval
+
+   ! number of Arnoldi vectors
+   integer :: nvecs
+
+   !> calculate eigenvector or not
+   logical :: ritzvec
+
+   !shift-invert sigma
+   complex(dp) :: sigma=(0d0,0d0)
+
+   !> time measurement
+   real(dp) :: time1, time2, time3
+
+
+   neval=OmegaNum
+   if (neval>Num_wann-2) neval= Num_wann- 2
+
+   !> ncv
+   nvecs=int(2*neval)
+
+   if (nvecs<50) nvecs= 50
+   if (nvecs>Num_wann) nvecs= Num_wann
+
+   if (trim(adjustl(projection_weight_mode))=='FOLDEDKPOITNS') then
+      numk= Nk3_unfold_point_mode
+   else
+      numk=1
+   endif
+
+   sigma=(1d0,0d0)*E_arc
+   nnzmax=splen+Num_wann
+   nnz=splen
+   allocate( acoo(nnzmax))
+   allocate( jcoo(nnzmax))
+   allocate( icoo(nnzmax))
+   allocate( W( neval))
+   allocate( eigv( neval, nk3_band))
+   allocate( eigv_mpi( neval, nk3_band))
+   allocate( psi(Num_wann))
+   allocate( psi_project(Num_wann))
+   allocate( zeigv(Num_wann,nvecs))
+   allocate( weight(NumberofSelectedOrbitals_groups, numk))
+   allocate( dos_selected     (neval,   nk3_band, NumberofSelectedOrbitals_groups, numk))
+   allocate( dos_selected_mpi (neval,   nk3_band, NumberofSelectedOrbitals_groups, numk))
+   psi=0d0; psi_project= 0d0; zeigv= 0d0
+   dos_selected= 0d0; dos_selected_mpi= 0d0
+
+   eigv_mpi= 0d0;  eigv    = 0d0
+   acoo= 0d0; icoo=0; jcoo=0
+
+   ritzvec= BulkFatBand_calc
+
+   !> calculate the energy bands along special k line
+   k3= 0
+   do ik=1+ cpuid, nk3_band, num_cpu
+      if (cpuid==0) write(stdout, '(a, 2i10)') 'BulkBand_calc in sparse mode:', ik,nk3_band
+      k3 = K3points(:, ik)
+      call now(time1)
+      call ham_bulk_coo_sparsehr(k3,acoo,icoo,jcoo)
+      acoo= acoo/eV2Hartree
+      nnz= splen
+      call now(time2)
+      
+      !> diagonalization by call zheev in lapack
+      W= 0d0
+      !> after arpack_sparse_coo_eigs, nnz will be updated.
+      call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
+      call now(time3)
+      eigv(1:neval, ik)= W(1:neval)
+
+      do ib= 1, neval
+         psi(:)= zeigv(:, ib)  !> the eigenvector of ib'th band
+         call get_projection_weight_bulk(k3, numk, psi, weight)
+         dos_selected(ib, ik, :, :)= weight(:, :)
+      enddo
+      !> calculate the weight on the selected orbitals
+     !do ig=1, NumberofSelectedOrbitals_groups
+     !   do ib= 1, neval
+     !      psi(:)= zeigv(:, ib)  !> the eigenvector of ib'th band
+     !      do i= 1, NumberofSelectedOrbitals(ig)
+     !         j= Selected_WannierOrbitals(ig)%iarray(i)
+     !         dos_selected(ib, ik, ig)= dos_selected(ib, ik, ig)+ abs(psi(j))**2
+     !      enddo ! sweep the selected orbitals
+     !   enddo ! ib sweep the eigenvalue
+     !enddo
+
+      if (cpuid==0)write(stdout, '(a, f20.2, a)')'  >> Time cost for constructing H: ', time2-time1, ' s'
+      if (cpuid==0)write(stdout, '(a, f20.2, a)')'  >> Time cost for diagonalize H: ', time3-time2, ' s'
+   enddo !ik
+
+#if defined (MPI)
+   call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
+   call mpi_allreduce(dos_selected, dos_selected_mpi,size(dos_selected),&
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+   eigv_mpi= eigv
+   dos_selected_mpi= dos_selected
+#endif
+
+   !> minimum and maximum value of energy bands
+   emin= minval(eigv_mpi)+0.05*(maxval(eigv_mpi)-minval(eigv_mpi))
+   emax= maxval(eigv_mpi)-0.05*(maxval(eigv_mpi)-minval(eigv_mpi))
+   
+
+
+   outfileindex= outfileindex+ 1
+   if (cpuid==0)then
+      open(unit=outfileindex, file='bulkek.dat')
+
+      !> 
+      if (BulkFatBand_calc) then
+         write(outfileindex, &
+            "('#', a12, a14, 1X, '| projection', 100(3X,'|group', i2, ': A '))")&
+            'klen', 'E', (i, i=1, NumberofSelectedOrbitals_groups)
+         write(outfileindex, "('#column', i5, 200i16)")(i, i=1, 2+NumberofSelectedOrbitals_groups)
+      else
+         write(outfileindex, '(2a19)') '# klen', 'E(eV)'
+      endif
+
+      do i=1, neval
+         do ik=1, nk3_band
+            if (BulkFatBand_calc) then
+               write(outfileindex, '(300f16.9)')k3len(ik),eigv_mpi(i, ik), &
+                  (dos_selected_mpi(i, ik, ig, :), ig=1, NumberofSelectedOrbitals_groups)
+            else
+               write(outfileindex, '(2f16.9)')k3len(ik),eigv_mpi(i, ik)
+            endif
+         enddo
+         write(outfileindex, *)' '
+      enddo
+      close(outfileindex)
+   endif
+
+   outfileindex= outfileindex+ 1
+   if (cpuid==0) then
+      open(unit=outfileindex, file='bulkek.gnu')
+      write(outfileindex, '(a)') '#set terminal  postscript enhanced color font ",30"'
+      write(outfileindex, '(a)')"#set output 'bulkek.eps'"
+      write(outfileindex, '(a)') 'set terminal pdf enhanced color font ",20"'
+      write(outfileindex, '(a)') 'set palette defined (-10 "#194eff", 0 "green", 10 "red" )'
+      write(outfileindex, '(a)')"set output 'bulkek.pdf'"
+      write(outfileindex, '(a)')'set style data points'
+      write(outfileindex, '(a)')'set size 0.9, 1'
+      write(outfileindex, '(a)')'set origin 0.05,0'
+      write(outfileindex, '(a)')'unset key'
+      write(outfileindex, '(a)')'set pointsize 0.1'
+      write(outfileindex, '(a)')'#set xtics font ",24"'
+      write(outfileindex, '(a)')'#set ytics font ",24"'
+      write(outfileindex, '(a)')'#set ylabel font ",24"'
+      write(outfileindex, '(a)')'#set ylabel offset 1.5,0'
+      write(outfileindex, '(a,f12.6)')'emin=', emin
+      write(outfileindex, '(a,f12.6)')'emax=', emax
+      write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
+      if (index(Particle,'phonon')/=0) then
+         write(outfileindex, '(a, f10.5, a)')'set yrange [0: emax ]'
+         write(outfileindex, '(a)')'set ylabel "Frequency (THz)"'
+      else
+         write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+         write(outfileindex, '(a)')'set yrange [ emin : emax ]'
+      endif
+      write(outfileindex, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
+      write(outfileindex, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
+
+      do i=1, nk3lines-1
+         if (index(Particle,'phonon')/=0) then
+            write(outfileindex, 204)k3line_stop(i+1), '0.0', k3line_stop(i+1), 'emax'
+         else
+            write(outfileindex, 204)k3line_stop(i+1), 'emin', k3line_stop(i+1), 'emax'
+         endif
+      enddo
+
+      if (BulkFatBand_calc) then
+            write(outfileindex, '(a)')"set colorbox"
+            write(outfileindex, '(2a)')"plot 'bulkek.dat' u 1:2:3 ",  &
+               " w p  pt 7  ps 0.2 lc pal z"
+      else
+         write(outfileindex, '(2a)')"plot 'bulkek.dat' w p pt 7 ps 0.3 lc rgb 'black'"
+      endif
+      close(outfileindex)
+   endif
+202 format('set xtics (',20('"',A3,'" ',F10.5,','))
+203 format(A3,'" ',F10.5,')')
+204 format('set arrow from ',F10.5,',',A5,' to ',F10.5,',',A5, ' nohead')
+
+
+
+#if defined (MPI)
+   call mpi_barrier(mpi_cmw, ierr)
+#endif
+
+   deallocate( acoo)
+   deallocate( jcoo)
+   deallocate( icoo)
+   deallocate( W)
+   deallocate( eigv)
+   deallocate( eigv_mpi)
+   deallocate( zeigv)
+   deallocate( dos_selected)
+   deallocate( dos_selected_mpi)
+
+   return
+end subroutine sparse_ekbulk
+
+
+subroutine sparse_ekbulk_plane
+   use sparse
+   use para
+   implicit none
+
+
+   !> some temporary integers
+   integer :: ik, i, j, ierr, ib, ig, knv3
+
+   ! wave vector
+   real(dp) :: k3(3)
+
+   !> dim= Num_wann, knv3
+   real(dp), allocatable :: W(:)
+   real(dp), allocatable :: eigv(:, :)
+   real(dp), allocatable :: eigv_mpi(:, :)
+
+   real(dp), allocatable :: kxy(:,:)
+   real(dp), allocatable :: kxy_shape(:,:)
+   real(dp), allocatable :: kxy_plane(:,:)
+   real(dp) :: emin, emax
+
+   !> dim= Num_wann*Num_wann
+   integer :: nnzmax, nnz
+   complex(dp), allocatable :: acoo(:)
+   integer, allocatable :: jcoo(:)
+   integer, allocatable :: icoo(:)
+
+   !> eigenvector of the sparse matrix acoo. Dim=(Num_wann, neval)
+   complex(dp), allocatable :: psi(:)
+   complex(dp), allocatable :: psi_project(:)
+   complex(dp), allocatable :: zeigv(:, :)
+
+   !> print the weight for the Selected_WannierOrbitals
+   real(dp), allocatable :: weight(:, :)
+   real(dp), allocatable :: dos_selected(:, :, :, :)
+   real(dp), allocatable :: dos_selected_mpi(:, :, :, :)
+
+   !number of ARPACK eigenvalues
+   integer :: neval
+
+   ! number of Arnoldi vectors
+   integer :: nvecs
+
+   !> calculate eigenvector or not
+   logical :: ritzvec
+
+   !shift-invert sigma
+   complex(dp) :: sigma=(0d0,0d0)
+
+   !> time measurement
+   real(dp) :: time1, time2, time3, time_start, time_end
+
+
+   neval=OmegaNum
+   if (neval>Num_wann-2) neval= Num_wann- 2
+
+   !> ncv
+   nvecs=int(2*neval)
+
+   if (nvecs<20) nvecs= 20
+   if (nvecs>Num_wann) nvecs= Num_wann
+
+   knv3= nk1*Nk2
+   allocate( kxy(3, knv3))
+   allocate( kxy_shape(3, knv3))
+   allocate( kxy_plane(3, knv3))
+
+   eigv    = 0d0
+   eigv_mpi= 0d0
+
+   kxy=0d0
+   kxy_shape=0d0
+   kxy_plane=0d0
+  
+   if (Nk1<2 .or. Nk2<2) stop 'ERROR: I refuse to do this job because you give me so small Nk1 and Nk2'      
+   if (Numoccupied> Num_wann) stop 'ERROR: please set correct Numoccupied, it should be small than num_wann'
+   
+   ik =0
+   do i= 1, Nk1
+      do j= 1, Nk2
+         ik =ik +1
+         kxy(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(Nk1-1)+ K3D_vec2*(j-1)/dble(Nk2-1) &
+            -(K3D_vec1+K3D_vec2)/2d0
+         kxy_shape(:, ik)= kxy(1, ik)* Origin_cell%Kua+ kxy(2, ik)* Origin_cell%Kub+ kxy(3, ik)* Origin_cell%Kuc 
+         call rotate_k3_to_kplane(kxy_shape(:, ik), kxy_plane(:, ik))
+      enddo
+   enddo
+
+   sigma=(1d0,0d0)*E_arc
+   nnzmax=splen+Num_wann
+   nnz=splen
+   allocate( acoo(nnzmax))
+   allocate( jcoo(nnzmax))
+   allocate( icoo(nnzmax))
+   allocate( W( neval))
+   allocate( eigv( neval, knv3))
+   allocate( eigv_mpi( neval, knv3))
+   allocate( zeigv(Num_wann,nvecs))
+   zeigv= 0d0
+
+   eigv_mpi= 0d0;  eigv    = 0d0
+   acoo= 0d0; icoo=0; jcoo=0
+
+   ritzvec= .False.
+
+   !> calculate the energy bands along special k line
+   k3= 0
+   time_start= 0d0
+   time_end= 0d0
+   do ik=1+ cpuid, knv3, num_cpu
+      if (cpuid==0.and. mod(ik/num_cpu, 20 )==0) &
+         write(stdout, '(a, i12, a, i12, a, f10.2, a)') &
+         'BulkBand_plane_calc sparse, ik ', ik, ' knv3',knv3, ' time left', &
+         (knv3-ik)*(time_end- time_start)/num_cpu, ' s'
+      call now(time_start)
+
+      k3 = kxy(:, ik)
+      call ham_bulk_coo_sparsehr(k3,acoo,icoo,jcoo)
+      acoo= acoo/eV2Hartree
+      nnz= splen
+      call now(time2)
+      
+      !> diagonalization by call zheev in lapack
+      W= 0d0
+      !> after arpack_sparse_coo_eigs, nnz will be updated.
+      call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
+      call now(time_end)
+      eigv(1:neval, ik)= W(1:neval)
+
+      if (cpuid==0)write(stdout, '(a, f20.2, a)')'  >> Time cost for constructing H: ', time2-time_start, ' s'
+      if (cpuid==0)write(stdout, '(a, f20.2, a)')'  >> Time cost for diagonalize H: ', time_end-time2, ' s'
+   enddo !ik
+
+#if defined (MPI)
+   call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+   eigv_mpi= eigv
+#endif
+
+   !> minimum and maximum value of energy bands
+   emin= minval(eigv_mpi)+0.05*(maxval(eigv_mpi)-minval(eigv_mpi))
+   emax= maxval(eigv_mpi)-0.05*(maxval(eigv_mpi)-minval(eigv_mpi))
+   
+
+   !> write out the data in gnuplot format
+   outfileindex= outfileindex+ 1
+   if (cpuid==0)then
+      open(unit=outfileindex, file='bulkek_plane.dat')
+      write(outfileindex, '(1000a19)')'# kx', 'ky', 'kz', 'k1', 'k2', 'k3', &
+         'E(Numoccupied-1)', 'E(Numoccupied)' , 'E(Numoccupied+1)', 'E(Numoccupied+2)'
+      do ik=1, knv3
+         write(outfileindex, '(1000f19.9)')kxy_shape(:, ik), &
+            kxy_plane(:, ik), eigv_mpi(:, ik)  
+         if (mod(ik, nk2)==0) write(outfileindex, *)' '
+      enddo
+      close(outfileindex)
+   endif
+
+   !> write out the data in gnuplot format
+   outfileindex= outfileindex+ 1
+   if (cpuid==0)then
+      open(unit=outfileindex, file='bulkek_plane-matlab.dat')
+      write(outfileindex, '(1000a19)')'% kx', 'ky', 'kz', 'k1', 'k2', &
+         'E(Numoccupied-1)', 'E(Numoccupied)' , 'E(Numoccupied+1)', 'E(Numoccupied+2)'
+      do ik=1, knv3
+         write(outfileindex, '(1000f19.9)')kxy_shape(:, ik), &
+            kxy_plane(:, ik), eigv_mpi(:, ik)  
+      enddo
+      close(outfileindex)
+   endif
+
+   !> write out a script that can be used for gnuplot
+   outfileindex= outfileindex+ 1
+   if (cpuid==0)then
+      open(unit=outfileindex, file='bulkek_plane.gnu')
+      write(outfileindex, '(a)')"set encoding iso_8859_1"
+      write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
+      write(outfileindex, '(a)')"#set output 'bulkek_plane.eps'"
+      write(outfileindex, '(3a)')'set terminal  png truecolor enhanced', &
+         ' size 1920, 1680 font ",36"'
+      write(outfileindex, '(a)')"set output 'bulkek_plane.png'"
+      write(outfileindex, '(a)')'set palette rgbformulae 33,13,10'
+      write(outfileindex, '(a)')'unset key'
+      write(outfileindex, '(a)')'set pm3d'
+      write(outfileindex, '(a)')'set origin 0.2, 0'
+      write(outfileindex, '(a)')'set size 0.8, 1'
+      write(outfileindex, '(a)')'set border lw 3'
+      write(outfileindex, '(a)')'#set xtics font ",24"'
+      write(outfileindex, '(a)')'#set ytics font ",24"'
+      write(outfileindex, '(a)')'set size ratio -1'
+      write(outfileindex, '(a)')'set xtics'
+      write(outfileindex, '(a)')'set ytics'
+      write(outfileindex, '(a)')'set view 80,60'
+      write(outfileindex, '(a)')'set xlabel "k_1"'
+      write(outfileindex, '(a)')'set ylabel "k_2"'
+      write(outfileindex, '(a)')'set zlabel "Energy (eV)" rotate by 90'
+      write(outfileindex, '(a)')'unset colorbox'
+      write(outfileindex, '(a)')'set autoscale fix'
+      write(outfileindex, '(a)')'set pm3d interpolate 4,4'
+      write(outfileindex, '(2a)')"splot 'bulkek_plane.dat' u 4:5:8 w pm3d, \"
+      write(outfileindex, '(2a)')"      'bulkek_plane.dat' u 4:5:9 w pm3d"
+
+      close(outfileindex)
+
+   endif ! cpuid
+
+
+
+#if defined (MPI)
+   call mpi_barrier(mpi_cmw, ierr)
+#endif
+
+   deallocate( acoo)
+   deallocate( jcoo)
+   deallocate( icoo)
+   deallocate( W)
+   deallocate( eigv)
+   deallocate( eigv_mpi)
+   deallocate( zeigv)
+
+   return
+end subroutine sparse_ekbulk_plane
+
+#endif
+
+#if defined (ELPA)
+subroutine ekbulk_elpa
+   use para
+   use elpa1
+   use elpa2
+   implicit none
+
+   !> magnetic supercell size, perpendicular to the magnetic field
+   !> Ndimq= Nq* Num_wann
+
+   integer :: ik, ierr,i,j
+
+   ! wave vector
+   real(dp) :: k3(3)
+
+   !> dim= Ndimq, knv3
+!~    real(dp), allocatable :: W(:)
+   real(dp), allocatable :: eigv(:, :)
+   real(dp), allocatable :: eigv_mpi(:, :)
+   real(dp), allocatable :: eigv_mpi2(:, :)
+
+   !> wave function
+
+
+
+   !> dim= Ndimq*Ndimq
+
+   real(dp),external :: PhasePdGauge
+
+   integer :: np_cols,np_rows
+   !ProcessorCore_
+   integer :: my_blacs_ctxt
+   integer ::  nprow, npcol, my_prow, my_pcol
+   integer :: switch001
+   integer :: info_mpi,nblk=1,na_rows,na_cols
+
+   complex(dp),allocatable :: haml_block(:,:) ,z(:,:)
+
+   integer, external :: numroc
+   integer, external :: indxl2g,indxg2p,indxg2l
+
+   integer :: sc_desc(9)
+   integer :: mpi_comm_rows, mpi_comm_cols
+
+   integer :: neval
+
+
+   logical success
+
+
+!~    allocate( ham_landau(Ndimq, Ndimq))
+   allocate( eigv(Num_wann,nk3_band))
+   allocate( eigv_mpi(Num_wann,nk3_band))
+   allocate( eigv_mpi2(Num_wann,nk3_band))
+!~    allocate( psi(Ndimq))
+
+
+
+
+   eigv_mpi= 0d0
+   eigv    = 0d0
+
+
+
+   neval=OmegaNum
+
+
+
+
+
+
+   do np_cols = NINT(SQRT(REAL(num_cpu))),2,-1
+      if(mod(num_cpu,np_cols) == 0 ) exit
+   enddo
+   ! search for uniform distribution near SQRT
+
+! at the end of the above loop, nprocs is always divisible by np_cols
+   np_rows = num_cpu/np_cols
+
+   ! Blacs preparation
+   my_blacs_ctxt = mpi_cmw
+   call BLACS_Gridinit( my_blacs_ctxt, 'C', np_rows, np_cols )
+   call BLACS_Gridinfo( my_blacs_ctxt, nprow, npcol, my_prow, my_pcol )
+
+   ! All ELPA routines need MPI communicators for communicating within
+! rows or columns of processes, these are set in get_elpa_row_col_comms.
+
+   switch001= get_elpa_row_col_comms(mpi_comm_world, my_prow, my_pcol, mpi_comm_rows, mpi_comm_cols)
+
+!~    switch001 = get_elpa_communicators(mpi_cmw, my_prow, my_pcol, mpi_comm_rows, mpi_comm_cols)
+
+   na_rows = numroc(Num_wann, nblk, my_prow, 0, np_rows)
+   na_cols = numroc(Num_wann, nblk, my_pcol, 0, np_cols)
+
+   call descinit( sc_desc, Num_wann, Num_wann, nblk, nblk, 0, 0, my_blacs_ctxt, na_rows, info_mpi )
+
+   !< NO eigenvectors>
+
+   allocate(haml_block(na_rows,na_cols),z(na_rows,na_cols))
+   haml_block=0.0d0
+   z=0.0d0
+   outfileindex= outfileindex+ 1
+   if(cpuid==0) then
+      open(outfileindex,file='bulk.ek',status='replace',form='unformatted')
+      write(outfileindex) nk3_band,neval
+   end if
+   do ik=1,nk3_band
+
+      haml_block=0.0d0
+      z=0.0d0
+      k3  = k3points(:, ik)
+      call ham_bulk_elpa( k3, haml_block,&
+         np_rows,np_cols,&
+         na_rows,na_cols,&
+         nblk,&
+         my_prow,my_pcol)
+
+      call mpi_barrier(mpi_cmw, ierr)
+!~       do i=1,na_rows
+!~          do j=1,na_cols
+!~             write(233,*) haml_block(i,j)
+!~          end do
+!~       end do
+      success = solve_evp_complex_2stage&
+         (Num_wann, neval,&
+         haml_block, na_rows,eigv_mpi(:, ik),&
+         z, na_rows,&
+         nblk,na_cols,&
+         mpi_comm_rows, mpi_comm_cols, mpi_cmw)
+
+
+      if (.not.(success)) then
+         if (cpuid==0) write(*,*) "solve_evp_complex_2stage produced an error! Aborting..."
+         call MPI_ABORT(mpi_comm_world, ierr)
+      endif
+      if (cpuid==0) write (*,*) "#Diagonalization done"
+
+
+
+   enddo !ib
+   !,status='replace',form='unformatted')
+
+   if(cpuid==0) then
+      do ik=1,nk3_band
+         write(outfileindex) k3len(ik),eigv_mpi(1:neval,ik)
+!~     write(239,*) k3len(ik),eigv_mpi(1:neval,ik)
+      enddo
+   endif
+
+
+
+end subroutine ekbulk_elpa
+#endif
+
+
 
 
    subroutine orbitaltexture3D
@@ -694,6 +1628,7 @@ end subroutine ek_bulk_cube
         Hamk_bulk= 0d0
 
         call ham_bulk_atomicgauge(k, Hamk_bulk)
+        Hamk_bulk= Hamk_bulk/eV2Hartree
 
         !> diagonalization by call zheev in lapack
         W= 0d0
@@ -881,6 +1816,7 @@ end subroutine ek_bulk_cube
         ! calculation bulk hamiltonian
         Hamk_bulk= 0d0
         call ham_bulk_atomicgauge(k, Hamk_bulk)
+        Hamk_bulk= Hamk_bulk/eV2Hartree
 
         !> diagonalization by call zheev in lapack
         W= 0d0
@@ -1072,6 +2008,7 @@ end subroutine ek_bulk_cube
         ! calculation bulk hamiltonian
         Hamk_bulk= 0d0
         call ham_bulk_atomicgauge(k, Hamk_bulk)
+        Hamk_bulk= Hamk_bulk/eV2Hartree
 
         !> diagonalization by call zheev in lapack
         Hamk_bulk= Hamk_bulk+ zi*eta_arc
@@ -1176,6 +2113,211 @@ end subroutine ek_bulk_cube
    end subroutine ek_bulk2D_spin_green
 
 
+
+subroutine ek_bulk_mengyu
+   ! Calculate bulk's energy bands using wannier TB method
+   !
+   ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
+
+   use wmpi
+   use para
+
+   implicit none
+
+   integer :: ik, i, j, knv3, ierr
+   real(dp) :: emin, emax, k(3), kx, ky, kz, kxy_plane(3), kxy_cart(3), k1(3), k2(3)
+   real(Dp), allocatable :: W(:)
+
+   real(dp) :: kzbroden
+
+   ! Hamiltonian of bulk system
+   complex(Dp), allocatable :: Hamk_bulk(:, :)
+
+   ! eigen value of H
+   real(dp), allocatable :: eigv(:,:)
+   real(dp), allocatable :: eigv_mpi(:,:)
+   real(dp), allocatable :: weight(:,:,:)
+   real(dp), allocatable :: weight_mpi(:,:,:)
+   real(dp), allocatable :: weight_sum(:,:)
+
+   kzbroden= omegamin
+
+   knv3= nk3_band
+   allocate(W(Num_wann))
+   allocate(Hamk_bulk(Num_wann, Num_wann))
+   allocate( eigv    (Num_wann, knv3))
+   allocate( eigv_mpi(Num_wann, knv3))
+   allocate( weight    (Num_wann,Num_wann, knv3))
+   allocate( weight_mpi(Num_wann,Num_wann, knv3))
+   allocate( weight_sum(Num_wann, knv3))
+   eigv    = 0d0
+   eigv_mpi= 0d0
+   weight = 0d0
+   weight_sum = 0d0
+   weight_mpi = 0d0
+
+   do ik= 1+cpuid, knv3, num_cpu
+      !if (cpuid==0) write(stdout, *)'BulkBand, ik, knv3 ', ik, knv3
+
+      !> in fractional coordinates
+      k = k3points(:, ik)
+
+      kxy_cart(:)= k(1)* Origin_cell%Kua+ k(2)* Origin_cell%Kub+ k(3)* Origin_cell%Kuc
+      call rotate_k3_to_kplane(kxy_cart(:), kxy_plane(:))
+      kx=kxy_plane(1)
+      ky=kxy_plane(2)
+
+      !> due to the bending effect in the ARPES measurement
+      kz=kxy_plane(3)+ kzbroden*dsqrt(kx*kx+ky*ky)
+      k1(1)= kx
+      k1(2)= ky
+      k1(3)= kz
+      call rotate_kplane_to_k3(k1, k2)
+      call cart_direct_rec(k2, k(:))
+
+      ! calculation bulk hamiltonian
+      Hamk_bulk= 0d0
+
+      ! generate bulk Hamiltonian
+      if (index(KPorTB, 'KP')/=0)then
+         call ham_bulk_kp(k, Hamk_bulk)
+      else
+         !> deal with phonon system
+         if (index(Particle,'phonon')/=0.and.LOTO_correction) then
+            call ham_bulk_LOTO(k, Hamk_bulk)
+         else
+            call ham_bulk_latticegauge    (k, Hamk_bulk)
+            Hamk_bulk= Hamk_bulk/eV2Hartree
+         endif
+      endif
+
+      !> diagonalization by call zheev in lapack
+      W= 0d0
+      call eigensystem_c('V', 'U', Num_wann ,Hamk_bulk, W)
+
+      !if (sum(abs(k))<1e-5) call  orbital_momenta(k, Hamk_bulk)
+
+      eigv(:, ik)= W
+      do i=1, Num_wann  !> band
+         if (soc==0) then
+            do j=1, Num_wann  !> projector
+               weight(j, i, ik)= abs(Hamk_bulk(j, i))**2
+            enddo ! j
+         else
+            do j=1, Num_wann/2  !> projector
+               weight(j, i, ik)= (abs(Hamk_bulk(j, i))**2+ &
+                  abs(Hamk_bulk(j+ Num_wann/2, i))**2)
+            enddo ! j
+         endif
+      enddo ! i
+   enddo ! ik
+
+#if defined (MPI)
+   call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
+   call mpi_allreduce(weight, weight_mpi,size(weight),&
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+   eigv_mpi= eigv
+   weight_mpi= weight
+#endif
+
+   if (index(Particle,'phonon')/=0) then
+      eigv_mpi = eigv_mpi - MINVAL(eigv_mpi)
+   endif
+
+   !> deal with phonon system
+   if (index(Particle,'phonon')/=0) then
+      do ik=1, knv3
+         do j=1, Num_wann
+            eigv_mpi(j, ik)= sqrt(abs(eigv_mpi(j, ik)))*sign(1d0, eigv_mpi(j, ik))
+            !eigv_mpi(j, ik)=     (abs(eigv_mpi(j, ik)))*sign(1d0, eigv_mpi(j, ik))
+         enddo
+      enddo
+   endif
+
+   do i=1, Num_wann
+      do ik=1, knv3
+         weight_sum(i, ik)= sum(weight_mpi(:, i, ik))
+      enddo
+   enddo
+
+   weight= weight_mpi/maxval(weight_sum)*255d0
+
+   outfileindex= outfileindex+ 1
+   if (cpuid==0)then
+      open(unit=outfileindex, file='bulkek.dat')
+
+      do i=1, Num_wann
+         do ik=1, knv3
+            write(outfileindex, '(2f19.9, 10000i5)')k3len(ik),eigv_mpi(i, ik), &
+               int(weight(:, i, ik))
+         enddo
+         write(outfileindex, *)' '
+      enddo
+      close(outfileindex)
+   endif
+
+   !> minimum and maximum value of energy bands
+   emin=  minval(eigv_mpi)-0.5d0
+   emax=  maxval(eigv_mpi)+0.5d0
+
+   !> write script for gnuplot
+   outfileindex= outfileindex+ 1
+   if (cpuid==0) then
+      open(unit=outfileindex, file='bulkek.gnu')
+      write(outfileindex, '(a)') 'set terminal  postscript enhanced color font ",30"'
+      write(outfileindex,'(2a)') '#set palette defined ( 0  "green", ', &
+         '5 "yellow", 10 "red" )'
+      write(outfileindex, '(a)')"set output 'bulkek.eps'"
+      write(outfileindex, '(a)')'set style data linespoints'
+      write(outfileindex, '(a)')'unset ztics'
+      write(outfileindex, '(a)')'unset key'
+      write(outfileindex, '(a)')'set pointsize 0.8'
+      write(outfileindex, '(a)')'set view 0,0'
+      write(outfileindex, '(a)')'set xtics font ",24"'
+      write(outfileindex, '(a)')'set ytics font ",24"'
+      write(outfileindex, '(a)')'set ylabel font ",24"'
+      write(outfileindex, '(a)')'set ylabel offset 1.5,0'
+      write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
+      if (index(Particle,'phonon')/=0) then
+         write(outfileindex, '(a, f10.5, a)')'set yrange [0:', emax, ']'
+         write(outfileindex, '(a)')'set ylabel "Frequency (THz)"'
+      else
+         write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
+      endif
+      write(outfileindex, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
+      write(outfileindex, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
+
+      do i=1, nk3lines-1
+         if (index(Particle,'phonon')/=0) then
+            write(outfileindex, 204)k3line_stop(i+1), 0.0, k3line_stop(i+1), emax
+         else
+            write(outfileindex, 204)k3line_stop(i+1), emin, k3line_stop(i+1), emax
+         endif
+      enddo
+      write(outfileindex, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
+         " w lp lw 2 pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2"
+      close(outfileindex)
+   endif
+
+202 format('set xtics (',20('"',A3,'" ',F10.5,','))
+203 format(A3,'" ',F10.5,')')
+204 format('set arrow from ',F10.5,',',F10.5,' to ',F10.5,',',F10.5, ' nohead')
+
+   deallocate(W)
+   deallocate(Hamk_bulk)
+   deallocate( eigv    )
+   deallocate( eigv_mpi)
+   deallocate( weight    )
+   deallocate( weight_mpi)
+   deallocate( weight_sum)
+
+   return
+end subroutine ek_bulk_mengyu
+
+
 subroutine ek_bulk_spin
    ! Calculate bulk's energy band using wannier TB method
    ! also calculate spin direction for each band and each kpoint
@@ -1249,6 +2391,7 @@ subroutine ek_bulk_spin
       ! calculation bulk hamiltonian
       Hamk_bulk= 0d0
       call ham_bulk_latticegauge(k, Hamk_bulk)
+      Hamk_bulk= Hamk_bulk/eV2Hartree
 
       !> diagonalization by call zheev in lapack
       W= 0d0
@@ -1359,6 +2502,87 @@ subroutine ek_bulk_spin
    return
 end subroutine ek_bulk_spin
 
+subroutine ek_bulk_fortomas
+   ! only for IrF4 project
+
+   use wmpi
+   use para
+
+   implicit none
+
+   integer :: ik1, ik2, ik3
+   integer :: Nk_t
+   real(Dp) :: k(3), k1, k2, k3
+   real(Dp), allocatable :: W(:)
+
+   ! Hamiltonian of bulk system
+   complex(Dp), allocatable :: Hamk_bulk(:, :)
+
+   allocate(W(Num_wann))
+   allocate(Hamk_bulk(Num_wann, Num_wann))
+   W=0
+   Hamk_bulk= 0d0
+
+   outfileindex= outfileindex+ 1
+   if (cpuid==0)then
+      open(unit=outfileindex, file='bulkek-fortomas.dat')
+      open(unit=15, file='bulkek-math.dat')
+   endif
+
+   Nk_t= 10
+   if (cpuid==0) write (15, '(A)', advance="NO")'{'
+   do ik1=0, Nk_t
+      if (cpuid==0) write (15, '(A)', advance="NO")'{'
+      do ik2=0, Nk_t
+         if (cpuid==0) write (15, '(A)', advance="NO")'{'
+         do ik3=0, Nk_t
+            k1= dble(ik1)/Nk_t
+            k2= dble(ik2)/Nk_t
+            k3= dble(ik3)/Nk_t
+
+            k(1)= 0.5d0*k2+ 0.5d0*k3
+            k(2)= 0.5d0*k3+ 0.5d0*k1
+            k(3)= 0.5d0*k1+ 0.5d0*k2
+
+            ! calculation bulk hamiltonian
+            Hamk_bulk= 0d0
+            call ham_bulk_latticegauge(k, Hamk_bulk)
+            Hamk_bulk= Hamk_bulk/eV2Hartree
+
+            !> diagonalization by call zheev in lapack
+            W= 0d0
+            call eigensystem_c( 'N', 'U', Num_wann ,Hamk_bulk, W)
+
+            if (cpuid==0) then
+               write(outfileindex, '(3i5, 4f12.8)')ik1, ik2, ik3, W(9:12)
+               if (ik3/=Nk_t) then
+                  write(15, '(a, 4(f12.7, a))', advance="No")"{", W(9), ",", W(10), ",", W(11), ",", W(12), "},"
+               else
+                  write(15, '(a, 4(f12.7, a))', advance="No")"{", W(9), ",", W(10), ",", W(11), ",", W(12), "}"
+               endif
+            endif
+         enddo !ik3
+         if (ik2/=Nk_t) then
+            if (cpuid==0) write (15, '(A)', advance="NO")'},'
+         else
+            if (cpuid==0) write (15, '(A)', advance="NO")'}'
+         endif
+      enddo !ik2
+      if (ik1/=Nk_t) then
+         if (cpuid==0) write (15, '(A)', advance="NO")'},'
+      else
+         if (cpuid==0) write (15, '(A)', advance="NO")'}'
+      endif
+   enddo !ik1
+   if (cpuid==0) write (15, '(A)', ADVANCE="NO")'}'
+   if (cpuid==0) close(outfileindex)
+
+   deallocate(W)
+   deallocate(Hamk_bulk)
+   return
+end subroutine ek_bulk_fortomas
+
+
 subroutine ek_bulk_mirror_z
    ! Use the eigenvalue of mirror z to label the energy bands
 
@@ -1410,11 +2634,13 @@ subroutine ek_bulk_mirror_z
       ! calculation bulk hamiltonian
       Hamk_bulk= 0d0
       call ham_bulk_latticegauge    (k, Hamk_bulk)
+      Hamk_bulk= Hamk_bulk/eV2Hartree
 
       k = k3points(:, ik)
       !k(2)= -k(2)
       Hamk= 0d0
       call ham_bulk_latticegauge    (k, Hamk)
+      Hamk= Hamk/eV2Hartree
 
       !> symmetrization
       call mat_mul(Num_wann, mirror_z, hamk, mat1)
@@ -1613,6 +2839,7 @@ subroutine ek_bulk_mirror_x
       ! calculation bulk hamiltonian
       Hamk_bulk= 0d0
       call ham_bulk_latticegauge    (k, Hamk_bulk)
+      Hamk_bulk= Hamk_bulk/eV2Hartree
 
       !k = k3points(:, ik)
       !k(1)= -k(1)
@@ -1825,6 +3052,7 @@ subroutine ek_bulk_out
             call ham_bulk_LOTO(k, Hamk_bulk)
          else
             call ham_bulk_atomicgauge        (k, Hamk_bulk)
+            Hamk_bulk= Hamk_bulk/eV2Hartree
          endif
       endif
 

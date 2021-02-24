@@ -15,5 +15,26 @@ rm -f bulkek.dat-segment3
 rm -f bulkek.gnu
 rm -f wcc-mirrorchernnumber.eps
 rm -f wcc-mirrorchernnumber.gnu
-rm -f wcc-mirrorm -finus.dat
+rm -f wcc-mirrorminus.dat
 rm -f wcc-mirrorplus.dat
+rm -f Berrycurvature.dat-wt
+rm -f Berrycurvature.gnu-bak
+rm -f Berrycurvature_EF.png
+rm -f Nodes.dat
+rm -f Nodes.gnu
+rm -f Nodes.png
+rm -f Orbitalmagnetization.dat
+rm -f Orbitalmagnetization.gnu
+rm -f Orbitalmagnetization.png
+rm -f POSCAR-Folded
+rm -f POSCAR-SURFACE
+rm -f POSCAR-mag
+rm -f bulkek.dat-G-A
+rm -f bulkek.dat-K-G
+rm -f bulkek.dat-M-K
+rm -f input.dat
+rm -f wannier90.wout
+rm -f wannier90_hr.dat
+rm -f wcc-mirrorminus.dat
+rm -f wt.in
+rm -f wt.in-back

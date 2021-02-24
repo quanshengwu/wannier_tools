@@ -1,4 +1,7 @@
-!include 'mkl_dss.f90'
+#if defined (INTELMKL)
+    include 'mkl_dss.f90'
+#endif
+
   module prec
      !>> A module controls the precision. 
      !> when the nnzmax is larger than 2,147,483,647 then li=8,
@@ -370,6 +373,7 @@
      logical :: BulkBand_line_calc    ! Flag for bulk energy band calculation
      logical :: BulkBand_unfold_line_calc    ! Flag for bulk energy band calculation
      logical :: BulkBand_unfold_plane_calc    ! Flag for bulk energy band calculation
+     logical :: Landaulevel_unfold_line_calc    ! Flag for bulk energy band calculation
      logical :: BulkFatBand_calc    ! Flag for bulk energy band calculation
      logical :: BulkBand_plane_calc    ! Flag for bulk energy band calculation for a fixed k plane 
      logical :: BulkBand_cube_calc    ! Flag for bulk energy band calculation for a fixed k plane 
@@ -385,6 +389,8 @@
      logical :: WireBand_calc  ! Flag for 1D wire energy band calculation
      logical :: SlabSS_calc    ! Flag for surface state ARPES spectrum calculation
      logical :: Dos_calc       ! Flag for density of state calculation
+     logical :: ChargeDensity_selected_bands_calc       ! Flag for charge density 
+     logical :: ChargeDensity_selected_energies_calc       ! Flag for charge density 
      logical :: JDos_calc      ! Flag for joint density of state calculation
      logical :: SlabArc_calc   ! Flag for surface state fermi-arc calculation
      logical :: SlabQPI_calc   ! Flag for surface state QPI spectrum calculation in a given k plane in 2D BZ
@@ -400,6 +406,7 @@
      logical :: MirrorChern_calc  ! Flag for mirror Chern number calculations
      logical :: BerryPhase_calc   ! Flag for Berry phase calculation
      logical :: BerryCurvature_calc ! Flag for Berry curvature calculation
+     logical :: BerryCurvature_plane_selectedbands_calc ! Flag for Berry curvature calculation
      logical :: BerryCurvature_EF_calc ! Flag for Berry curvature calculation
      logical :: BerryCurvature_Cube_calc ! Flag for Berry curvature calculation
      logical :: BerryCurvature_slab_calc ! Flag for Berry curvature calculation for a slab system
@@ -410,6 +417,7 @@
      logical :: LandauLevel_B_calc  ! Flag for Hofstader butterfly
      logical :: LOTO_correction  ! Flag for LOTO correction of phonon spectrum 
      logical :: Boltz_OHE_calc  ! Flag for Boltzmann tranport under magnetic field
+     logical :: Boltz_Berry_correction  ! Flag for Boltzmann tranport under magnetic field
      logical :: Symmetry_Import_calc  ! Flag for Boltzmann tranport under magnetic field using symmetry
      logical :: Boltz_evolve_k  ! Flag for Boltzmann tranport under magnetic field
      logical :: Boltz_k_calc  ! Flag for Boltzmann tranport under magnetic field
@@ -433,36 +441,41 @@
      logical :: export_newhr = .false.
      logical :: export_maghr =.false.
      
+     logical :: w3d_nested_calc = .false.
      
      namelist / Control / BulkBand_calc, BulkFS_calc,  BulkFS_Plane_calc, &
                           BulkFS_plane_stack_calc,  BulkGap_plane_calc, &
                           BulkBand_unfold_line_calc, &
+                          Landaulevel_unfold_line_calc, &
                           BulkBand_unfold_plane_calc, &
                           BulkBand_points_calc, BulkBand_cube_calc, BulkBand_line_calc, &
                           BulkGap_cube_calc, BulkSpintexture_calc,  BulkFatBand_calc, &
                           SlabBand_calc, SlabBand_plane_calc, SlabBandWaveFunc_calc,&
                           SlabQPI_calc, SlabQPI_kpath_calc, SlabQPI_kplane_calc, &
                           SlabSS_calc, SlabArc_calc, SlabSpintexture_calc,&
+                          ChargeDensity_selected_bands_calc, &
+                          ChargeDensity_selected_energies_calc, &
                           WireBand_calc, &
                           WannierCenter_calc,BerryPhase_calc, &
                           BerryCurvature_EF_calc, BerryCurvature_calc, &
+                          BerryCurvature_plane_selectedbands_calc, &
                           BerryCurvature_slab_calc, MirrorChern_calc, BerryCurvature_Cube_calc, &
                           Z2_3D_calc, Chern_3D_calc, WeylChirality_calc, NLChirality_calc, &
                           Dos_calc, JDos_calc, EffectiveMass_calc, &
                           FindNodes_calc, TBtoKP_calc, LOTO_correction, &
                           BulkBand_plane_calc, Hof_Butt_calc, Symmetry_Import_calc, &
+                          Boltz_Berry_correction, &
                           Boltz_k_calc, Boltz_evolve_k, Boltz_OHE_calc, AHC_Calc, &
                           LandauLevel_k_calc, OrbitalTexture_calc, OrbitalTexture_3D_calc, &
                           LandauLevel_wavefunction_calc, Fit_kp_calc, DMFT_MAG_calc, &
                           LanczosSeqDOS_calc, Translate_to_WS_calc, LandauLevel_k_dos_calc, &
                           LandauLevel_B_dos_calc,LanczosBand_calc,LanczosDos_calc, &
                           LandauLevel_B_calc, LandauLevel_kplane_calc,landau_chern_calc, &
-                          FermiLevel_calc , export_newhr,export_maghr
+                          FermiLevel_calc , export_newhr,export_maghr,w3d_nested_calc
 
      integer :: Nslab  ! Number of slabs for 2d Slab system
      integer :: Nslab1 ! Number of slabs for 1D wire system
      integer :: Nslab2 ! Number of slabs for 1D wire system
-     integer :: Nslab3 ! Number of slabs for 1D wire system
 
      integer :: Np !> Number of princple layers for surface green's function
      
@@ -529,15 +542,15 @@
      integer  :: NumT
 
      !> magnetic field times time in units of Tesla*ps
-     real(dp) :: BTauMax
-     integer :: NBTau, BTauNum
+     real(dp) :: BTauMax, Relaxation_Time_Tau
+     integer :: NBTau, BTauNum  
      integer :: Nslice_BTau_Max
 
      !> cut of radial for summation over R vectors
      real(dp) :: Rcut
 
      !> a integer to control the magnetic filed, Magp should smaller than Nq
-     integer :: Magp, Magp_min, Magp_max
+     integer :: Magp, Magp_min, Magp_max, Magq
 
      !>> parameters for wilson loop calculation (Wannier charge center)
 
@@ -551,12 +564,17 @@
      !> for larger new lattice, the bands will be folded. 
      character(20) :: projection_weight_mode
 
+     !> specify the atom index that located on the top surface that you want to study
+     integer :: topsurface_atom_index
+     real(dp) :: shift_to_topsurface_cart(3)
+
      !> namelist parameters
      namelist /PARAMETERS/ Eta_Arc, OmegaNum, OmegaNum_unfold, OmegaMin, OmegaMax, &
         E_arc, Nk1, Nk2, Nk3, NP, Gap_threshold, Tmin, Tmax, NumT, &
-        NBTau, BTauNum, BTauMax, Rcut, Magp, Magp_min, Magp_max, Nslice_BTau_Max, &
+        NBTau, BTauNum, BTauMax, Rcut, Magp, Magq, Magp_min, Magp_max, Nslice_BTau_Max, &
         wcc_neighbour_tol, wcc_calc_tol, Beta,NumLCZVecs, &
-        NumRandomConfs, NumSelectedEigenVals, projection_weight_mode
+        Relaxation_Time_Tau, &
+        NumRandomConfs, NumSelectedEigenVals, projection_weight_mode, topsurface_atom_index
     
      real(Dp) :: E_fermi  ! Fermi energy, search E-fermi in OUTCAR for VASP, set to zero for Wien2k
 
@@ -571,7 +589,7 @@
      !> eg. Effective_gfactor=2, magneticfield=1Tesla, then Zeeman_energy_in_eV =1.16*1E-4 eV  
      logical :: Add_Zeeman_Field  ! if consider zeeman effect in the tight binding model
      real(dp) :: Effective_gfactor ! in unit of Bohr magneton 
-     real(dp), parameter :: Bohr_magneton= 5.7883818012*1D-5  ! in unit of eV*Tesla^-1
+     real(dp), parameter :: Bohr_magneton= 0.5d0  ! in unit of Hatree atomic unit
 
      !> You can specify the Zeeman energy in unit of eV in the input.dat/wt.in directly
      !> or you can specify magnetic field and Effective_gfactor together
@@ -599,12 +617,17 @@
      real(dp),parameter :: alpha= 1.20736d0*1D-6  !> e/2/h*a*a   a=1d-10m, h is the planck constant then the flux equals alpha*B*s
 
      !> some parameters related to atomic units
-     real(dp),parameter :: bohr2angstrom=0.529177211d0  ! atomic length unit to Angstrom 
-     real(dp),parameter :: Ang2Bohr=1d0/0.529177211d0  ! Angstrom to atomic length unit 
+     !> https://en.wikipedia.org/wiki/Hartree_atomic_units 2020
+     !> WannierTools codes use Hatree atomic units
+     real(dp),parameter :: Time_atomic=2.4188843265857E-17 ! atomic unit of time \hbar/E_Hatree
+     real(dp),parameter :: Bohr_radius=5.29177210903E-11 ! Bohr radius in meters
+     real(dp),parameter :: Angstrom2atomic=1d0/0.529177210903d0  ! Angstrom to atomic length unit (Bohr radius)
+     real(dp),parameter :: Ang2Bohr=1d0/0.529177210903d0  ! Angstrom to atomic length unit (Bohr radius)
      real(dp),parameter :: eV2Hartree= 1d0/27.211385d0 ! electron Voltage to Hartree unit
-     real(dp),parameter :: Echarge= 1.602189E-19    ! electron charge in SI unit
-     real(dp),parameter :: hbar= 1.054589E-34    ! electron charge in SI unit
+     real(dp),parameter :: Echarge= 1.602176634E-19    ! electron charge in SI unit
+     real(dp),parameter :: hbar= 1.054571817E-34    ! electron charge in SI unit
      real(dp),parameter :: epsilon0= 8.85418781762E-12    ! dielectric constant in SI unit
+     real(dp),parameter :: Magneticfluxdensity_atomic=  2.35051756758*1E5    ! magnetic field strength in SI unit
 
      real(dp),parameter ::  Pi= 3.14159265358979d0  ! circumference ratio pi  
      real(dp),parameter :: half= 0.5d0  ! 1/2
@@ -613,10 +636,10 @@
      real(dp),parameter :: eps3= 1e-3   ! 0.001
      real(dp),parameter :: eps4= 1e-4   ! 0.0001
      real(dp),parameter :: eps6= 1e-6   ! 0.000001
-     real(dp),parameter :: eps8= 1e-8   ! 0.00000001
+     real(dp),parameter :: eps8= 1e-8   ! 0.000001
      real(dp),parameter :: eps9= 1e-9   ! 0.000000001
-     real(dp),parameter :: eps12= 1e-12 ! 0.000000000001
-     complex(dp),parameter :: zzero= 0.0d0  ! 0
+     real(dp),parameter :: eps12= 1e-12   ! 0.000000000001
+     complex(dp),parameter :: zzero= (0.0d0, 0d0)  ! 0
 
      real(Dp),parameter :: Ka(2)=(/1.0d0,0.0d0/)  
      real(Dp),parameter :: Kb(2)=(/0.0d0,1.0d0/)
@@ -633,6 +656,7 @@
         real(dp) :: Rua(3) ! Three vectors to define the cell box
         real(dp) :: Rub(3) 
         real(dp) :: Ruc(3) 
+        real(dp) :: lattice(3, 3)
 
         !> a, b, c, alpha, beta, gamma
         real(dp) :: cell_parameters(6) 
@@ -642,6 +666,7 @@
         real(dp) :: Kua(3)   ! three reciprocal primitive vectors
         real(dp) :: Kub(3)   ! three reciprocal primitive vectors
         real(dp) :: Kuc(3)   ! three reciprocal primitive vectors
+        real(dp) :: reciprocal_lattice(3, 3)
 
         integer :: Num_atoms  ! number of atoms in one primitive cell
         integer :: Num_atom_type  ! number of atom's type in one primitive cell
@@ -667,6 +692,29 @@
         character(10), allocatable :: proj_name(:, :) 
      end type cell_type
 
+     type dense_tb_hr
+        !> define a new type to describe the tight-binding Hamiltonian stored as 
+        !> dense Wannier90 hr format 
+
+        !> number of R lattice vector points
+        integer :: nrpts
+
+        !> R lattice vectors in units of three primitive lattice vectors
+        integer, allocatable :: irvec(:, :)
+
+        !> related cell
+        type(cell_type) :: cell
+
+        !> degenercy of R point induced by Wigner-Seitz cell integration
+        integer, allocatable :: ndegen_R(:)
+
+        !> Hamiltonian value
+        complex(dp), allocatable :: HmnR(:, :, :)
+
+     end type dense_tb_hr
+
+
+
 
      !> This is the main unit cell specified by user. 
      !> LATTICE, ATOM_POSITIONS, PROJECTORS
@@ -674,6 +722,9 @@
 
      !> Usually, Fold_cell is smaller than Origin_cell. 
      type(cell_type) :: Folded_cell
+
+     !> magnetic super cell after adding magnetic field, the size of it is Nslab.
+     type(cell_type) :: Magnetic_cell
 
      !> A new cell defined by SURFACE card. 
      type(cell_type) :: Cell_defined_by_surface
@@ -716,9 +767,11 @@
      real(dp), allocatable :: k3points_unfold_pointmode_cart(:, :)
      real(dp), allocatable :: k3points_unfold_pointmode_direct(:, :)
 
-     !> kpath for unfoled lattice
-     real(dp), allocatable :: k3len_folded(:)
-     real(dp), allocatable :: k3line_folded_stop(:)
+     !> kpath for unfold supercell
+     real(dp),allocatable :: K3len_unfold(:)  ! put all k points in a line in order to plot the bands 
+     real(dp),allocatable :: k3line_unfold_stop(:)  ! Connet points
+
+
 
      !> kpath for magnetic supercell
      real(dp),allocatable :: K3len_mag(:)  ! put all k points in a line in order to plot the bands 

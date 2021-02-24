@@ -34,15 +34,15 @@ SURFACE            ! Specify surface with two vectors, see doc
 !> bulk band structure calculation flag
 &CONTROL
 BulkBand_calc            = T
-BulkBand_points_calc     = T
+BulkBand_points_calc     = F
 DOS_calc                 = T
-SlabBand_calc            = T
-SlabBandWaveFunc_calc    = T
-SlabBand_plane_calc      = T
-WireBand_calc            = T
+SlabBand_calc            = F
+SlabBandWaveFunc_calc    = F
+SlabBand_plane_calc      = F
+WireBand_calc            = F
 SlabSS_calc              = T
 SlabArc_calc             = T
-SlabQPI_calc             = T
+SlabQPI_calc             = F
 Z2_3D_calc               = T
 SlabSpintexture_calc     = T
 Wanniercenter_calc       = T
@@ -64,9 +64,9 @@ E_arc = 0.0         ! energy level for contour plot of spectrum
 OmegaNum = 400      ! omega number       
 OmegaMin = -0.6     ! energy interval
 OmegaMax =  0.5     ! energy interval
-Nk1 = 10           ! number k points  odd number would be better
-Nk2 = 10            ! number k points  odd number would be better
-Nk3 = 10            ! number k points  odd number would be better
+Nk1 = 81           ! number k points  odd number would be better
+Nk2 = 40            ! number k points  odd number would be better
+Nk3 = 2             ! number k points  odd number would be better
 NP = 1              ! number of principle layers
 Gap_threshold = 0.01 ! threshold for FindNodes_calc output
 /

@@ -85,16 +85,16 @@ subroutine dHdk_atomicgauge(k, velocity_Wannier)
    real(dp), external :: norm
 
    velocity_Wannier= zzero
-   !> the first atom in home unit cell
    do iR=1,Nrpts
       do i2=1, Num_wann
          pos2= Origin_cell%wannier_centers_direct(:, i2)
          !> the second atom in unit cell R
          do i1=1, Num_wann
+            !> the first atom in home unit cell
             pos1= Origin_cell%wannier_centers_direct(:, i1)
             pos_direct= irvec(:, iR)+ pos2- pos1
 
-            call direct_cart_real(pos_direct, pos_cart)
+            call direct_cart_real(pos_direct, pos_cart, Origin_cell%lattice)
 
             dis= norm(pos_cart)
             if (dis> Rcut) cycle

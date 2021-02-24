@@ -16,6 +16,7 @@
 ! version     2.4.2  At EPFL, Switzerland, July. 9. 2019
 ! version     2.5.0  At EPFL, Switzerland, Dec. 9. 2019, magnetoresistance, band unfolding
 ! version     2.5.1  At EPFL, Switzerland, Mar. 6. 2020, For WannierTools tutorial 2020
+! version     2.6.0  At EPFL, Switzerland, Feb.15. 2021, Landau level, sparse Hamiltonian, TBG
 ! wuquansheng@gmail.com
 ! Copyright (c) 2017 QuanSheng Wu. All rights reserved.
 !--------+--------+--------+--------+--------+--------+--------+------!
@@ -36,7 +37,7 @@
 
 
      !> version of WannierTools
-     version='2.5.1'
+     version='2.6.0'
 
      ierr = 0
      cpuid= 0
@@ -204,18 +205,22 @@
       if(cpuid.eq.0)write(stdout, *)'<< End of unfolding bulk band in plane mode'
    endif
 
-     !> bulk band
-     if (BulkBand_calc.or.BulkBand_line_calc) then
-        if(cpuid.eq.0)write(stdout, *)' '
-        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating bulk band'
-        call now(time_start)
-        call ek_bulk_line
-       !call ek_bulk_mirror_x
-       !call ek_bulk_mirror_z
-        call now(time_end)
-        call print_time_cost(time_start, time_end, 'BulkBand')
-        if(cpuid.eq.0)write(stdout, *)'<< End of calculating bulk band'
-     endif
+   !> bulk band
+   if (BulkBand_calc.or.BulkBand_line_calc) then
+      if(cpuid.eq.0)write(stdout, *)' '
+      if(cpuid.eq.0)write(stdout, *)'>> Start of calculating bulk band'
+      call now(time_start)
+      if(Is_Sparse_Hr) then
+#if defined (INTELMKL)
+            call sparse_ekbulk
+#endif
+      else
+         call ek_bulk_line
+      end if
+      call now(time_end)
+      call print_time_cost(time_start, time_end, 'BulkBand')
+      if(cpuid.eq.0)write(stdout, *)'<< End of calculating bulk band'
+   endif
 
      !> bulk band of a series k points.
      if (BulkBand_points_calc) then
@@ -230,15 +235,104 @@
 
 
      !> bulk band in a plane. For Dirac or Weyl cone
-     if (BulkBand_plane_calc) then
-        if(cpuid.eq.0)write(stdout, *)' '
-        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the bulk band in plane'
-        call now(time_start)
-        call ek_bulk_plane
-        call now(time_end)
-        call print_time_cost(time_start, time_end, 'BulkBand_plane')
-        if(cpuid.eq.0)write(stdout, *)'<< End of calculating the bulk band in plane'
-     endif
+   if (BulkBand_plane_calc) then
+      if(cpuid.eq.0)write(stdout, *)' '
+      if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the bulk band in plane'
+      call now(time_start)
+
+      if (Is_Sparse_Hr) then
+#if defined (INTELMKL)
+         call sparse_ekbulk_plane
+#endif
+      else
+         call ek_bulk_plane
+      endif
+
+     !call ek_bulk_plane_C2yT
+      call now(time_end)
+      call print_time_cost(time_start, time_end, 'BulkBand_plane')
+      if(cpuid.eq.0)write(stdout, *)'<< End of calculating the bulk band in plane'
+   endif
+
+
+   if (LandauLevel_B_dos_calc) then
+      if(cpuid.eq.0)write(stdout, *)' '
+      if(cpuid.eq.0)write(stdout, *)'>> Start of calculating Landau level spectrum'
+      call now(time_start)
+#if defined (INTELMKL)
+      call LandauLevel_B_dos_Lanczos
+#endif
+      call now(time_end)
+      call print_time_cost(time_start, time_end, 'LandauLevel_B_dos_calc')
+      if(cpuid.eq.0)write(stdout, *)'<< End of calculating Landau level spectrum'
+   endif
+
+
+   if (LandauLevel_k_dos_calc) then
+      if(cpuid.eq.0)write(stdout, *)' '
+      if(cpuid.eq.0)write(stdout, *)'>> Start of calculating Landau level spectrum'
+      call now(time_start)
+#if defined (INTELMKL)
+      call LandauLevel_k_dos_Lanczos
+#endif
+      call now(time_end)
+      call print_time_cost(time_start, time_end, 'LandauLevel_k_dos_calc')
+      if(cpuid.eq.0)write(stdout, *)'<< End of calculating Landau level spectrum'
+   endif
+   
+   if (Hof_Butt_calc.or.LandauLevel_B_calc) then
+      if(cpuid.eq.0)write(stdout, *)' '
+      if(cpuid.eq.0)write(stdout, *)'>> start of calculating the Hofstader butterfly '
+      call now(time_start)
+      if (Is_HrFile) then
+         if(Is_Sparse_Hr) then
+#if defined (INTELMKL)
+            call sparse_landau_level_B
+#endif
+         else
+            call landau_level_B
+         end if
+      endif
+      call now(time_end)
+      call print_time_cost(time_start, time_end, 'Hof_Butt_calc')
+      if(cpuid.eq.0)write(stdout, *)'<< End of calculating the Hofstader butterfly'
+   endif
+
+
+   !> calculate LandauLevel along kpath with fixed B set by Nslab
+   if (LandauLevel_kplane_calc)then
+      if(cpuid.eq.0)write(stdout, *)' '
+      if(cpuid.eq.0)write(stdout, *)'>> Start to calculate LandauLevel_kplane_calc'
+      call now(time_start)
+      if (Is_HrFile) then
+         call landau_level_kplane
+      endif
+      call now(time_end)
+      call print_time_cost(time_start, time_end, 'LandauLevel_kplane_calc')
+      if(cpuid.eq.0)write(stdout, *)'End of LandauLevel_kplane_calc calculation'
+   endif
+
+
+   !> calculate LandauLevel along kpath with fixed B set by Magq
+   if (LandauLevel_k_calc)then
+      if(cpuid.eq.0)write(stdout, *)' '
+      if(cpuid.eq.0)write(stdout, *)'>> Start to calculate LandauLevel_k_calc'
+      call now(time_start)
+      if (Is_HrFile) then
+         if(Is_Sparse_Hr.or.Num_wann*Magq>2000) then
+#if defined (INTELMKL)
+            call sparse_landau_level_k
+#endif
+         else
+            call landau_level_k
+         endif
+      else
+      endif
+      call now(time_end)
+      call print_time_cost(time_start, time_end, 'LandauLevel_k_calc')
+      if(cpuid.eq.0)write(stdout, *)'End of LandauLevel_k_calc calculation'
+   endif
+
 
    if (BulkBand_cube_calc) then
       if(cpuid.eq.0)write(stdout, *)' '
@@ -388,13 +482,20 @@
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the slab band wave function'
      endif
 
+
      !> slab band
      if (SlabBand_calc)then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the slab band structure'
         call now(time_start)
-        call ek_slab
-       !call psik
+        if (Is_Sparse_Hr) then
+#if defined (INTELMKL)
+          call ek_slab_sparseHR
+#endif
+        else
+           call ek_slab
+        endif
+        !call ek_slab_2d
         call now(time_end)
         call print_time_cost(time_start, time_end, 'SlabBand')
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the slab band structure'

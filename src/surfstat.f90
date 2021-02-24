@@ -16,39 +16,28 @@
      use para
      implicit none
 
-     integer :: ierr
-
-     integer :: doslfile, dosrfile, dosbulkfile
+     integer :: ierr, doslfile, dosrfile, dosbulkfile
 
      ! general loop index
-     integer :: i, j, io
+     integer :: i, j, io, ikp, nw_half, spindoslfile, spindosrfile
 
-     ! kpoint loop index
-     integer :: ikp
-
-     real(dp) :: emin
-     real(dp) :: emax
-     real(dp) :: k(2), w
-
-     real(dp) :: time_start, time_end
+     real(dp) :: emin, emax, w, k(2), time_start, time_end, s0(3), s1(3)
 
      real(dp), allocatable :: omega(:)
 
-     real(dp), allocatable :: dos_l(:,:)
-     real(dp), allocatable :: dos_r(:,:)
-     real(dp), allocatable :: dos_l_only(:,:)
-     real(dp), allocatable :: dos_r_only(:,:)
-     real(dp), allocatable :: dos_l_mpi(:,:)
-     real(dp), allocatable :: dos_r_mpi(:,:)
-     real(dp), allocatable :: dos_bulk(:,:)
-     real(dp), allocatable :: dos_bulk_mpi(:,:)
+     real(dp), allocatable :: dos_l(:,:), dos_r(:,:), dos_l_only(:, :), dos_r_only(:,:)
+     real(dp), allocatable :: dos_l_mpi(:,:), dos_r_mpi(:,:), dos_bulk(:,:), dos_bulk_mpi(:,:)
 
-     complex(dp), allocatable :: GLL(:,:)
-     complex(dp), allocatable :: GRR(:,:)
-     complex(dp), allocatable :: GB (:,:)
-     complex(dp), allocatable :: H00(:,:)
-     complex(dp), allocatable :: H01(:,:)
-     complex(dp), allocatable :: ones(:,:)
+     complex(dp), allocatable :: GLL(:,:), GRR(:,:), GB (:,:), H00(:,:), H01(:,:), ones(:,:)
+ 
+     ! Spin resolved component
+     REAL(DP),    ALLOCATABLE  :: sx_l(:, :), sy_l(:, :), sz_l(:, :)
+     REAL(DP),    ALLOCATABLE  :: sx_r(:, :), sy_r(:, :), sz_r(:, :)
+     REAL(DP),    ALLOCATABLE  :: sx_l_mpi(:, :), sy_l_mpi(:, :), sz_l_mpi(:, :)
+     REAL(DP),    ALLOCATABLE  :: sx_r_mpi(:, :), sy_r_mpi(:, :), sz_r_mpi(:, :)
+     COMPLEX(DP), ALLOCATABLE  :: sigma_x(:,:), sigma_y(:,:), sigma_z(:,:)
+     COMPLEX(DP), ALLOCATABLE  :: ctemp(:,:)
+
 
      !> for special line
     !ke(1,:)=(/0.0d0, 0.00d0/)
@@ -73,24 +62,24 @@
     !   print *, i, t1
     !ENDDO
 
-     allocate( omega(omeganum))
-     allocate( dos_l(knv2, omeganum))
-     allocate( dos_r(knv2, omeganum))
-     allocate( dos_l_only(knv2, omeganum))
-     allocate( dos_r_only(knv2, omeganum))
-     allocate( dos_l_mpi(knv2, omeganum))
-     allocate( dos_r_mpi(knv2, omeganum))
-     allocate( dos_bulk(knv2, omeganum))
-     allocate( dos_bulk_mpi(knv2, omeganum))
-     omega=0d0
-     dos_l=0d0
-     dos_r=0d0
-     dos_l_only=0d0
-     dos_r_only=0d0
-     dos_l_mpi=0d0
-     dos_r_mpi=0d0
-     dos_bulk=0d0
-     dos_bulk_mpi=0d0
+     allocate( omega(omeganum), dos_l(knv2, omeganum), dos_r(knv2, omeganum))
+     allocate( dos_l_only(knv2, omeganum), dos_r_only(knv2, omeganum))
+     allocate( dos_l_mpi(knv2, omeganum), dos_r_mpi(knv2, omeganum))
+     allocate( dos_bulk(knv2, omeganum), dos_bulk_mpi(knv2, omeganum))
+     omega=0d0;  dos_l=0d0;  dos_r=0d0;  dos_l_only=0d0;  dos_r_only=0d0
+     dos_l_mpi=0d0;  dos_r_mpi=0d0;  dos_bulk=0d0;  dos_bulk_mpi=0d0
+
+     ALLOCATE( sx_l(knv2, omeganum), sy_l(knv2, omeganum), sz_l(knv2, omeganum))
+     ALLOCATE( sx_l_mpi(knv2, omeganum), sy_l_mpi(knv2, omeganum), sz_l_mpi(knv2, omeganum))
+     ALLOCATE( sx_r(knv2, omeganum), sy_r(knv2, omeganum), sz_r(knv2, omeganum))
+     ALLOCATE( sx_r_mpi(knv2, omeganum), sy_r_mpi(knv2, omeganum), sz_r_mpi(knv2, omeganum))
+     ALLOCATE( sigma_x(ndim,ndim), sigma_y(ndim,ndim), sigma_z(ndim,ndim), ctemp(ndim,ndim))
+     sigma_x      = 0d0;      sigma_y      = 0d0;      sigma_z      = 0d0
+     sx_l         = 0d0;      sy_l         = 0d0;      sz_l         = 0d0
+     sx_r         = 0d0;      sy_r         = 0d0;      sz_r         = 0d0
+     sx_l_mpi     = 0d0;      sy_l_mpi     = 0d0;      sz_l_mpi     = 0d0
+     sx_r_mpi     = 0d0;      sy_r_mpi     = 0d0;      sz_r_mpi     = 0d0
+
 
      eta=(omegamax- omegamin)/dble(omeganum)*1.5d0
 
@@ -106,19 +95,24 @@
         enddo
      endif
 
+     allocate(GLL(Ndim, Ndim), GRR(Ndim, Ndim), GB (Ndim, Ndim))
+     allocate(H00(Ndim, Ndim), H01(Ndim, Ndim), ones(Ndim, Ndim))
+     GLL= 0d0; GRR= 0d0; GB = 0d0; H00= 0d0; H01= 0d0; ones= 0d0
 
-     allocate(GLL(Ndim, Ndim))
-     allocate(GRR(Ndim, Ndim))
-     allocate(GB (Ndim, Ndim))
-     allocate(H00(Ndim, Ndim))
-     allocate(H01(Ndim, Ndim))
-     allocate(ones(Ndim, Ndim))
-     GLL= 0d0
-     GRR= 0d0
-     GB = 0d0
-     H00= 0d0
-     H01= 0d0
-     ones= 0d0
+     !> spin operator matrix
+     !> Note, the basis here should be |↑↑↓↓>
+     nw_half = Num_wann/2
+     do i=1, Np
+        do j=1, nw_half
+           sigma_x( Num_wann*(i-1)+j        , Num_wann*(i-1)+j+nw_half ) =  1.0d0
+           sigma_x( Num_wann*(i-1)+j+nw_half, Num_wann*(i-1)+j         ) =  1.0d0
+           sigma_y( Num_wann*(i-1)+j        , Num_wann*(i-1)+j+nw_half ) = -zi
+           sigma_y( Num_wann*(i-1)+j+nw_half, Num_wann*(i-1)+j         ) =  zi
+           sigma_z( Num_wann*(i-1)+j        , Num_wann*(i-1)+j         ) =  1.0d0
+           sigma_z( Num_wann*(i-1)+j+nw_half, Num_wann*(i-1)+j+nw_half ) = -1.0d0
+        enddo 
+     enddo
+
 
      do i=1,Ndim
         ones(i,i)=1.0d0
@@ -165,9 +159,66 @@
               dos_bulk(ikp, j)=dos_bulk(ikp,j)- aimag(GB(i,i))
            enddo ! i
 
+            ! Spin resolved sprectrum
+            call mat_mul(ndim,gll,sigma_x,ctemp)
+            do i = 1, NtopOrbitals
+                io = TopOrbitals(i)
+                sx_l_mpi(ikp, j) = sx_l_mpi(ikp, j)- AIMAG(ctemp(io,io))
+            enddo ! i
+            call mat_mul(ndim,gll,sigma_y,ctemp)
+            do i = 1, NtopOrbitals
+                io = TopOrbitals(i)
+                sy_l_mpi(ikp, j) = sy_l_mpi(ikp, j)- AIMAG(ctemp(io,io))
+            enddo !
+            call mat_mul(ndim,gll,sigma_z,ctemp)
+            do i = 1, NtopOrbitals
+                io = TopOrbitals(i)
+                sz_l_mpi(ikp, j) = sz_l_mpi(ikp, j)- AIMAG(ctemp(io,io))
+            enddo ! i
+            call mat_mul(ndim,grr,sigma_x,ctemp)
+            do i = 1, NtopOrbitals
+                io = TopOrbitals(i)
+                sx_r_mpi(ikp, j) = sx_r_mpi(ikp, j)- AIMAG(ctemp(io,io))
+            enddo ! i
+            call mat_mul(ndim,grr,sigma_y,ctemp)
+            do i = 1, NtopOrbitals
+                io = TopOrbitals(i)
+                sy_r_mpi(ikp, j) = sy_r_mpi(ikp, j)- AIMAG(ctemp(io,io))
+            enddo !
+            call mat_mul(ndim,grr,sigma_z,ctemp)
+            do i = 1, NtopOrbitals
+                io = TopOrbitals(i)
+                sz_r_mpi(ikp, j) = sz_r_mpi(ikp, j)- AIMAG(ctemp(io,io))
+            enddo ! i
+
+
         enddo ! j
         call now(time_end)
      enddo ! ikp
+
+!> we do have to do allreduce operation
+#ifdef MPI
+    call mpi_allreduce(sx_l_mpi, sx_l, SIZE(sx_l), mpi_double_precision,&
+    mpi_sum, mpi_comm_world, ierr)
+    call mpi_allreduce(sy_l_mpi, sy_l, SIZE(sy_l), mpi_double_precision,&
+    mpi_sum, mpi_comm_world, ierr)
+    call mpi_allreduce(sz_l_mpi, sz_l, SIZE(sz_l), mpi_double_precision,&
+    mpi_sum, mpi_comm_world, ierr)
+    call mpi_allreduce(sx_r_mpi, sx_r, SIZE(sx_r), mpi_double_precision,&
+    mpi_sum, mpi_comm_world, ierr)
+    call mpi_allreduce(sy_r_mpi, sy_r, SIZE(sy_r), mpi_double_precision,&
+    mpi_sum, mpi_comm_world, ierr)
+    call mpi_allreduce(sz_r_mpi, sz_r, SIZE(sz_r), mpi_double_precision,&
+    mpi_sum, mpi_comm_world, ierr)
+#else
+    sx_l     = sx_l_mpi;      sy_l     = sy_l_mpi;      sz_l     = sz_l_mpi
+    sx_r     = sx_r_mpi;      sy_r     = sy_r_mpi;      sz_r     = sz_r_mpi
+#endif
+
+    deallocate( sx_l_mpi, sy_l_mpi, sz_l_mpi )
+    deallocate( sx_r_mpi, sy_r_mpi, sz_r_mpi )
+    deallocate( sigma_x, sigma_y, sigma_z, ctemp )
+
 
      !> we don't have to do allreduce operation
 #if defined (MPI)
@@ -201,6 +252,10 @@
      dosrfile= outfileindex
      outfileindex= outfileindex+ 1
      dosbulkfile= outfileindex
+     outfileindex = outfileindex+ 1
+     spindoslfile = outfileindex
+     outfileindex = outfileindex+ 1
+     spindosrfile = outfileindex
 
      !> deal with phonon system
      !> for phonon system, omega should be changed to omega^2
@@ -210,32 +265,50 @@
         enddo
      endif
 
-     if (cpuid.eq.0)then
-        open (unit=doslfile, file='dos.dat_l')
-        open (unit=dosrfile, file='dos.dat_r')
-        open (unit=dosbulkfile, file='dos.dat_bulk')
-        do ikp=1, knv2
-           do j=1, omeganum
-              WRITE(doslfile, '(30f16.8)')k2len(ikp), omega(j), dos_l(ikp, j), log(dos_l_only(ikp, j))
-              WRITE(dosrfile, '(30f16.8)')k2len(ikp), omega(j), dos_r(ikp, j), log(dos_r_only(ikp, j))
-              WRITE(dosbulkfile, '(30f16.8)')k2len(ikp), omega(j), dos_bulk(ikp, j)
-           enddo
-           WRITE(doslfile, *) ' '
-           WRITE(dosrfile, *) ' '
-           WRITE(dosbulkfile, *) ' '
-        enddo
-        CLOSE(doslfile)
-        CLOSE(dosrfile)
-        CLOSE(dosbulkfile)
+ 
+     ! Write surface state to files
+     IF (cpuid .eq. 0) THEN
+         open(unit=doslfile    , file='dos.dat_l')
+         open(unit=dosrfile    , file='dos.dat_r')
+         open(unit=dosbulkfile , file='dos.dat_bulk')
+         open(unit=spindoslfile, file='spindos.dat_l')
+         open(unit=spindosrfile, file='spindos.dat_r')
+         do ikp = 1, knv2
+            do j = 1, omeganum
+                write(doslfile,    2002) k2len(ikp), omega(j)/eV2Hartree, dos_l(ikp, j), dos_l_only(ikp, j)
+                write(dosrfile,    2002) k2len(ikp), omega(j)/eV2Hartree, dos_r(ikp, j), dos_r_only(ikp, j)
+                write(dosbulkfile, 2003) k2len(ikp), omega(j)/eV2Hartree, dos_bulk(ikp, j)
+                s0(1)=sx_l(ikp, j); s0(2)=sy_l(ikp, j); s0(3)=sz_l(ikp, j); 
+                call rotate(s0, s1)
+                write(spindoslfile,2001) k2len(ikp), omega(j)/eV2Hartree, s1
+                s0(1)=sx_r(ikp, j); s0(2)=sy_r(ikp, j); s0(3)=sz_r(ikp, j); 
+                call rotate(s0, s1)
+                write(spindosrfile,2001) k2len(ikp), omega(j)/eV2Hartree, s1
+             ENDDO
+             write(doslfile    , *)
+             write(dosrfile    , *)
+             write(dosbulkfile , *)
+             write(spindoslfile, *)
+             write(spindosrfile, *)
+         ENDDO
+         close(doslfile)
+         close(dosrfile)
+         close(dosbulkfile)
+         close(spindoslfile)
+         close(spindosrfile)
+         write(stdout,*)'ndim',ndim
+         write(stdout,*) 'knv2,omeganum,eta',knv2, omeganum, eta
+         write(stdout,*)'calculate density of state successfully'
+     ENDIF
 
-        WRITE(stdout,*)'ndim',ndim
-        WRITE(stdout,*) 'knv2,omeganum,eta',knv2, omeganum, eta
-        WRITE(stdout,*)'calculate density of state successfully'
-     endif
 
 
-     emin= minval(omega)
-     emax= maxval(omega)
+2001 FORMAT(5(1X,E16.8))
+2002 FORMAT(4(1X,E16.8))
+2003 FORMAT(3(1X,E16.8))
+
+     emin= minval(omega)/eV2Hartree
+     emax= maxval(omega)/eV2Hartree
      !> write script for gnuplot
      outfileindex= outfileindex+ 1
      if (cpuid==0) then
@@ -278,7 +351,20 @@
         enddo
         write(outfileindex, '(a)')'set pm3d interpolate 2,2'
         write(outfileindex, '(2a)')"splot 'dos.dat_l' u 1:2:3 w pm3d"
-        CLOSE(outfileindex)
+
+        write(outfileindex, '(3a)')'set terminal png truecolor enhanced', &
+           ' font ", 30" size 1920, 1680'
+        write(outfileindex, '(a)')"set output 'spindos_l.png'"
+        write(outfileindex, '(a)')"set multiplot layout 3, 1"
+        write(outfileindex, '(a)')"set title 'sx'"
+        write(outfileindex, '(2a)')"splot 'spindos.dat_l' u 1:2:3 w pm3d "
+        write(outfileindex, '(a)')"set title 'sy'"
+        write(outfileindex, '(2a)')"splot 'spindos.dat_l' u 1:2:4 w pm3d"
+        write(outfileindex, '(a)')"set title 'sz'"
+        write(outfileindex, '(2a)')"splot 'spindos.dat_l' u 1:2:5 w pm3d"
+ 
+
+        close(outfileindex)
 
      endif
 
@@ -420,7 +506,18 @@
         enddo
         write(outfileindex, '(a)')'set pm3d interpolate 2,2'
         write(outfileindex, '(2a)')"splot 'dos.dat_r' u 1:2:3 w pm3d"
-        CLOSE(outfileindex)
+
+        write(outfileindex, '(3a)')'set terminal png truecolor enhanced', &
+           ' font ", 30" size 1920, 1680'
+        write(outfileindex, '(a)')"set output 'spindos_r.png'"
+        write(outfileindex, '(a)')"set multiplot layout 3, 1"
+        write(outfileindex, '(a)')"set title 'sx'"
+        write(outfileindex, '(2a)')"splot 'spindos.dat_r' u 1:2:3 w pm3d "
+        write(outfileindex, '(a)')"set title 'sy'"
+        write(outfileindex, '(2a)')"splot 'spindos.dat_r' u 1:2:4 w pm3d"
+        write(outfileindex, '(a)')"set title 'sz'"
+        write(outfileindex, '(2a)')"splot 'spindos.dat_r' u 1:2:5 w pm3d"
+        close(outfileindex)
 
      endif
 
@@ -518,7 +615,7 @@ SUBROUTINE surfstat_jdos
     USE wmpi
     USE para, ONLY: omeganum, omegamin, omegamax, ndim, knv2, k2_path, outfileindex, &
                     BottomOrbitals, TopOrbitals, NBottomOrbitals, NtopOrbitals, stdout, &
-                    k2len, Num_wann, eps9, zi, Np
+                    k2len, Num_wann, eps9, zi, Np, eV2Hartree
     IMPLICIT NONE
 
     ! MPI error code
@@ -531,7 +628,7 @@ SUBROUTINE surfstat_jdos
     ! general loop index
     INTEGER  :: i, j, io, iq, iq1, ik1, ikp
     INTEGER  :: Nk_half, imin1, imax1, nw_half
-    REAL(DP) :: ktmp(2), eta
+    REAL(DP) :: ktmp(2), eta, s0(3), s1(3)
     ! string for integer
     CHARACTER(LEN=140) :: ichar, jchar, kchar, fmt
 
@@ -759,11 +856,15 @@ SUBROUTINE surfstat_jdos
         OPEN(unit=spindosrfile, file='spindos.dat_r')
         DO ikp = 1, knv2
             DO j = 1, omeganum
-                WRITE(doslfile,    2002) k2len(ikp), omega(j), dos_l(ikp, j), dos_l_only(ikp, j)
-                WRITE(dosrfile,    2002) k2len(ikp), omega(j), dos_r(ikp, j), dos_r_only(ikp, j)
-                WRITE(dosbulkfile, 2003) k2len(ikp), omega(j), dos_bulk(ikp, j)
-                WRITE(spindoslfile,2001) k2len(ikp), omega(j), sx_l(ikp, j), sy_l(ikp, j), sz_l(ikp,j)
-                WRITE(spindosrfile,2001) k2len(ikp), omega(j), sx_r(ikp, j), sy_r(ikp, j), sz_r(ikp,j)
+                WRITE(doslfile,    2002) k2len(ikp), omega(j)/eV2Hartree, dos_l(ikp, j), dos_l_only(ikp, j)
+                WRITE(dosrfile,    2002) k2len(ikp), omega(j)/eV2Hartree, dos_r(ikp, j), dos_r_only(ikp, j)
+                WRITE(dosbulkfile, 2003) k2len(ikp), omega(j)/eV2Hartree, dos_bulk(ikp, j)
+                s0(1)=sx_l(ikp, j); s0(2)=sy_l(ikp, j); s0(3)=sz_l(ikp, j); 
+                call rotate(s0, s1)
+                WRITE(spindoslfile,2001) k2len(ikp), omega(j)/eV2Hartree, s1
+                s0(1)=sx_r(ikp, j); s0(2)=sy_r(ikp, j); s0(3)=sz_r(ikp, j); 
+                call rotate(s0, s1)
+                WRITE(spindosrfile,2001) k2len(ikp), omega(j)/eV2Hartree, s1
             ENDDO
             WRITE(doslfile    , *)
             WRITE(dosrfile    , *)
@@ -822,8 +923,8 @@ SUBROUTINE surfstat_jdos
         OPEN(unit=jdosrfile, file='dos.jdat_r')
         DO ikp = 1, knv2
             DO j = 1, omeganum
-                WRITE(jdoslfile, 2002) k2len(ikp), omega(j), jdos_l(ikp, j), jdos_l_only(ikp, j)
-                WRITE(jdosrfile, 2002) k2len(ikp), omega(j), jdos_r(ikp, j), jdos_r_only(ikp, j)
+                WRITE(jdoslfile, 2002) k2len(ikp), omega(j)/eV2Hartree, jdos_l(ikp, j), jdos_l_only(ikp, j)
+                WRITE(jdosrfile, 2002) k2len(ikp), omega(j)/eV2Hartree, jdos_r(ikp, j), jdos_r_only(ikp, j)
             ENDDO
             WRITE(jdoslfile, *)
             WRITE(jdosrfile, *)
@@ -843,8 +944,8 @@ SUBROUTINE surfstat_jdos
     DEALLOCATE( sx_l, sy_l, sz_l )
     DEALLOCATE( sx_r, sy_r, sz_r )
 
-2001 FORMAT(5(1X,F16.8))
-2002 FORMAT(4(1X,F16.8))
-2003 FORMAT(3(1X,F16.8))
+2001 FORMAT(5(1X,E16.8))
+2002 FORMAT(4(1X,E16.8))
+2003 FORMAT(3(1X,E16.8))
 
 END SUBROUTINE surfstat_jdos

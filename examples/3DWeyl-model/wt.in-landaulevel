@@ -1,0 +1,48 @@
+&TB_FILE
+Hrfile = "Weyl3D_hr.dat"
+/
+
+!> bulk band structure calculation flag
+&CONTROL
+LandauLevel_k_calc = T  ! energy bands at a fixed magnetic flux magp/Nslab*\Phi_0 using diagonalization method
+/
+
+&SYSTEM
+Nslab = 100       ! magnetic supercell size along the second vector defined in SURFACE card
+NumOccupied = 1         ! NumOccupied
+SOC = 1                 ! soc
+E_FERMI = 0        ! e-fermi
+/
+
+&PARAMETERS
+Eta_Arc = 0.001     ! infinite small value, like brodening 
+E_arc = 0.0         ! energy for calculate Fermi Arc
+Nk1 = 201            ! number k points 
+Magp= 5      ! magnetic field flux is equal to Magp/Nslab*\Phi_0 
+/
+
+LATTICE
+Angstrom
+   1.0000000   000000000   000000000    ! R1
+   000000000   1.0000000   000000000    ! R2
+   000000000   000000000   1.0000000    ! R3
+
+ATOM_POSITIONS
+1                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+A   0    0    0. 
+
+PROJECTORS
+ 1           ! number of projectors
+A s
+
+
+SURFACE            ! See doc for details
+ 0  0  1  ! magnetic field direction unit of R1, R2 and R3
+ 1  0  0  
+ 0  1  0  ! magnetic supercell is defined along this direction
+
+KPATH_BULK
+2        ! numker of k line
+-X -0.50 0.0 0.0 G 0.0 0.0 0.0
+ G  0.0 0.0 0.0   X 0.0 0.0  0.5

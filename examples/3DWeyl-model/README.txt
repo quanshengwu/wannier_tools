@@ -54,7 +54,16 @@ $ ./writehmnr
    $ evince wcc-kz0.5.eps
 
 7. Calculate anomalous hall conductivity
-   $ cp wt.in-AHC
+   $ cp wt.in-AHC wt.in
    $ mpiexec -np 4 wt.x &
    $ gnuplot sigma_ahc.gnu
    $ evince sigma_ahc.pdf
+
+8. Calculate Landau level for a given magnetic field
+   $ cp wt.in-landaulevel wt.in
+   $ mpiexec -np 4 wt.x &
+   $ gnuplot landaulevel_k.gnu
+   $ eog landaulevel_k.png
+
+
+

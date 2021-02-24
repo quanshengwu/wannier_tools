@@ -82,7 +82,7 @@ subroutine ham_slab_sparseHR(nnzmax, k, acoo,jcoo,icoo)
    integer :: i1, i2, ncoo, iR, ims
 
    ! index used to sign irvec
-   integer :: ia,ib,ic
+   real(dp) :: ia,ib,ic
 
    integer :: inew_ic
 
@@ -161,7 +161,7 @@ end subroutine ham_slab_sparseHR
      integer :: iR
 
      ! index used to sign irvec     
-     integer :: ia,ib,ic
+     real(dp) :: ia,ib,ic
      integer :: ia1, ia2
 
      integer :: istart1, istart2
@@ -200,8 +200,8 @@ end subroutine ham_slab_sparseHR
      allocate( orbital_start(Origin_cell%Num_atoms+ 1))
      orbital_start= 0
      orbital_start(1)= 1
-     do ia=1, Origin_cell%Num_atoms
-        orbital_start(ia+1)= orbital_start(ia)+ Origin_cell%nprojs(ia)
+     do i1=1, Origin_cell%Num_atoms
+        orbital_start(i1+1)= orbital_start(i1)+ Origin_cell%nprojs(i1)
      enddo
 
      Hamk_slab=0.0d0 

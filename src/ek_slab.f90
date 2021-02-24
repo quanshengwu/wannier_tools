@@ -74,6 +74,7 @@
         chamk=0.0d0 
 
         call ham_slab(k,Chamk)
+        Chamk= Chamk/eV2Hartree
 
 
         eigenvalue=0.0d0
@@ -241,6 +242,306 @@
   return
   end subroutine ek_slab
 
+subroutine ek_slab_sparseHR
+   use para
+   use sparse
+   implicit none
+
+   !> some temporary integers
+   integer :: ik, ia1, ia2, i, j, ierr, ib, iq, ig
+
+   ! wave vector
+   real(dp) :: k(2)
+
+   !> dim= Ndimq, knv3
+   integer :: Ndimq
+   real(dp), allocatable :: W(:)
+   real(dp), allocatable :: eigv(:, :)
+   real(dp), allocatable :: eigv_mpi(:, :)
+
+   real(dp) :: emin, emax
+   real(dp) :: time_start, time_end, time_start0
+
+   integer :: nnzmax, nnz
+   complex(dp), allocatable :: acoo(:)
+   integer, allocatable :: jcoo(:)
+   integer, allocatable :: icoo(:)
+
+   !> eigenvector of the sparse matrix acoo. Dim=(Ndimq, neval)
+   complex(dp), allocatable :: psi(:)
+   complex(dp), allocatable :: zeigv(:, :)
+
+   !> print the weight for the Selected_WannierOrbitals
+   real(dp), allocatable :: dos_selected(:, :, :)
+   real(dp), allocatable :: dos_selected_mpi(:, :, :)
+
+   real(dp), allocatable :: dos_l_selected(:, :, :)
+   real(dp), allocatable :: dos_l_selected_mpi(:, :, :)
+   real(dp), allocatable :: dos_r_selected(:, :, :)
+   real(dp), allocatable :: dos_r_selected_mpi(:, :, :)
+
+   !number of ARPACK eigenvalues
+   integer :: neval
+
+   ! number of Arnoldi vectors
+   integer :: nvecs
+
+   !shift-invert sigma
+   complex(dp) :: sigma
+
+   !> time measurement
+   real(dp) :: time1, time2, time3
+
+   logical :: ritzvec
+   
+   Ndimq= Num_wann* Nslab
+   nnzmax= Num_wann*(2*ijmax+1)*Ndimq+Ndimq
+   if(Is_Sparse_Hr) nnzmax=splen*Nslab+Ndimq
+   if (NumSelectedEigenVals==0) NumSelectedEigenVals=Ndimq
+   neval=NumSelectedEigenVals
+   if (neval>=Ndimq) neval= Ndimq- 2
+
+   !> ncv
+   nvecs=int(2*neval)
+
+   ! if (nvecs<50) nvecs= 50
+   if (nvecs>Ndimq) nvecs= Ndimq
+
+
+   sigma=(1d0,0d0)*E_arc
+   
+   allocate( acoo(nnzmax), stat= ierr)
+   call printallocationinfo('acoo', ierr)
+   allocate( jcoo(nnzmax), stat= ierr)
+   call printallocationinfo('jcoo', ierr)
+   allocate( icoo(nnzmax), stat= ierr)
+   call printallocationinfo('icoo', ierr)
+   allocate( W( neval), stat= ierr)
+   allocate( eigv( neval, knv2))
+   call printallocationinfo('eigv', ierr)
+   allocate( eigv_mpi( neval, knv2), stat= ierr)
+   call printallocationinfo('eigv_mpi', ierr)
+   allocate( psi(ndimq))
+   allocate( zeigv(ndimq,nvecs), stat= ierr)
+   call printallocationinfo('zeigv', ierr)
+   allocate( dos_selected     (neval,   knv2, NumberofSelectedOrbitals_groups), stat= ierr)
+   call printallocationinfo('dos_selected', ierr)
+   allocate( dos_selected_mpi (neval,   knv2, NumberofSelectedOrbitals_groups), stat= ierr)
+   call printallocationinfo('dos_selected_mpi', ierr)
+   allocate( dos_l_selected     (neval,   knv2, NumberofSelectedOrbitals_groups), stat= ierr)
+   call printallocationinfo('dos_l_selected', ierr)
+   allocate( dos_l_selected_mpi (neval,   knv2, NumberofSelectedOrbitals_groups), stat= ierr)
+   call printallocationinfo('dos_l_selected_mpi', ierr)
+   allocate( dos_r_selected     (neval,   knv2, NumberofSelectedOrbitals_groups), stat= ierr)
+   call printallocationinfo('dos_r_selected', ierr)
+   allocate( dos_r_selected_mpi (neval,   knv2, NumberofSelectedOrbitals_groups), stat= ierr)
+   call printallocationinfo('dos_r_selected_mpi', ierr)
+   dos_l_selected= 0d0
+   dos_l_selected_mpi= 0d0
+   dos_r_selected= 0d0
+   dos_r_selected_mpi= 0d0
+   dos_selected= 0d0
+   dos_selected_mpi= 0d0
+
+   eigv_mpi= 0d0
+   eigv    = 0d0
+   acoo= 0d0
+
+   !> calculate the along special k line
+   time_start= 0d0
+   time_start0= 0d0
+   call now(time_start0)
+   time_start= time_start0
+   time_end  = time_start0
+   ritzvec= .true.
+   do ik=1+ cpuid, knv2, num_cpu
+      if (cpuid==0.and. mod(ik/num_cpu, 4)==0) &
+         write(stdout, '(a, i9, "  /", i10, a, f10.1, "s", a, f10.1, "s")') &
+         ' Slabek: ik', ik, knv2, ' time left', &
+         (knv2-ik)*(time_end- time_start)/num_cpu, &
+         ' time elapsed: ', time_end-time_start0 
+
+      call now(time_start)
+      
+      k= k2_path(ik, :)
+      nnz= nnzmax
+      call now(time1)
+      call ham_slab_sparseHR(nnz, k, acoo,jcoo,icoo)
+      acoo= acoo/eV2Hartree
+      call now(time2)
+
+      !> diagonalization by call zheev in lapack
+      W= 0d0
+
+#if defined (INTEL_MKL)
+      call arpack_sparse_coo_eigs(Ndimq,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
+#endif
+
+      call now(time3)
+      eigv(1:neval, ik)= W(1:neval)
+
+      !> calculate the weight on the selected orbitals
+      do ib= 1, neval
+         psi(:)= zeigv(:, ib)  !> the eigenvector of ib'th band
+         do ig=1, NumberofSelectedOrbitals_groups
+            do iq=1, Nslab
+               do i= 1, NumberofSelectedOrbitals(ig)
+                  j= Num_wann*(iq-1)+ Selected_WannierOrbitals(ig)%iarray(i)
+                  dos_selected(ib, ik, ig)= dos_selected(ib, ik, ig)+ abs(psi(j))**2
+                  
+               enddo ! sweep the selected orbitals
+            enddo ! iq sweep the magnetic supercell
+
+            do iq=1, 2  ! edge states
+               if (iq>Nslab) cycle
+               do i= 1, NumberofSelectedOrbitals(ig)
+                  j= Num_wann*(iq-1)+ Selected_WannierOrbitals(ig)%iarray(i)
+                  dos_l_selected(ib, ik, ig)= dos_l_selected(ib, ik, ig)+ abs(psi(j))**2
+               enddo ! sweep the selected orbitals
+            enddo ! iq sweep the magnetic supercell
+            do iq=Nslab-1, Nslab ! edge states
+               if (iq<1) cycle
+               do i= 1, NumberofSelectedOrbitals(ig)
+                  j= Num_wann*(iq-1)+ Selected_WannierOrbitals(ig)%iarray(i)
+                  dos_r_selected(ib, ik, ig)= dos_r_selected(ib, ik, ig)+ abs(psi(j))**2
+               enddo ! sweep the selected orbitals
+            enddo ! iq sweep the magnetic supercell
+         enddo ! ig
+      enddo ! ib sweep the eigenvalue
+
+      if (cpuid==0)write(stdout, '(a, f20.2, a)')'  >> Time cost for constructing H: ', time2-time1, ' s'
+      if (cpuid==0)write(stdout, '(a, f20.2, a)')'  >> Time cost for diagonalize H: ', time3-time2, ' s'
+      call now(time_end)
+   enddo !ik
+
+#if defined (MPI)
+   call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
+   call mpi_allreduce(dos_selected, dos_selected_mpi,size(dos_selected),&
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
+      
+   call mpi_allreduce(dos_l_selected, dos_l_selected_mpi,size(dos_l_selected),&
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
+   call mpi_allreduce(dos_r_selected, dos_r_selected_mpi,size(dos_r_selected),&
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+   eigv_mpi= eigv
+   dos_selected_mpi= dos_selected
+   dos_l_selected_mpi= dos_l_selected
+   dos_r_selected_mpi= dos_r_selected
+#endif
+
+   !> minimum and maximum value of energy bands
+   emin= minval(eigv_mpi)-0.5d0
+   emax= maxval(eigv_mpi)+0.5d0
+
+
+   outfileindex= outfileindex+ 1
+   if (cpuid.eq.0) then
+      open(unit=outfileindex, file='slabek.dat')
+      write(outfileindex, '("#", a14, a15, a)')'k ', ' E', ' Weight on the selected orbitals'
+      do j=1, neval
+         do i=1,knv2
+            write(outfileindex,'(200f16.8)')k2len(i), eigv_mpi(j, i), &
+               (dos_l_selected_mpi(j, i, ig), dos_r_selected_mpi(j, i, ig), &
+               ig=1, NumberofSelectedOrbitals_groups)
+         enddo
+         write(outfileindex , *)''
+      enddo
+      close(outfileindex)
+      write(stdout,*) 'calculate landau level done'
+   endif
+
+   outfileindex= outfileindex+ 1
+
+   emin= minval(eigv_mpi)-0.5d0
+   emax= maxval(eigv_mpi)+0.5d0
+   !> write script for gnuplot
+   outfileindex= outfileindex+ 1
+   if (cpuid==0) then
+      open(unit=outfileindex, file='slabek.gnu')
+      write(outfileindex, '(a)')"set encoding iso_8859_1"
+      write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
+      write(outfileindex, '(a)')"#set output 'slabek.eps'"
+      write(outfileindex, '(3a)')'#set terminal  pngcairo truecolor enhanced', &
+         '  font ",60" size 1920, 1680'
+      write(outfileindex, '(3a)')'set terminal  png truecolor enhanced', &
+         '  font ",60" size 1920, 1680'
+      write(outfileindex, '(a)')"set output 'slabek.png'"
+      write(outfileindex,'(2a)') 'set palette defined ( 0  "green", ', &
+         '5 "yellow", 10 "red" )'
+      write(outfileindex, '(a)')'set style data linespoints'
+      write(outfileindex, '(a)')'unset ztics'
+      write(outfileindex, '(a)')'unset key'
+      write(outfileindex, '(a)')'set pointsize 0.8'
+      write(outfileindex, '(a)')'set border lw 3 '
+      write(outfileindex, '(a)')'set view 0,0'
+      write(outfileindex, '(a)')'#set xtics font ",36"'
+      write(outfileindex, '(a)')'#set ytics font ",36"'
+      write(outfileindex, '(a)')'#set ylabel font ",36"'
+      write(outfileindex, '(a)')'#set xtics offset 0, -1'
+      write(outfileindex, '(a)')'set ylabel offset -1, 0 '
+      write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k2len), ']'
+      if (index(Particle,'phonon')/=0) then
+         write(outfileindex, '(a, f10.5, a)')'set yrange [0:', emax, ']'
+         write(outfileindex, '(a)')'set ylabel "Frequency (THz)"'
+      else
+         write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
+      endif
+      write(outfileindex, 202, advance="no") (trim(k2line_name(i)), k2line_stop(i), i=1, nk2lines)
+      write(outfileindex, 203)trim(k2line_name(nk2lines+1)), k2line_stop(nk2lines+1)
+
+      do i=1, nk2lines-1
+         if (index(Particle,'phonon')/=0) then
+            write(outfileindex, 204)k2line_stop(i+1), 0.0, k2line_stop(i+1), emax
+         else
+            write(outfileindex, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
+         endif
+      enddo
+      write(outfileindex, '(a)')'#rgb(r,g,b) = int(r)*65536 + int(g)*256 + int(b)'
+      write(outfileindex, '(2a)')"#plot 'slabek.dat' u 1:2:(rgb(255,$3, 3)) ",  &
+          "w lp lw 2 pt 7  ps 1 lc rgb variable"
+      write(outfileindex, '(2a)')"# plot the top and bottom surface's weight together"
+      write(outfileindex, '(2a)')"plot 'slabek.dat' u 1:2:($3+$4) ",  &
+          "w lp lw 2 pt 7  ps 1 lc palette"
+      write(outfileindex, '(2a)')"#"
+      write(outfileindex, '(2a)')"# plot top and bottom surface's weight with different color"
+      write(outfileindex,'(2a)') '#set palette defined ( -1  "blue", ', &
+         '0 "grey", 1 "red" )'
+      write(outfileindex, '(2a)')"#plot 'slabek.dat' u 1:2:($4-$3) ",  &
+          "w lp lw 2 pt 7  ps 1 lc palette"
+
+      !write(outfileindex, '(2a)')"splot 'slabek.dat' u 1:2:3 ",  &
+      !   "w lp lw 2 pt 13 palette"
+      close(outfileindex)
+   endif
+
+   202 format('set xtics (',:20('"',A3,'" ',F10.5,','))
+   203 format(A3,'" ',F10.5,')')
+   204 format('set arrow from ',F10.5,',',F10.5, &
+        ' to ',F10.5,',',F10.5, ' nohead')
+   
+
+
+#if defined (MPI)
+   call mpi_barrier(mpi_cmw, ierr)
+#endif
+
+   deallocate( acoo)
+   deallocate( jcoo)
+   deallocate( icoo)
+   deallocate( W)
+   deallocate( eigv)
+   deallocate( eigv_mpi)
+   deallocate( zeigv)
+   deallocate( dos_selected)
+   deallocate( dos_selected_mpi)
+
+   return
+end subroutine ek_slab_sparseHR
+
+
   subroutine ek_slab_kplane
      !> This subroutine is used for calculating energy 
      !> dispersion with wannier functions for 2D slab system
@@ -317,6 +618,7 @@
         chamk=0.0d0 
 
         call ham_slab(k,Chamk)
+        Chamk= Chamk/eV2Hartree
 
         eigenvalue=0.0d0
 
