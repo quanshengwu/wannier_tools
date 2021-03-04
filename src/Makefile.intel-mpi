@@ -20,7 +20,7 @@ OFLAG = -O3 -static-intel
 FFLAG = $(OFLAG) $(WFLAG)
 LFLAG = $(OFLAG)
 
-ARPACK=/Users/user/quan/work/workplace/ARPACK/libarpack_MAC.a
+ARPACK=/Users/quan/work/workplace/ARPACK/libarpack_MAC.a
 
 # blas and lapack libraries
 # static linking

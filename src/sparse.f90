@@ -196,7 +196,7 @@ module sparse
    public :: WTParCSRMatrixCreate
    public :: csr_sort_indices
    public :: csr_sum_duplicates
-#if defined (INTEL_MKL)
+#if defined (INTELMKL)
    public :: arpack_sparse_coo_eigs
 #endif
 
@@ -2162,7 +2162,7 @@ contains
          return
       end subroutine csr_sum_duplicates
 
-# if defined (INTEL_MKL)
+# if defined (INTELMKL)
       subroutine arpack_sparse_coo_eigs(ndims,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,deval,sigma,zeigv, ritzvec)
          use para, only : dp
          implicit none

@@ -373,7 +373,7 @@ subroutine ek_slab_sparseHR
       !> diagonalization by call zheev in lapack
       W= 0d0
 
-#if defined (INTEL_MKL)
+#if defined (INTELMKL)
       call arpack_sparse_coo_eigs(Ndimq,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
 #endif
 

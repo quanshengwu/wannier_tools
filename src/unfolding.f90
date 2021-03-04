@@ -178,7 +178,7 @@ subroutine unfolding_kpath
             W= 0d0
             !> after arpack_sparse_coo_eigs, nnz will be updated.
             ritzvec= .true.
-#if defined (INTEL_MKL)
+#if defined (INTELMKL)
             call arpack_sparse_coo_eigs(Ndimq,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
 #endif
          else
@@ -199,7 +199,7 @@ subroutine unfolding_kpath
             W= 0d0
             !> after arpack_sparse_coo_eigs, nnz will be updated.
             ritzvec= .true.
-#if defined (INTEL_MKL)
+#if defined (INTELMKL)
             call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
 #endif
             call now(time3)
@@ -464,7 +464,7 @@ subroutine unfolding_kplane
          W= 0d0
          !> after arpack_sparse_coo_eigs, nnz will be updated.
          ritzvec= .true.
-#if defined (INTEL_MKL)
+#if defined (INTELMKL)
          call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
 #endif
          call now(time3)
@@ -479,7 +479,7 @@ subroutine unfolding_kplane
             W= 0d0
             !> after arpack_sparse_coo_eigs, nnz will be updated.
             ritzvec= .true.
-#if defined (INTEL_MKL)
+#if defined (INTELMKL)
             call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
 #endif
             call now(time3)

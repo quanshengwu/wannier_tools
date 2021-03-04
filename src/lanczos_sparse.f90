@@ -83,7 +83,7 @@ subroutine lanczos_seqsparse_cpu_z(NumLczVectors, NumLczVectors_out, Mdim, nnz, 
    vec_0= 1d0/betan(1)* vec_0
 
    !* perform |vec(1,:)>=Ham |vec(0,:)>
-#if defined (INTEL_MKL)
+#if defined (INTELMKL)
    call mkl_zcsrgemv('N', Mdim, acsr, icsr, jcsr, vec_0, vec_1)
 #endif
 
@@ -114,7 +114,7 @@ subroutine lanczos_seqsparse_cpu_z(NumLczVectors, NumLczVectors_out, Mdim, nnz, 
       call now(time_start)
 
 
-#if defined (INTEL_MKL)
+#if defined (INTELMKL)
       call mkl_zcsrgemv('N', Mdim, acsr, icsr, jcsr, vec_1, vec_2)
 #endif
 

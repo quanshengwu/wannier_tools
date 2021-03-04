@@ -752,7 +752,7 @@ subroutine sparse_landau_level_B
 
       !> diagonalization by call zheev in lapack
       W= 0d0
-#if defined (INTEL_MKL)
+#if defined (INTELMKL)
       call arpack_sparse_coo_eigs(Ndimq,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, LandauLevel_wavefunction_calc)
 #endif
       call now(time3)
@@ -1072,7 +1072,7 @@ subroutine sparse_landau_level_k
 
       !> diagonalization by call zheev in lapack
       W= 0d0
-#if defined (INTEL_MKL)
+#if defined (INTELMKL)
       call arpack_sparse_coo_eigs(Ndimq,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, LandauLevel_wavefunction_calc)
 #endif
 
@@ -1403,7 +1403,7 @@ subroutine sparse_landau_dos
       !> diagonalization by call zheev in lapack
       W= 0d0
       !        call eigensystem_c( 'N', 'U', Ndimq ,ham_landau, W)
-#if defined (INTEL_MKL)
+#if defined (INTELMKL)
       call arpack_sparse_coo_eigs(Ndimq,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, LandauLevel_wavefunction_calc)
 #endif
       do ie= 1, NE
