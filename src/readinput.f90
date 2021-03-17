@@ -339,7 +339,7 @@ subroutine readinput
       FindNodes_calc) then
          write(*, *)"ERROR: you should set Numoccupied in namelist SYSTEM correctly"
          stop
-      else (
+      else 
          Numoccupied = 1
       endif
    endif
