@@ -57,7 +57,6 @@ subroutine ek_bulk_line
          else
             call ham_bulk_latticegauge(k, Hamk_bulk)
            !call ham_bulk_atomicgauge(k, Hamk_bulk)
-            Hamk_bulk= Hamk_bulk/eV2Hartree
          endif
       endif
 
@@ -98,6 +97,7 @@ subroutine ek_bulk_line
          enddo
       enddo
    endif
+   eigv_mpi= eigv_mpi/eV2Hartree
 
    outfileindex= outfileindex+ 1
    if (cpuid==0)then
@@ -263,7 +263,6 @@ end subroutine ek_bulk_line
         !> calculation bulk hamiltonian
         Hamk_bulk= 0d0
         call ham_bulk_latticegauge(k, Hamk_bulk)
-        Hamk_bulk= Hamk_bulk/eV2Hartree
        !call ham_bulk    (k, Hamk_bulk)
 
         !> diagonalization by call zheev in lapack
@@ -295,6 +294,7 @@ end subroutine ek_bulk_line
      weight_mpi= weight
 #endif
 
+     eigv_mpi= eigv_mpi/eV2Hartree
      weight= weight_mpi/maxval(weight_mpi)*255d0
 
      outfileindex= outfileindex+ 1
@@ -462,7 +462,6 @@ subroutine ek_bulk_plane_C2yT
       ! calculation bulk hamiltonian
       Hamk_bulk= 0d0
       call ham_bulk_atomicgauge(k, Hamk_bulk)
-      Hamk_bulk= Hamk_bulk/eV2Hartree
 
       !> diagonalization by call zheev in lapack
       W= 0d0
@@ -506,6 +505,7 @@ subroutine ek_bulk_plane_C2yT
 #else
    eigv_mpi= eigv
 #endif
+   eigv_mpi= eigv_mpi/eV2Hartree
 
    !> write out the data in gnuplot format
    outfileindex= outfileindex+ 1

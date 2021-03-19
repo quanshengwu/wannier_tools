@@ -31,11 +31,11 @@ SURFACE            ! See doc for details
 &CONTROL
 BulkBand_calc         = F
 BulkFS_calc           = F
-BulkFS_plane_calc     = T
+BulkFS_plane_calc     = F
 FindNodes_calc        = F
 SlabBand_calc         = F
-SlabSS_calc           = F
-SlabArc_calc          = F
+SlabSS_calc           = T
+SlabArc_calc          = T
 BerryPhase_calc       = F
 Translate_to_WS_calc  = F
 /
@@ -55,10 +55,10 @@ surf_onsite= 0.0        ! surf_onsite
 Eta_Arc = 0.001     ! infinite small value, like brodening 
 E_arc = 0.0         ! energy for calculate Fermi Arc
 OmegaNum = 401      ! omega number       
-OmegaMin = -0.6     ! energy interval
-OmegaMax =  0.5     ! energy interval
-Nk1 = 101               ! number k points  odd number would be better
-Nk2 = 101            ! number k points  odd number would be better
+OmegaMin = -2.0     ! energy interval
+OmegaMax =  2.0     ! energy interval
+Nk1 = 201               ! number k points  odd number would be better
+Nk2 = 201            ! number k points  odd number would be better
 Nk3 = 11           ! number k points  odd number would be better
 NP = 1              ! number of principle layers
 Gap_threshold = 0.001 ! threshold for GapCube output
@@ -75,9 +75,10 @@ KPATH_BULK            ! k point path
  L  0.00000 0.50000 0.50000     H -0.33333  0.66667  0.50000  
 
 KPATH_SLAB
-2        ! numker of k line for 2D case
-K 0.33 0.67 G 0.0 0.0  ! k path for 2D case
-G 0.0 0.0 M 0.5 0.5
+3        ! numker of k line for 2D case
+G 0.0 0.0 M 0.5 0.0
+M 0.5 0.0 K 0.33333 0.33333
+K 0.33333 0.33333 G 0.0 0.0
 
 KPLANE_SLAB
 -0.1 -0.1      ! Original point for 2D k plane

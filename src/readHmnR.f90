@@ -79,7 +79,11 @@ subroutine readNormalHmnR()
          endif
       enddo
       !> WannierTools codes use Hatree atomic units
-      HmnR= HmnR/27.2114d0 ! from eV to Hartree
+      if (index(Particle,'phonon')/=0) then
+         HmnR= HmnR*eV2Hartree*eV2Hartree ! from eV to Hartree
+      else
+         HmnR= HmnR*eV2Hartree ! from eV to Hartree
+      endif
 
    else
 
