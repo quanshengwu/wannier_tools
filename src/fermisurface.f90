@@ -127,7 +127,7 @@
            write(outfileindex,'(a, i10)') '%BAND: ',i
            write(outfileindex,'(a, 4i16)') '%Nk1, Nk2, Nk3, total', Nk1, Nk2, Nk3, knv3
            do ik=1, knv3
-              write(outfileindex,'(f16.8)') eigval(i, ik)
+              write(outfileindex,'(f16.8)') eigval(i, ik)/eV2Hartree
            enddo
            close(outfileindex)
         endif
@@ -157,7 +157,7 @@
         do i=1,nband_store
            write(outfileindex,'(a, i10)') 'BAND: ',i
            do ik=1, knv3
-              write(outfileindex,'(E16.8)') eigval(i, ik)
+              write(outfileindex,'(E16.8)') eigval(i, ik)/eV2Hartree
            enddo
         enddo
         write(outfileindex,'(a)') 'END_BANDGRID_3D'
