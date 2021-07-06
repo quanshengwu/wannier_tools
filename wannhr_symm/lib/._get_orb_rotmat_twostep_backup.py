@@ -66,10 +66,8 @@ fs=[ss]
 fp=[pz,px,py]
 fd=[dz2,dxz,dyz,dx2_y2,dxy]
 ff=[fz3,fxz2,fyz2,fzx2_zy2,fxyz,fx3_3xy2,f3yx2_y3]
-# new 2020-09-09
-fpz=[pz]
-forb=[fs,fp,fd,ff,ft2g,fpz]
-#      0  1  2  3  4    5
+forb=[fs,fp,fd,ff,ft2g]
+#      0  1  2  3  4
 
 def get_orb_map_s(xp,yp,zp,ndim,orbi):
     if ndim!=1 or orbi!=0: 
@@ -330,57 +328,6 @@ def get_orb_map_t2g(xp,yp,zp,ndim,orbi):
         #print pretty([c0,c1,c2])
     return rmat
 
-# new 2020-09-09
-def get_orb_map_pz(xp,yp,zp,ndim,orbi):
-    if ndim!=1 or orbi!=5: 
-       print "Error: local rot matrix for pz orbital is of dim 1 !"
-       sys.exit(0)
-
-    fst=[x,y,z]
-    #    0 1 2
-
-    rmat=np.zeros((ndim,ndim),dtype=np.float64)
-    for j in range(ndim):
-        e=(forb[orbi][j](xp,yp,zp)).expand()
-
-        # " get coefficients of pz "
-        t=e
-        for st in fst:
-            if st != z: 
-               t = t.subs(st,0)
-            else:
-               t = t.subs(st,1)
-        c0=t
-        rmat[0,j]=c0.evalf()
-         
-        # " get coefficients of px "
-        t=e
-        for st in fst:
-            if st != x: 
-               t = t.subs(st,0)
-            else:
-               t = t.subs(st,1)
-        c1=t
-        xval=c1.evalf()
-        
-        # " get coefficients of py "
-        t=e
-        for st in fst:
-            if st != y: 
-               t = t.subs(st,0)
-            else:
-               t = t.subs(st,1)
-        c2=t
-        yval=c2.evalf()
-
-    if (abs(xval)>1.0E-3 or abs(yval)>1.0E-3):
-        print "ERROR ! pz only is not complete sinze it is rotated to px or py ! STOP"     
-        sys.exit(0)
-        #print pretty([c0,c1,c2])
-
-    return rmat
-
-
 def get_any_rot_orb_twostep(case,rot):
     """
     
@@ -417,11 +364,6 @@ def get_any_rot_orb_twostep(case,rot):
         ndim = 3
         orbi = 4
         rmat = get_orb_map_t2g(xp,yp,zp,ndim,orbi)
-# new 2020-09-09
-    elif case.strip() == 'pz': 
-        ndim = 1
-        orbi = 5
-        rmat = get_orb_map_pz(xp,yp,zp,ndim,orbi)
     else:
         print "don't support orbitals for this case: ", case
         return
@@ -431,4 +373,3 @@ def get_any_rot_orb_twostep(case,rot):
             if abs(rmat[j,i])<1.0E-6:
                 rmat[j,i]=0.0
     return rmat
-
