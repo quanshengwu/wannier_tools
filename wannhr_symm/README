@@ -1,6 +1,6 @@
 New feature: if you put an empty file "write_symmop.flag" in the symmetrization folder,
 then representation matrices of all the space group operations in the wannier basis
-will be generated. This would be helful to write down Mirror matrix to calculation, e.g.
+will be generated. This would be helful to write down Mirror matrix to calculate, e.g.
 mirror Chern number.
 
 Copyright: Changming Yue, Institute of Physics, Chinese Academy of Sciences.
