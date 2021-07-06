@@ -10,7 +10,7 @@ from math import sqrt, cos, sin
 from get_orb_rotmat_twostep import get_any_rot_orb_twostep
 import rotate as rot_spin
 from get_euler_angle import *
-from dets_rot import rot_glb_dets
+#from dets_rot import rot_glb_dets
 import os
 
 np.set_printoptions(precision=10,linewidth=200)
@@ -115,7 +115,7 @@ def get_rotation_matrix_in_wannorbs(myposwan, nsymm, nptrans, symop, wann_atom_r
 	print >>f, "diffs\n", rgb - rot_glb
 
         print >>f, "det of rot_glb=",det(rot_glb)
-        rot_glb_dets.append(det(rot_glb))
+        #rot_glb_dets.append(det(rot_glb))
     
     # get dmat
         if ispinor: 
