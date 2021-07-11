@@ -112,75 +112,114 @@ if __name__ == "__main__":
     for xx in e:
         ax.plot(xx[:, 0], xx[:, 1], xx[:, 2], color='k', lw=1.0)
 
+#------- set kxky plane (kz=0) by finding all the vortices 
     pts=[]
     lens=[]
     phis=[]
 
     for xx in e:
         for i in range(len(xx)-1):  
-            if abs(xx[i,2]*0.5+xx[i+1,2]*0.5)>1.0E-6: continue
-            s="{:16.8f}{:16.8f}{:16.8f}".format(xx[i,0]*0.5+xx[i+1,0]*0.5, xx[i,1]*0.5+xx[i+1,1]*0.5, xx[i,2]*0.5+xx[i+1,2]*0.5)
+            if abs(xx[i,2])<1.0E-6: # vortices
+                s="{:16.8f}{:16.8f}{:16.8f}".format(xx[i,0]*1.0+xx[i+1,0]*0.0, xx[i,1]*1.0+xx[i+1,1]*0.0, xx[i,2]*1.0+xx[i+1,2]*0.0)
+		t=(xx[i,0]*1.0+xx[i+1,0]*0.0, xx[i,1]*1.0+xx[i+1,1]*0.0, xx[i,2]*1.0+xx[i+1,2]*0.0)
+		c=xx[i,0]*1.0+xx[i+1,0]*0.0+(xx[i,1]*1.0+xx[i+1,1]*0.0)*1.0j
+            elif abs(xx[i+1,2])<1.0E-6: # vortices
+                s="{:16.8f}{:16.8f}{:16.8f}".format(xx[i,0]*0.0+xx[i+1,0]*1.0, xx[i,1]*0.0+xx[i+1,1]*1.0, xx[i,2]*0.0+xx[i+1,2]*1.0)
+  		t=(xx[i,0]*0.0+xx[i+1,0]*1.0, xx[i,1]*0.0+xx[i+1,1]*1.0, xx[i,2]*0.0+xx[i+1,2]*1.0)
+		c=xx[i,0]*0.0+xx[i+1,0]*1.0 + (xx[i,1]*0.0+xx[i+1,1]*1.0)*1.0j
+            elif abs(xx[i,2]*0.5+xx[i+1,2]*0.5)<1.0E-6: # centers 
+                s="{:16.8f}{:16.8f}{:16.8f}".format(xx[i,0]*0.5+xx[i+1,0]*0.5, xx[i,1]*0.5+xx[i+1,1]*0.5, xx[i,2]*0.5+xx[i+1,2]*0.5)
+		t=(xx[i,0]*0.5+xx[i+1,0]*0.5, xx[i,1]*0.5+xx[i+1,1]*0.5, xx[i,2]*0.5+xx[i+1,2]*0.5)
+		c=(xx[i,0]*0.5+xx[i+1,0]*0.5)+(xx[i,1]*0.5+xx[i+1,1]*0.5)*1.0j
+	    else:
+	        continue
+
             if s not in lens:
-                pts.append( (xx[i,0]*0.5+xx[i+1,0]*0.5, xx[i,1]*0.5+xx[i+1,1]*0.5, xx[i,2]*0.5+xx[i+1,2]*0.5) )
-                c=(xx[i,0]*0.5+xx[i+1,0]*0.5)+(xx[i,1]*0.5+xx[i+1,1]*0.5)*1.0j
+                pts.append(t)
                 ang=np.angle(c)
                 phis.append(ang)
                 lens.append(s)
+
     phis_= np.sort(phis)
-    mplane=[]
+    kxky_plane=[]
     for i in phis_:
         idx=phis.index(i) 
-        mplane.append(pts[idx])	
-    mplane.append(mplane[0])	
-    print mplane
+        kxky_plane.append(pts[idx])	
+    kxky_plane.append(kxky_plane[0])	
 
+#------- set kykz plane (kx=0) by finding all the vortices 
     pts=[]
     lens=[]
     phis=[]
 
     for xx in e:
         for i in range(len(xx)-1):  
-            if abs(xx[i,1]*0.5+xx[i+1,1]*0.5)>1.0E-6: continue
-            s="{:16.8f}{:16.8f}{:16.8f}".format(xx[i,0]*0.5+xx[i+1,0]*0.5, xx[i,1]*0.5+xx[i+1,1]*0.5, xx[i,2]*0.5+xx[i+1,2]*0.5)
+            if abs(xx[i,0])<1.0E-6: # vortices
+                s="{:16.8f}{:16.8f}{:16.8f}".format(xx[i,0]*1.0+xx[i+1,0]*0.0, xx[i,1]*1.0+xx[i+1,1]*0.0, xx[i,2]*1.0+xx[i+1,2]*0.0)
+		t=(xx[i,0]*1.0+xx[i+1,0]*0.0, xx[i,1]*1.0+xx[i+1,1]*0.0, xx[i,2]*1.0+xx[i+1,2]*0.0)
+		c=xx[i,1]*1.0+xx[i+1,1]*0.0+(xx[i,2]*1.0+xx[i+1,2]*0.0)*1.0j
+            elif abs(xx[i+1,0])<1.0E-6: # vortices
+                s="{:16.8f}{:16.8f}{:16.8f}".format(xx[i,0]*0.0+xx[i+1,0]*1.0, xx[i,1]*0.0+xx[i+1,1]*1.0, xx[i,2]*0.0+xx[i+1,2]*1.0)
+  		t=(xx[i,0]*0.0+xx[i+1,0]*1.0, xx[i,1]*0.0+xx[i+1,1]*1.0, xx[i,2]*0.0+xx[i+1,2]*1.0)
+		c=xx[i,1]*0.0+xx[i+1,1]*1.0 + (xx[i,2]*0.0+xx[i+1,2]*1.0)*1.0j
+            elif abs(xx[i,0]*0.5+xx[i+1,0]*0.5)<1.0E-6: # centers 
+                s="{:16.8f}{:16.8f}{:16.8f}".format(xx[i,0]*0.5+xx[i+1,0]*0.5, xx[i,1]*0.5+xx[i+1,1]*0.5, xx[i,2]*0.5+xx[i+1,2]*0.5)
+		t=(xx[i,0]*0.5+xx[i+1,0]*0.5, xx[i,1]*0.5+xx[i+1,1]*0.5, xx[i,2]*0.5+xx[i+1,2]*0.5)
+		c=(xx[i,1]*0.5+xx[i+1,1]*0.5)+(xx[i,2]*0.5+xx[i+1,2]*0.5)*1.0j
+	    else:
+	        continue
+
             if s not in lens:
-                pts.append( (xx[i,0]*0.5+xx[i+1,0]*0.5, xx[i,1]*0.5+xx[i+1,1]*0.5, xx[i,2]*0.5+xx[i+1,2]*0.5) )
-                c=(xx[i,0]*0.5+xx[i+1,0]*0.5)+(xx[i,2]*0.5+xx[i+1,2]*0.5)*1.0j
+                pts.append(t)
                 ang=np.angle(c)
                 phis.append(ang)
                 lens.append(s)
+
     phis_= np.sort(phis)
-    vplane=[]
+    kykz_plane=[]
     for i in phis_:
         idx=phis.index(i) 
-        vplane.append(pts[idx])	
-    vplane.append(vplane[0])	
-    print vplane
+        kykz_plane.append(pts[idx])	
+    kykz_plane.append(kykz_plane[0])	
 
+#------- set kzkx plane (ky=0) by finding all the vortices 
     pts=[]
     lens=[]
     phis=[]
+
     for xx in e:
         for i in range(len(xx)-1):  
-            if abs(xx[i,0]*0.5+xx[i+1,0]*0.5)>1.0E-6: continue
-            s="{:16.8f}{:16.8f}{:16.8f}".format(xx[i,0]*0.5+xx[i+1,0]*0.5, xx[i,1]*0.5+xx[i+1,1]*0.5, xx[i,2]*0.5+xx[i+1,2]*0.5)
+            if abs(xx[i,1])<1.0E-6: # vortices
+                s="{:16.8f}{:16.8f}{:16.8f}".format(xx[i,0]*1.0+xx[i+1,0]*0.0, xx[i,1]*1.0+xx[i+1,1]*0.0, xx[i,2]*1.0+xx[i+1,2]*0.0)
+		t=(xx[i,0]*1.0+xx[i+1,0]*0.0, xx[i,1]*1.0+xx[i+1,1]*0.0, xx[i,2]*1.0+xx[i+1,2]*0.0)
+		c=xx[i,2]*1.0+xx[i+1,2]*0.0+(xx[i,0]*1.0+xx[i+1,0]*0.0)*1.0j
+            elif abs(xx[i+1,1])<1.0E-6: # vortices
+                s="{:16.8f}{:16.8f}{:16.8f}".format(xx[i,0]*0.0+xx[i+1,0]*1.0, xx[i,1]*0.0+xx[i+1,1]*1.0, xx[i,2]*0.0+xx[i+1,2]*1.0)
+  		t=(xx[i,0]*0.0+xx[i+1,0]*1.0, xx[i,1]*0.0+xx[i+1,1]*1.0, xx[i,2]*0.0+xx[i+1,2]*1.0)
+		c=xx[i,2]*0.0+xx[i+1,2]*1.0 + (xx[i,0]*0.0+xx[i+1,0]*1.0)*1.0j
+            elif abs(xx[i,1]*0.5+xx[i+1,1]*0.5)<1.0E-6: # centers 
+                s="{:16.8f}{:16.8f}{:16.8f}".format(xx[i,0]*0.5+xx[i+1,0]*0.5, xx[i,1]*0.5+xx[i+1,1]*0.5, xx[i,2]*0.5+xx[i+1,2]*0.5)
+		t=(xx[i,0]*0.5+xx[i+1,0]*0.5, xx[i,1]*0.5+xx[i+1,1]*0.5, xx[i,2]*0.5+xx[i+1,2]*0.5)
+		c=(xx[i,2]*0.5+xx[i+1,2]*0.5)+(xx[i,0]*0.5+xx[i+1,0]*0.5)*1.0j
+	    else:
+	        continue
+
             if s not in lens:
-                pts.append( (xx[i,0]*0.5+xx[i+1,0]*0.5, xx[i,1]*0.5+xx[i+1,1]*0.5, xx[i,2]*0.5+xx[i+1,2]*0.5) )
-                c=(xx[i,1]*0.5+xx[i+1,1]*0.5)+(xx[i,2]*0.5+xx[i+1,2]*0.5)*1.0j
+                pts.append(t)
                 ang=np.angle(c)
                 phis.append(ang)
                 lens.append(s)
+
     phis_= np.sort(phis)
-    hplane=[]
+    kzkx_plane=[]
     for i in phis_:
         idx=phis.index(i) 
-        hplane.append(pts[idx])	
-    hplane.append(hplane[0])	
+        kzkx_plane.append(pts[idx])	
+    kzkx_plane.append(kzkx_plane[0])	
 
-# face1,kxky plane; face2 kzkx plane; face3 kykz plane
-    face1 = mp3d.art3d.Poly3DCollection([middle_plane], alpha=0.35, linewidth=1)
-##  face1 = mp3d.art3d.Poly3DCollection([mplane], alpha=0.35, linewidth=1)
-    face2 = mp3d.art3d.Poly3DCollection([vplane], alpha=0.35, linewidth=1)
-    face3 = mp3d.art3d.Poly3DCollection([hplane], alpha=0.35, linewidth=1)
+    face1 = mp3d.art3d.Poly3DCollection([kxky_plane], alpha=0.35, linewidth=1)
+    face2 = mp3d.art3d.Poly3DCollection([kykz_plane], alpha=0.35, linewidth=1)
+    face3 = mp3d.art3d.Poly3DCollection([kzkx_plane], alpha=0.35, linewidth=1)
     face1.set_facecolor('tab:gray') 
     face2.set_facecolor('tab:gray') 
     face3.set_facecolor('tab:gray') 
