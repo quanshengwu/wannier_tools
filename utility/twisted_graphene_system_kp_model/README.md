@@ -16,4 +16,8 @@ After the compilation, an excutable file ***tg_kpgen*** will generated.
 
 2. The control parameters are included in the file *system.in*. 
 
-3. ./tg-kpgen
+3. run the code
+
+```
+./tg-kpgen
+```
