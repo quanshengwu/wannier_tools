@@ -146,6 +146,26 @@ subroutine readNormalHmnR()
    if (index( Package, 'QE')/=0.or.index( Package, 'quantumespresso')/=0 &
          .or.index( Package, 'quantum-espresso')/=0.or.index( Package, 'pwscf')/=0) then
       call reorder_wannierbasis
+
+      if (cpuid==0.and.export_newhr) then
+         !> write to new_hr.dat
+         outfileindex= outfileindex+ 1
+         open(unit=outfileindex, file='wannier90_hr_standard.dat')
+         write(outfileindex, '(a,1X,a,1X,a,1X, a, a)')  &
+            'HmnR transformed from QE ', time_now, date_now, 'UTC', zone_now
+         write(outfileindex, *)Num_wann
+         write(outfileindex, *)nrpts
+         write(outfileindex, '(15I5)')ndegen
+         do ir=1, nrpts
+            do j=1, Num_wann
+               do i=1, Num_wann
+                  write( outfileindex, '(5I5, 2f16.6)') &
+                     irvec(:, ir), i, j, HmnR(i, j, ir)/eV2Hartree
+               end do
+            end do
+         end do
+         close(outfileindex)
+      endif
    endif
 
 

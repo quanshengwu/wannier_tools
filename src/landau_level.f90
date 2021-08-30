@@ -719,8 +719,7 @@ subroutine landau_level_B
    k3=Single_KPOINT_3D_DIRECT
    
    if (cpuid==0) then
-   write(*,*) k3
-   write(stdout, *) k3
+      write(stdout, *) k3
    endif
 
    !> calculate the landau levels along special k line
