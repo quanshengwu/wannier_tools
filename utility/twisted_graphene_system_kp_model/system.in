@@ -1,0 +1,50 @@
+   &PARAMETERS
+   number_layers = 4
+
+   !> magic angle
+   twisted_angle_degree= 1.0661
+
+   !> setup the stacking sequences
+   stacking_sequences_input ="A" "A" "B" "A"
+
+
+   !>> A-ABA 
+   !> setup the twisted angle with respect to the first layer. 0 means there is no twist. 
+   !> in unit of twisted_angle_degree
+   !> In this example, there is a twist between the first layer and the second layer. There is no twist between the 2nd and the 3rd layer.
+   !>  There is no twist between the 3nd and the 4th layer neither.
+   twisted_angle_array_input = 0   1   1    1 
+
+   !> In this version, it supports only one moire lattice. it means that A-AB-A where the first and the second twist have opposite angle is also supported.
+   !> twisted_angle_array_input = 0   1   1    0 
+
+
+   !> we also can try to control the coupling between the layers. the unit is vppsigma 
+   interlayercoupling_ratio_array_input = 1 1 1   
+
+   u_AA=0.0797  ! eV  parameters from Phys. Rev. X 8, 031087
+   u_AB=0.0975  ! eV 
+   vf=5.253084  ! eV/Angstrom 2.1354*2.46
+
+  !u_AA=0.000   ! eV parameters from PhysRevLett.122.106405
+  !u_AB=0.110   ! eV
+  !vf= 5.817    ! eV/Angstrom  2.365*2.46
+
+   vppsigma=0.48d0  ! eV  
+   Qcutoff=4
+   Num_bands=40
+   Nk=20   
+   Electric_field = -0.0000 ! eV/Angstrom
+
+   !> this symbol "/" is a closur to the symbol "&" at the beginging.
+   /
+
+
+KPATH_BULK
+5  ! number of lines of kpath
+M   0.000000 0.500000  K-  0.333333 0.666667 
+K-  0.333333 0.666667  G   0.000000 0.000000
+G   0.000000 0.000000  M   0.000000 0.500000
+M   0.000000 0.500000  K+ -0.333333 0.333333 
+K+ -0.333333 0.333333  G   0.000000 0.000000
+
