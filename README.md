@@ -1,8 +1,8 @@
 # WannierTools [![Build Status](https://travis-ci.org/quanshengwu/wannier_tools.svg?branch=master)](https://travis-ci.org/quanshengwu/wannier_tools)  [![codecov](https://codecov.io/gh/quanshengwu/wannier_tools/branch/master/graph/badge.svg)](https://codecov.io/gh/quanshengwu/wannier_tools)
 
-More examples and a Forum for WannierTools on [**https://www.wanniertools.org**](https://www.wanniertools.org)
+The homepage of the WannierTools code is [**https://www.wanniertools.org**](https://www.wanniertools.org)
 
-[**Full documentation for WannierTools**](http://quanshengwu.github.io/wannier_tools/)
+Full documentation of WannierTools is on website [**http://www.wanniertools.com**](http://quanshengwu.github.io/wannier_tools/)
 
 ![](https://lh3.googleusercontent.com/-NGkPcF7iUDY/Vy-34BbICBI/AAAAAAAAASY/e2YiWSnQJD4jpHh-kDWceThf2jKKSGAxwCCo/s526/wannier_tools-logo-purple.jpg)
 
@@ -27,7 +27,7 @@ git clone https://github.com/quanshengwu/wannier_tools.git
 
 The stable branch can be downloaded in
 
-[**https://github.com/quanshengwu/wannier_tools/releases**] (https://github.com/quanshengwu/wannier_tools/releases)
+[**https://github.com/quanshengwu/wannier\_tools/releases**](https://github.com/quanshengwu/wannier_tools/releases)
 
 
 
