@@ -47,7 +47,7 @@ and get unfolded energy spectrum from a supercell calculation.
 -------------------------
 WannierTools was released under GPL V3. If you use our code for your research, please cite it properly, 
 like  “ The surface spectrums or Berry curvature, Wilson loop, Weyl/Dirac points, Nodal line,  Chirality et al.
-are calculated by the software package WannierTools~\cite{Wu2017}. "
+are calculated by the software package WannierTools~\cite{Wu2018}. "
 
 Please use **WannierTools** instead of "wannier_tools" , "wannier-tools" or WannierTool" when you cite our software.
 
@@ -55,12 +55,12 @@ For the surface state calculation, please also cite {Sancho1985}.
 
 For the Wilson loop calculation, please also cite PhysRevB.84.075119 and PhysRevB.83.035108.
 
-For magnetoresistance calculation, please cite Magnetoresistance from Fermi surface topology, ShengNan Zhang, QuanSheng Wu, Yi Liu, and Oleg V. Yazyev, Phys. Rev. B 99, 035142 (2019)
+For magnetoresistance calculation, please also cite Magnetoresistance from Fermi surface topology, ShengNan Zhang, QuanSheng Wu, Yi Liu, and Oleg V. Yazyev, Phys. Rev. B 99, 035142 (2019)
 
 Reference 
 
 ```
-@article{WU2017,
+@article{WU2018,
 title = "WannierTools : An open-source software package for novel topological materials",
 journal = "Computer Physics Communications",
 volume = "224",
