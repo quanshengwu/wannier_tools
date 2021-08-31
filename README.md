@@ -1,5 +1,7 @@
 # WannierTools [![Build Status](https://travis-ci.org/quanshengwu/wannier_tools.svg?branch=master)](https://travis-ci.org/quanshengwu/wannier_tools)  [![codecov](https://codecov.io/gh/quanshengwu/wannier_tools/branch/master/graph/badge.svg)](https://codecov.io/gh/quanshengwu/wannier_tools)
 
+![wanniertools-logo](wt-logo.jpg)
+
 The homepage of the WannierTools code is [**https://www.wanniertools.org**](https://www.wanniertools.org)
 
 Full documentation of WannierTools is on website [**http://www.wanniertools.com**](http://quanshengwu.github.io/wannier_tools/)
