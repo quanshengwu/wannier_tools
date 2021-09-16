@@ -3,12 +3,16 @@
 ! as wannier90_hr.dat defined in Wannier90 software package.
 !
 ! Ref:
-! Q.S. Wu et al., Computer Physics Communications 224, 405 (2018)
+! WannierTools : An open-source software package for novel topological materials
+! QuanSheng Wu and ShengNan Zhang and Hai-Feng Song and Matthias Troyer and Alexey A. Soluyanov
+! Computer Physics Communications 224, 405 (2018)
+! Magnetoresistance from Fermi surface topology, 
+! ShengNan Zhang, QuanSheng Wu, Yi Liu, and Oleg V. Yazyev, 
+! Phys. Rev. B 99, 035142 (2019)
 !
 ! constructed by Q.S.Wu on 4/9/2010
 ! change      by Q.S.Wu on 4/22/2010
 ! changed     by Q.S.wu on July/15/2010
-! mpi-version is  tested , please report bugs to QSWU
 ! Jan 25 2015 by Q.S.Wu at ETH Zurich
 ! version     2.2.1  At EPFL, Switzerland, Sep. 14. 2017
 ! version     2.4.0  At EPFL, Switzerland, Aug. 31. 2018
@@ -17,8 +21,10 @@
 ! version     2.5.0  At EPFL, Switzerland, Dec. 9. 2019, magnetoresistance, band unfolding
 ! version     2.5.1  At EPFL, Switzerland, Mar. 6. 2020, For WannierTools tutorial 2020
 ! version     2.6.0  At EPFL, Switzerland, Feb.15. 2021, Landau level, sparse Hamiltonian, TBG
-! wuquansheng@gmail.com
-! Copyright (c) 2017 QuanSheng Wu. All rights reserved.
+!
+! Corresponding to : wuquansheng@gmail.com
+!
+! License: GPL V3
 !--------+--------+--------+--------+--------+--------+--------+------!
 
   program main
@@ -68,7 +74,7 @@
 
    !> readin the control parameters for this program
    call readinput
-   !call deepmdkit_interface
+
    !> determine whether you are using kp model or TB model
    IF (index(KPorTB, 'KP')/=0) then
       Num_wann= sum(Origin_cell%nprojs)
@@ -128,9 +134,6 @@
             stop "ERROR: the summation of all projectors times spin degeneracy is not equal to num_wann"
          endif
       endif ! cpuid
-
-
-
 
       !> broadcast and Nrpts to every cpu
 #if defined (MPI)
@@ -367,15 +370,15 @@
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the bulk FS in a k plane'
      endif
 
-   if (BulkFS_Plane_stack_calc) then
-      if(cpuid.eq.0)write(stdout, *)' '
-      if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the bulk FS in a k plane stacking'
-      call now(time_start)
-      call fermisurface_stack
-      call now(time_end)
-      call print_time_cost(time_start, time_end, 'BulkFS_Plane_stack')
-      if(cpuid.eq.0)write(stdout, *)'<< End of calculating the bulk FS in a k plane stacking'
-   endif
+     if (BulkFS_Plane_stack_calc) then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the bulk FS in a k plane stacking'
+        call now(time_start)
+        call fermisurface_stack
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'BulkFS_Plane_stack')
+        if(cpuid.eq.0)write(stdout, *)'<< End of calculating the bulk FS in a k plane stacking'
+     endif
 
 
      !> calculate 3D Fermi surface
@@ -453,14 +456,12 @@
         if(cpuid.eq.0)write(stdout, *)'>> start of calculating the bulk gap in Cube'
         call now(time_start)
         call gapshape3D
-       !call landau_level_k
-       !call landau_level_B
         call now(time_end)
         call print_time_cost(time_start, time_end, 'BulkGap_Cube')
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the bulk gap in Cube'
      endif
 
-     !> slab band
+     !> slab band kplane mode
      if (SlabBand_plane_calc)then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the slab band structure in k plane mode'
@@ -471,7 +472,7 @@
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the slab band structure in k plane mode'
      endif
 
-     !> slab band
+     !> Wave function of Slab 
      if (SlabBandWaveFunc_calc)then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the slab band wave function'
@@ -482,8 +483,7 @@
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the slab band wave function'
      endif
 
-
-     !> slab band
+     !> slab band kpath mode
      if (SlabBand_calc)then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the slab band structure'
@@ -495,9 +495,8 @@
         else
            call ek_slab
         endif
-        !call ek_slab_2d
         call now(time_end)
-        call print_time_cost(time_start, time_end, 'SlabBand')
+        call print_time_cost(time_start, time_end, 'SlabBand_calc')
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the slab band structure'
      endif
 
@@ -522,16 +521,15 @@
         if(cpuid.eq.0)write(stdout, *)'End of calculating the Berry curvature'
      endif
 
-   if (BerryCurvature_Cube_calc)then
-      if(cpuid.eq.0)write(stdout, *)' '
-      if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Berry curvature in a cube'
-      call now(time_start)
-      call berry_curvarture_cube
-      call now(time_end)
-      call print_time_cost(time_start, time_end, 'BerryCurvature_Cube')
-      if(cpuid.eq.0)write(stdout, *)'End of calculating the Berry curvature in a cube'
-   endif
-
+     if (BerryCurvature_Cube_calc)then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Berry curvature in a k-cube'
+        call now(time_start)
+        call berry_curvarture_cube
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'BerryCurvature_Cube')
+        if(cpuid.eq.0)write(stdout, *)'End of calculating the Berry curvature in a cube'
+     endif
 
 
      if (WireBand_calc) then
@@ -622,7 +620,7 @@
         if(cpuid.eq.0)write(stdout, *)'End of OHE calculation'
      endif
   
-     !> calculate ordinary hall effect with Boltzmann transport
+     !> calculate  with Boltzmann transport
      if (Boltz_k_calc)then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start to calculate ordinary hall effects for different k'
@@ -723,8 +721,6 @@
         call print_time_cost(time_start, time_end, 'SlabSpintexture')
         if(cpuid.eq.0)write(stdout, *)'End of calculating the spin texture for surface'
      endif
-
-
 
      call now(time_end)
 

@@ -63,15 +63,11 @@
      sigma_tensor_ahc    = 0d0
      sigma_tensor_ahc_mpi= 0d0
      omega= 0d0
-     vx=0d0
-     vy=0d0
-     vz=0d0
+     vx=0d0; vy=0d0; vz=0d0
      Hamk_bulk=0d0
      Amat= 0d0
-     UU_dag=0d0
-     UU= 0d0
-     DHDk= 0d0
-     DHDkdag= 0d0
+     UU_dag=0d0; UU= 0d0
+     DHDk= 0d0;  DHDkdag= 0d0
      
      !> energy
      do ie=1, OmegaNum

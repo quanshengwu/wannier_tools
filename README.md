@@ -13,7 +13,7 @@ Full documentation of WannierTools is on website [**http://www.wanniertools.com*
 WannierTools was initialized by QuanSheng Wu (EPFL CH) and Shengnan Zhang (EPFL CH) at IOP CAS Beijing in 2012. 
 Now, it's an open-source software, there are serveral contributors including
 
-* Changming Yue (UniFR CH): symmetrization of Wannier tight-binding Hamiltonian.
+* Changming Yue (UniFR CH): symmetrization of Wannier tight-binding Hamiltonian and obtain phonon tight-binding Hamiltonian.
 * Yifei Guan (EPFL CH): Landau level calculation.
 * Tiantian Zhang (Tokyo Institute of Technology): LOTO correction in phonon systems.
 * Yi Liu (BNU Beijing): Ruge-Kutta integration.
@@ -58,6 +58,8 @@ For the surface state calculation, please also cite {Sancho1985}.
 For the Wilson loop calculation, please also cite PhysRevB.84.075119 and PhysRevB.83.035108.
 
 For magnetoresistance calculation, please also cite Magnetoresistance from Fermi surface topology, ShengNan Zhang, QuanSheng Wu, Yi Liu, and Oleg V. Yazyev, Phys. Rev. B 99, 035142 (2019)
+
+For phonon system calculation, please cite "PhononTB: a tool to construct tight-binding model for phonon systems, https://github.com/quanshengwu/wannier\_tools/tree/master/utility/phonopyTB, Changming Yue"
 
 Reference 
 
