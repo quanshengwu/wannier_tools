@@ -5,8 +5,9 @@
  
  !> bulk band structure calculation flag
  &CONTROL
- BulkBand_calc         = F
- BulkFS_plane_calc   = T
+ BulkBand_calc    = T
+ DOS_calc         = T
+ BulkFS_plane_calc   = F
  BulkBand_Unfold_line_calc          = F
  BulkBand_Unfold_plane_calc         = F
  /
@@ -19,12 +20,13 @@
  
  &PARAMETERS
  Eta_Arc = 0.050     ! infinite small value, like brodening
- E_arc = 1.00         ! energy contour plot
- OmegaNum_unfold =600       ! omega number
- OmegaMin = -13.0     ! energy interval
- OmegaMax =  7.0     ! energy interval
- Nk1 =401           ! number k points
- Nk2 =401          ! number k points
+ E_arc = 0.00         ! energy contour plot
+ !OmegaNum_unfold =600       ! omega number
+ OmegaNum =401       ! omega number
+ OmegaMin = -4.0     ! energy interval
+ OmegaMax =  4.0     ! energy interval
+ Nk1 =41           ! number k points
+ Nk2 =41          ! number k points
  /
  
   

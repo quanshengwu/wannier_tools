@@ -114,8 +114,8 @@ subroutine landau_level_k
    !> \phi_0 = h/2e  h=6.62607004*1E-34, e= 1.6*1E-19
    !> B0Tesla_quantumflux_magsupcell is the magnetic field that makes the flux through the magnetic
    !> supercell to be one quantum flux
-   B0Tesla_quantumflux_magsupcell= 6.62607004*1E-34/2d0/1.6021766208*1E19/MagneticSuperProjectedArea*1E20
-   B0Tesla= 6.62607004*1E-34/2d0/1.6021766208*1E19/MagneticSuperProjectedArea*1E20*Magp
+   B0Tesla_quantumflux_magsupcell= 6.62607004*1E-34/1.6021766208*1E19/MagneticSuperProjectedArea*1E20
+   B0Tesla= 6.62607004*1E-34/1.6021766208*1E19/MagneticSuperProjectedArea*1E20*Magp
 
    if (cpuid==0) then
       write(stdout, '(a, 2E18.8)')' Magnetic field B in Tesla that makes the flux through '
@@ -436,8 +436,8 @@ subroutine landau_level_kplane
    !> \phi_0 = h/2e  h=6.62607004*1E-34, e= 1.6*1E-19
    !> B0Tesla_quantumflux_magsupcell is the magnetic field that makes the flux through the magnetic
    !> supercell to be one quantum flux
-   B0Tesla_quantumflux_magsupcell= 6.62607004*1E-34/2d0/1.6021766208*1E19/MagneticSuperProjectedArea*1E20
-   B0Tesla= 6.62607004*1E-34/2d0/1.6021766208*1E19/MagneticSuperProjectedArea*1E20*Magp
+   B0Tesla_quantumflux_magsupcell= 6.62607004*1E-34/1.6021766208*1E19/MagneticSuperProjectedArea*1E20
+   B0Tesla= 6.62607004*1E-34/1.6021766208*1E19/MagneticSuperProjectedArea*1E20*Magp
 
    if (cpuid==0) then
       write(stdout, '(a, 2E18.8)')' Magnetic field B in Tesla that makes the flux through '
@@ -706,8 +706,8 @@ subroutine landau_level_B
    !> \phi_0 = h/2e  h=6.62607004*1E-34, e= 1.6*1E-19
    !> B0Tesla_quantumflux_magsupcell is the magnetic field that makes the flux through the magnetic
    !> supercell to be one quantum flux
-   B0Tesla_quantumflux_magsupcell= 6.62607004*1E-34/2d0/1.6021766208*1E19/MagneticSuperProjectedArea*1E20
-   B0Tesla= 6.62607004*1E-34/2d0/1.6021766208*1E19/MagneticSuperProjectedArea*1E20*Magp
+   B0Tesla_quantumflux_magsupcell= 6.62607004*1E-34/1.6021766208*1E19/MagneticSuperProjectedArea*1E20
+   B0Tesla= 6.62607004*1E-34/1.6021766208*1E19/MagneticSuperProjectedArea*1E20*Magp
 
    if (cpuid==0) then
       write(stdout, '(a, 2E18.8)')' Magnetic field B in Tesla that makes the flux through '
@@ -972,8 +972,8 @@ subroutine landau_sf
    !> \phi_0 = h/2e  h=6.62607004*1E-34, e= 1.6*1E-19
    !> B0Tesla_quantumflux_magsupcell is the magnetic field that makes the flux through the magnetic
    !> supercell to be one quantum flux
-   B0Tesla_quantumflux_magsupcell= 6.62607004*1E-34/2d0/1.6021766208*1E19/MagneticSuperProjectedArea*1E20
-   B0Tesla= 6.62607004*1E-34/2d0/1.6021766208*1E19/MagneticSuperProjectedArea*1E20*Magp
+   B0Tesla_quantumflux_magsupcell= 6.62607004*1E-34/1.6021766208*1E19/MagneticSuperProjectedArea*1E20
+   B0Tesla= 6.62607004*1E-34/1.6021766208*1E19/MagneticSuperProjectedArea*1E20*Magp
 
    if (cpuid==0) then
       write(stdout, '(a, 2E18.8)')' Magnetic field B in Tesla that makes the flux through '

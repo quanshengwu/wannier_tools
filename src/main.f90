@@ -406,7 +406,13 @@
            if(cpuid.eq.0)write(stdout, *)' '
            if(cpuid.eq.0)write(stdout, *)'>> Start of calculating DOS for bulk system'
            call now(time_start)
-           call dos_sub
+           if(.not. Is_Sparse_Hr) then
+              call dos_sub
+           else
+#if defined (INTELMKL)
+              call dos_sparse
+#endif     
+           end if
            call now(time_end)
            call print_time_cost(time_start, time_end, 'Dos_calc')
            if(cpuid.eq.0)write(stdout, *)'<< End of calculating the DOS for bulk system'

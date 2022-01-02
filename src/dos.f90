@@ -1,3 +1,359 @@
+
+#if defined (INTELMKL)
+subroutine dos_sparse
+!> calculate density of state for 3D bulk system
+!
+!> DOS(\omega)= \sum_k \delta(\omega- E(k))
+   use sparse
+   use wmpi
+   use para
+   implicit none
+
+   !> the integration k space
+   real(dp) :: emin, emax
+
+   integer :: ik, ie, ib, ikx, iky, ikz
+   integer :: knv3, NE, ierr, ieta
+   integer :: NumberofEta
+
+   real(dp) :: x, dk3, eta0
+
+   real(dp) :: k(3)
+   real(dp) :: time_start, time_end
+
+   real(dp), allocatable :: eigval(:)
+   real(dp), allocatable :: W(:)
+   real(dp), allocatable :: omega(:)
+   real(dp), allocatable :: dos(:, :), dos_mpi(:, :)
+   real(dp), external :: delta
+   real(dp), allocatable :: eta_array(:)
+
+   logical :: ritzvec
+
+
+   complex(dp), allocatable :: acoo(:),zeigv(:,:)
+   integer,allocatable :: icoo(:),jcoo(:)
+   integer :: neval,Ndimq,nnz,nnzmax,nvecs
+   complex(dp) :: sigma=(0d0,0d0)
+
+   ndimq=Num_wann
+   ritzvec= .false.
+
+   if (NumSelectedEigenVals==0) NumSelectedEigenVals=Num_wann
+
+   neval=NumSelectedEigenVals
+   if (neval>Ndimq-2) neval= Ndimq- 2
+
+   !> ncv
+   nvecs=int(1.5*neval)
+
+   if (nvecs<50) nvecs= 50
+   if (nvecs>Ndimq) nvecs= Ndimq
+   !> delta function
+
+   knv3= Nk1*Nk2*Nk3
+
+   if (OmegaNum<2) OmegaNum=2
+   NE= OmegaNum
+   sigma=(1d0,0d0)*E_arc
+   nnzmax=splen+ Ndimq
+   nnz=splen
+
+   NumberofEta=9
+
+   allocate(W(Num_wann))
+   allocate(eigval(neval))
+   allocate(eta_array(NumberofEta))
+   allocate(dos(NE, NumberofEta))
+   allocate(dos_mpi(NE, NumberofEta))
+   allocate(omega(NE))
+   allocate( acoo(nnzmax))
+   allocate( jcoo(nnzmax))
+   allocate( icoo(nnzmax))
+   allocate( zeigv(ndimq,nvecs))
+   dos=0d0
+   dos_mpi=0d0
+   eigval= 0d0
+
+
+   emin= OmegaMin
+   emax= OmegaMax
+
+   eta_array=(/0.1d0, 0.2d0, 0.4d0, 0.8d0, 1.0d0, 2d0, 4d0, 8d0, 10d0/)
+   eta_array= eta_array*Eta_Arc
+
+   !eta= (emax- emin)/ dble(NE)*3d0
+
+   !> energy
+   do ie=1, NE
+      omega(ie)= emin+ (emax-emin)* (ie-1d0)/dble(NE-1)
+   enddo ! ie
+
+   !dk3= kCubeVolume/dble(knv3)
+   dk3= 1d0/dble(knv3)
+
+   !> get eigenvalue
+   time_start= 0d0
+   time_end= 0d0
+   do ik=1+cpuid, knv3, num_cpu
+
+      if (cpuid.eq.0.and. mod(ik/num_cpu, 100).eq.0) &
+         write(stdout, '(a, i18, "/", i18, a, f10.3, "s")') 'ik/knv3', &
+         ik, knv3, ' time left', (knv3-ik)*(time_end-time_start)/num_cpu
+
+
+      call now(time_start)
+      ikx= (ik-1)/(nk2*nk3)+1
+      iky= ((ik-1-(ikx-1)*Nk2*Nk3)/nk3)+1
+      ikz= (ik-(iky-1)*Nk3- (ikx-1)*Nk2*Nk3)
+      k= K3D_start_cube+ K3D_vec1_cube*(ikx-1)/dble(nk1)  &
+         + K3D_vec2_cube*(iky-1)/dble(nk2)  &
+         + K3D_vec3_cube*(ikz-1)/dble(nk3)
+
+      call ham_bulk_coo_sparsehr(k,acoo,icoo,jcoo)
+      W= 0d0
+      call arpack_sparse_coo_eigs(Ndimq,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
+
+      eigval(:)= W(1:neval)
+
+      !> get density of state
+      do ie= 1, NE
+         do ib= 1, neval
+            x= omega(ie)- eigval(ib)
+            do ieta= 1, NumberofEta
+               eta0= eta_array(ieta)
+               dos_mpi(ie, ieta) = dos_mpi(ie, ieta)+ delta(eta0, x)
+            enddo
+         enddo ! ib
+      enddo ! ie
+      call now(time_end)
+
+   enddo  ! ik
+
+#if defined (MPI)
+   call mpi_allreduce(dos_mpi,dos,size(dos),&
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+   dos= dos_mpi
+#endif
+   dos= dos*dk3
+
+   outfileindex= outfileindex+ 1
+   if (cpuid.eq.0) then
+      open(unit=outfileindex, file='dos.dat')
+      write(outfileindex, *)'# Density of state of bulk system'
+      write(outfileindex, '(a16, a)')'# E(eV)', 'DOS(E) (states/unit cell/eV)'
+      write(outfileindex, '(a16, 90f16.6)')'# E(eV)', eta_array
+      do ie=1, NE
+         write(outfileindex, '(90f16.6)')omega(ie)/eV2Hartree, dos(ie, :)
+      enddo ! ie
+      close(outfileindex)
+   endif
+
+   outfileindex= outfileindex+ 1
+   !> write script for gnuplot
+   if (cpuid==0) then
+      open(unit=outfileindex, file='dos.gnu')
+      write(outfileindex, '(a)')"set encoding iso_8859_1"
+      write(outfileindex, '(a)')'set terminal  postscript enhanced color font ",24" '
+      write(outfileindex, '(a)')"set output 'dos.eps'"
+      write(outfileindex, '(a)')'set border lw 2'
+      write(outfileindex, '(a)')'set autoscale fix'
+      write(outfileindex, '(a)')'set yrange [0:1]'
+      write(outfileindex, '(a)')'unset key'
+      write(outfileindex, '(a)')'set xlabel "Energy (eV)"'
+      write(outfileindex, '(a)')'set ylabel "DOS (states/eV/unit cell)"'
+      write(outfileindex, '(a)')"plot 'dos.dat' u 1:2 w lp pt 6 ps 0.2 lw 1.0 lc rgb 'black'  "
+      close(outfileindex)
+   endif
+
+#if defined (MPI)
+   call mpi_barrier(mpi_cmw, ierr)
+#endif
+   deallocate(W)
+!~    deallocate(Hk)
+   deallocate(eigval)
+   deallocate(dos)
+   deallocate(dos_mpi)
+   deallocate(omega)
+
+   return
+end subroutine dos_sparse
+
+#endif
+
+
+#if defined (INTELMKL)
+subroutine charge_density_sparse
+!> calculate charge density
+!
+!> rho(r)= \sum_k |\psi_k(r)|^2
+   use sparse
+   use wmpi
+   use para
+   implicit none
+
+   integer :: ik, ie, ib, ikx, iky, ikz, i, j, ia, n
+   integer :: knv3, NE, ierr, ieta
+   integer :: NumberofEta
+
+   real(dp) :: x, dk3, eta0
+
+   real(dp) :: k(3)
+   real(dp) :: time_start, time_end
+
+   real(dp), allocatable :: eigval(:)
+   real(dp), allocatable :: W(:)
+   real(dp), allocatable :: omega(:)
+   real(dp), allocatable :: chargedensity(:), chargedensity_mpi(:)
+   real(dp), external :: delta
+
+   logical :: ritzvec
+
+
+   complex(dp), allocatable :: acoo(:),zeigv(:,:)
+   integer,allocatable :: icoo(:),jcoo(:)
+   integer :: neval,Ndimq,nnz,nnzmax,nvecs
+   complex(dp) :: sigma=(0d0,0d0)
+
+   ndimq=Num_wann
+   ritzvec= .true.
+
+   if (NumSelectedEigenVals==0) then
+      if (OmegaNum==0) then
+         NumSelectedEigenVals=Num_wann
+      else
+         NumSelectedEigenVals=OmegaNum
+      endif
+   endif
+
+   neval=NumSelectedEigenVals
+   if (neval>Ndimq-2) neval= Ndimq- 2
+
+   !> ncv
+   nvecs=int(1.5*neval)
+
+   if (nvecs<50) nvecs= 50
+   if (nvecs>Ndimq) nvecs= Ndimq
+   !> delta function
+
+   knv3= Nk1*Nk2*Nk3
+
+   if (OmegaNum<2) OmegaNum=2
+   NE= OmegaNum
+   sigma=(1d0,0d0)*E_arc
+   nnzmax=splen+ Ndimq
+   nnz=splen
+
+
+   allocate(W(Num_wann))
+   allocate(eigval(neval))
+   allocate(chargedensity(Origin_cell%Num_atoms))
+   allocate(chargedensity_mpi(Origin_cell%Num_atoms))
+   allocate(omega(NE))
+   allocate( acoo(nnzmax))
+   allocate( jcoo(nnzmax))
+   allocate( icoo(nnzmax))
+   allocate( zeigv(ndimq,nvecs))
+   chargedensity=0d0
+   chargedensity_mpi=0d0
+   eigval= 0d0
+
+
+   !> get eigenvalue
+   time_start= 0d0
+   time_end= 0d0
+   do ik=1+cpuid, knv3, num_cpu
+
+      if (cpuid.eq.0.and. mod((ik-1)/num_cpu, 100).eq.0) &
+         write(stdout, '(a, i18, "/", i18, a, f10.3, "s")') 'ik/knv3', &
+         ik, knv3, ' time left', (knv3-ik)*(time_end-time_start)/num_cpu
+
+
+      call now(time_start)
+      ikx= (ik-1)/(nk2*nk3)+1
+      iky= ((ik-1-(ikx-1)*Nk2*Nk3)/nk3)+1
+      ikz= (ik-(iky-1)*Nk3- (ikx-1)*Nk2*Nk3)
+      k= K3D_start_cube+ K3D_vec1_cube*(ikx-1)/dble(nk1)  &
+         + K3D_vec2_cube*(iky-1)/dble(nk2)  &
+         + K3D_vec3_cube*(ikz-1)/dble(nk3)
+
+      call ham_bulk_coo_sparsehr(k,acoo,icoo,jcoo)
+      W= 0d0
+      call arpack_sparse_coo_eigs(Ndimq,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
+
+      !> get charge density
+      do i=1, neval
+         if (W(i)>OmegaMin .and.W(i)<OmegaMax) then
+            n=0
+            do ia= 1, Origin_cell%Num_atoms
+               do j= 1, Origin_cell%nprojs(ia)
+                  n=n+1
+                  chargedensity_mpi(ia)= chargedensity_mpi(ia)+ abs(zeigv(n, i))**2
+                  if (SOC>0) then
+                     chargedensity_mpi(ia)= chargedensity_mpi(ia)+ abs(zeigv(n+Num_wann/2, i))**2
+                  endif
+               enddo
+            enddo
+         endif
+      enddo ! i
+      call now(time_end)
+   enddo  ! ik
+
+#if defined (MPI)
+   call mpi_allreduce(chargedensity_mpi,chargedensity,size(chargedensity),&
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+   chargedensity= chargedensity_mpi
+#endif
+   chargedensity= chargedensity/knv3
+
+   outfileindex= outfileindex+ 1
+   if (cpuid.eq.0) then
+      open(unit=outfileindex, file='chargedensity.dat')
+      write(outfileindex, *)'# Density of state of bulk system'
+      write(outfileindex, '(a16, a)')'# E(eV)', 'chargedensity(E) (states/unit cell/eV)'
+      do ia=1, Origin_cell%Num_atoms
+         write(outfileindex, '(90f16.6)')Origin_cell%Atom_position_cart(:, ia), chargedensity(ia)
+      enddo ! ia
+      close(outfileindex)
+   endif
+
+   outfileindex= outfileindex+ 1
+   !> write script for gnuplot
+   if (cpuid==0) then
+      open(unit=outfileindex, file='chargedensity.gnu')
+      write(outfileindex, '(a)')"set encoding iso_8859_1"
+      write(outfileindex, '(a)')'set terminal  postscript enhanced color font ",24" '
+      write(outfileindex, '(a)')"set output 'chargedensity.eps'"
+      write(outfileindex, '(a)')'set border lw 2'
+      write(outfileindex, '(a)')'set autoscale fix'
+      write(outfileindex, '(a)')'set yrange [0:1]'
+      write(outfileindex, '(a)')'unset key'
+      write(outfileindex, '(a)')'set xlabel "Energy (eV)"'
+      write(outfileindex, '(a)')'set ylabel "chargedensity (states/eV/unit cell)"'
+      write(outfileindex, '(a)')"splot 'chargedensity.dat' u 1:2:3 w lp pt 6 ps 0.2 lw 1.0 lc rgb 'black'  "
+      close(outfileindex)
+   endif
+
+#if defined (MPI)
+   call mpi_barrier(mpi_cmw, ierr)
+#endif
+   deallocate(W)
+   deallocate(eigval)
+   deallocate(chargedensity)
+   deallocate(chargedensity_mpi)
+
+   return
+end subroutine charge_density_sparse
+
+#endif
+
+
+
+
+
+
 subroutine dos_sub
 !> calculate density of state for 3D bulk system
 !
@@ -10,14 +366,15 @@ subroutine dos_sub
    !> the integration k space
    real(dp) :: emin, emax
 
-   real(dp) :: eta_brodening
-
-   integer :: ik, ie, ib, ikx, iky, ikz, knv3, NE, ierr
+   integer :: ik,ie,ib,ikx,iky,ikz
+   integer :: knv3,NE,ierr
 
    !> integration for band
-   integer :: iband_low, iband_high, iband_tot
+   integer :: iband_low,iband_high,iband_tot
 
-   real(dp) :: x, dk3, k(3)
+   real(dp) :: x, dk3
+
+   real(dp) :: k(3)
    real(dp) :: time_start, time_end
 
    real(dp), allocatable :: eigval(:)
@@ -50,9 +407,6 @@ subroutine dos_sub
    allocate(dos(NE))
    allocate(dos_mpi(NE))
    allocate(omega(NE))
-   omega= 0d0
-   Hk= 0d0
-   W=0d0
    dos=0d0
    dos_mpi=0d0
    eigval= 0d0
@@ -60,15 +414,16 @@ subroutine dos_sub
 
    emin= OmegaMin
    emax= OmegaMax
-   eta_brodening= (emax- emin)/ dble(NE)*6d0
-
+  !eta= (emax- emin)/ dble(NE)*6d0
+   eta= Eta_Arc
 
    !> energy
    do ie=1, NE
       omega(ie)= emin+ (emax-emin)* (ie-1d0)/dble(NE-1)
    enddo ! ie
 
-   dk3= kCubeVolume/dble(knv3)
+   !dk3= kCubeVolume/dble(knv3)
+   dk3= 1d0/dble(knv3)
 
    !> get eigenvalue
    time_start= 0d0
@@ -77,27 +432,26 @@ subroutine dos_sub
 
       if (cpuid.eq.0.and. mod(ik/num_cpu, 100).eq.0) &
          write(stdout, '(a, i18, "/", i18, a, f10.3, "s")') 'ik/knv3', &
-         ik, knv3, 'time left', (knv3-ik)*(time_end-time_start)/num_cpu
-
+         ik, knv3, ' time left', (knv3-ik)*(time_end-time_start)/num_cpu
 
       call now(time_start)
       ikx= (ik-1)/(nk2*nk3)+1
       iky= ((ik-1-(ikx-1)*Nk2*Nk3)/nk3)+1
       ikz= (ik-(iky-1)*Nk3- (ikx-1)*Nk2*Nk3)
       k= K3D_start_cube+ K3D_vec1_cube*(ikx-1)/dble(nk1)  &
-       + K3D_vec2_cube*(iky-1)/dble(nk2)  &
-       + K3D_vec3_cube*(ikz-1)/dble(nk3)
+         + K3D_vec2_cube*(iky-1)/dble(nk2)  &
+         + K3D_vec3_cube*(ikz-1)/dble(nk3)
 
-      !> get Hamiltonian at a given k point and diagonalize it
-      call ham_bulk_latticegauge(k, Hk)
+      call ham_bulk_atomicgauge(k, Hk)
       W= 0d0
       call eigensystem_c( 'N', 'U', Num_wann ,Hk, W)
       eigval(:)= W(iband_low:iband_high)
 
+      !> get density of state
       do ie= 1, NE
          do ib= 1, iband_tot
             x= omega(ie)- eigval(ib)
-            dos_mpi(ie) = dos_mpi(ie)+ delta(eta_brodening, x)
+            dos_mpi(ie) = dos_mpi(ie)+ delta(eta, x)
          enddo ! ib
       enddo ! ie
       call now(time_end)
@@ -105,8 +459,8 @@ subroutine dos_sub
    enddo  ! ik
 
 #if defined (MPI)
-call mpi_allreduce(dos_mpi,dos,size(dos),&
-                      mpi_dp,mpi_sum,mpi_cmw,ierr)
+   call mpi_allreduce(dos_mpi,dos,size(dos),&
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
 #else
    dos= dos_mpi
 #endif
@@ -119,13 +473,13 @@ call mpi_allreduce(dos_mpi,dos,size(dos),&
    if (cpuid.eq.0) then
       open(unit=outfileindex, file='dos.dat')
       write(outfileindex, *)'# Density of state of bulk system'
-      write(outfileindex, '(2a16)')'# E(eV)', 'DOS(E) (1/eV/unit cell)'
+      write(outfileindex, '(2a16)')'# E(eV)', 'DOS(E) (1/eV)'
       do ie=1, NE
-         write(outfileindex, '(2f16.6)')omega(ie), dos(ie)
-      enddo ! ie 
+         write(outfileindex, '(2f16.6)')omega(ie)/eV2Hartree, dos(ie)
+      enddo ! ie
       close(outfileindex)
    endif
- 
+
    outfileindex= outfileindex+ 1
    !> write script for gnuplot
    if (cpuid==0) then
@@ -138,11 +492,20 @@ call mpi_allreduce(dos_mpi,dos,size(dos),&
       write(outfileindex, '(a)')'set yrange [0:1]'
       write(outfileindex, '(a)')'unset key'
       write(outfileindex, '(a)')'set xlabel "Energy (eV)"'
-      write(outfileindex, '(a)')'set ylabel "DOS (1/eV/unit cell)"'
+      write(outfileindex, '(a)')'set ylabel "DOS (states/eV/unit cell)"'
       write(outfileindex, '(2a)')"plot 'dos.dat' u 1:2 w l lw 4 lc rgb 'black'"
       close(outfileindex)
    endif
 
+#if defined (MPI)
+   call mpi_barrier(mpi_cmw, ierr)
+#endif
+   deallocate(W)
+   deallocate(Hk)
+   deallocate(eigval)
+   deallocate(dos)
+   deallocate(dos_mpi)
+   deallocate(omega)
 
    return
 end subroutine dos_sub
@@ -157,7 +520,8 @@ subroutine joint_dos
    implicit none
 
    !> the integration k space
-   real(dp) :: emin, emax
+   real(dp) :: emin
+   real(dp) :: emax
 
    integer :: ik, ie, ib, ib1, ib2
    integer :: ikx, iky, ikz, knv3, NE, ierr
@@ -209,7 +573,7 @@ subroutine joint_dos
    jdos= 0d0
    jdos_mpi= 0d0
    omega= 0d0
- 
+
    ik =0
 
    do ikx= 1, nk1
@@ -217,8 +581,8 @@ subroutine joint_dos
          do ikz= 1, nk3
             ik= ik+ 1
             kpoints(:, ik)= K3D_start_cube+ K3D_vec1_cube*(ikx-1)/dble(nk1)  &
-                      + K3D_vec2_cube*(iky-1)/dble(nk2)  &
-                      + K3D_vec3_cube*(ikz-1)/dble(nk3)
+               + K3D_vec2_cube*(iky-1)/dble(nk2)  &
+               + K3D_vec3_cube*(ikz-1)/dble(nk3)
          enddo
       enddo
    enddo
@@ -229,7 +593,7 @@ subroutine joint_dos
    do ik=1+cpuid, knv3, num_cpu
       if (cpuid.eq.0) write(stdout, *) 'ik, knv3', ik, knv3
       k= kpoints(:, ik)
-      call ham_bulk_latticegauge(k, Hk)
+      call ham_bulk_atomicgauge(k, Hk)
       W= 0d0
       call eigensystem_c( 'N', 'U', Num_wann ,Hk, W)
       eigval_mpi(:, ik)= W(iband_low:iband_high)
@@ -237,9 +601,9 @@ subroutine joint_dos
 
 #if defined (MPI)
    call mpi_allreduce(eigval_mpi,eigval,size(eigval),&
-                      mpi_dp,mpi_sum,mpi_cmw,ierr)
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
 #else
-     eigval= eigval_mpi
+   eigval= eigval_mpi
 #endif
 
 
@@ -283,21 +647,34 @@ subroutine joint_dos
    jdos = 0d0
 #if defined (MPI)
    call mpi_allreduce(jdos_mpi,jdos,size(jdos),&
-                      mpi_dp,mpi_sum,mpi_cmw,ierr)
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
 #else
-     jdos= jdos_mpi
+   jdos= jdos_mpi
 #endif
 
    outfileindex= outfileindex+ 1
    if (cpuid.eq.0) then
       open(unit=outfileindex, file='jdos.dat')
       do ie=1, NE
-         write(outfileindex, *)omega(ie), jdos(ie)
-      enddo ! ie 
+         write(outfileindex, *)omega(ie)/eV2Hartree, jdos(ie)
+      enddo ! ie
       close(outfileindex)
    endif
 
- 
+#if defined (MPI)
+   call mpi_barrier(mpi_cmw, ierr)
+#endif
+   deallocate(jdos)
+   deallocate(jdos_mpi)
+   deallocate(omega)
+   deallocate(W)
+   deallocate(kpoints)
+   deallocate(Hk)
+   deallocate(eigval)
+   deallocate(eigval_mpi)
+   deallocate(fermi_dis)
+
+
    return
 end subroutine joint_dos
 
@@ -312,7 +689,8 @@ subroutine dos_joint_dos
    implicit none
 
    !> the integration k space
-   real(dp) :: emin, emax
+   real(dp) :: emin
+   real(dp) :: emax
 
    integer :: ik, ie, ib, ib1, ib2
    integer :: ikx, iky, ikz, knv3, NE, ierr
@@ -363,7 +741,7 @@ subroutine dos_joint_dos
    dos_mpi= 0d0
    omega_dos= 0d0
    omega_jdos= 0d0
- 
+
 
    dk3= kCubeVolume/dble(knv3)
 
@@ -392,12 +770,12 @@ subroutine dos_joint_dos
       if (cpuid.eq.0) write(stdout, *) 'ik, knv3', ik, knv3
       ikx= (ik- 1)/(Nk2*Nk3)+ 1
       iky= (ik- (ikx-1)*Nk2*Nk3- 1)/Nk3+ 1
-      ikz= ik- (ikx-1)*Nk2*Nk3- (iky-1)*Nk3 
+      ikz= ik- (ikx-1)*Nk2*Nk3- (iky-1)*Nk3
 
       k= K3D_start_cube+ K3D_vec1_cube*(ikx-1)/dble(nk1-1)  &
-                + K3D_vec2_cube*(iky-1)/dble(nk2-1)  &
-                + K3D_vec3_cube*(ikz-1)/dble(nk3-1)
-      call ham_bulk_latticegauge(k, Hk)
+         + K3D_vec2_cube*(iky-1)/dble(nk2-1)  &
+         + K3D_vec3_cube*(ikz-1)/dble(nk3-1)
+      call ham_bulk_atomicgauge(k, Hk)
       W= 0d0
       call eigensystem_c( 'N', 'U', Num_wann ,Hk, W)
 
@@ -433,12 +811,12 @@ subroutine dos_joint_dos
 
 #if defined (MPI)
    call mpi_allreduce(dos_mpi,dos,size(dos),&
-                      mpi_dp,mpi_sum,mpi_cmw,ierr)
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
    call mpi_allreduce(jdos_mpi,jdos,size(jdos),&
-                      mpi_dp,mpi_sum,mpi_cmw,ierr)
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
 #else
-     dos= dos_mpi
-     jdos= jdos_mpi
+   dos= dos_mpi
+   jdos= jdos_mpi
 #endif
 
 
@@ -447,7 +825,7 @@ subroutine dos_joint_dos
       open(unit=outfileindex, file='jdos.dat')
       do ie=1, NE
          write(outfileindex, *)omega_jdos(ie), jdos(ie)*dk3
-      enddo ! ie 
+      enddo ! ie
       close(outfileindex)
    endif
 
@@ -456,36 +834,47 @@ subroutine dos_joint_dos
       open(unit=outfileindex, file='dos.dat')
       do ie=1, NE
          write(outfileindex, *)omega_dos(ie), dos(ie)*dk3
-      enddo ! ie 
+      enddo ! ie
       close(outfileindex)
    endif
- 
+#if defined (MPI)
+   call mpi_barrier(mpi_cmw, ierr)
+#endif
+
+   deallocate(dos)
+   deallocate(dos_mpi)
+   deallocate(jdos)
+   deallocate(jdos_mpi)
+   deallocate(omega_dos)
+   deallocate(omega_jdos)
+   deallocate(W)
+   deallocate(Hk)
+   deallocate(fermi_dis)
+
    return
 end subroutine dos_joint_dos
 
 
 function delta(eta, x)
-   !>  Lorentz or Gaussian expansion of the Delta function
+   !>  Lorentz or gaussian expansion of the Delta function
    use para, only : dp, pi
    implicit none
    real(dp), intent(in) :: eta
    real(dp), intent(in) :: x
    real(dp) :: delta, y
 
-   !> lorentz brodening
-  !delta= 1d0/pi*eta/(eta*eta+x*x)
+   !> Lorentz expansion
+   !delta= 1d0/pi*eta/(eta*eta+x*x)
 
    y= x*x/eta/eta/2d0
 
    !> Gaussian brodening
-   !> exp(-60)=8.75651076269652e-27
-   if (y>60) then
-      delta= 0d0
+   !> exp(-60) = 8.75651076269652e-27
+   if (y>60d0) then
+      delta = 0d0
    else
       delta= exp(-y)/sqrt(2d0*pi)/eta
    endif
 
    return
-end function
-
-
+end function delta

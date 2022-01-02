@@ -614,7 +614,8 @@ subroutine readinput
    Eta_Arc = Eta_Arc*eV2Hartree
    OmegaMin= OmegaMin*eV2Hartree
    OmegaMax= OmegaMax*eV2Hartree
-
+   Gap_threshold= Gap_threshold*eV2Hartree
+   Rcut= Rcut*Ang2Bohr
 
    !> change the unit of relaxtion time from ps to atomic unit
    Relaxation_Time_Tau= Relaxation_Time_Tau*1E-12/Time_atomic

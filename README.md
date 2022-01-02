@@ -84,7 +84,7 @@ Sancho1985: [Highly convergent schemes for the calculation of bulk and surface G
 **Citations**
 ----------------
 
-[Full list of citations from the ADS Databases](http://adsabs.harvard.edu/abs/2018CoPhC.224..405W)
+[Full list of citations from the ADS Databases](http://adsabs.harvard.edu/abs/2018CoPhC.224..405W/citations)
 
 * Non-Abelian band topology in noninteracting metals, **QuanSheng Wu**, Alexey A. Soluyanov, and Tomas Bzdusek, Science 365, 1273 (2019)
 * Phonon-Induced Topological Transition to a Type-II Weyl Semimetal, Lin-Lin Wang, Na Hyun Jo, Yun Wu, QuanSheng Wu, Adam Kaminski, Paul C. Canfield, Duane D. Johnson, [arXiv:1703.07292] (https://128.84.21.199/abs/1703.07292)

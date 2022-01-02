@@ -22,24 +22,52 @@ subroutine ham_bulk_atomicgauge(k,Hamk_bulk)
    integer :: i1,i2,iR
 
    ! wave vector in 3d
-   real(Dp) :: k(3), kdotr, pos0(3)
+   real(Dp) :: k(3), kdotr, pos0(3), pos1(3), pos2(3)
+   real(dp) :: dis, pos_direct(3), pos_cart(3)
 
    complex(dp) :: factor
 
    ! Hamiltonian of bulk system
    complex(Dp),intent(out) ::Hamk_bulk(Num_wann, Num_wann)
    complex(dp), allocatable :: mat1(:, :)
+   real(dp), external :: norm
+
    allocate(mat1(Num_wann, Num_wann))
 
    Hamk_bulk=0d0
-   do iR=1, Nrpts
-      kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
-      factor= exp(pi2zi*kdotr)
+!  do iR=1, Nrpts
+!     kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
+!     factor= exp(pi2zi*kdotr)
 
-      Hamk_bulk(:, :)= Hamk_bulk(:, :) &
-         + HmnR(:, :, iR)*factor/ndegen(iR)
+!     Hamk_bulk(:, :)= Hamk_bulk(:, :) &
+!        + HmnR(:, :, iR)*factor/ndegen(iR)
+!  enddo ! iR
+ 
+   do iR=1,Nrpts
+      do i2=1, Num_wann
+         pos2= Origin_cell%wannier_centers_direct(:, i2)
+         !> the second atom in unit cell R
+         do i1=1, Num_wann
+            !> the first atom in home unit cell
+            pos1= Origin_cell%wannier_centers_direct(:, i1)
+            pos_direct= irvec(:, iR)+ pos2- pos1
+
+            call direct_cart_real(pos_direct, pos_cart, Origin_cell%lattice)
+
+            dis= norm(pos_cart)
+            if (dis> Rcut) cycle
+
+            kdotr=k(1)*pos_direct(1) + k(2)*pos_direct(2) + k(3)*pos_direct(3)
+            factor= exp(pi2zi*kdotr)
+
+            Hamk_bulk(i1, i2)= Hamk_bulk(i1, i2) &
+               + HmnR(i1, i2, iR)*factor/ndegen(iR)
+
+         enddo ! i2
+      enddo ! i1
    enddo ! iR
-   
+
+  
    mat1=0d0
    do i1=1,Num_wann
       pos0=Origin_cell%wannier_centers_direct(:, i1)
