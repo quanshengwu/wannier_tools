@@ -84,7 +84,17 @@ subroutine unfolding_kpath
    sigma=(1d0,0d0)*E_arc
    if (Is_Sparse_Hr) then
 
-      neval=OmegaNum
+      !> first use NumSelectedEigenVals, if NumSelectedEigenVals is not set, 
+      !> then use OmegaNum; if OmegaNum is also not set, 
+      !> then use Num_wann
+      if (NumSelectedEigenVals>0) then
+         neval= NumSelectedEigenVals
+      else if (OmegaNum>0) then
+         neval= OmegaNum
+      else
+         neval = Num_wann
+      endif
+
       if (neval>Num_wann-2) then
          neval= Num_wann- 2
       endif
@@ -398,7 +408,17 @@ subroutine unfolding_kplane
    sigma=(1d0,0d0)*E_arc
    if (Is_Sparse_Hr) then
 
-      neval=OmegaNum
+      !> first use NumSelectedEigenVals, if NumSelectedEigenVals is not set, 
+      !> then use OmegaNum; if OmegaNum is also not set, 
+      !> then use Num_wann
+      if (NumSelectedEigenVals>0) then
+         neval= NumSelectedEigenVals
+      else if (OmegaNum>0) then
+         neval= OmegaNum
+      else
+         neval = Num_wann
+      endif
+
       if (neval>Num_wann-2) then
          neval= Num_wann- 2
       endif
