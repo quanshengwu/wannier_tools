@@ -17,6 +17,7 @@ Now, it's an open-source software, there are serveral contributors including
 * Yifei Guan (EPFL CH): Landau level calculation.
 * Tiantian Zhang (Tokyo Institute of Technology): LOTO correction in phonon systems.
 * Yi Liu (BNU Beijing): Ruge-Kutta integration.
+* Jianzhou Zhao (SWUST): QPI in kpath mode
 
 **Pull down the package**
 -------------------------
