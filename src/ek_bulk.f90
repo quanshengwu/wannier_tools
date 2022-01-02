@@ -974,7 +974,20 @@ subroutine sparse_ekbulk
    real(dp) :: time1, time2, time3
 
 
-   neval=OmegaNum
+   if (OmegaNum==0) OmegaNum= Num_wann
+   if (NumSelectedEigenVals==0) NumSelectedEigenVals=OmegaNum
+
+   !> first use NumSelectedEigenVals, if NumSelectedEigenVals is not set, 
+   !> then use OmegaNum; if OmegaNum is also not set, 
+   !> then use Num_wann
+   if (NumSelectedEigenVals>0) then
+      neval= NumSelectedEigenVals
+   else if (OmegaNum>0) then
+      neval= OmegaNum
+   else
+      neval = Num_wann
+   endif
+
    if (neval>Num_wann-2) neval= Num_wann- 2
 
    !> ncv
@@ -1219,7 +1232,17 @@ subroutine sparse_ekbulk_plane
    real(dp) :: time1, time2, time3, time_start, time_end
 
 
-   neval=OmegaNum
+   !> first use NumSelectedEigenVals, if NumSelectedEigenVals is not set, 
+   !> then use OmegaNum; if OmegaNum is also not set, 
+   !> then use Num_wann
+   if (NumSelectedEigenVals>0) then
+      neval= NumSelectedEigenVals
+   else if (OmegaNum>0) then
+      neval= OmegaNum
+   else
+      neval = Num_wann
+   endif
+
    if (neval>Num_wann-2) neval= Num_wann- 2
 
    !> ncv
