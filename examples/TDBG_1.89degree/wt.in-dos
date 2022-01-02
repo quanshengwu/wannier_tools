@@ -5,12 +5,12 @@ Is_Sparse=T     ! TDBG_m17_hr.dat is stored as sparse format
 
 !> bulk band structure calculation flag
 &CONTROL
-BulkBand_calc          = T
+DOS_calc          = T
 /
 
 &SYSTEM
 NumOccupied =  14       ! NumOccupied, not used here
-SOC = 0                 ! without
+SOC = 0                 ! without SOC
 E_FERMI = 0.044
 Add_Zeeman_field = F
 Zeeman_energy_in_eV= 0.00
@@ -19,10 +19,16 @@ Inner_symmetrical_Electric_Field = F
 /
 
 &PARAMETERS
-E_arc = 0.00        ! obtain energy bands close to E_arc
-NumSelectedEigenVals = 20  ! only when Is_Sparse=T  
-Nk1 = 72            ! number k points
-/
+Eta_Arc = 0.050     ! infinite small value, like brodening
+E_arc = 0.00        ! obtained NumSelectedEigenVals bands close to E_arc
+OmegaNum = 201       ! omega number
+Omegamin = -0.3     ! in eV
+OmegaMax =  0.3     ! in eV
+NumSelectedEigenVals = 20 ! only used when Is_Sparse=T   
+Nk1 = 31            ! number k points
+Nk2 = 31            ! number k points
+Nk3 = 1             ! number k points
+ /
 
 LATTICE
 Angstrom
@@ -14752,4 +14758,11 @@ KPATH_BULK            ! k point path
 G 0.000000 0.000000 0.0000 K 0.333333 0.333333 0.0000
 K 0.333333 0.333333 0.0000 M 0.500000 0.000000 0.0000
 M 0.500000 0.000000 0.0000 G 0.000000 0.000000 0.0000
+ 
+!> this will be used in the DOS calculation
+KCUBE_BULK
+  0.00  0.00  0.00   ! Original point for 3D k plane
+  1.00  0.00  0.00   ! The first vector to define 3d k space plane
+  0.00  1.00  0.00   ! The second vector to define 3d k space plane
+  0.00  0.00  1.00   ! The third vector to define 3d k cube
  
