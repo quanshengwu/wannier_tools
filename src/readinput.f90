@@ -119,9 +119,12 @@ subroutine readinput
    NLChirality_calc    = .FALSE.
    BerryPhase_calc       = .FALSE.
    BerryCurvature_calc   = .FALSE.
+   BerryCurvature_EF_calc   = .FALSE.
    BerryCurvature_plane_selectedbands_calc = .FALSE.
    BerryCurvature_Cube_calc   = .FALSE.
    BerryCurvature_slab_calc = .FALSE.
+   Berrycurvature_kpath_EF_calc = .FALSE.
+   BerryCurvature_kpath_Occupied_calc = .FALSE.
    MirrorChern_calc      = .FALSE.
    Dos_calc              = .FALSE.
    JDos_calc             = .FALSE.
@@ -170,7 +173,8 @@ subroutine readinput
       write(*, *)"SlabQPI_kpath_calc"
       write(*, *)"SlabQPI_kplane_calc"
       write(*, *)"SlabSpintexture,wanniercenter_calc"
-      write(*, *)"BerryPhase_calc,BerryCurvature_calc"
+      write(*, *)"BerryPhase_calc,BerryCurvature_calc, BerryCurvature_EF_calc"
+      write(*, *)"Berrycurvature_kpath_EF_calc, BerryCurvature_kpath_Occupied_calc"
       write(*, *)"BerryCurvature_slab_calc, BerryCurvature_Cube_calc"
       write(*, *)"Dos_calc, JDos_calc, FindNodes_calc"
       write(*, *)"BulkFS_plane_calc"
@@ -241,6 +245,9 @@ subroutine readinput
       write(stdout, *) "wanniercenter_calc                : ", wanniercenter_calc
       write(stdout, *) "BerryPhase_calc                   : ", BerryPhase_calc
       write(stdout, *) "BerryCurvature_calc               : ", BerryCurvature_calc
+      write(stdout, *) "BerryCurvature_EF_calc            : ", BerryCurvature_EF_calc
+      write(stdout, *) "BerryCurvature_kpath_EF_calc      : ", BerryCurvature_kpath_EF_calc
+      write(stdout, *) "BerryCurvature_kpath_Occupied_calc: ", BerryCurvature_kpath_Occupied_calc
       write(stdout, *) "BerryCurvature_Cube_calc          : ", BerryCurvature_Cube_calc
       write(stdout, *) "BerryCurvature_slab_calc          : ", BerryCurvature_slab_calc
       write(stdout, *) "Dos_calc                          : ",  DOS_calc

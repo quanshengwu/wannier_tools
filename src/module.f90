@@ -408,6 +408,8 @@
      logical :: BerryCurvature_calc ! Flag for Berry curvature calculation
      logical :: BerryCurvature_plane_selectedbands_calc ! Flag for Berry curvature calculation
      logical :: BerryCurvature_EF_calc ! Flag for Berry curvature calculation
+     logical :: BerryCurvature_kpath_EF_calc ! Flag for Berry curvature calculation in kpath model at EF
+     logical :: BerryCurvature_kpath_Occupied_calc ! Flag for Berry curvature calculation in kpath model sum over all occupied bands
      logical :: BerryCurvature_Cube_calc ! Flag for Berry curvature calculation
      logical :: BerryCurvature_slab_calc ! Flag for Berry curvature calculation for a slab system
      logical :: EffectiveMass_calc  ! Flag for effective mass calculation
@@ -458,6 +460,7 @@
                           WireBand_calc, &
                           WannierCenter_calc,BerryPhase_calc, &
                           BerryCurvature_EF_calc, BerryCurvature_calc, &
+                          Berrycurvature_kpath_EF_calc, BerryCurvature_kpath_Occupied_calc, &
                           BerryCurvature_plane_selectedbands_calc, &
                           BerryCurvature_slab_calc, MirrorChern_calc, BerryCurvature_Cube_calc, &
                           Z2_3D_calc, Chern_3D_calc, WeylChirality_calc, NLChirality_calc, &

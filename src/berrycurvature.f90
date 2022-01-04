@@ -541,14 +541,14 @@
      outfileindex= outfileindex+ 1
      if (cpuid==0) then
         open(unit=outfileindex, file='Berrycurvature_slab.dat')
-        write(outfileindex, '(20a28)')'# Please take the real part for your use'
+        write(outfileindex, '(20a28)')'# Unit of Berry curvature is Angstrom^2'
         write(outfileindex, '(20a28)')'# kx (1/A)', 'ky (1/A)', &
            'Omega_z'
         ik= 0
         do i= 1, nk1
            do j= 1, nk2
               ik= ik+ 1
-              write(outfileindex, '(20E28.10)')k12_xyz(:, ik), real(Omega_mpi(ik))
+              write(outfileindex, '(20E28.10)')k12_xyz(:, ik), real(Omega_mpi(ik))/Angstrom2atomic**2
            enddo
            write(outfileindex, *) ' '
         enddo
@@ -583,7 +583,7 @@
         write(outfileindex, '(a)')"set yrange [] noextend"
         write(outfileindex, '(a)')"set ytics 0.5 nomirror scale 0.5"
         write(outfileindex, '(a)')"set pm3d interpolate 2,2"
-        write(outfileindex, '(a)')"set title 'Berry Curvature {/Symbol W}_z'"
+        write(outfileindex, '(a)')"set title 'Berry Curvature {/Symbol W}_z (Ang^2)'"
         write(outfileindex, '(a)')"set colorbox"
         write(outfileindex, '(a)')"splot 'Berrycurvature_slab.dat' u 1:2:3 w pm3d"
         close(outfileindex)
@@ -603,155 +603,163 @@
 
   end subroutine berry_curvarture_slab
 
-! subroutine berry_curvarture_line
-!    !> Calculate Berry curvature for a k line defined bu KPATH_BULK
-!    !
-!    !> ref : Physical Review B 74, 195118(2006)
-!    !
-!    !> eqn (9), Eqn (34)
-!    !
-!    !> Sep. 28 2018 by Quansheng Wu @ EPFL
-!    !
-!    ! Copyright (c) 2018 QuanSheng Wu. All rights reserved.
+  subroutine berry_curvarture_line
+     !> Calculate Berry curvature for a k line defined bu KPATH_BULK
+     !
+     !> ref : Physical Review B 74, 195118(2006)
+     !
+     !> eqn (9), Eqn (34)
+     !
+     !> Sep. 28 2018 by Quansheng Wu @ EPFL
+     !
+     ! Copyright (c) 2018 QuanSheng Wu. All rights reserved.
 
-!    use wmpi
-!    use para
-!    implicit none
-!   
-!    integer :: ik, ierr
+     use wmpi
+     use para
+     implicit none
+    
+     integer :: ik, ierr, i
 
-!    real(dp) :: k(3), o1(3), k_cart(3)
-!    real(dp) :: time_start, time_end, time_start0
+     real(dp) :: k(3), o1(3), k_cart(3)
+     real(dp) :: time_start, time_end, time_start0, ybound_min, ybound_max
 
-!    real(dp), external :: norm
+     real(dp), external :: norm
 
-!    !> Berry curvature  (3, bands, k)
-!    complex(dp), allocatable :: Omega_x(:), Omega_y(:), Omega_z(:)
-!    real(dp), allocatable :: Omega(:, :), Omega_mpi(:, :)
+     !> Berry curvature  (3, bands, k)
+     complex(dp), allocatable :: Omega_x(:), Omega_y(:), Omega_z(:)
+     real(dp), allocatable :: Omega(:, :), Omega_mpi(:, :)
 
-!    !> energy bands
-!    real(dp), allocatable :: eigv(:,:)
-!    real(dp), allocatable :: eigv_mpi(:,:)
+     !> energy bands
+     real(dp), allocatable :: eigv(:,:)
+     real(dp), allocatable :: eigv_mpi(:,:)
 
-!    allocate( Omega_x(Num_wann))
-!    allocate( Omega_y(Num_wann))
-!    allocate( Omega_z(Num_wann))
-!    allocate( eigv    (Num_wann, knv3))
-!    allocate( eigv_mpi(Num_wann, knv3))
-!    allocate( Omega    (3, nk3_band))
-!    allocate( Omega_mpi(3, nk3_band))
-!    omega= 0d0
-!    omega_mpi= 0d0
-!   
-!    time_start= 0d0
-!    time_start0= 0d0
-!    call now(time_start0)
-!    time_start= time_start0
-!    time_end  = time_start0
-!    do ik= 1+ cpuid, nk3_band, num_cpu
-!       if (cpuid==0.and. mod(ik/num_cpu, 100)==0) &
-!          write(stdout, '(a, i9, "  /", i10, a, f10.1, "s", a, f10.1, "s")') &
-!          ' Berry curvature: ik', ik, nk3_band, ' time left', &
-!          (nk3_band-ik)*(time_end- time_start)/num_cpu, &
-!          ' time elapsed: ', time_end-time_start0 
+     allocate( Omega_x(Num_wann))
+     allocate( Omega_y(Num_wann))
+     allocate( Omega_z(Num_wann))
+     allocate( eigv    (Num_wann, nk3_band))
+     allocate( eigv_mpi(Num_wann, nk3_band))
+     allocate( Omega    (3, nk3_band))
+     allocate( Omega_mpi(3, nk3_band))
+     omega= 0d0
+     omega_mpi= 0d0
+    
+     time_start= 0d0
+     time_start0= 0d0
+     call now(time_start0)
+     time_start= time_start0
+     time_end  = time_start0
+     do ik= 1+ cpuid, nk3_band, num_cpu
+        if (cpuid==0.and. mod(ik/num_cpu, 100)==0) &
+           write(stdout, '(a, i9, "  /", i10, a, f10.1, "s", a, f10.1, "s")') &
+           ' Berry curvature: ik', ik, nk3_band, ' time left', &
+           (nk3_band-ik)*(time_end- time_start)/num_cpu, &
+           ' time elapsed: ', time_end-time_start0 
 
-!       !> a k point in fractional coordinates
-!       k= k3points(:, ik)
+        !> a k point in fractional coordinates
+        k= k3points(:, ik)
 
-!       call now(time_start)
-!
-!       Omega_x= 0d0
-!       Omega_y= 0d0
-!       Omega_z= 0d0
+        call now(time_start)
+ 
+        Omega_x= 0d0
+        Omega_y= 0d0
+        Omega_z= 0d0
 
-!       call berry_curvarture_singlek_numoccupied(k, Omega_x, Omega_y, Omega_z)
-!       !call berry_curvarture_singlek_numoccupied_total(k, Omega_x(1), Omega_y(1), Omega_z(1))
-!       Omega(1, ik) = real(sum(Omega_x))
-!       Omega(2, ik) = real(sum(Omega_y))
-!       Omega(3, ik) = real(sum(Omega_z))
-!       call now(time_end)
-!    enddo ! ik
+        !call berry_curvarture_singlek_numoccupied_old(k, Omega_x, Omega_y, Omega_z)
+        if (Berrycurvature_kpath_EF_calc) then
+           call berry_curvarture_singlek_EF(k, E_arc, Omega_x, Omega_y, Omega_z)
+        else if (BerryCurvature_kpath_Occupied_calc) then
+           call berry_curvarture_singlek_numoccupied_total(k, Omega_x(1), Omega_y(1), Omega_z(1))
+        else
+           write(*, *) 'ERROR: In subroutine berry_curvarture_line, we only support BerryCurvature_kpath_Occupied_calc '
+           write(*, *) ' and Berrycurvature_kpath_EF_calc '
+           stop
+        endif
+ 
+        Omega(1, ik) = real(sum(Omega_x))
+        Omega(2, ik) = real(sum(Omega_y))
+        Omega(3, ik) = real(sum(Omega_z))
+        call now(time_end)
+     enddo ! ik
 
-!    Omega_mpi= 0d0
+     Omega_mpi= 0d0
 
-!if defined (MPI)
-!    call mpi_allreduce(Omega,Omega_mpi,size(Omega_mpi),&
-!                      mpi_dp,mpi_sum,mpi_cmw,ierr)
-!else
-!    Omega_mpi= Omega
-!endif
+#if defined (MPI)
+     call mpi_allreduce(Omega,Omega_mpi,size(Omega_mpi),&
+                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     Omega_mpi= Omega
+#endif
 
-!    !> output the Berry curvature to file
-!    outfileindex= outfileindex+ 1
-!    if (cpuid==0) then
-!       open(unit=outfileindex, file='Berrycurvature_line.dat')
-!       write(outfileindex, '(20a18)')'# Column 1-3 cartesian coordinates of k'
-!       write(outfileindex, '(20a18)')'# Column 4-6 Berry curvature'
-!       write(outfileindex, '(20a18)')'# Column 7-9 Normalized Berry curvature \Omega/|\Omega|'
-!       write(outfileindex, '(20a18)')'# kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
-!          'real(Omega_x)', 'real(Omega_y)', 'real(Omega_z)', "NOx", "NOy", "NOz"
+     !> output the Berry curvature to file
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+        open(unit=outfileindex, file='Berrycurvature_line.dat')
+        write(outfileindex, '(20a18)')'# Column 1 kpath with accumulated length in the kpath'
+        write(outfileindex, '(20a18)')'# Column 2-4 Berry curvature (Ang^2)'
+        write(outfileindex, '(20a18)')'# k (1/A)', &
+           'real(Omega_x)', 'real(Omega_y)', 'real(Omega_z)'
 
-!       do ik= 1, nk3_band
-!          k=k3points(:, ik)
-!          o1= real(Omega_mpi(:, ik))
-!          if (norm(o1)>eps9) o1= o1/norm(o1)
-!          write(outfileindex, '(20E18.8)')k_cart, real(Omega_mpi(:, ik)), o1
-!       enddo
+        do ik= 1, nk3_band
+           k=k3points(:, ik)
+           write(outfileindex, '(20E18.8)')k3len(ik), real(Omega_mpi(:, ik))/Angstrom2atomic**2
+        enddo
 
-!       close(outfileindex)
-!    endif
+        close(outfileindex)
+     endif
 
-!    !> write script for gnuplot
-!    outfileindex= outfileindex+ 1
-!    if (cpuid==0) then
-!       open(unit=outfileindex, file='Berrycurvature_line.gnu')
-!       write(outfileindex, '(a)') 'set terminal  postscript enhanced color font 24'
-!       write(outfileindex, '(a)')"set output 'Berrycurvature_line.eps'"
-!       write(outfileindex, '(a)')'set style data linespoints'
-!       write(outfileindex, '(a)')'unset ztics'
-!       write(outfileindex, '(a)')'unset key'
-!       write(outfileindex, '(a)')'set pointsize 0.8'
-!       write(outfileindex, '(a)')'set view 0,0'
-!       write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
-!       if (index(Particle,'phonon')/=0) then
-!          write(outfileindex, '(a, f10.5, a)')'set yrange [0:', emax, ']'
-!          write(outfileindex, '(a)')'set ylabel "Frequency (THz)"'
-!       else
-!          write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
-!          write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
-!       endif
-!       write(outfileindex, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
-!       write(outfileindex, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
-! 
-!       do i=1, nk3lines-1
-!          if (index(Particle,'phonon')/=0) then
-!             write(outfileindex, 204)k3line_stop(i+1), 0.0, k3line_stop(i+1), emax
-!          else
-!             write(outfileindex, 204)k3line_stop(i+1), emin, k3line_stop(i+1), emax
-!          endif
-!       enddo
-!       write(outfileindex, '(2a)')"plot 'Berrycurvature_line.dat' u 1:2 ",  &
-!          "w lp lw 2 pt 7  ps 0.2, \"
-!       write(outfileindex, '(2a)')"     'bulkek.dat' u 1:2:($3/6):($4/6) ",  &
-!          "w vec"
-!       close(outfileindex)
-!    endif
+     ybound_min= minval(real(Omega_mpi))-2
+     ybound_max= maxval(real(Omega_mpi))+5 
+     !> write script for gnuplot
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+        open(unit=outfileindex, file='Berrycurvature_line.gnu')
+        write(outfileindex, '(a)')"set encoding iso_8859_1"
+        write(outfileindex, '(a)') 'set terminal pdf enhanced color font ",16"'
+        write(outfileindex, '(a)')"set output 'Berrycurvature_line.pdf'"
+        write(outfileindex, '(a)')'set style data linespoints'
+        write(outfileindex, '(a)')'unset key'
+        write(outfileindex, '(a)')'set pointsize 0.8'
+        write(outfileindex, '(a)')'set view 0,0'
+        write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
+        if (index(Particle,'phonon')/=0) then
+           write(outfileindex, '(a, f10.5, a)')'set yrange [0:', ybound_max, ']'
+           write(outfileindex, '(a)')'set ylabel "Frequency (THz)"'
+        else
+           write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+           write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', ybound_min, ':', ybound_max, ']'
+        endif
+        write(outfileindex, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
+        write(outfileindex, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
+  
+        do i=1, nk3lines-1
+           if (index(Particle,'phonon')/=0) then
+              write(outfileindex, 204)k3line_stop(i+1), 0.0, k3line_stop(i+1), ybound_max
+           else
+              write(outfileindex, 204)k3line_stop(i+1), ybound_min, k3line_stop(i+1), ybound_max
+           endif
+        enddo
+        write(outfileindex, '(a)')"plot 'Berrycurvature_line.dat' "  
+        write(outfileindex, '(a)')"u 1:2 w lp lc rgb 'red'   lw 2 pt 7 ps 0.2 title '{/Symbol W}_x', \" 
+        write(outfileindex, '(a)')"'' u 1:3 w lp lc rgb 'green' lw 2 pt 7 ps 0.2 title '{/Symbol W}_y', \" 
+        write(outfileindex, '(a)')"'' u 1:4 w lp lc rgb 'blue'  lw 2 pt 7 ps 0.2 title '{/Symbol W}_z' "
+        close(outfileindex)
+     endif
 
-!02 format('set xtics (',20('"',A3,'" ',F10.5,','))
-!03 format(A3,'" ',F10.5,')')
-!04 format('set arrow from ',F10.5,',',F10.5,' to ',F10.5,',',F10.5, ' nohead')
+202 format('set xtics (',20('"',A3,'" ',F10.5,','))
+203 format(A3,'" ',F10.5,')')
+204 format('set arrow from ',F10.5,',',F10.5,' to ',F10.5,',',F10.5, ' nohead')
 
 
-!if defined (MPI)
-!    call mpi_barrier(mpi_cmw, ierr)
-!endif
+#if defined (MPI)
+     call mpi_barrier(mpi_cmw, ierr)
+#endif
 
-!    deallocate( Omega_x, Omega_y, Omega_z)
-!    deallocate( Omega, Omega_mpi)
-!
-!    return
+     deallocate( Omega_x, Omega_y, Omega_z)
+     deallocate( Omega, Omega_mpi)
+ 
+     return
 
-! end subroutine berry_curvarture_line
+  end subroutine berry_curvarture_line
 
 
   subroutine berry_curvarture_cube
@@ -895,7 +903,7 @@
         enddo
         do m=1, Num_wann
            do ik= 1, knv3
-              o1= Omega_allk_mpi(m, :, ik)
+              o1= Omega_allk_mpi(m, :, ik)/Angstrom2atomic**2
               write(outfileindex, '(E18.10)') norm(o1)
            enddo
         enddo
@@ -921,7 +929,7 @@
         enddo
         do m=1, Num_wann
            do ik= 1, knv3
-              o1= Omega_allk_mpi(m, :, ik)
+              o1= Omega_allk_mpi(m, :, ik)/Angstrom2atomic**2
               write(outfileindex, '(E18.10)') o1(1)
            enddo
         enddo
@@ -947,7 +955,7 @@
         enddo
         do m=1, Num_wann
            do ik= 1, knv3
-              o1= Omega_allk_mpi(m, :, ik)
+              o1= Omega_allk_mpi(m, :, ik)/Angstrom2atomic**2
               write(outfileindex, '(E18.10)') o1(3)
            enddo
         enddo
@@ -1186,8 +1194,10 @@
            do j= 1, nk2
               ik= ik+ 1
               write(outfileindex, '(3f12.6,2000E12.4)')kslice_xyz(:, ik), &
-                 Omega_allk_Occ_mpi(1, :, ik), Omega_allk_Occ_mpi(2, :, ik), &
-                 Omega_allk_EF_mpi(1, :, ik),  Omega_allk_EF_mpi(2, :, ik)
+                 Omega_allk_Occ_mpi(1, :, ik)/Angstrom2atomic**2, &
+                 Omega_allk_Occ_mpi(2, :, ik)/Angstrom2atomic**2, &
+                 Omega_allk_EF_mpi(1, :, ik)/Angstrom2atomic**2, &
+                 Omega_allk_EF_mpi(2, :, ik)/Angstrom2atomic**2
            enddo
            write(outfileindex, *) ' '
         enddo
@@ -1618,14 +1628,15 @@
         open(unit=outfileindex, file='Berrycurvature_Orbitalmagnetization.dat')
         write(outfileindex, '("#col ", i5, 200i12)')(i, i=1, NumberofSelectedBands*6+3)
         write(outfileindex, '(a10,2000a12)')'# kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
-           'Omega_x', 'Omega_y', 'Omega_z' , 'm_x', 'm_y', 'm_z'
+           'Omega_x(A^2)', 'Omega_y(A^2)', 'Omega_z(A^2)' , 'm_x', 'm_y', 'm_z'
 
         ik= 0
         do i= 1, nk1
            do j= 1, nk2
               ik= ik+ 1
               write(outfileindex, '(3f12.6,2000E12.4)')kslice_xyz(:, ik), &
-                 (Omega_allk_mpi(Selected_band_index(n), :, ik), m_OrbMag_allk_mpi(Selected_band_index(n), :, ik), n=1, NumberofSelectedBands)   
+                 (Omega_allk_mpi(Selected_band_index(n), :, ik)/Angstrom2atomic**2, &
+                 m_OrbMag_allk_mpi(Selected_band_index(n), :, ik), n=1, NumberofSelectedBands)   
            enddo
            write(outfileindex, *) ' '
         enddo
@@ -1837,7 +1848,8 @@
            do j= 1, nk2
               ik= ik+ 1
               write(outfileindex, '(3f12.6,2000E12.4)')kslice_xyz(:, ik), &
-                 (Omega_allk_mpi(Selected_band_index(n), :, ik), m_OrbMag_allk_mpi(Selected_band_index(n), :, ik), n=1, NumberofSelectedBands)   
+                 (Omega_allk_mpi(Selected_band_index(n), :, ik)/Angstrom2atomic**2, &
+                 m_OrbMag_allk_mpi(Selected_band_index(n), :, ik), n=1, NumberofSelectedBands)   
            enddo
            write(outfileindex, *) ' '
         enddo
@@ -2018,7 +2030,8 @@
         do i= 1, nk1
            do j= 1, nk2
               ik= ik+ 1
-              write(outfileindex, '(20E28.10)')kslice_xyz(:, ik), real(Omega_mpi(:, ik))
+              write(outfileindex, '(20E28.10)')kslice_xyz(:, ik), &
+                 real(Omega_mpi(:, ik))/Angstrom2atomic**2
            enddo
            write(outfileindex, *) ' '
         enddo
@@ -2033,7 +2046,7 @@
         open(unit=outfileindex, file='Berrycurvature-normalized.dat')
         write(outfileindex, '(20a28)')'# Please take the real part for your use'
         write(outfileindex, '(20a28)')'# kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
-           'real(Omega_x)', 'real(Omega_y)', 'real(Omega_z)'
+           'Omega_x(A^2)', 'Omega_y(A^2)', 'Omega_z(A^2)'
 
         ik= 0
         do i= 1, nk1
