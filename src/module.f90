@@ -373,6 +373,7 @@
      logical :: BulkBand_line_calc    ! Flag for bulk energy band calculation
      logical :: BulkBand_unfold_line_calc    ! Flag for bulk energy band calculation
      logical :: BulkBand_unfold_plane_calc    ! Flag for bulk energy band calculation
+     logical :: QPI_unfold_plane_calc    ! Flag for bulk energy band calculation
      logical :: Landaulevel_unfold_line_calc    ! Flag for bulk energy band calculation
      logical :: BulkFatBand_calc    ! Flag for bulk energy band calculation
      logical :: BulkBand_plane_calc    ! Flag for bulk energy band calculation for a fixed k plane 
@@ -447,6 +448,7 @@
      
      namelist / Control / BulkBand_calc, BulkFS_calc,  BulkFS_Plane_calc, &
                           BulkFS_plane_stack_calc,  BulkGap_plane_calc, &
+                          QPI_unfold_plane_calc, &
                           BulkBand_unfold_line_calc, &
                           Landaulevel_unfold_line_calc, &
                           BulkBand_unfold_plane_calc, &

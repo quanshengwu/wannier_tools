@@ -94,6 +94,7 @@ subroutine readinput
    BulkBand_unfold_line_calc    = .FALSE.
    Landaulevel_unfold_line_calc    = .FALSE.
    BulkBand_unfold_plane_calc    = .FALSE.
+   QPI_unfold_plane_calc    = .FALSE.
    BulkFatBand_calc      = .FALSE.
    BulkBand_plane_calc   = .FALSE.
    BulkBand_cube_calc    = .FALSE.
@@ -165,6 +166,7 @@ subroutine readinput
       write(*, *)"Landaulevel_unfold_line_calc, "
       write(*, *)"BulkBand_unfold_line_calc, "
       write(*, *)"BulkBand_unfold_plane_calc, "
+      write(*, *)"QPI_unfold_plane_calc, "
       write(*, *)"BulkFatBand_calc, "
       write(*, *)"BulkGap_cube_calc,BulkGap_plane_calc"
       write(*, *)"SlabBand_calc,SlabBandWaveFunc_calc"
@@ -230,6 +232,7 @@ subroutine readinput
       write(stdout, *) "Landaulevel_unfold_line_calc      : ",  Landaulevel_unfold_line_calc
       write(stdout, *) "BulkBand_unfold_line_calc         : ",  BulkBand_unfold_line_calc
       write(stdout, *) "BulkBand_unfold_plane_calc        : ",  BulkBand_unfold_plane_calc
+      write(stdout, *) "QPI_unfold_plane_calc             : ",  QPI_unfold_plane_calc
       write(stdout, *) "BulkFatBand_calc                  : ",  BulkFatBand_calc
       write(stdout, *) "BulkBand_cube_calc                : ",  BulkBand_cube_calc
       write(stdout, *) "BulkFS_calc                       : ",  BulkFS_calc

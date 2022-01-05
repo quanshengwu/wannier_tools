@@ -84,17 +84,7 @@ subroutine unfolding_kpath
    sigma=(1d0,0d0)*E_arc
    if (Is_Sparse_Hr) then
 
-      !> first use NumSelectedEigenVals, if NumSelectedEigenVals is not set, 
-      !> then use OmegaNum; if OmegaNum is also not set, 
-      !> then use Num_wann
-      if (NumSelectedEigenVals>0) then
-         neval= NumSelectedEigenVals
-      else if (OmegaNum>0) then
-         neval= OmegaNum
-      else
-         neval = Num_wann
-      endif
-
+      neval=OmegaNum
       if (neval>Num_wann-2) then
          neval= Num_wann- 2
       endif
@@ -256,7 +246,7 @@ subroutine unfolding_kpath
    if (cpuid.eq.0)then
       open (unit=outfileindex, file='spectrum_unfold_kpath.dat')
       write(outfileindex, '("# Column", I5, 100I16)')(i, i=1, 11)
-      write(outfileindex, '("#", a, 6X, 300f16.2)')'Broadening \eta (meV): ', Eta_array(:)*1000d0/eV2Hartree
+      write(outfileindex, '("#", a, 6X, 300f16.2)')'Brodening \eta (meV): ', Eta_array(:)*1000d0/eV2Hartree
       write(outfileindex, '("# ", a12, 3a16)')'k', ' E(eV)', 'A(k,E)'
       do ik=1, nk3_band
          do ie=1, omeganum_unfold
@@ -342,13 +332,15 @@ subroutine unfolding_kplane
 
    real(dp), allocatable :: eta_array(:)
 
-   real(dp), allocatable :: spectrum_unfold(:, :, :), spectrum_unfold_mpi(:, :, :)
+   real(dp), allocatable :: spectrum_unfold(:, :, :, :), spectrum_unfold_mpi(:, :, :, :)
    !> unfolded spectrum, dimension (omeganum_unfold, NumberofEta, NumberofSelectedOrbitals_groups, nk3_band)
+
+   real(dp), allocatable :: qpi_unfold(:, :, :), qpi_unfold_mpi(:, :, :)
+   !> For the QPI calculations, we only support the 2D systems
 
    real(dp) :: k_PBZ_direct(3), k_PBZ_direct_in_SBZ(3), k_cart(3), k_SBZ_direct(3)
 
 
-   integer :: nnzmax, nnz, knv3, Ndimq
    integer, allocatable :: jcoo(:), icoo(:)
    complex(dp), allocatable :: acoo(:)
    !> Hamiltonian for sparse version
@@ -373,9 +365,12 @@ subroutine unfolding_kplane
    complex(dp) :: sigma=(0d0,0d0)
    !> shift-invert sigma
 
+   integer , allocatable :: ik12(:,:)
    real(dp), allocatable :: kxy(:,:), kxy_shape(:,:), kxy_plane(:,:)
 
-   integer :: n, i, j, ie, ik, ig, ierr, ieta,NumberofEta
+   integer :: nnzmax, nnz, knv3, Ndimq, nkx, nky, Nk1_half, Nk2_half 
+   integer :: iq, iq1, iq2, imin1, imin2, imax1, imax2
+   integer :: n, i, j, ie, ik, ik1, ik2, ig, ierr, ieta,NumberofEta
     
    
    ! time measurement
@@ -385,8 +380,18 @@ subroutine unfolding_kplane
    real(dp), external :: delta
    NumberofEta = 9
 
-   knv3= Nk1*Nk2
+   !> Nk1 and Nk2 should be odd number so that the center of the kslice is (0,0)
+   !> if you want to calculate the QPI
+   nkx=Nk1; nky=Nk2
+   if (mod(Nk1, 2)==0) nkx= Nk1+1
+   if (mod(Nk2, 2)==0) nky= Nk2+1
+
+   Nk1_half= (nkx-1)/2
+   Nk2_half= (nky-1)/2
+ 
+   knv3= Nkx*Nky
    allocate( kxy(3, knv3))
+   allocate( ik12(2, nkx*nky))
    allocate( kxy_shape(3, knv3))
    allocate( kxy_plane(3, knv3))
    kxy=0d0
@@ -394,10 +399,12 @@ subroutine unfolding_kplane
    kxy_plane=0d0
    
    ik =0
-   do i= 1, Nk1
-      do j= 1, Nk2
+   do i= 1, nkx
+      do j= 1, nky
          ik =ik +1
-         kxy(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(Nk1-1)+ K3D_vec2*(j-1)/dble(Nk2-1) &
+         ik12(1, ik)= i
+         ik12(2, ik)= j
+         kxy(:, ik)= K3D_start+ K3D_vec1*(i-1)/dble(nkx-1)+ K3D_vec2*(j-1)/dble(nky-1) &
             -(K3D_vec1+K3D_vec2)/2d0
          kxy_shape(:, ik)= kxy(1, ik)* Folded_cell%Kua+ kxy(2, ik)* Folded_cell%Kub+ kxy(3, ik)* Folded_cell%Kuc 
          call rotate_k3_to_kplane(kxy_shape(:, ik), kxy_plane(:, ik))
@@ -408,21 +415,17 @@ subroutine unfolding_kplane
    sigma=(1d0,0d0)*E_arc
    if (Is_Sparse_Hr) then
 
-      !> first use NumSelectedEigenVals, if NumSelectedEigenVals is not set, 
-      !> then use OmegaNum; if OmegaNum is also not set, 
-      !> then use Num_wann
-      if (NumSelectedEigenVals>0) then
-         neval= NumSelectedEigenVals
-      else if (OmegaNum>0) then
-         neval= OmegaNum
-      else
-         neval = Num_wann
-      endif
-
-      if (neval>Num_wann-2) then
-         neval= Num_wann- 2
+      if (NumSelectedEigenVals==0) then
+         if (OmegaNum==0) then
+            NumSelectedEigenVals=Num_wann
+         else
+            NumSelectedEigenVals=OmegaNum
+         endif
       endif
    
+      neval=NumSelectedEigenVals
+      if (neval>Num_wann-2) neval= Num_wann- 2
+
       !> ncv
       nvecs=int(2*neval)
       if (nvecs<50) nvecs= 50
@@ -443,10 +446,13 @@ subroutine unfolding_kplane
    allocate( psi(Num_wann))
    allocate( zeigv(Num_wann,nvecs))
    allocate( weight(NumberofSelectedOrbitals_groups))
-   allocate( spectrum_unfold(NumberofEta, NumberofSelectedOrbitals_groups, knv3)) 
-   allocate( spectrum_unfold_mpi(NumberofEta, NumberofSelectedOrbitals_groups, knv3)) 
-   spectrum_unfold= 0d0
-   spectrum_unfold_mpi= 0d0
+   allocate( qpi_unfold(NumberofEta, NumberofSelectedOrbitals_groups, knv3)) 
+   allocate( qpi_unfold_mpi(NumberofEta, NumberofSelectedOrbitals_groups, knv3)) 
+   allocate( spectrum_unfold(NumberofEta, NumberofSelectedOrbitals_groups, nkx, nky)) 
+   allocate( spectrum_unfold_mpi(NumberofEta, NumberofSelectedOrbitals_groups, nkx, nky)) 
+   psi= 0d0; zeigv= 0d0; weight= 0d0
+   qpi_unfold= 0d0; qpi_unfold_mpi= 0d0
+   spectrum_unfold= 0d0; spectrum_unfold_mpi= 0d0
 
    NumberofEta=9
    allocate(eta_array(NumberofEta))
@@ -455,6 +461,8 @@ subroutine unfolding_kplane
 
    !> first unfold the kpoints from the kpath of the supercell
    do ik= 1+cpuid, knv3, num_cpu
+      ik1= ik12(1, ik)
+      ik2= ik12(2, ik)
       if (cpuid==0.and.mod(ik, 40)==1) write(stdout, '(a, i10," /", i1)') 'BulkBand unfolding at :', ik, knv3
       k_PBZ_direct= kxy(:, ik)
       call direct_cart_rec_unfold(k_PBZ_direct, k_cart)
@@ -520,7 +528,7 @@ subroutine unfolding_kplane
               NumberofSelectedOrbitals_groups, NumberofSelectedOrbitals, Selected_WannierOrbitals)
          do ig=1, NumberofSelectedOrbitals_groups
             do ieta= 1, NumberofEta
-               spectrum_unfold(ieta, ig, ik)= spectrum_unfold(ieta, ig, ik) + &
+               spectrum_unfold(ieta, ig, ik1, ik2)= spectrum_unfold(ieta, ig, ik1, ik2) + &
                   weight(ig)*delta(eta_array(ieta), W(n)-E_arc)
             enddo ! ieta
          enddo ! ig
@@ -542,9 +550,11 @@ subroutine unfolding_kplane
          (i, i=1, NumberofSelectedOrbitals_groups)
       write(outfileindex, "('#column', i5, 3000i12)")(i, i=1, 7+NumberofSelectedOrbitals_groups*NumberofEta)
       do ik=1, knv3
+         ik1= ik12(1, ik)
+         ik2= ik12(2, ik)
          write(outfileindex, '(3000f12.5)')kxy_shape(:, ik), kxy_plane(:, ik), &
-              ((spectrum_unfold_mpi(ieta, ig, ik), ieta=1, NumberofEta), ig=1, NumberofSelectedOrbitals_groups)
-         if (mod(ik, nk2)==0) write(outfileindex, *)' '
+              ((spectrum_unfold_mpi(ieta, ig, ik1, ik2), ieta=1, NumberofEta), ig=1, NumberofSelectedOrbitals_groups)
+         if (mod(ik, nky)==0) write(outfileindex, *)' '
       enddo
       close(outfileindex)
       write(stdout,*)'<<< Unfold bands successfully'    
@@ -578,6 +588,63 @@ subroutine unfolding_kplane
       close(outfileindex)
    endif
 
+   IF (QPI_unfold_plane_calc) then
+
+     !> calculate QPI (jdos)
+     do iq= 1+ cpuid, nkx*nky, num_cpu
+        iq1= ik12(1, iq)- Nk1_half
+        iq2= ik12(2, iq)- Nk2_half
+        if (cpuid==0.and. mod(iq/num_cpu, 100)==0) &
+           write(stdout, *) 'JDOS, iq ', iq, 'Nq',nkx*nky, 'time left', &
+           (nkx*nky-iq)*(time3- time1)/num_cpu, ' s'
+        call now(time1)
+        imin1= max(-Nk1_half-iq1, -Nk1_half)+ Nk1_half+ 1
+        imax1= min(Nk1_half-iq1, Nk1_half)+ Nk1_half+ 1
+        imin2= max(-Nk2_half-iq2, -Nk2_half)+ Nk2_half+ 1
+        imax2= min(Nk2_half-iq2, Nk2_half)+ Nk2_half+ 1
+        do ik2= imin2, imax2
+           do ik1= imin1, imax1
+              do ig=1, NumberofSelectedOrbitals_groups
+                 do ieta= 1, NumberofEta
+                    qpi_unfold(ieta, ig, iq)= qpi_unfold(ieta, ig, iq)+ &
+                       spectrum_unfold_mpi(ieta, ig, ik1, ik2)* spectrum_unfold_mpi(ieta, ig, ik1+iq1, ik2+iq2)
+                 enddo !ieta
+              enddo !ig
+           enddo !ik1
+        enddo !ik2
+
+        call now(time3)
+     enddo !iq
+
+     qpi_unfold_mpi= 1D-12
+#if defined (MPI)
+     call mpi_reduce(qpi_unfold, qpi_unfold_mpi, size(qpi_unfold),mpi_double_precision,&
+                     mpi_sum, 0, mpi_comm_world, ierr)
+#endif
+
+     outfileindex= outfileindex+ 1
+     if (cpuid.eq.0.and.QPI_unfold_plane_calc)then
+        write(stdout,*)'>>The calculation of joint density of state in the unfold model was done.'
+        open (unit=outfileindex, file='qpi_unfold.dat')
+        write(outfileindex,'(a)')'# Bulk joint density of states in the unfold mode'
+        write(outfileindex,'(a)')'# The coordinate of k is redefined according to the KPLANE_BULK'
+        write(outfileindex,'(a)')"# x axis is parallel to K1'"
+        write(outfileindex,'(a)')"# z axis is parallel to K1'xK2'"
+        write(outfileindex,'(a)')"# y axis is parallel to z x x"
+        write(outfileindex,'(30a16)')'#kx', 'ky', 'log(dos)'
+        write(outfileindex, "('#column', i5, 3000i12)")(i, i=1, 7+NumberofSelectedOrbitals_groups*NumberofEta)
+        write(outfileindex, "('#', a6, 6a12, 3X, '| A(k,E)', a6, 100(8X,'group ', i2))") &
+           'kx', 'ky', 'kz', 'kp1', 'kp2', 'kp3' 
+        do ik=1, nkx*nky
+           write(outfileindex, '(3000f12.5)')kxy_shape(:, ik), kxy_plane(:, ik), &
+              ((qpi_unfold_mpi(ieta, ig, ik), ieta=1, NumberofEta), ig=1, NumberofSelectedOrbitals_groups)
+           if (mod(ik, nky)==0) write(outfileindex, *)' '
+        enddo
+        close(outfileindex)
+        write(stdout,*)'<<< qpi_unfold finished!'    
+     endif
+
+   ENDIF ! qpi_unfold
 #if defined (MPI)
      call mpi_barrier(mpi_cmw, ierr)
 #endif
@@ -690,7 +757,7 @@ subroutine get_projection_weight_bulk_unfold(ndim, k_SBZ_direct, k_PBZ_direct, p
                icount=icount+ 1
             endif
 
-            !> broadening is 0.1 Angstrom
+            !> brodening is 0.1 Angstrom
             overlp= overlp+ delta(0.1d0, norm(dij_tilde_cart))*exp(-pi2zi*(kdotr))*psi(io_SC)/delta(0.1d0, 0d0)
 
          enddo ! io

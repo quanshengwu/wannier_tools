@@ -198,7 +198,7 @@
 
 
    !> unfold bulk band kplane mode
-   if (BulkBand_unfold_plane_calc) then
+   if (BulkBand_unfold_plane_calc.or.QPI_unfold_plane_calc) then
       if(cpuid.eq.0)write(stdout, *)' '
       if(cpuid.eq.0)write(stdout, *)'>> Start of unfolding bulk band in plane mode'
       call now(time_start)
