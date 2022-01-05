@@ -571,8 +571,8 @@ subroutine LandauLevel_B_dos_Lanczos
       write(outfileindex, '(a16)') 'A(B, E)'
       write(outfileindex+1, '(2a16)') 'n   ', 'A(n, E)'
 
-      write(outfileindex, '("#", a, 20X, 300f16.2)')'Brodening \eta (meV): ', Eta_array(:)*1000d0/eV2Hartree
-      write(outfileindex+1, '("#", a, 5X, f26.2,300f32.2)')'Brodening \eta (meV): ', Eta_array(:)*1000d0/eV2Hartree
+      write(outfileindex, '("#", a, 20X, 300f16.2)')'Broadening \eta (meV): ', Eta_array(:)*1000d0/eV2Hartree
+      write(outfileindex+1, '("#", a, 5X, f26.2,300f32.2)')'Broadening \eta (meV): ', Eta_array(:)*1000d0/eV2Hartree
       do ib=1, Nmag
          n_int=0
          do ie=1, omeganum
@@ -1250,7 +1250,7 @@ subroutine bulk_dos_lanczos
       write(outfileindex,*)     'set style data linespoints'
       write(outfileindex,*)     '#unset ztics'
       write(outfileindex,*)     'set key box opaque samplen 0.5 textcolor variable font ",12"'
-      write(outfileindex,*)     'set key title "Brodening" font ",12"'
+      write(outfileindex,*)     'set key title "Broadening" font ",12"'
       write(outfileindex, '(a)')'#set xtics font ",24"'
       write(outfileindex, '(a)')'#set ytics font ",24"'
       write(outfileindex, '(a)')'#set xlabel font ",24"'

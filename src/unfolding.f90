@@ -256,7 +256,7 @@ subroutine unfolding_kpath
    if (cpuid.eq.0)then
       open (unit=outfileindex, file='spectrum_unfold_kpath.dat')
       write(outfileindex, '("# Column", I5, 100I16)')(i, i=1, 11)
-      write(outfileindex, '("#", a, 6X, 300f16.2)')'Brodening \eta (meV): ', Eta_array(:)*1000d0/eV2Hartree
+      write(outfileindex, '("#", a, 6X, 300f16.2)')'Broadening \eta (meV): ', Eta_array(:)*1000d0/eV2Hartree
       write(outfileindex, '("# ", a12, 3a16)')'k', ' E(eV)', 'A(k,E)'
       do ik=1, nk3_band
          do ie=1, omeganum_unfold
@@ -690,7 +690,7 @@ subroutine get_projection_weight_bulk_unfold(ndim, k_SBZ_direct, k_PBZ_direct, p
                icount=icount+ 1
             endif
 
-            !> brodening is 0.1 Angstrom
+            !> broadening is 0.1 Angstrom
             overlp= overlp+ delta(0.1d0, norm(dij_tilde_cart))*exp(-pi2zi*(kdotr))*psi(io_SC)/delta(0.1d0, 0d0)
 
          enddo ! io

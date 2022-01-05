@@ -68,7 +68,7 @@
      Omega_y= -Omega_y*2d0*zi
      Omega_z= -Omega_z*2d0*zi
 
-     !> consider the Fermi-distribution according to the brodening Earc_eta
+     !> consider the Fermi-distribution according to the broadening Earc_eta
      if (Eta_Arc<eps6) Eta_Arc= eps6
      beta_fake= 1d0/Eta_Arc
      do m= 1, Num_wann
@@ -1142,7 +1142,7 @@
            m_OrbMag_allk_Occ(2, i, ik) = m_OrbMag(NumOccupied, i)
         enddo
 
-        !> consider the Fermi-distribution according to the brodening Earc_eta
+        !> consider the Fermi-distribution according to the broadening Earc_eta
         if (Eta_Arc<eps6) Eta_Arc= eps6
         beta_fake= 1d0/Eta_Arc
         do i=1, 3

@@ -352,7 +352,7 @@
         Omega_y= -Omega_y*2d0*zi
         Omega_z= -Omega_z*2d0*zi
    
-        !> consider the Fermi-distribution according to the brodening Earc_eta
+        !> consider the Fermi-distribution according to the broadening Earc_eta
         Beta_fake= 1d0/Eta_Arc
 
         do ie=1, OmegaNum

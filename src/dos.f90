@@ -143,9 +143,9 @@ subroutine dos_sparse
       open(unit=outfileindex, file='dos.dat')
       write(outfileindex, *)'# Density of state of bulk system'
       write(outfileindex, '(a16, a)')'# E(eV)', 'DOS(E) (states/unit cell/eV)'
-      write(outfileindex, '(a16, 90f16.6)')'# E(eV)', eta_array
+      write(outfileindex, '("#", a, f6.2, 300f16.2)')'Broadening \eta (meV): ', Eta_array(:)*1000d0/eV2Hartree
       do ie=1, NE
-         write(outfileindex, '(90f16.6)')omega(ie)/eV2Hartree, dos(ie, :)
+         write(outfileindex, '(90f16.6)')omega(ie)/eV2Hartree, dos(ie, :)*eV2Hartree
       enddo ! ie
       close(outfileindex)
    endif
@@ -159,13 +159,21 @@ subroutine dos_sparse
       write(outfileindex, '(a)')"set output 'dos.eps'"
       write(outfileindex, '(a)')'set border lw 2'
       write(outfileindex, '(a)')'set autoscale fix'
-      write(outfileindex, '(a)')'set yrange [0:1]'
-      write(outfileindex, '(a)')'unset key'
+      write(outfileindex, '(a, f16.6,a)')'set yrange [0:', maxval(dos)*eV2Hartree+0.5, '1]'
+      write(outfileindex, '(a)')'set key samplen 0.8 spacing 1 font ",12"'
       write(outfileindex, '(a)')'set xlabel "Energy (eV)"'
       write(outfileindex, '(a)')'set ylabel "DOS (states/eV/unit cell)"'
-      write(outfileindex, '(a)')"plot 'dos.dat' u 1:2 w lp pt 6 ps 0.2 lw 1.0 lc rgb 'black'  "
+      write(outfileindex, '(a, f6.1, a)')"plot 'dos.dat' u 1:2 w l lw 2 title '",&
+         Eta_array(1)*1000/eV2Hartree, "meV', \"
+      do ieta= 2, NumberofEta-1
+         write(outfileindex, 201)" '' u 1:", ieta, " w l lw 2 title '", &
+            Eta_array(ieta)*1000/eV2Hartree, "meV', \"
+      enddo
+      write(outfileindex, '(a, f6.1, a)')" '' u 1:10 w l lw 2 title '",&
+         Eta_array(NumberofEta)*1000/eV2Hartree, "meV'"
       close(outfileindex)
    endif
+201 format(a, i3, a, f6.1, a)
 
 #if defined (MPI)
    call mpi_barrier(mpi_cmw, ierr)
@@ -366,13 +374,14 @@ subroutine dos_sub
    !> the integration k space
    real(dp) :: emin, emax
 
-   integer :: ik,ie,ib,ikx,iky,ikz
+   integer :: ik,ie,ib,ikx,iky,ikz,ieta
    integer :: knv3,NE,ierr
+   integer :: NumberofEta
 
    !> integration for band
    integer :: iband_low,iband_high,iband_tot
 
-   real(dp) :: x, dk3
+   real(dp) :: x, dk3, eta0
 
    real(dp) :: k(3)
    real(dp) :: time_start, time_end
@@ -380,8 +389,9 @@ subroutine dos_sub
    real(dp), allocatable :: eigval(:)
    real(dp), allocatable :: W(:)
    real(dp), allocatable :: omega(:)
-   real(dp), allocatable :: dos(:)
-   real(dp), allocatable :: dos_mpi(:)
+   real(dp), allocatable :: dos(:, :)
+   real(dp), allocatable :: dos_mpi(:, :)
+   real(dp), allocatable :: eta_array(:)
    complex(dp), allocatable :: Hk(:, :)
 
    !> delta function
@@ -400,12 +410,14 @@ subroutine dos_sub
 
    iband_tot= iband_high- iband_low+ 1
 
+   NumberofEta = 9
 
    allocate(W(Num_wann))
    allocate(Hk(Num_wann, Num_wann))
    allocate(eigval(iband_tot))
-   allocate(dos(NE))
-   allocate(dos_mpi(NE))
+   allocate(eta_array(NumberofEta))
+   allocate(dos(NE, NumberofEta))
+   allocate(dos_mpi(NE, NumberofEta))
    allocate(omega(NE))
    dos=0d0
    dos_mpi=0d0
@@ -414,8 +426,9 @@ subroutine dos_sub
 
    emin= OmegaMin
    emax= OmegaMax
-  !eta= (emax- emin)/ dble(NE)*6d0
-   eta= Eta_Arc
+   eta_array=(/0.1d0, 0.2d0, 0.4d0, 0.8d0, 1.0d0, 2d0, 4d0, 8d0, 10d0/)
+   eta_array= eta_array*Eta_Arc
+
 
    !> energy
    do ie=1, NE
@@ -451,9 +464,15 @@ subroutine dos_sub
       do ie= 1, NE
          do ib= 1, iband_tot
             x= omega(ie)- eigval(ib)
-            dos_mpi(ie) = dos_mpi(ie)+ delta(eta, x)
+            do ieta= 1, NumberofEta
+               eta0= eta_array(ieta)
+               dos_mpi(ie, ieta) = dos_mpi(ie, ieta)+ delta(eta0, x)
+            enddo
          enddo ! ib
       enddo ! ie
+      call now(time_end)
+
+
       call now(time_end)
 
    enddo  ! ik
@@ -474,8 +493,9 @@ subroutine dos_sub
       open(unit=outfileindex, file='dos.dat')
       write(outfileindex, *)'# Density of state of bulk system'
       write(outfileindex, '(2a16)')'# E(eV)', 'DOS(E) (1/eV)'
+      write(outfileindex, '("#", a, f6.2, 300f16.2)')'Broadening \eta (meV): ', Eta_array(:)*1000d0/eV2Hartree
       do ie=1, NE
-         write(outfileindex, '(2f16.6)')omega(ie)/eV2Hartree, dos(ie)
+         write(outfileindex, '(90f16.6)')omega(ie)/eV2Hartree, dos(ie, :)*eV2Hartree
       enddo ! ie
       close(outfileindex)
    endif
@@ -489,13 +509,22 @@ subroutine dos_sub
       write(outfileindex, '(a)')"set output 'dos.eps'"
       write(outfileindex, '(a)')'set border lw 2'
       write(outfileindex, '(a)')'set autoscale fix'
-      write(outfileindex, '(a)')'set yrange [0:1]'
-      write(outfileindex, '(a)')'unset key'
+      write(outfileindex, '(a, f16.6,a)')'set yrange [0:', maxval(dos)*eV2Hartree+0.5, '1]'
+      write(outfileindex, '(a)')'set key samplen 0.8 spacing 1 font ",12"'
       write(outfileindex, '(a)')'set xlabel "Energy (eV)"'
+      write(outfileindex, '(a)')'set title "DOS with different broadenings"'
       write(outfileindex, '(a)')'set ylabel "DOS (states/eV/unit cell)"'
-      write(outfileindex, '(2a)')"plot 'dos.dat' u 1:2 w l lw 4 lc rgb 'black'"
+      write(outfileindex, '(a, f6.1, a)')"plot 'dos.dat' u 1:2 w l lw 2 title '",&
+         Eta_array(1)*1000/eV2Hartree, "meV', \"
+      do ieta= 2, NumberofEta-1
+         write(outfileindex, 202)" '' u 1:", ieta, " w l lw 2 title '", &
+            Eta_array(ieta)*1000/eV2Hartree, "meV', \"
+      enddo
+      write(outfileindex, '(a, f6.1, a)')" '' u 1:10 w l lw 2 title '",&
+         Eta_array(NumberofEta)*1000/eV2Hartree, "meV'"
       close(outfileindex)
    endif
+202 format(a, i3, a, f6.1, a)
 
 #if defined (MPI)
    call mpi_barrier(mpi_cmw, ierr)
@@ -824,7 +853,7 @@ subroutine dos_joint_dos
    if (cpuid.eq.0) then
       open(unit=outfileindex, file='jdos.dat')
       do ie=1, NE
-         write(outfileindex, *)omega_jdos(ie), jdos(ie)*dk3
+         write(outfileindex, *)omega_jdos(ie)/eV2Hartree, jdos(ie)*dk3*eV2Hartree
       enddo ! ie
       close(outfileindex)
    endif
@@ -833,7 +862,7 @@ subroutine dos_joint_dos
    if (cpuid.eq.0) then
       open(unit=outfileindex, file='dos.dat')
       do ie=1, NE
-         write(outfileindex, *)omega_dos(ie), dos(ie)*dk3
+         write(outfileindex, *)omega_dos(ie)/eV2Hartree, dos(ie)*dk3*eV2Hartree
       enddo ! ie
       close(outfileindex)
    endif
@@ -868,7 +897,7 @@ function delta(eta, x)
 
    y= x*x/eta/eta/2d0
 
-   !> Gaussian brodening
+   !> Gaussian broadening
    !> exp(-60) = 8.75651076269652e-27
    if (y>60d0) then
       delta = 0d0
