@@ -155,7 +155,7 @@
         enddo ! m
      enddo ! n
 
-     Omega_z= -aimag(Omega_z*2d0)
+     Omega_z= -aimag(Omega_z*2d0)/Angstrom2atomic**2
 
      return
   end subroutine berry_curvarture_singlek_numoccupied_slab_total
@@ -223,9 +223,9 @@
         enddo ! m
      enddo ! n
 
-     Omega_x= -aimag(Omega_x*2d0)  
-     Omega_y= -aimag(Omega_y*2d0)  
-     Omega_z= -aimag(Omega_z*2d0)  
+     Omega_x=  aimag(Omega_x*2d0)  
+     Omega_y=  aimag(Omega_y*2d0)  
+     Omega_z=  aimag(Omega_z*2d0)  
 
      deallocate(W, UU, UU_dag, hamk_bulk)
      deallocate(Amat, velocity_wann, velocity_Ham)
@@ -360,8 +360,6 @@
            enddo
         enddo
      enddo
-    !print *, zz*zi
-    !pause
 
      return
   end subroutine berry_curvarture_singlek_allbands
@@ -738,7 +736,7 @@
               write(outfileindex, 204)k3line_stop(i+1), ybound_min, k3line_stop(i+1), ybound_max
            endif
         enddo
-        write(outfileindex, '(a)')"plot 'Berrycurvature_line.dat' "  
+        write(outfileindex, '(a)')"plot 'Berrycurvature_line.dat' \"  
         write(outfileindex, '(a)')"u 1:2 w lp lc rgb 'red'   lw 2 pt 7 ps 0.2 title '{/Symbol W}_x', \" 
         write(outfileindex, '(a)')"'' u 1:3 w lp lc rgb 'green' lw 2 pt 7 ps 0.2 title '{/Symbol W}_y', \" 
         write(outfileindex, '(a)')"'' u 1:4 w lp lc rgb 'blue'  lw 2 pt 7 ps 0.2 title '{/Symbol W}_z' "
