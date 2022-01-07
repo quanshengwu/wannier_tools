@@ -1,11 +1,11 @@
  &TB_FILE
- Hrfile = 'TBG_13.2_hr.dat'
+ Hrfile = 'tbg_hr.dat'
  /
  
  
  !> bulk band structure calculation flag
  &CONTROL
- QPI_Unfold_plane_calc         = F
+ QPI_Unfold_plane_calc         = T
  /
  
  &SYSTEM
@@ -20,8 +20,8 @@
  OmegaNum_unfold =600       ! omega number
  OmegaMin = -13.0     ! energy interval
  OmegaMax =  7.0     ! energy interval
- Nk1 =41           ! number k points
- Nk2 =41          ! number k points
+ Nk1 =201           ! number k points
+ Nk2 =201          ! number k points
  /
  
   
