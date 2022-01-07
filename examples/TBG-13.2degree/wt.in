@@ -6,6 +6,7 @@
  !> bulk band structure calculation flag
  &CONTROL
  QPI_Unfold_plane_calc         = F
+ BulkBand_Unfold_line_calc          = T
  /
  
  &SYSTEM

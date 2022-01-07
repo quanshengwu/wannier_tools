@@ -83,12 +83,10 @@ subroutine unfolding_kpath
 
    sigma=(1d0,0d0)*E_arc
    if (Is_Sparse_Hr) then
-
-      neval=OmegaNum
-      if (neval>Num_wann-2) then
-         neval= Num_wann- 2
-      endif
-   
+      if (NumSelectedEigenVals==0) NumSelectedEigenVals=OmegaNum
+      neval=NumSelectedEigenVals
+      if (neval>=Num_wann) neval= Num_wann- 2
+ 
       !> ncv
       nvecs=int(2*neval)
       if (nvecs<50) nvecs= 50
@@ -148,9 +146,6 @@ subroutine unfolding_kpath
       if (Landaulevel_unfold_line_calc) then 
          Bx=-2d0*pi*Magp/Magq; By=0d0
          Ndimq= Num_wann*Magq
-         if (NumSelectedEigenVals==0) NumSelectedEigenVals=OmegaNum
-         neval=NumSelectedEigenVals
-         if (neval>=Ndimq) neval= Ndimq- 2
          nvecs=int(2*neval)
          if (nvecs<50) nvecs= 50
          if (nvecs>Ndimq) nvecs= Ndimq
