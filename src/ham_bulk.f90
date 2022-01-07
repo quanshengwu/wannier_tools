@@ -145,9 +145,7 @@ subroutine ham_bulk_latticegauge(k,Hamk_bulk)
       kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
       factor= exp(pi2zi*kdotr)
 
-      Hamk_bulk(:, :)=&
-         Hamk_bulk(:, :) &
-         + HmnR(:, :, iR)*factor/ndegen(iR)
+      Hamk_bulk(:, :)= Hamk_bulk(:, :)+ HmnR(:, :, iR)*factor/ndegen(iR)
    enddo ! iR
 
    ! check hermitcity
