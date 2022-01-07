@@ -5,7 +5,7 @@
  
  !> bulk band structure calculation flag
  &CONTROL
- QPI_Unfold_plane_calc         = F
+ QPI_Unfold_plane_calc         = T
  BulkBand_Unfold_line_calc          = T
  /
  
@@ -17,12 +17,12 @@
  
  &PARAMETERS
  Eta_Arc = 0.050     ! infinite small value, like brodening
- E_arc = 0.00         ! energy contour plot
+ E_arc = 1.10         ! energy contour plot
  OmegaNum_unfold =600       ! omega number
  OmegaMin = -13.0     ! energy interval
  OmegaMax =  7.0     ! energy interval
- Nk1 =41           ! number k points
- Nk2 =41          ! number k points
+ Nk1 =81           ! number k points
+ Nk2 =81          ! number k points
  /
  
   

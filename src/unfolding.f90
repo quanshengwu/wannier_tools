@@ -544,6 +544,7 @@ subroutine unfolding_kplane
          'kx', 'ky', 'kz', 'kp1', 'kp2', 'kp3', 'total',&
          (i, i=1, NumberofSelectedOrbitals_groups)
       write(outfileindex, "('#column', i5, 3000i12)")(i, i=1, 7+NumberofSelectedOrbitals_groups*NumberofEta)
+      write(outfileindex, '("#", a, 6X, 300f16.2)')'Brodening \eta (meV): ', Eta_array(:)*1000d0/eV2Hartree
       do ik=1, knv3
          ik1= ik12(1, ik)
          ik2= ik12(2, ik)
@@ -615,7 +616,10 @@ subroutine unfolding_kplane
 #if defined (MPI)
      call mpi_reduce(qpi_unfold, qpi_unfold_mpi, size(qpi_unfold),mpi_double_precision,&
                      mpi_sum, 0, mpi_comm_world, ierr)
+#else
+     qpi_unfold_mpi= qpi_unfold
 #endif
+     qpi_unfold_mpi= qpi_unfold_mpi/nkx/nky
 
      outfileindex= outfileindex+ 1
      if (cpuid.eq.0.and.QPI_unfold_plane_calc)then
@@ -628,6 +632,7 @@ subroutine unfolding_kplane
         write(outfileindex,'(a)')"# y axis is parallel to z x x"
         write(outfileindex,'(30a16)')'#kx', 'ky', 'log(dos)'
         write(outfileindex, "('#column', i5, 3000i12)")(i, i=1, 7+NumberofSelectedOrbitals_groups*NumberofEta)
+        write(outfileindex, '("#", a, 6X, 300f16.2)')'Brodening \eta (meV): ', Eta_array(:)*1000d0/eV2Hartree
         write(outfileindex, "('#', a6, 6a12, 3X, '| A(k,E)', a6, 100(8X,'group ', i2))") &
            'kx', 'ky', 'kz', 'kp1', 'kp2', 'kp3' 
         do ik=1, nkx*nky
@@ -639,6 +644,30 @@ subroutine unfolding_kplane
         write(stdout,*)'<<< qpi_unfold finished!'    
      endif
 
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+        open(unit=outfileindex, file='qpi_unfold.gnu')
+        write(outfileindex, '(a)') 'set terminal pngcairo enhanced color font ",60" size 1920,1680'
+        write(outfileindex, '(a)') 'set palette defined ( 0 "white", 1  "#D72F01" )'
+        write(outfileindex, '(a)')"set output 'qpi_unfold.png'"
+        write(outfileindex, '(a)')'set size 0.9, 1'
+        write(outfileindex, '(a)')'set origin 0.05,0'
+        write(outfileindex, '(a)')'set border lw 3'
+        write(outfileindex, '(a)')'set pm3d'
+        write(outfileindex, '(a)')'unset key'
+        write(outfileindex, '(a)')'set view map'
+        write(outfileindex, '(a)')'#set xtics font ",24"'
+        write(outfileindex, '(a)')'#set ytics font ",24"'
+        write(outfileindex, '(a)')'set xlabel "k1"'
+        write(outfileindex, '(a)')'set ylabel "k2"'
+        write(outfileindex, '(a)')'#set ylabel offset 1.5,0'
+        write(outfileindex, '(a)')'set size ratio -1'
+        write(outfileindex, '(a)')"set colorbox"
+        write(outfileindex, '(a)')'set pm3d interpolate 2,2'
+        write(outfileindex, '(2a)')"splot 'qpi_unfold.dat' u 4:5:($11) ",  &
+           " w pm3d"
+        close(outfileindex)
+     endif
    ENDIF ! qpi_unfold
 #if defined (MPI)
      call mpi_barrier(mpi_cmw, ierr)

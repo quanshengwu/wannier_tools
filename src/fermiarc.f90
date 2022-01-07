@@ -531,6 +531,9 @@
         jsdos_r_mpi= jsdos_r
      endif
 #endif
+     jdos_l_mpi= jdos_l_mpi/nkx/nky
+     jdos_r_mpi= jdos_r_mpi/nkx/nky
+
      ENDIF ! SlabQPI_kplane_calc= T
 
      if (cpuid.eq.0.and.SlabQPI_kplane_calc)then
