@@ -202,7 +202,7 @@
         open(unit=outfileindex, file='sigma_ahe.txt')
         write(outfileindex, '("#",20a16)')'E(eV)', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
         do ie=1, OmegaNum
-           write(outfileindex, '(200f16.8)')energy(ie), ((sigma_tensor_ahc(i, j, ie), i=1, 3), j=1, 3)
+           write(outfileindex, '(200f16.8)')energy(ie)/eV2Hartree, ((sigma_tensor_ahc(i, j, ie), i=1, 3), j=1, 3)
         enddo
         close(outfileindex)
      endif
@@ -398,7 +398,7 @@
         write(outfileindex, '("#",a)')' Anomalous hall conductivity in unit of (Ohm*cm)^-1 (Omega*cm)^-1, and e^2/h'
         write(outfileindex, '("#",a13, 20a16)')'Eenergy (eV)', '\sigma_xy', '\sigma_yz', '\sigma_zx'
         do ie=1, OmegaNum
-           write(outfileindex, '(200E16.8)')energy(ie), sigma_tensor_ahc(3, ie), &
+           write(outfileindex, '(200E16.8)')energy(ie)/eV2Hartree, sigma_tensor_ahc(3, ie), &
                                                         sigma_tensor_ahc(1, ie), &
                                                         sigma_tensor_ahc(2, ie)
 
