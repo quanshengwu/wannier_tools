@@ -16,7 +16,7 @@ libs = -L/opt/intel/mkl/lib/ \
  
 main :  $(obj)
 	$(f90) $(obj) -o tgtbgen $(libs) 
-	cp tgtbgen  ../bin
+	cp tgtbgen  ../../bin
 
 .SUFFIXES: .o .f90
 

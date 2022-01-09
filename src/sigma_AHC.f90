@@ -5,7 +5,7 @@
      !
      !> ref : Physical Review B 74, 195118(2006)
      !
-     !> eqn (34)
+     !> eqn (1)
      !
      !> Dec. 05 2017 by Quansheng Wu @ EPFL
      !
@@ -188,7 +188,14 @@
 #else
      sigma_tensor_ahc= sigma_tensor_ahc_mpi
 #endif
-     sigma_tensor_ahc= sigma_tensor_ahc/dble(knv3)/Origin_cell%CellVolume*24341d0*2d0  ! in (Omega*cm)^-1
+     !> in the version older than 2.5.2, we use Angstrom as the unit as length
+     !sigma_tensor_ahc= sigma_tensor_ahc/dble(knv3)/Origin_cell%CellVolume*24341d0*2d0  ! in (Omega*cm)^-1
+     
+     !> in the latest version, we use the atomic unit
+     !> in unit of (Ohm*m)^-1
+     sigma_tensor_ahc= sigma_tensor_ahc/dble(knv3)/Origin_cell%CellVolume*Echarge**2/hbar/Bohr_radius
+     !> in unit of (Ohm*cm)^-1
+     sigma_tensor_ahc= sigma_tensor_ahc/100d0
 
      outfileindex= outfileindex+ 1
      if (cpuid.eq.0) then
@@ -375,7 +382,15 @@
      sigma_tensor_ahc= sigma_tensor_ahc_mpi
 #endif
 
-     sigma_tensor_ahc= sigma_tensor_ahc/dble(knv3)/Origin_cell%CellVolume*24341d0*kCubeVolume/Origin_cell%ReciprocalCellVolume ! in (Omega*cm)^-1
+     !> in the version older than 2.5.2, we use Angstrom as the unit as length
+     !sigma_tensor_ahc= sigma_tensor_ahc/dble(knv3)/Origin_cell%CellVolume*24341d0*kCubeVolume/Origin_cell%ReciprocalCellVolume  ! in (Omega*cm)^-1
+     
+     !> in the latest version, we use the atomic unit
+     !> in unit of (Ohm*m)^-1
+     sigma_tensor_ahc= sigma_tensor_ahc/dble(knv3)/Origin_cell%CellVolume*Echarge**2/hbar/Bohr_radius*kCubeVolume/Origin_cell%ReciprocalCellVolume
+     !> in unit of (Ohm*cm)^-1
+     sigma_tensor_ahc= sigma_tensor_ahc/100d0
+
 
      outfileindex= outfileindex+ 1
      if (cpuid.eq.0) then
