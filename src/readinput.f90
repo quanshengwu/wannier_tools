@@ -675,7 +675,8 @@ subroutine readinput
       stop 'ERROR: please set lattice information'
    endif
 
-   if (index(AngOrBohr, 'Ang')>0.and.index(AngOrBohr, 'ANG')>0) then
+   if (index(AngOrBohr, 'ANG')>0) then
+      !> the input unit is Angstrom
       Origin_cell%Rua= Origin_cell%Rua*Angstrom2atomic
       Origin_cell%Rub= Origin_cell%Rub*Angstrom2atomic
       Origin_cell%Ruc= Origin_cell%Ruc*Angstrom2atomic
@@ -718,19 +719,19 @@ subroutine readinput
 
    if(cpuid==0)write(stdout, '(a)') '>> lattice information (Angstrom)'
    if(cpuid==0)write(stdout, '(6a12)')" a", " b", " c", 'alpha', 'beta', 'gamma'
-   if(cpuid==0)write(stdout, '(6f12.6)')Origin_cell%cell_parameters
+   if(cpuid==0)write(stdout, '(6f12.6)')Origin_cell%cell_parameters/Angstrom2atomic
    if(cpuid==0)write(stdout, '(a)')" Three Lattice vectors of the unfolded cell: "
-   if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Rua
-   if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Rub
-   if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Ruc
+   if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Rua/Angstrom2atomic
+   if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Rub/Angstrom2atomic
+   if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Ruc/Angstrom2atomic
 
    if(cpuid==0)write(stdout, '(a)') '>> Reciprocal lattice information (1/Angstrom)'
    if(cpuid==0)write(stdout, '(6a12)')" a", " b", " c", 'alpha', 'beta', 'gamma'
-   if(cpuid==0)write(stdout, '(6f12.6)')Origin_cell%reciprocal_cell_parameters
+   if(cpuid==0)write(stdout, '(6f12.6)')Origin_cell%reciprocal_cell_parameters*Angstrom2atomic
    if(cpuid==0)write(stdout, '(a)')" Three reciprocal lattice vectors of the primitive cell: "
-   if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Kua
-   if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Kub
-   if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Kuc
+   if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Kua*Angstrom2atomic
+   if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Kub*Angstrom2atomic
+   if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Kuc*Angstrom2atomic
 
 !===============================================================================================================!
 !> ATOM_POSITIONS card
@@ -1139,19 +1140,19 @@ subroutine readinput
 
    if(cpuid==0)write(stdout, '(a)') '>> Folded lattice information (Angstrom)'
    if(cpuid==0)write(stdout, '(6a12)')" a", " b", " c", 'alpha', 'beta', 'gamma'
-   if(cpuid==0)write(stdout, '(6f12.6)')Folded_cell%cell_parameters
+   if(cpuid==0)write(stdout, '(6f12.6)')Folded_cell%cell_parameters/Angstrom2atomic
    if(cpuid==0)write(stdout, '(a)')" Three Lattice vectors of unfolded cell: "
-   if(cpuid==0)write(stdout, '(3f12.6)')Folded_cell%Rua
-   if(cpuid==0)write(stdout, '(3f12.6)')Folded_cell%Rub
-   if(cpuid==0)write(stdout, '(3f12.6)')Folded_cell%Ruc
+   if(cpuid==0)write(stdout, '(3f12.6)')Folded_cell%Rua/Angstrom2atomic
+   if(cpuid==0)write(stdout, '(3f12.6)')Folded_cell%Rub/Angstrom2atomic
+   if(cpuid==0)write(stdout, '(3f12.6)')Folded_cell%Ruc/Angstrom2atomic
 
    if(cpuid==0)write(stdout, '(a)') '>> Folded Reciprocal lattice information (1/Angstrom)'
    if(cpuid==0)write(stdout, '(6a12)')" a", " b", " c", 'alpha', 'beta', 'gamma'
-   if(cpuid==0)write(stdout, '(6f12.6)')Folded_cell%reciprocal_cell_parameters
+   if(cpuid==0)write(stdout, '(6f12.6)')Folded_cell%reciprocal_cell_parameters*Angstrom2atomic
    if(cpuid==0)write(stdout, '(a)')" Three reciprocal lattice vectors of unfolded cell: "
-   if(cpuid==0)write(stdout, '(3f12.6)')Folded_cell%Kua
-   if(cpuid==0)write(stdout, '(3f12.6)')Folded_cell%Kub
-   if(cpuid==0)write(stdout, '(3f12.6)')Folded_cell%Kuc
+   if(cpuid==0)write(stdout, '(3f12.6)')Folded_cell%Kua*Angstrom2atomic
+   if(cpuid==0)write(stdout, '(3f12.6)')Folded_cell%Kub*Angstrom2atomic
+   if(cpuid==0)write(stdout, '(3f12.6)')Folded_cell%Kuc*Angstrom2atomic
 
    !> calculate the coordinates of Origin_cell in the unit of Folded_cell
    call cart_direct_real_unfold(Origin_cell%Rua, R1)
@@ -1273,13 +1274,13 @@ subroutine readinput
 
    if(cpuid==0)write(stdout,'(a)')' '
    if(cpuid==0)write(stdout,'(a)')'>>> Atom position and magnetic moment of Unfolded lattice'
-   if(cpuid==0)write(stdout,'(13X, 2a36, a24)')' Catesian', 'Fractional(Direct)', 'Magnetic moment'
+   if(cpuid==0)write(stdout,'(13X, 2a36, a24)')' Catesian(Ang)', 'Fractional(Direct)', 'Magnetic moment'
    if(cpuid==0)write(stdout,'(a)')'------------------------------------------------------------------------------------------------------------------'
    if(cpuid==0)write(stdout,'(a6, 2X, a10, 6a12, 3a8)')'index', 'Atom Name ', ' x', ' y', ' z', 'a', 'b', 'c', 'Mx', 'My', 'Mz'
    if(cpuid==0)write(stdout,'(a)')'------------------------------------------------------------------------------------------------------------------'
    do i=1, Folded_cell%Num_atoms
       if(cpuid==0)write(stdout, '(i6,2X, a10,6f12.6,3f8.3)')i, Folded_cell%atom_name(i), &
-         Folded_cell%Atom_position_cart(:, i), Folded_cell%Atom_position_direct(:,i), Folded_cell%Atom_magnetic_moment(:, i)
+         Folded_cell%Atom_position_cart(:, i)/Angstrom2atomic, Folded_cell%Atom_position_direct(:,i), Folded_cell%Atom_magnetic_moment(:, i)
    enddo
 
 
@@ -1562,9 +1563,9 @@ subroutine readinput
       open(outfileindex, file="POSCAR-rotated")
       write(outfileindex, '(a)')"Rotated POSCAR by SURFACE card in wt.in by WannierTools"
       write(outfileindex, '(a)')"1.0"
-      write(outfileindex, '(3f12.6)') R1
-      write(outfileindex, '(3f12.6)') R2
-      write(outfileindex, '(3f12.6)') R3
+      write(outfileindex, '(3f12.6)') R1/Angstrom2atomic
+      write(outfileindex, '(3f12.6)') R2/Angstrom2atomic
+      write(outfileindex, '(3f12.6)') R3/Angstrom2atomic
       write(outfileindex, '(300A6)') Origin_cell%Name_of_atomtype
       write(outfileindex, '(300i6)') Origin_cell%Num_atoms_eachtype
       write(outfileindex, '(a)')"Direct"
@@ -1717,13 +1718,13 @@ subroutine readinput
    Kb2(2)= 2d0*pi/cell_volume*Ra2(1)
 
    if (cpuid==0) then
-      write(stdout, *)'2D Primitive Cell_Volume: ', Cell_Volume
+      write(stdout, *)'2D Primitive Cell_Volume: ', Cell_Volume/Angstrom2atomic/Angstrom2atomic
       write(stdout, *)'Ra2, Rb2'
-      write(stdout, '(3f10.4)')Ra2
-      write(stdout, '(3f10.4)')Rb2
+      write(stdout, '(3f10.4)')Ra2/Angstrom2atomic
+      write(stdout, '(3f10.4)')Rb2/Angstrom2atomic
       write(stdout, *)'Ka2, Kb2'
-      write(stdout, '(3f10.4)')ka2
-      write(stdout, '(3f10.4)')kb2
+      write(stdout, '(3f10.4)')ka2/Angstrom2atomic
+      write(stdout, '(3f10.4)')kb2/Angstrom2atomic
    endif
 
 
@@ -2271,8 +2272,9 @@ subroutine readinput
    if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 1st vector: ', K3D_vec1_cube
    if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 2nd vector: ', K3D_vec2_cube
    if (cpuid==0) write(stdout, '((a, 3f8.4))')'The 3rd vector: ', K3D_vec3_cube
-   if (cpuid==0) write(stdout, '((a, 3f8.4))')'kCubeVolume: ', kCubeVolume
-   if (cpuid==0) write(stdout, '((a, 3f8.4))')'ReciprocalOrigin_cell%CellVolume: ', Origin_cell%ReciprocalCellVolume
+   if (cpuid==0) write(stdout, '((a, 3f8.4))')'kCubeVolume: ', kCubeVolume*Angstrom2atomic**3
+   if (cpuid==0) write(stdout, '((a, 3f8.4))')'ReciprocalOrigin_cell%CellVolume: ', &
+   Origin_cell%ReciprocalCellVolume*Angstrom2atomic**3
    if (.not.lfound .and.(BulkGap_cube_calc)) then
       stop 'ERROR: please set KCUBE_BULK for gap3D calculations'
    endif
@@ -2383,7 +2385,7 @@ subroutine readinput
    if (.not.lfound.and.cpuid==0)write(stdout, *)'>> Using default parameters for Kpoint_3D'
    if (cpuid==0) then
       write(stdout, '(a, 3f7.4, a)')'>> k points ', Kpoint_3D_direct, " in unit of reciprocal primitive cell"
-      write(stdout, '(a, 3f7.4, a)')'>> k points ', Kpoint_3D_cart, " in Cartesian coordinates"
+      write(stdout, '(a, 3f7.4, a)')'>> k points ', Kpoint_3D_cart*Angstrom2atomic, " in Cartesian coordinates"
    endif
 
 !===============================================================================================================!
@@ -2430,15 +2432,16 @@ subroutine readinput
 
 
 109 continue
+   dk_mass= dk_mass/Angstrom2atomic
    if (cpuid==0) write(stdout, *)' '
    if (.not.lfound.and.cpuid==0)write(stdout, *)'>> Using default parameters for effective mass calculation'
    if (cpuid==0) write(stdout, *)'>> Effective mass calculation parameters  '
    if (cpuid==0) write(stdout, '(a, i5, a)')'>> The ', iband_mass, "'th band"
-   if (cpuid==0) write(stdout, '(a, f7.4, a)')'>> k step ', dk_mass, " in unit of 1/Angstrom"
+   if (cpuid==0) write(stdout, '(a, f7.4, a)')'>> k step ', dk_mass*Angstrom2atomic, " in unit of 1/Angstrom"
    if (cpuid==0) write(stdout, '(a, 3f7.4, a)')'>> k points ', k_mass, " in unit of reciprocal primitive cell"
    k1=k_mass
    call direct_cart_rec(k1, k_mass)
-   if (cpuid==0) write(stdout, '(a, 3f7.4, a)')'>> k points ', k_mass, " in unit of 1/Angstrom"
+   if (cpuid==0) write(stdout, '(a, 3f7.4, a)')'>> k points ', k_mass*Angstrom2atomic, " in unit of 1/Angstrom"
 
 !===============================================================================================================!
 !> KPOINTS_3D card
@@ -2502,7 +2505,7 @@ subroutine readinput
         write(stdout, '(a)')"KPOINTS_3D positions"
         write(stdout, '(8a10)')"index", "kx", 'ky', 'kz', 'k1', 'k2', 'k3'
         do ik=1, Nk3_point_mode
-           write(stdout, '(i8,4x,8f10.5)')ik, k3points_pointmode_cart(:, ik), k3points_pointmode_direct(:, ik)
+           write(stdout, '(i8,4x,8f10.5)')ik, k3points_pointmode_cart(:, ik)*Angstrom2atomic, k3points_pointmode_direct(:, ik)
         enddo
         write(stdout, '(a)')" "
      endif
@@ -2580,7 +2583,8 @@ subroutine readinput
         write(stdout, '(a)')"KPOINTS_FOLD_3D positions"
         write(stdout, '(8a10)')"index", "kx", 'ky', 'kz', 'k1', 'k2', 'k3'
         do ik=1, Nk3_unfold_point_mode
-           write(stdout, '(i8, 4x,8f10.5)')ik, k3points_unfold_pointmode_cart(:, ik), k3points_unfold_pointmode_direct(:, ik)
+           write(stdout, '(i8, 4x,8f10.5)')ik, k3points_unfold_pointmode_cart(:, ik)*Angstrom2atomic, &
+              k3points_unfold_pointmode_direct(:, ik)
         enddo
         write(stdout, '(a)')" "
      endif
@@ -2697,7 +2701,7 @@ subroutine readinput
       write(stdout, '(a)')" "
       write(stdout, '(a)')"Single_KPOINT_3D positions"
       write(stdout, '(8a10)')"kx", 'ky', 'kz', 'k1', 'k2', 'k3'
-      write(stdout, '(8f10.5)') Single_KPOINT_3D_CART, Single_KPOINT_3D_DIRECT
+      write(stdout, '(8f10.5)') Single_KPOINT_3D_CART*Angstrom2atomic, Single_KPOINT_3D_DIRECT
       write(stdout, '(a)')" "
    endif
 
@@ -2873,7 +2877,7 @@ subroutine readinput
       write(stdout, '(a)')"Nodal Line center positions"
       write(stdout, '(8a10)')"kx", 'ky', 'kz', 'k1', 'k2', 'k3'
       do i=1, Num_NLs
-         write(stdout, '(8f10.5)')NL_center_position_cart(:, i), NL_center_position_direct(:, i)
+         write(stdout, '(8f10.5)')NL_center_position_cart(:, i)*Angstrom2atomic, NL_center_position_direct(:, i)
       enddo
 
       write(stdout, '(a)')" "
@@ -2943,7 +2947,7 @@ subroutine readinput
       write(stdout, '(a)')"Weyl point positions"
       write(stdout, '(8a10)')"kx", 'ky', 'kz', 'k1', 'k2', 'k3'
       do i=1, Num_Weyls
-         write(stdout, '(8f10.5)')weyl_position_cart(:, i), weyl_position_direct(:, i)
+         write(stdout, '(8f10.5)')weyl_position_cart(:, i)*Angstrom2atomic, weyl_position_direct(:, i)
       enddo
 
       write(stdout, '(a)')" "
@@ -4555,14 +4559,14 @@ subroutine generate_slab_poscar(cell)
       open(outfileindex, file="POSCAR-slab")
       write(outfileindex, '(a)')"POSCAR for slab defined by SURFACE card and Nslab and Vacuum_thickness_in_Angstrom in wt.in by WannierTools"
       write(outfileindex, '(a)')"1.0"
-      write(outfileindex, '(3f12.6)') R1
-      write(outfileindex, '(3f12.6)') R2
-      write(outfileindex, '(3f12.6)') R3_slab
+      write(outfileindex, '(3f12.6)') R1/Angstrom2atomic
+      write(outfileindex, '(3f12.6)') R2/Angstrom2atomic
+      write(outfileindex, '(3f12.6)') R3_slab/Angstrom2atomic
       write(outfileindex, '(30A6)') cell%Name_of_atomtype
       write(outfileindex, '(30i6)') Num_atoms_eachtype
       write(outfileindex, '(a)')"Cartesian"
       do ia=1, Num_atoms_slab
-         if(cpuid==0)write(outfileindex, '(3f12.6, a9)')pos_cart(:, ia), trim(adjustl(atom_name(ia)))
+         if(cpuid==0)write(outfileindex, '(3f12.6, a9)')pos_cart(:, ia)/Angstrom2atomic, trim(adjustl(atom_name(ia)))
       enddo
       close(outfileindex)
    endif
@@ -4625,14 +4629,14 @@ subroutine generate_supercell_poscar()
       open(outfileindex, file="POSCAR-slab")
       write(outfileindex, '(a)')"POSCAR for slab defined by SURFACE card and Nslab and Vacuum_thickness_in_Angstrom in wt.in by WannierTools"
       write(outfileindex, '(a)')"1.0"
-      write(outfileindex, '(3f12.6)') R1
-      write(outfileindex, '(3f12.6)') R2
-      write(outfileindex, '(3f12.6)') R3_slab
+      write(outfileindex, '(3f12.6)') R1/Angstrom2atomic
+      write(outfileindex, '(3f12.6)') R2/Angstrom2atomic
+      write(outfileindex, '(3f12.6)') R3_slab/Angstrom2atomic
       write(outfileindex, '(30A6)') Cell_defined_by_surface%Name_of_atomtype
       write(outfileindex, '(30i6)') Num_atoms_eachtype
       write(outfileindex, '(a)')"Cartesian"
       do ia=1, Num_atoms_slab
-         if(cpuid==0)write(outfileindex, '(3f12.6, a9)')pos_cart(:, ia), trim(adjustl(atom_name(ia)))
+         if(cpuid==0)write(outfileindex, '(3f12.6, a9)')pos_cart(:, ia)/Angstrom2atomic, trim(adjustl(atom_name(ia)))
       enddo
       close(outfileindex)
    endif

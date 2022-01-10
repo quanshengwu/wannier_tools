@@ -414,7 +414,7 @@
         write(outfileindex, '(a)')"set output 'sigma_ahc.pdf'"
         write(outfileindex, '(a)')'set key samplen 0.8'
         write(outfileindex, '(a)')'set ylabel offset 0.0,0'
-        write(outfileindex, '(a, f10.5, a, f10.5, a)')'set xrange [', OmegaMin, ':', OmegaMax, ']'
+        write(outfileindex, '(a, f10.5, a, f10.5, a)')'set xrange [', OmegaMin/eV2Hartree, ':', OmegaMax/eV2Hartree, ']'
         write(outfileindex, '(a)')'set xlabel "Energy (eV)"'
         write(outfileindex, '(a)')'set ylabel "\sigma (1/(Ohm*cm))"'
         write(outfileindex, '(2a)')"plot 'sigma_ahc.txt' u 1:2 w l title '\sigma_{xy}' lc rgb 'red' lw 4, \"
