@@ -395,7 +395,7 @@
      outfileindex= outfileindex+ 1
      if (cpuid.eq.0) then
         open(unit=outfileindex, file='sigma_ahc.txt')
-        write(outfileindex, '("#",a)')' Anomalous hall conductivity in unit of (Ohm*cm)^-1 (Omega*cm)^-1, and e^2/h'
+        write(outfileindex, '("#",a)')' Anomalous hall conductivity in unit of (Ohm*cm)^-1'
         write(outfileindex, '("#",a13, 20a16)')'Eenergy (eV)', '\sigma_xy', '\sigma_yz', '\sigma_zx'
         do ie=1, OmegaNum
            write(outfileindex, '(200E16.8)')energy(ie)/eV2Hartree, sigma_tensor_ahc(3, ie), &
