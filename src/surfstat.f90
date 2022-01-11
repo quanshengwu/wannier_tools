@@ -81,7 +81,7 @@
      sx_r_mpi     = 0d0;      sy_r_mpi     = 0d0;      sz_r_mpi     = 0d0
 
 
-     eta=(omegamax- omegamin)/dble(omeganum)*1.5d0
+     eta=(omegamax- omegamin)/dble(omeganum)*3.0d0
 
      do i= 1, omeganum
         omega(i)=omegamin+(i-1)*(omegamax-omegamin)/dble(omeganum)
@@ -273,6 +273,15 @@
          open(unit=dosbulkfile , file='dos.dat_bulk')
          open(unit=spindoslfile, file='spindos.dat_l')
          open(unit=spindosrfile, file='spindos.dat_r')
+         write(doslfile, '("#", a12, 6a17)') ' k(1/Ang)', ' E(eV)', 'dos_l', 'dos_l_only'
+         write(dosrfile, '("#", a12, 6a17)') ' k(1/Ang)', ' E(eV)', 'dos_r', 'dos_r_only'
+         write(dosbulkfile, '("#", a12, 6a17)') ' k(1/Ang)', ' E(eV)', 'dos_bulk'
+         write(spindoslfile, '("#", a)') ' spin dos_l, the axis is rotated as '
+         write(spindoslfile, '("#", a)') " x is along R1', z is along R1'xR2', y is along z x y"
+         write(spindoslfile, '("#", a12, 6a17)') ' k(1/Ang)', ' E(eV)', 'sx', 'sy', 'sz'
+         write(spindosrfile, '("#", a)') ' spin dos_r, the axis is rotated as '
+         write(spindosrfile, '("#", a)') " x is along R1', z is along R1'xR2', y is along z x y"
+         write(spindosrfile, '("#", a12, 6a17)') ' k(1/Ang)', ' E(eV)', 'sx', 'sy', 'sz'
          do ikp = 1, knv2
             do j = 1, omeganum
                 write(doslfile,    2002) k2len(ikp), omega(j)/eV2Hartree, dos_l(ikp, j), dos_l_only(ikp, j)
@@ -297,7 +306,7 @@
          close(spindoslfile)
          close(spindosrfile)
          write(stdout,*)'ndim',ndim
-         write(stdout,*) 'knv2,omeganum,eta',knv2, omeganum, eta
+         write(stdout,*) 'knv2,omeganum,eta',knv2, omeganum, eta/eV2Hartree
          write(stdout,*)'calculate density of state successfully'
      ENDIF
 
@@ -615,7 +624,7 @@ SUBROUTINE surfstat_jdos
     USE wmpi
     USE para, ONLY: omeganum, omegamin, omegamax, ndim, knv2, k2_path, outfileindex, &
                     BottomOrbitals, TopOrbitals, NBottomOrbitals, NtopOrbitals, stdout, &
-                    k2len, Num_wann, eps9, zi, Np, eV2Hartree
+                    k2len, Num_wann, eps9, zi, Np, eV2Hartree, Angstrom2atomic
     IMPLICIT NONE
 
     ! MPI error code
@@ -696,7 +705,7 @@ SUBROUTINE surfstat_jdos
     DO i = 1, omeganum
         omega(i) = omegamin+(i-1)*eta
     ENDDO
-    eta = eta * 1.5d0
+    eta = eta * 3.0d0
 
     DO i=1,Ndim
         ones(i,i) = 1.0d0
@@ -921,10 +930,12 @@ SUBROUTINE surfstat_jdos
     IF(cpuid.eq.0) THEN
         OPEN(unit=jdoslfile, file='dos.jdat_l')
         OPEN(unit=jdosrfile, file='dos.jdat_r')
+        write(jdoslfile, '("#", a12, 3a17)') ' k(1/Ang)', ' E(eV)', 'jdos_l', 'jdos_l_only'
+        write(jdosrfile, '("#", a12, 3a17)') ' k(1/Ang)', ' E(eV)', 'jdos_l', 'jdos_l_only'
         DO ikp = 1, knv2
             DO j = 1, omeganum
-                WRITE(jdoslfile, 2002) k2len(ikp), omega(j)/eV2Hartree, jdos_l(ikp, j), jdos_l_only(ikp, j)
-                WRITE(jdosrfile, 2002) k2len(ikp), omega(j)/eV2Hartree, jdos_r(ikp, j), jdos_r_only(ikp, j)
+                WRITE(jdoslfile, 2002) k2len(ikp)*Angstrom2atomic, omega(j)/eV2Hartree, jdos_l(ikp, j), jdos_l_only(ikp, j)
+                WRITE(jdosrfile, 2002) k2len(ikp)*Angstrom2atomic, omega(j)/eV2Hartree, jdos_r(ikp, j), jdos_r_only(ikp, j)
             ENDDO
             WRITE(jdoslfile, *)
             WRITE(jdosrfile, *)
