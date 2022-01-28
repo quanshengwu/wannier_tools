@@ -368,7 +368,6 @@ subroutine ek_slab_sparseHR
       nnz= nnzmax
       call now(time1)
       call ham_slab_sparseHR(nnz, k, acoo,jcoo,icoo)
-      acoo= acoo/eV2Hartree
       call now(time2)
 
       !> diagonalization by call zheev in lapack
@@ -436,6 +435,7 @@ subroutine ek_slab_sparseHR
    emin= minval(eigv_mpi)-0.5d0
    emax= maxval(eigv_mpi)+0.5d0
 
+   eigv_mpi= eigv_mpi/eV2Hartree
 
    outfileindex= outfileindex+ 1
    if (cpuid.eq.0) then

@@ -32,6 +32,7 @@
 !          If JOBZ = 'N', then on exit the lower triangle (if UPLO='L')
 !          or the upper triangle (if UPLO='U') of A, including the
 !          diagonal, is destroyed.
+!          A_in* A_out(:, n)= w(n)*A_out(:, n)
 
      complex(Dp),intent(inout) :: A(N,N)
 

@@ -974,8 +974,8 @@ subroutine sparse_ekbulk
    real(dp) :: time1, time2, time3
 
 
-   if (OmegaNum==0) OmegaNum= Num_wann
-   if (NumSelectedEigenVals==0) NumSelectedEigenVals=OmegaNum
+   !if (OmegaNum==0) OmegaNum= Num_wann
+   !if (NumSelectedEigenVals==0) NumSelectedEigenVals=OmegaNum
 
    !> first use NumSelectedEigenVals, if NumSelectedEigenVals is not set, 
    !> then use OmegaNum; if OmegaNum is also not set, 
@@ -1756,7 +1756,6 @@ end subroutine ekbulk_elpa
      real(dp) :: sx
      real(dp) :: sy
      real(dp) :: sz
-     real(dp) :: kxmin, kxmax, kymin, kymax
      real(Dp), allocatable :: W(:)
      real(dp), allocatable :: kxy(:,:)
      real(dp), allocatable :: kxy_shape(:,:)
@@ -1765,12 +1764,12 @@ end subroutine ekbulk_elpa
      complex(Dp), allocatable :: Hamk_bulk(:, :)
 
      ! eigen value of H
-	  real(dp), allocatable :: gap(:)
-	  real(dp), allocatable :: gap_mpi(:)
-	  real(dp), allocatable :: eigv(:,:)
-	  real(dp), allocatable :: eigv_mpi(:,:)
-	  real(dp), allocatable :: spin(:, :, :)
-	  real(dp), allocatable :: spin_mpi(:, :, :)
+     real(dp), allocatable :: gap(:)
+     real(dp), allocatable :: gap_mpi(:)
+     real(dp), allocatable :: eigv(:,:)
+     real(dp), allocatable :: eigv_mpi(:,:)
+     real(dp), allocatable :: spin(:, :, :)
+     real(dp), allocatable :: spin_mpi(:, :, :)
 
 
      complex(dp), allocatable :: sigmax(:, :)
@@ -3178,9 +3177,8 @@ subroutine get_projection_weight_bulk(k_SBZ_direct, numk, psi, weight)
    real(dp), intent(out) :: weight(NumberofSelectedOrbitals_groups, numK)
 
    !> local variables
-   integer :: ia, ig, ir, ik, io, i, j
-   real(dp) :: posij_cart(3), posij_direct(3), posij_direct_unfold(3), kdotr
-   real(dp) :: k_cart(3), k_PBZ_direct(3), k_t(3)
+   integer :: ig, ik, i, j
+   real(dp) :: k_PBZ_direct(3)
    real(dp), allocatable :: weight_t(:)
    complex(dp) :: overlp
 

@@ -22,16 +22,13 @@ subroutine ham_bulk_atomicgauge(k,Hamk_bulk)
    integer :: i1,i2,iR
 
    ! wave vector in 3d
-   real(Dp) :: k(3), kdotr, pos0(3), pos1(3), pos2(3)
-   real(dp) :: dis, pos_direct(3), pos_cart(3)
+   real(Dp) :: k(3), kdotr, pos0(3)
 
    complex(dp) :: factor
 
    ! Hamiltonian of bulk system
    complex(Dp),intent(out) ::Hamk_bulk(Num_wann, Num_wann)
    complex(dp), allocatable :: mat1(:, :)
-   real(dp), external :: norm
-
    allocate(mat1(Num_wann, Num_wann))
 
    Hamk_bulk=0d0
@@ -67,7 +64,59 @@ subroutine ham_bulk_atomicgauge(k,Hamk_bulk)
    return
 end subroutine ham_bulk_atomicgauge
 
+subroutine d2Hdk2_atomicgauge(k, DHDk2_wann)
+   !> second derivatve of H(k)
+   use para, only : Nrpts, irvec, crvec, Origin_cell, HmnR, ndegen, &
+       Num_wann, dp, Rcut, pi2zi, zi
+   implicit none
+
+   !> momentum in 3D BZ
+   real(dp), intent(in) :: k(3)
+
+   !> second derivate of H(k)
+   complex(dp), intent(out) :: DHDk2_wann(Num_wann, Num_wann, 3, 3)
+
+   integer :: iR, i1, i2, i, j
+
+   real(dp) :: pos(3), pos1(3), pos2(3), pos_cart(3), pos_direct(3)
+   real(dp) :: kdotr, dis
+   complex(dp) :: ratio
+   real(dp), external :: norm
+
+   DHDk2_wann= 0d0
+   !> the first atom in home unit cell
+   do iR=1, Nrpts
+      do i2=1, Num_wann
+         pos2= Origin_cell%wannier_centers_direct(:, i2)
+         !> the second atom in unit cell R
+         do i1=1, Num_wann
+            pos1= Origin_cell%wannier_centers_direct(:, i1)
+            pos_direct= irvec(:, iR)
+            pos_direct= pos_direct+ pos2- pos1
+
+            call direct_cart_real(pos_direct, pos_cart, Origin_cell%lattice)
+
+            dis= norm(pos_cart)
+            if (dis> Rcut) cycle
+
+            kdotr=k(1)*pos_direct(1) + k(2)*pos_direct(2) + k(3)*pos_direct(3)
+            ratio= exp(pi2zi*kdotr)/ndegen(iR)
+
+            do j=1, 3
+               do i=1, 3
+                  DHDk2_wann(i1, i2, i, j)=DHDk2_wann(i1, i2, i, j) &
+                     -pos_cart(i)*pos_cart(j)*HmnR(i1, i2, iR)*ratio
+               enddo ! j 
+            enddo ! i
+         enddo ! i1
+      enddo ! i2
+   enddo ! iR
+
+   return
+end subroutine d2Hdk2_atomicgauge
+
 subroutine dHdk_atomicgauge(k, velocity_Wannier)
+   !> Velocity operator in Wannier basis using atomic gauge
    !> First derivate of H(k); dH(k)/dk
    use para, only : Nrpts, irvec, Origin_cell, HmnR, ndegen, &
        Num_wann, dp, Rcut, pi2zi,  &
@@ -117,6 +166,36 @@ subroutine dHdk_atomicgauge(k, velocity_Wannier)
    return
 end subroutine dHdk_atomicgauge
 
+subroutine dHdk_atomicgauge_Ham(k, eigvec, Vmn_Ham)
+   !> Velocity operator in Hamiltonian basis using atomic gauge
+   !> see https://www.wanniertools.org/theory/tight-binding-model/
+   use para, only : Num_wann, dp
+   implicit none
+
+   !> momentum in 3D BZ
+   real(dp), intent(in) :: k(3)
+
+   !> eigenvectors of H, H*eigvec(:, n)= E(n)*eigvec(:, n)
+   complex(dp), intent(in) :: eigvec(Num_wann, Num_wann)
+
+   !> velocity operator in the diagonalized Hamiltonian basis using lattice gauge
+   complex(dp), intent(out) :: Vmn_Ham(Num_wann, Num_wann, 3)
+
+   !> velocity operator in Wannier basis using lattice gauge
+   complex(dp), allocatable :: Vmn_wann(:, :, :)
+
+   integer :: i
+
+   allocate(Vmn_wann(Num_wann, Num_wann, 3))
+   Vmn_Ham= 0d0
+   call dHdk_atomicgauge(k, Vmn_wann)
+   do i=1, 3
+      call rotation_to_Ham_basis(eigvec, Vmn_wann(:, :, i), Vmn_Ham(:, :, i))
+   enddo
+   deallocate(Vmn_wann)
+
+   return
+end subroutine dHdk_atomicgauge_Ham
 
 subroutine ham_bulk_latticegauge(k,Hamk_bulk)
    ! This subroutine caculates Hamiltonian for
@@ -131,7 +210,6 @@ subroutine ham_bulk_latticegauge(k,Hamk_bulk)
 
    ! loop index
    integer :: i1,i2,iR
-   integer :: nwann
 
    real(dp) :: kdotr, k(3)
 
@@ -147,6 +225,10 @@ subroutine ham_bulk_latticegauge(k,Hamk_bulk)
 
       Hamk_bulk(:, :)= Hamk_bulk(:, :)+ HmnR(:, :, iR)*factor/ndegen(iR)
    enddo ! iR
+   
+   !call mat_mul(Num_wann, mirror_z, Hamk_bulk, mat1)
+   !call mat_mul(Num_wann, mat1, mirror_z, mat2)
+   !Hamk_bulk= (Hamk_bulk+ mat2)/2d0
 
    ! check hermitcity
    do i1=1, Num_wann
@@ -164,9 +246,7 @@ subroutine ham_bulk_latticegauge(k,Hamk_bulk)
    return
 end subroutine ham_bulk_latticegauge
 
-
-
-subroutine dHdk_latticegauge(k, vx, vy, vz)
+subroutine dHdk_latticegauge_wann(k, velocity_Wannier)
    use para, only : Nrpts, irvec, crvec, Origin_cell, &
       HmnR, ndegen, Num_wann, zi, pi2zi, dp
    implicit none
@@ -174,28 +254,118 @@ subroutine dHdk_latticegauge(k, vx, vy, vz)
    !> momentum in 3D BZ
    real(dp), intent(in) :: k(3)
 
-   !> velocity operator using lattice gauge 
-   !> which don't take into account the atom's position
-   !> this is a nature choice, while maybe not consistent with the symmetry
-   complex(dp), intent(out) :: vx(Num_wann, Num_wann)
-   complex(dp), intent(out) :: vy(Num_wann, Num_wann)
-   complex(dp), intent(out) :: vz(Num_wann, Num_wann)
+   !> velocity operator in Wannier basis using lattice gauge
+   complex(dp), intent(out) :: velocity_Wannier(Num_wann, Num_wann, 3)
 
-   integer :: iR
+   integer :: iR, i
 
    real(dp) :: kdotr
    complex(dp) :: ratio
 
-   do iR= 1, Nrpts
-      kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
-      ratio= Exp(pi2zi*kdotr)
-      vx= vx+ zi*crvec(1, iR)*HmnR(:,:,iR)*ratio/ndegen(iR)
-      vy= vy+ zi*crvec(2, iR)*HmnR(:,:,iR)*ratio/ndegen(iR)
-      vz= vz+ zi*crvec(3, iR)*HmnR(:,:,iR)*ratio/ndegen(iR)
-   enddo ! iR
+   do i=1, 3
+      do iR= 1, Nrpts
+         kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
+         ratio= Exp(pi2zi*kdotr)
+         velocity_Wannier(:, :, i)= velocity_Wannier(:, :, i)+ &
+            zi*crvec(i, iR)*HmnR(:,:,iR)*ratio/ndegen(iR)
+      enddo ! iR
+   enddo
 
    return
-end subroutine dHdk_latticegauge
+end subroutine dHdk_latticegauge_wann
+
+subroutine dHdk_latticegauge_Ham(k, eigval, eigvec, Vmn_Ham)
+   use para, only : Nrpts, irvec, crvec, Origin_cell, &
+      HmnR, ndegen, Num_wann, zi, pi2zi, dp, zzero
+   implicit none
+
+   !> momentum in 3D BZ
+   real(dp), intent(in) :: k(3)
+
+   real(dp), intent(in) :: eigval(Num_wann)
+   complex(dp), intent(in) :: eigvec(Num_wann, Num_wann)
+
+   !> velocity operator in the diagonalized Hamiltonian basis using lattice gauge
+   complex(dp), intent(out) :: Vmn_Ham(Num_wann, Num_wann, 3)
+
+   !> velocity operator in Wannier basis using lattice gauge
+   complex(dp), allocatable :: Vmn_wann(:, :, :), Vmn_Ham0(:, :, :)
+
+   !> wnm=En-Em
+   complex(dp), allocatable :: wnm(:, :), temp(:, :)
+
+   !> it's a diagonal matrix for each axis
+   complex(dp), allocatable :: itau(:, :, :)
+
+   integer :: i, m, n, l
+
+   allocate(Vmn_wann(Num_wann, Num_wann, 3))
+   allocate(Vmn_Ham0(Num_wann, Num_wann, 3))
+   Vmn_wann= 0d0; Vmn_Ham0= 0d0
+
+   call dHdk_latticegauge_wann(k, Vmn_wann)
+   do i=1, 3
+      call rotation_to_Ham_basis(eigvec, Vmn_wann(:, :, i), Vmn_Ham0(:, :, i))
+   enddo
+ 
+   allocate(wnm(Num_wann, Num_wann))
+   allocate(temp(Num_wann, Num_wann))
+   allocate(itau(Num_wann, Num_wann, 3))
+   wnm=0d0; temp=0d0; itau= zzero
+
+   !\  -i\tau
+   do i=1, 3
+      do m=1, Num_wann
+         itau(m, m, i)= -zi*Origin_cell%wannier_centers_cart(i, m)
+      enddo
+   enddo
+
+   do m=1, Num_wann
+      do n=1, Num_wann
+         wnm(m, n)= eigval(n)-eigval(m)
+      enddo
+   enddo
+  
+   !> \sum_l (-i*\tau_{l})*conjg(vec(l, m))*vec(l, n)
+   do i=1, 3
+      call mat_mul(Num_wann, itau(:, :, i), eigvec, temp)
+      call mat_mul(Num_wann, conjg(transpose(eigvec)), temp, Vmn_Ham(:, :, i))
+   enddo
+ 
+   do i=1, 3
+      do n=1, Num_wann
+         do m=1, Num_wann
+            temp(m, n) = wnm(m, n)*Vmn_Ham(m, n, i)
+         enddo
+      enddo
+      Vmn_Ham(:, :, i)= temp(:, :)
+   enddo
+
+
+   Vmn_Ham= Vmn_Ham+ Vmn_Ham0
+  !Vmn_Ham = Vmn_Ham0
+
+!  print *, Vmn_Ham(1, 1, 1)
+
+  !Vmn_Ham= 0d0
+  !do m=1, Num_wann
+  !   do n=1, Num_wann
+  !      do i=1, 3
+  !         do l=1, Num_wann
+  !         Vmn_Ham(m, n, i)= Vmn_Ham(m, n, i)- &
+  !            (eigval(n)- eigval(m))*zi*Origin_cell%wannier_centers_cart(i, l)*conjg(eigvec(l, m))*eigvec(l, n)
+  !         enddo ! summation over l
+  !      enddo
+  !   enddo
+  !enddo
+  !Vmn_Ham= Vmn_Ham+ Vmn_Ham0
+
+!  print *, Vmn_Ham(1, 1, 1)
+!  stop
+
+   return
+end subroutine dHdk_latticegauge_Ham
+
 
 subroutine ham_bulk_LOTO(k,Hamk_bulk)
    ! This subroutine caculates Hamiltonian for
@@ -346,8 +516,8 @@ subroutine ham_bulk_kp(k,Hamk_bulk)
    kx=k(1)
    ky=k(2)
    kz=k(3)
-   E1= 1.25d0  
-   E2= 0.85d0 
+   E1= 1.25d0
+   E2= 0.85d0
    E3= 0.25d0
    E4=-0.05d0
 

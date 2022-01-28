@@ -205,7 +205,6 @@
 
      UU_dag= conjg(transpose(UU))
 
-     !call dHdk_latticegauge(k, vx, vy, vz)
      call dHdk_atomicgauge(k, velocity_wann)
 
      !> unitility rotate velocity
@@ -276,7 +275,6 @@
 
      UU_dag= conjg(transpose(UU))
 
-     !call dHdk_latticegauge(k, vx, vy, vz)
      call dHdk_atomicgauge(k, velocity_wann)
 
      !> unitility rotate velocity
@@ -851,13 +849,8 @@
         call eigensystem_c( 'V', 'U', Num_wann, UU, W)
         eigval_allk(:, ik) = W
 
-        !> get velocity operator in Wannier basis
-        call dHdk_atomicgauge(k, Vmn_wann)
-        
-        !> Rotate Vmn_wann from Wannier basis to Hamiltonian basis
-        do i=1, 3
-           call rotation_to_Ham_basis(UU, Vmn_wann(:, :, i), Vmn_Ham(:, :, i))
-        enddo
+        !> get velocity operator in Hamiltonian basis
+        call dHdk_atomicgauge_Ham(k, UU, Vmn_Ham)
 
         call get_Dmn_Ham(W, Vmn_Ham, Dmn_Ham)
         call get_Vmn_Ham_nondiag(Vmn_Ham, Vmn_Ham_nondiag)

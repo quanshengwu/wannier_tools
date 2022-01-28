@@ -121,8 +121,9 @@
       !> transform from Kelvin to eV
       !> The SI unit of temperature is the kelvin (K), but using the above relation the electron temperature is often expressed in
       !> terms of the energy unit electronvolt (eV). Each kelvin (1 K) corresponds to 8.6173324(78)×10−5 eV; this factor is the ratio
-      !> of the Boltzmann constant to the elementary charge.
-      KBT_array= KBT_array*8.6173324E-5
+      !> of the Boltzmann constant to the elementary charge. After version 2.6, we 
+      !> adopt the atomic unit
+      KBT_array= KBT_array*8.6173324E-5*eV2Hartree
 
       !>> calculate the band resolved conductivity tensor
       !> The tensor is like

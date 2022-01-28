@@ -1,6 +1,6 @@
 !> Calculate magnetoresistance with R.G.Chambers's formula based on Boltzmann transport
 !> Written By QuanSheng Wu (wuquansheng@gmail.com)
-!> Thanks Yi Liu for help discussions
+!> Thanks Yi Liu for helpful discussions
 !> References : 
 !> [1] Electrons in metals and semiconductors, R.G. Chambers,
 !> [2] Ab initio investigation of magnetic transport properties by Wannier interpolation, 
@@ -27,9 +27,7 @@
       real(dp), intent(in) :: BTau_array(NBTau) ! omega*tau without units
       real(dp), intent(inout) :: sigma_ohe_tensor(9, NBTau, OmegaNum, NumT, Nband_Fermi_Level) 
 
-      real(dp) :: coeff
-
-      real(dp) :: mu, BTau, KBT
+      real(dp) :: coeff,  mu, BTau, KBT
       integer :: ie, ibtau, ikt
 
       integer :: Nk_total, Nk_current, Nk_start, Nk_end
@@ -47,9 +45,7 @@
       integer :: NSlice_Btau_inuse
 
       !> Btau slices for Runge-Kutta integration
-      real(dp) :: Btau_start
-      real(dp) :: Btau_final
-      real(dp) :: DeltaBtau
+      real(dp) :: Btau_start, Btau_final, DeltaBtau
       logical :: fail
       integer :: icycle, ishift
 
@@ -234,7 +230,7 @@
            !vcrossB(2)= -v_t(3)*Bdirection(1)+ v_t(1)*Bdirection(3)
            !vcrossB(3)= -v_t(1)*Bdirection(2)+ v_t(2)*Bdirection(1)
            !if (abs(Enk(ik, ib))<0.05d0.and.dsqrt(sum((abs(vcrossB)**2)))>eps3) then
-            if (abs(Enk(ik, ib))<0.05d0) then
+            if (abs(Enk(ik, ib))/eV2Hartree<0.05d0) then
                it = it+ 1
             endif
          enddo ! ik
@@ -757,7 +753,7 @@
          do ikt=1, NumT
             do ie=1, OmegaNum
             outfileindex= outfileindex+ 1
-            KBT= KBT_array(ikt)/8.6173324E-5
+            KBT= KBT_array(ikt)/8.6173324E-5/eV2Hartree
             write(tname, '(f12.2)')KBT
             write(muname, '(f12.2)')mu_array(ie)
             if (cpuid.eq.0) then
@@ -773,8 +769,9 @@
             if (cpuid.eq.0) then
                do ibtau=1, NBTau
                   !> write out the conductivity/tau into file
-                  write(outfileindex, '(a6, f16.8, a12, f16.8)')'# Btau', BTau_array(ibtau), &
-                     ' omega*tau', BTau_array(ibtau)*0.175874356d0
+                  write(outfileindex, '(a6, f16.8, a12, f16.8)')'# Btau', &
+                     BTau_array(ibtau)*Magneticfluxdensity_atomic/Relaxation_Time_Tau, &
+                     ' omega*tau', BTau_array(ibtau)*Magneticfluxdensity_atomic/Relaxation_Time_Tau*0.175874356d0
                   write(outfileindex, '("#",a12,20a16)')'ik3', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
                   do ik3=1, Nk3
                      write(outfileindex, '(i6,20E16.6)')ik3, sigma_iband_k(ib)%sigma_ohe_tensor_kz(:, ibtau, ie, ikt, ik3)
@@ -802,7 +799,10 @@
                
                !> write out the conductivity/tau into file
                do i=1, NBTau
-                  write(outfileindex, '(20E16.6)')BTau_array(i), BTau_array(i)*0.175874356d0, sigma_ohe_tensor(:, i, ie, ikt, ib)
+                  write(outfileindex, '(20E16.6)') &
+                     BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau, &
+                     BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau*0.175874356d0, &
+                     sigma_ohe_tensor(:, i, ie, ikt, iband)
                enddo ! i, NBTau
                close(outfileindex)
             endif ! cpuid=0
@@ -823,7 +823,10 @@
                   rho(2, 1:3)=sigma_ohe_tensor(4:6, i, ie, ikt, ib)
                   rho(3, 1:3)=sigma_ohe_tensor(7:9, i, ie, ikt, ib)
                   call inv_r(3, rho)
-                  write(outfileindex, '(20E16.6)')BTau_array(i), BTau_array(i)*0.175874356d0, rho(1, 1:3), rho(2, 1:3), rho(3, 1:3)
+                  write(outfileindex, '(20E16.6)')&
+                     BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau, &
+                     BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau*0.175874356d0, &
+                     rho(1, 1:3), rho(2, 1:3), rho(3, 1:3)
                enddo ! i, NBTau
                close(outfileindex)
             endif ! cpuid=0
@@ -1514,7 +1517,7 @@
  
          do ikt=1, NumT
             outfileindex= outfileindex+ 1
-            KBT= KBT_array(ikt)/8.6173324E-5
+            KBT= KBT_array(ikt)/8.6173324E-5/eV2Hartree
             write(tname, '(f12.2)')KBT
             if (cpuid.eq.0) then
                write(bandname, '(i10)')bands_fermi_level(ib)
@@ -1583,14 +1586,14 @@
    end subroutine sigma_ohe_calc
 
    !> calculate -df(e)/de, where f(e) is the Fermi-Dirac distribution
-   !> KBT, mu, and e is in unit of eV
+   !> KBT, mu, and e is in unit of Hartree
    subroutine minusdfde_calc_single(e, KBT, mu,  minusdfde)
       use wmpi
       use para, only : dp
       implicit none
 
-      real(dp), intent(in) :: KBT  ! K_Boltzmann*Temperature in eV
-      real(dp), intent(in) :: mu   ! Chemical potential related to the Fermi level in eV
+      real(dp), intent(in) :: KBT  ! K_Boltzmann*Temperature in Hartree
+      real(dp), intent(in) :: mu   ! Chemical potential related to the Fermi level in Hartree
       real(dp), intent(in) :: e
       real(dp), intent(out) :: minusdfde
 
@@ -2207,7 +2210,7 @@
       integer :: ik, ib
       integer :: ierr, it, i, ibtau
 
-      real(dp) :: v_t(3)
+      real(dp) :: v_t(3), v_t2(3)
 
       real(dp) :: k(3), k_start(3)
       
@@ -2326,7 +2329,9 @@
                     call velocity_calc_iband2(bands_fermi_level(ib), k, v_t, E_iband)
                     BTau = -(it-1.0)/NSlice_Btau*15d0*BTauMax
                     call direct_cart_rec(kout(:, it), k)
-                    write(myfileindex(ib), '(100f16.8)')Btau, Btau*0.175874356d0, k, v_t, kout(:, it)
+                    call project_k3_to_kplane_defined_by_direction(v_t, Bdirection, v_t2)
+                    write(myfileindex(ib), '(100f16.8)')Btau*Magneticfluxdensity_atomic/Relaxation_Time_Tau, &
+                       Btau*Magneticfluxdensity_atomic/Relaxation_Time_Tau*0.175874356d0, k, v_t, kout(:, it), E_iband, v_t2
                  enddo
               endif
            endif
@@ -2764,7 +2769,8 @@
                v_k(2)= KCube2D_left(ib)%vy_total(ik)
                v_k(3)= KCube2D_left(ib)%vz_total(ik)
                
-               KBT= Tmin*8.6173324E-5
+               !> Kelvin to Hartree
+               KBT= Tmin*8.6173324E-5*eV2Hartree
                mu= OmegaMin
                call minusdfde_calc_single(EE, KBT, mu,  minusdfde)
      
