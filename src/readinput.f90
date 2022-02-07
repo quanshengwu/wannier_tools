@@ -1098,17 +1098,17 @@ subroutine readinput
       read(1001, *)Folded_cell%Rua
       read(1001, *)Folded_cell%Rub
       read(1001, *)Folded_cell%Ruc
+      if (index(AngOrBohr, 'ANG')>0) then
+         Folded_cell%Rua= Folded_cell%Rua*Angstrom2atomic
+         Folded_cell%Rub= Folded_cell%Rub*Angstrom2atomic
+         Folded_cell%Ruc= Folded_cell%Ruc*Angstrom2atomic
+      endif
+
    else
       if (cpuid==0) write(stdout, *)"We didn't found LATTICE_UNFOLD card, so it is the same as the unit cell."
       Folded_cell%Rua=Origin_cell%Rua
       Folded_cell%Rub=Origin_cell%Rub
       Folded_cell%Ruc=Origin_cell%Ruc
-   endif
-
-   if (index(AngOrBohr, 'ANG')>0) then
-      Folded_cell%Rua= Folded_cell%Rua*Angstrom2atomic
-      Folded_cell%Rub= Folded_cell%Rub*Angstrom2atomic
-      Folded_cell%Ruc= Folded_cell%Ruc*Angstrom2atomic
    endif
 
    !> cell parameters
