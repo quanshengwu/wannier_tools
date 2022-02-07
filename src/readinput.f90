@@ -1104,10 +1104,10 @@ subroutine readinput
       Folded_cell%Ruc=Origin_cell%Ruc
    endif
 
-   if (index(AngOrBohr, 'Bohr')>0) then
-      Folded_cell%Rua= Folded_cell%Rua*0.529177d0
-      Folded_cell%Rub= Folded_cell%Rub*0.529177d0
-      Folded_cell%Ruc= Folded_cell%Ruc*0.529177d0
+   if (index(AngOrBohr, 'ANG')>0) then
+      Folded_cell%Rua= Folded_cell%Rua*Angstrom2atomic
+      Folded_cell%Rub= Folded_cell%Rub*Angstrom2atomic
+      Folded_cell%Ruc= Folded_cell%Ruc*Angstrom2atomic
    endif
 
    !> cell parameters

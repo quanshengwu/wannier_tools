@@ -3140,7 +3140,7 @@ subroutine ek_bulk_out
 
       do ik=1, knv3
         !write(outfileindex, '(200f19.9)')k3len(ik),(eigv_mpi(i, ik), i=Numoccupied-1, Numoccupied+2)
-         write(outfileindex, '(200f19.9)')k3len(ik),k3points(:, ik), (eigv_mpi(i, ik), i=1, Num_wann)
+         write(outfileindex, '(200f19.9)')k3len(ik),k3points(:, ik),(eigv_mpi(i, ik), i=1, Num_wann)
       enddo
       close(outfileindex)
    endif
