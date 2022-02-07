@@ -1093,6 +1093,7 @@ subroutine readinput
 
    if (lfound) then
       read(1001, *)inline   ! The unit of lattice vector
+      inline= upper(inline)
       AngOrBohr=trim(adjustl(inline))
       read(1001, *)Folded_cell%Rua
       read(1001, *)Folded_cell%Rub
