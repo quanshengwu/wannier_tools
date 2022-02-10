@@ -118,7 +118,7 @@ subroutine ek_bulk_line
    
          do i=1, Num_wann
             do ik=1+(il-1)*Nk1, il*Nk1
-               write(outfileindex, '(2f19.9, 10000i5)')(k3len(ik)-k3len((il-1)*Nk1+1)),eigv_mpi(i, ik)
+               write(outfileindex, '(2f19.9, 10000i5)')(k3len(ik)*Angstrom2atomic-k3len((il-1)*Nk1+1)*Angstrom2atomic),eigv_mpi(i, ik)
             enddo
             write(outfileindex, *)' '
          enddo ! i
@@ -136,7 +136,7 @@ subroutine ek_bulk_line
       write(outfileindex, "('#column', i5, 200i16)")(i, i=1, 2+NumberofSelectedOrbitals_groups)
       do i=1, Num_wann
          do ik=1, knv3
-            write(outfileindex, '(200f16.9)')k3len(ik),eigv_mpi(i, ik), &
+            write(outfileindex, '(200f16.9)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik), &
                weight_mpi(:, i, ik)
          enddo
          write(outfileindex, *)' '
@@ -150,7 +150,7 @@ subroutine ek_bulk_line
       write(outfileindex, '(2a19)')'% klen', 'E(n)'
 
       do ik=1, knv3
-         write(outfileindex, '(2000f19.9)')k3len(ik),eigv_mpi(:, ik)
+         write(outfileindex, '(2000f19.9)')k3len(ik)*Angstrom2atomic,eigv_mpi(:, ik)
       enddo
       close(outfileindex)
    endif
@@ -160,56 +160,9 @@ subroutine ek_bulk_line
    emin=  minval(eigv_mpi)-0.5d0
    emax=  maxval(eigv_mpi)+0.5d0
 
-   !> write script for gnuplot
-   outfileindex= outfileindex+ 1
-   if (cpuid==0) then
-      open(unit=outfileindex, file='bulkek.gnu')
-      write(outfileindex, '(a)') 'set terminal pdf enhanced color font ",30"'
-      write(outfileindex,'(2a)') 'set palette defined ( 0  "green", ', &
-         '5 "yellow", 10 "red" )'
-      write(outfileindex, '(a)')"set output 'bulkek.pdf'"
-      write(outfileindex, '(a)')'set style data linespoints'
-      write(outfileindex, '(a)')'unset ztics'
-      write(outfileindex, '(a)')'unset key'
-      write(outfileindex, '(a)')'set pointsize 0.8'
-      write(outfileindex, '(a)')'set view 0,0'
-      write(outfileindex, '(a)')'set xtics font ",24"'
-      write(outfileindex, '(a)')'set ytics font ",24"'
-      write(outfileindex, '(a)')'set ylabel font ",24"'
-      write(outfileindex, '(a)')'set ylabel offset 1.5,0'
-      write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
-      write(outfileindex, '(a,f12.6)')'emin=', emin
-      write(outfileindex, '(a,f12.6)')'emax=', emax
-      if (index(Particle,'phonon')/=0) then
-         write(outfileindex, '(a)')'set yrange [0: emax]'
-         write(outfileindex, '(a)')'set ylabel "Frequency (THz)"'
-      else
-         write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
-         write(outfileindex, '(a)')'set yrange [ emin : emax ]'
-      endif
-      write(outfileindex, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
-      write(outfileindex, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
-
-      do i=1, nk3lines-1
-         if (index(Particle,'phonon')/=0) then
-            write(outfileindex, 204)k3line_stop(i+1), '0.0', k3line_stop(i+1), 'emax'
-         else
-            write(outfileindex, 204)k3line_stop(i+1), 'emin', k3line_stop(i+1), 'emax'
-         endif
-      enddo
-      write(outfileindex, '(2a)')"# please comment the following lines to plot the fatband "
-      write(outfileindex, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
-         " w lp lw 2 pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2"
-      write(outfileindex, '(2a)')" " 
-      write(outfileindex, '(2a)')"# uncomment the following lines to plot the fatband "
-      write(outfileindex, '(2a)')"#plot 'bulkek.dat' u 1:2:3 ",  &
-         " w lp lw 2 pt 7  ps 0.2 lc palette, 0 w l lw 2"
-      close(outfileindex)
-   endif
-
-202 format('set xtics (',20('"',A3,'" ',F10.5,','))
-203 format(A3,'" ',F10.5,')')
-204 format('set arrow from ',F10.5,',',A5,' to ',F10.5,',',A5, ' nohead')
+   call generate_ek_kpath_gnu('bulkek.dat', 'bulkek.gnu', 'bulkek.pdf', &
+                                 emin, emax, knv3, Nk3lines, &
+                                 k3line_name, k3line_stop, k3len)
 
    deallocate(W)
    deallocate(Hamk_bulk)
@@ -553,8 +506,8 @@ subroutine ek_bulk_plane_C2yT
       write(outfileindex, '(1000a19)')'# kx', 'ky', 'kz', 'k1', 'k2', 'k3', &
          'E(Numoccupied-1)', 'E(Numoccupied)' , 'E(Numoccupied+1)', 'E(Numoccupied+2)'
       do ik=1, knv3
-         write(outfileindex, '(1000f19.9)')kxy_shape(:, ik), &
-            kxy_plane(:, ik), eigv_mpi(:, ik)  
+         write(outfileindex, '(1000f19.9)')kxy_shape(:, ik)*Angstrom2atomic, &
+            kxy_plane(:, ik)*Angstrom2atomic, eigv_mpi(:, ik)  
          if (mod(ik, nk2)==0) write(outfileindex, *)' '
       enddo
       close(outfileindex)
@@ -567,8 +520,8 @@ subroutine ek_bulk_plane_C2yT
       write(outfileindex, '(1000a19)')'% kx', 'ky', 'kz', 'k1', 'k2', &
          'E(Numoccupied-1)', 'E(Numoccupied)' , 'E(Numoccupied+1)', 'E(Numoccupied+2)'
       do ik=1, knv3
-         write(outfileindex, '(1000f19.9)')kxy_shape(:, ik), &
-            kxy_plane(:, ik), eigv_mpi(:, ik)  
+         write(outfileindex, '(1000f19.9)')kxy_shape(:, ik)*Angstrom2atomic, &
+            kxy_plane(:, ik)*Angstrom2atomic, eigv_mpi(:, ik)  
       enddo
       close(outfileindex)
    endif
@@ -734,8 +687,8 @@ subroutine ek_bulk_plane
       write(outfileindex, '(1000a19)')'# kx', 'ky', 'kz', 'k1', 'k2', 'k3', &
          'E(Numoccupied-1)', 'E(Numoccupied)' , 'E(Numoccupied+1)', 'E(Numoccupied+2)'
       do ik=1, knv3
-         write(outfileindex, '(1000f19.9)')kxy_shape(:, ik), &
-            kxy_plane(:, ik), eigv_mpi(:, ik)  
+         write(outfileindex, '(1000f19.9)')kxy_shape(:, ik)*Angstrom2atomic, &
+            kxy_plane(:, ik)*Angstrom2atomic, eigv_mpi(:, ik)  
          if (mod(ik, nk2)==0) write(outfileindex, *)' '
       enddo
       close(outfileindex)
@@ -748,8 +701,8 @@ subroutine ek_bulk_plane
       write(outfileindex, '(1000a19)')'% kx', 'ky', 'kz', 'k1', 'k2', &
          'E(Numoccupied-1)', 'E(Numoccupied)' , 'E(Numoccupied+1)', 'E(Numoccupied+2)'
       do ik=1, knv3
-         write(outfileindex, '(1000f19.9)')kxy_shape(:, ik), &
-            kxy_plane(:, ik), eigv_mpi(:, ik)  
+         write(outfileindex, '(1000f19.9)')kxy_shape(:, ik)*Angstrom2atomic, &
+            kxy_plane(:, ik)*Angstrom2atomic, eigv_mpi(:, ik)  
       enddo
       close(outfileindex)
    endif
@@ -905,7 +858,7 @@ subroutine ek_bulk_cube
         write(outfileindex, '(1000a19)')'# kx', 'ky', 'kz', 'k1', 'k2', 'k3', &
            'E(Numoccupied-1)', 'E(Numoccupied)' , 'E(Numoccupied+1)', 'E(Numoccupied+2)'
         do ik=1, knv3
-           write(outfileindex, '(1000f19.9)')kxyz(:, ik), &
+           write(outfileindex, '(1000f19.9)')kxyz(:, ik)*Angstrom2atomic, &
               kabc(:, ik), eigv_mpi(:, ik)  
         enddo
         close(outfileindex)
@@ -1096,10 +1049,10 @@ subroutine sparse_ekbulk
       do i=1, neval
          do ik=1, nk3_band
             if (BulkFatBand_calc) then
-               write(outfileindex, '(300f16.9)')k3len(ik),eigv_mpi(i, ik), &
+               write(outfileindex, '(300f16.9)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik), &
                   (dos_selected_mpi(i, ik, ig, :), ig=1, NumberofSelectedOrbitals_groups)
             else
-               write(outfileindex, '(2f16.9)')k3len(ik),eigv_mpi(i, ik)
+               write(outfileindex, '(2f16.9)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik)
             endif
          enddo
          write(outfileindex, *)' '
@@ -1107,58 +1060,9 @@ subroutine sparse_ekbulk
       close(outfileindex)
    endif
 
-   outfileindex= outfileindex+ 1
-   if (cpuid==0) then
-      open(unit=outfileindex, file='bulkek.gnu')
-      write(outfileindex, '(a)') '#set terminal  postscript enhanced color font ",30"'
-      write(outfileindex, '(a)')"#set output 'bulkek.eps'"
-      write(outfileindex, '(a)') 'set terminal pdf enhanced color font ",20"'
-      write(outfileindex, '(a)') 'set palette defined (-10 "#194eff", 0 "green", 10 "red" )'
-      write(outfileindex, '(a)')"set output 'bulkek.pdf'"
-      write(outfileindex, '(a)')'set style data points'
-      write(outfileindex, '(a)')'set size 0.9, 1'
-      write(outfileindex, '(a)')'set origin 0.05,0'
-      write(outfileindex, '(a)')'unset key'
-      write(outfileindex, '(a)')'set pointsize 0.1'
-      write(outfileindex, '(a)')'#set xtics font ",24"'
-      write(outfileindex, '(a)')'#set ytics font ",24"'
-      write(outfileindex, '(a)')'#set ylabel font ",24"'
-      write(outfileindex, '(a)')'#set ylabel offset 1.5,0'
-      write(outfileindex, '(a,f12.6)')'emin=', emin
-      write(outfileindex, '(a,f12.6)')'emax=', emax
-      write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
-      if (index(Particle,'phonon')/=0) then
-         write(outfileindex, '(a, f10.5, a)')'set yrange [0: emax ]'
-         write(outfileindex, '(a)')'set ylabel "Frequency (THz)"'
-      else
-         write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
-         write(outfileindex, '(a)')'set yrange [ emin : emax ]'
-      endif
-      write(outfileindex, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
-      write(outfileindex, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
-
-      do i=1, nk3lines-1
-         if (index(Particle,'phonon')/=0) then
-            write(outfileindex, 204)k3line_stop(i+1), '0.0', k3line_stop(i+1), 'emax'
-         else
-            write(outfileindex, 204)k3line_stop(i+1), 'emin', k3line_stop(i+1), 'emax'
-         endif
-      enddo
-
-      if (BulkFatBand_calc) then
-            write(outfileindex, '(a)')"set colorbox"
-            write(outfileindex, '(2a)')"plot 'bulkek.dat' u 1:2:3 ",  &
-               " w p  pt 7  ps 0.2 lc pal z"
-      else
-         write(outfileindex, '(2a)')"plot 'bulkek.dat' w p pt 7 ps 0.3 lc rgb 'black'"
-      endif
-      close(outfileindex)
-   endif
-202 format('set xtics (',20('"',A3,'" ',F10.5,','))
-203 format(A3,'" ',F10.5,')')
-204 format('set arrow from ',F10.5,',',A5,' to ',F10.5,',',A5, ' nohead')
-
-
+   call generate_ek_kpath_gnu('bulkek.dat', 'bulkek.gnu', 'bulkek.pdf', &
+                                 emin, emax, nk3_band, Nk3lines, &
+                                 k3line_name, k3line_stop, k3len)
 
 #if defined (MPI)
    call mpi_barrier(mpi_cmw, ierr)
@@ -1341,8 +1245,8 @@ subroutine sparse_ekbulk_plane
       write(outfileindex, '(1000a19)')'# kx', 'ky', 'kz', 'k1', 'k2', 'k3', &
          'E(Numoccupied-1)', 'E(Numoccupied)' , 'E(Numoccupied+1)', 'E(Numoccupied+2)'
       do ik=1, knv3
-         write(outfileindex, '(1000f19.9)')kxy_shape(:, ik), &
-            kxy_plane(:, ik), eigv_mpi(:, ik)  
+         write(outfileindex, '(1000f19.9)')kxy_shape(:, ik)*Angstrom2atomic, &
+            kxy_plane(:, ik)*Angstrom2atomic, eigv_mpi(:, ik)  
          if (mod(ik, nk2)==0) write(outfileindex, *)' '
       enddo
       close(outfileindex)
@@ -1355,8 +1259,8 @@ subroutine sparse_ekbulk_plane
       write(outfileindex, '(1000a19)')'% kx', 'ky', 'kz', 'k1', 'k2', &
          'E(Numoccupied-1)', 'E(Numoccupied)' , 'E(Numoccupied+1)', 'E(Numoccupied+2)'
       do ik=1, knv3
-         write(outfileindex, '(1000f19.9)')kxy_shape(:, ik), &
-            kxy_plane(:, ik), eigv_mpi(:, ik)  
+         write(outfileindex, '(1000f19.9)')kxy_shape(:, ik)*Angstrom2atomic, &
+            kxy_plane(:, ik)*Angstrom2atomic, eigv_mpi(:, ik)  
       enddo
       close(outfileindex)
    endif
@@ -1559,7 +1463,7 @@ subroutine ekbulk_elpa
 
    if(cpuid==0) then
       do ik=1,nk3_band
-         write(outfileindex) k3len(ik),eigv_mpi(1:neval,ik)
+         write(outfileindex) k3len(ik)*Angstrom2atomic,eigv_mpi(1:neval,ik)
 !~     write(239,*) k3len(ik),eigv_mpi(1:neval,ik)
       enddo
    endif
@@ -1692,7 +1596,7 @@ end subroutine ekbulk_elpa
               ' (E(ib), dos(ib)), ib=1, NumberofSelectedBands'
            write(outfileindex, '(a, 2i10)')'# Nk1, Nk2=', Nk1, Nk2
            do ik=1, knv3
-              write(outfileindex, '(2000f16.8)') kxy_shape(:, ik), kxy_plane(:, ik), &
+              write(outfileindex, '(2000f16.8)') kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, &
                  (  eigv_mpi(ib, ik), dos_selected_mpi(ib, ik, ig) , ib=1, NumberofSelectedBands)
               if (mod(ik, nky)==0) write(outfileindex, *)' '
            enddo
@@ -1712,7 +1616,7 @@ end subroutine ekbulk_elpa
            ' (E(ib), dos(ib)), ib=1, NumberofSelectedOrbitals'
         write(outfileindex, '(a, 2i10)')'% Nk1, Nk2=', Nk1, Nk2
         do ik=1, knv3
-           write(outfileindex, '(1000f16.8)')kxy_shape(:, ik), kxy_plane(:, ik), & 
+           write(outfileindex, '(1000f16.8)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, & 
               (eigv_mpi(ib, ik), dos_selected_mpi(ib, ik, 1), ib=1, NumberofSelectedBands)
         enddo
         close(outfileindex)
@@ -1885,7 +1789,7 @@ end subroutine ekbulk_elpa
      if (cpuid==0)then
         open(unit=outfileindex, file='bulkek2D.dat')
         do ik=1, knv3
-           write(outfileindex, '(1000f19.9)')kxy_shape(:, ik), eigv_mpi(:, ik), &
+           write(outfileindex, '(1000f19.9)')kxy_shape(:, ik)*Angstrom2atomic, eigv_mpi(:, ik), &
               (spin_mpi(:, ib, ik), ib=Numoccupied-1, Numoccupied+2)
         enddo
         close(outfileindex)
@@ -1895,7 +1799,7 @@ end subroutine ekbulk_elpa
      if (cpuid==0)then
         open(unit=outfileindex, file='gap2D.dat')
         do ik=1, knv3
-           write(outfileindex, '(1000f19.9)')kxy(:, ik), gap_mpi(ik)
+           write(outfileindex, '(1000f19.9)')kxy(:, ik)*Angstrom2atomic, gap_mpi(ik)
         enddo
         close(outfileindex)
      endif
@@ -2081,7 +1985,7 @@ end subroutine ekbulk_elpa
      if (cpuid==0)then
         open(unit=outfileindex, file='bulkek2D.dat')
         do ik=1, knv3
-           write(outfileindex, '(1000f20.6)')kxy_shape(:, ik), eigv_mpi(:, ik) 
+           write(outfileindex, '(1000f20.6)')kxy_shape(:, ik)*Angstrom2atomic, eigv_mpi(:, ik) 
         enddo
         close(outfileindex)
      endif
@@ -2090,7 +1994,7 @@ end subroutine ekbulk_elpa
      if (cpuid==0)then
         open(unit=outfileindex, file='gap2D.dat')
         do ik=1, knv3
-           write(outfileindex, '(1000f20.6)')kxy_shape(:, ik), gap_mpi(ik)
+           write(outfileindex, '(1000f20.6)')kxy_shape(:, ik)*Angstrom2atomic, gap_mpi(ik)
         enddo
         close(outfileindex)
      endif
@@ -2105,7 +2009,7 @@ end subroutine ekbulk_elpa
 
               if (ik==1 .or. ik==knv3.or. dos_mpi(ik)<4d0) cycle
               if ((dos_mpi(ik)> dos_mpi(ik-1)) .and. (dos_mpi(ik)> dos_mpi(ik+1))) then
-                 write(outfileindex, '(10000f20.5)')kxy_shape(:, ik), dos_mpi(ik) , spin_mpi(:, ik) 
+                 write(outfileindex, '(10000f20.5)')kxy_shape(:, ik)*Angstrom2atomic, dos_mpi(ik) , spin_mpi(:, ik) 
               endif
            enddo
            write(outfileindex, '(a)')' '
@@ -2272,7 +2176,7 @@ subroutine ek_bulk_mengyu
 
       do i=1, Num_wann
          do ik=1, knv3
-            write(outfileindex, '(2f19.9, 10000i5)')k3len(ik),eigv_mpi(i, ik), &
+            write(outfileindex, '(2f19.9, 10000i5)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik), &
                int(weight(:, i, ik))
          enddo
          write(outfileindex, *)' '
@@ -2284,49 +2188,9 @@ subroutine ek_bulk_mengyu
    emin=  minval(eigv_mpi)-0.5d0
    emax=  maxval(eigv_mpi)+0.5d0
 
-   !> write script for gnuplot
-   outfileindex= outfileindex+ 1
-   if (cpuid==0) then
-      open(unit=outfileindex, file='bulkek.gnu')
-      write(outfileindex, '(a)') 'set terminal  postscript enhanced color font ",30"'
-      write(outfileindex,'(2a)') '#set palette defined ( 0  "green", ', &
-         '5 "yellow", 10 "red" )'
-      write(outfileindex, '(a)')"set output 'bulkek.eps'"
-      write(outfileindex, '(a)')'set style data linespoints'
-      write(outfileindex, '(a)')'unset ztics'
-      write(outfileindex, '(a)')'unset key'
-      write(outfileindex, '(a)')'set pointsize 0.8'
-      write(outfileindex, '(a)')'set view 0,0'
-      write(outfileindex, '(a)')'set xtics font ",24"'
-      write(outfileindex, '(a)')'set ytics font ",24"'
-      write(outfileindex, '(a)')'set ylabel font ",24"'
-      write(outfileindex, '(a)')'set ylabel offset 1.5,0'
-      write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
-      if (index(Particle,'phonon')/=0) then
-         write(outfileindex, '(a, f10.5, a)')'set yrange [0:', emax, ']'
-         write(outfileindex, '(a)')'set ylabel "Frequency (THz)"'
-      else
-         write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
-         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
-      endif
-      write(outfileindex, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
-      write(outfileindex, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
-
-      do i=1, nk3lines-1
-         if (index(Particle,'phonon')/=0) then
-            write(outfileindex, 204)k3line_stop(i+1), 0.0, k3line_stop(i+1), emax
-         else
-            write(outfileindex, 204)k3line_stop(i+1), emin, k3line_stop(i+1), emax
-         endif
-      enddo
-      write(outfileindex, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
-         " w lp lw 2 pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2"
-      close(outfileindex)
-   endif
-
-202 format('set xtics (',20('"',A3,'" ',F10.5,','))
-203 format(A3,'" ',F10.5,')')
-204 format('set arrow from ',F10.5,',',F10.5,' to ',F10.5,',',F10.5, ' nohead')
+   call generate_ek_kpath_gnu('bulkek.dat', 'bulkek.gnu', 'bulkek.pdf', &
+                                 emin, emax, knv3, Nk3lines, &
+                                 k3line_name, k3line_stop, k3len)
 
    deallocate(W)
    deallocate(Hamk_bulk)
@@ -2457,7 +2321,7 @@ subroutine ek_bulk_spin
 
       do i=1, Num_wann
          do ik=1, knv3
-            write(outfileindex, '(100000f19.9)')k3len(ik),eigv_mpi(i, ik), spin(:, i, ik)
+            write(outfileindex, '(100000f19.9)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik), spin(:, i, ik)
          enddo
          write(outfileindex, *)' '
       enddo
@@ -2468,47 +2332,9 @@ subroutine ek_bulk_spin
    emin= minval(eigv_mpi)-0.5d0
    emax= maxval(eigv_mpi)+0.5d0
 
-   !> write script for gnuplot
-   outfileindex= outfileindex+ 1
-   if (cpuid==0) then
-      open(unit=outfileindex, file='bulkek.gnu')
-      write(outfileindex, '(a)') 'set terminal  postscript enhanced color font 24'
-      write(outfileindex,'(2a)') '#set palette defined ( 0  "green", ', &
-         '5 "yellow", 10 "red" )'
-      write(outfileindex, '(a)')"set output 'bulkek.eps'"
-      write(outfileindex, '(a)')'set style data linespoints'
-      write(outfileindex, '(a)')'unset ztics'
-      write(outfileindex, '(a)')'unset key'
-      write(outfileindex, '(a)')'set pointsize 0.8'
-      write(outfileindex, '(a)')'set view 0,0'
-      write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
-      if (index(Particle,'phonon')/=0) then
-         write(outfileindex, '(a, f10.5, a)')'set yrange [0:', emax, ']'
-         write(outfileindex, '(a)')'set ylabel "Frequency (THz)"'
-      else
-         write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
-         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
-      endif
-      write(outfileindex, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
-      write(outfileindex, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
-
-      do i=1, nk3lines-1
-         if (index(Particle,'phonon')/=0) then
-            write(outfileindex, 204)k3line_stop(i+1), 0.0, k3line_stop(i+1), emax
-         else
-            write(outfileindex, 204)k3line_stop(i+1), emin, k3line_stop(i+1), emax
-         endif
-      enddo
-      write(outfileindex, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
-         "w lp lw 2 pt 7  ps 0.2, \"
-      write(outfileindex, '(2a)')"     'bulkek.dat' u 1:2:($3/6):($4/6) ",  &
-         "w vec"
-      close(outfileindex)
-   endif
-
-202 format('set xtics (',20('"',A3,'" ',F10.5,','))
-203 format(A3,'" ',F10.5,')')
-204 format('set arrow from ',F10.5,',',F10.5,' to ',F10.5,',',F10.5, ' nohead')
+   call generate_ek_kpath_gnu('bulkek.dat', 'bulkek.gnu', 'bulkek.pdf', &
+                                 emin, emax, knv3, Nk3lines, &
+                                 k3line_name, k3line_stop, k3len)
 
    deallocate( W)
    deallocate( psi)
@@ -2523,87 +2349,6 @@ subroutine ek_bulk_spin
 
    return
 end subroutine ek_bulk_spin
-
-subroutine ek_bulk_fortomas
-   ! only for IrF4 project
-
-   use wmpi
-   use para
-
-   implicit none
-
-   integer :: ik1, ik2, ik3
-   integer :: Nk_t
-   real(Dp) :: k(3), k1, k2, k3
-   real(Dp), allocatable :: W(:)
-
-   ! Hamiltonian of bulk system
-   complex(Dp), allocatable :: Hamk_bulk(:, :)
-
-   allocate(W(Num_wann))
-   allocate(Hamk_bulk(Num_wann, Num_wann))
-   W=0
-   Hamk_bulk= 0d0
-
-   outfileindex= outfileindex+ 1
-   if (cpuid==0)then
-      open(unit=outfileindex, file='bulkek-fortomas.dat')
-      open(unit=15, file='bulkek-math.dat')
-   endif
-
-   Nk_t= 10
-   if (cpuid==0) write (15, '(A)', advance="NO")'{'
-   do ik1=0, Nk_t
-      if (cpuid==0) write (15, '(A)', advance="NO")'{'
-      do ik2=0, Nk_t
-         if (cpuid==0) write (15, '(A)', advance="NO")'{'
-         do ik3=0, Nk_t
-            k1= dble(ik1)/Nk_t
-            k2= dble(ik2)/Nk_t
-            k3= dble(ik3)/Nk_t
-
-            k(1)= 0.5d0*k2+ 0.5d0*k3
-            k(2)= 0.5d0*k3+ 0.5d0*k1
-            k(3)= 0.5d0*k1+ 0.5d0*k2
-
-            ! calculation bulk hamiltonian
-            Hamk_bulk= 0d0
-            call ham_bulk_latticegauge(k, Hamk_bulk)
-            Hamk_bulk= Hamk_bulk/eV2Hartree
-
-            !> diagonalization by call zheev in lapack
-            W= 0d0
-            call eigensystem_c( 'N', 'U', Num_wann ,Hamk_bulk, W)
-
-            if (cpuid==0) then
-               write(outfileindex, '(3i5, 4f12.8)')ik1, ik2, ik3, W(9:12)
-               if (ik3/=Nk_t) then
-                  write(15, '(a, 4(f12.7, a))', advance="No")"{", W(9), ",", W(10), ",", W(11), ",", W(12), "},"
-               else
-                  write(15, '(a, 4(f12.7, a))', advance="No")"{", W(9), ",", W(10), ",", W(11), ",", W(12), "}"
-               endif
-            endif
-         enddo !ik3
-         if (ik2/=Nk_t) then
-            if (cpuid==0) write (15, '(A)', advance="NO")'},'
-         else
-            if (cpuid==0) write (15, '(A)', advance="NO")'}'
-         endif
-      enddo !ik2
-      if (ik1/=Nk_t) then
-         if (cpuid==0) write (15, '(A)', advance="NO")'},'
-      else
-         if (cpuid==0) write (15, '(A)', advance="NO")'}'
-      endif
-   enddo !ik1
-   if (cpuid==0) write (15, '(A)', ADVANCE="NO")'}'
-   if (cpuid==0) close(outfileindex)
-
-   deallocate(W)
-   deallocate(Hamk_bulk)
-   return
-end subroutine ek_bulk_fortomas
-
 
 subroutine ek_bulk_mirror_z
    ! Use the eigenvalue of mirror z to label the energy bands
@@ -2706,7 +2451,7 @@ subroutine ek_bulk_mirror_z
       open(unit=outfileindex, file='bulkek.dat')
       do i=1, Num_wann
          do ik=1, knv3
-            write(outfileindex, '(1000f19.9)')k3len(ik),eigv_mpi(i, ik)
+            write(outfileindex, '(1000f19.9)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik)
          enddo
          write(outfileindex, *)' '
       enddo
@@ -2719,7 +2464,7 @@ subroutine ek_bulk_mirror_z
       do i=1, Num_wann
          do ik=1, knv3
             if (mirror_plus(i, ik)) then
-               write(outfileindex, '(1000f19.9)')k3len(ik),eigv_mpi(i, ik)
+               write(outfileindex, '(1000f19.9)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik)
             endif
          enddo
          write(outfileindex, *)' '
@@ -2734,7 +2479,7 @@ subroutine ek_bulk_mirror_z
       do i=1, Num_wann
          do ik=1, knv3
             if (.not.mirror_plus(i, ik)) then
-               write(outfileindex, '(1000f19.9)')k3len(ik),eigv_mpi(i, ik)
+               write(outfileindex, '(1000f19.9)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik)
             endif
          enddo
          write(outfileindex, *)' '
@@ -2746,48 +2491,9 @@ subroutine ek_bulk_mirror_z
    emin= minval(eigv_mpi)-0.5d0
    emax= maxval(eigv_mpi)+0.5d0
 
-   !> write script for gnuplot
-   outfileindex= outfileindex+ 1
-   if (cpuid==0) then
-      open(unit=outfileindex, file='bulkek.gnu')
-      write(outfileindex, '(a)') 'set terminal  postscript enhanced color'
-      write(outfileindex,'(2a)') '#set palette defined ( 0  "green", ', &
-         '5 "yellow", 10 "red" )'
-      write(outfileindex, '(a)')"set output 'bulkek.eps'"
-      write(outfileindex, '(a)')'set style data linespoints'
-      write(outfileindex, '(a)')'unset ztics'
-      write(outfileindex, '(a)')'unset key'
-      write(outfileindex, '(a)')'set pointsize 0.8'
-      write(outfileindex, '(a)')'set view 0,0'
-      write(outfileindex, '(a)')'set xtics font ",24"'
-      write(outfileindex, '(a)')'set ytics font ",24"'
-      write(outfileindex, '(a)')'set ylabel font ",24"'
-      write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
-      if (index(Particle,'phonon')/=0) then
-         write(outfileindex, '(a, f10.5, a)')'set yrange [0:', emax, ']'
-         write(outfileindex, '(a)')'set ylabel "Frequency (THz)"'
-      else
-         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
-         write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
-      endif
-      write(outfileindex, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
-      write(outfileindex, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
-
-      do i=1, nk3lines-1
-         if (index(Particle,'phonon')/=0) then
-            write(outfileindex, 204)k3line_stop(i+1), 0.0, k3line_stop(i+1), emax
-         else
-            write(outfileindex, 204)k3line_stop(i+1), emin, k3line_stop(i+1), emax
-         endif
-      enddo
-      write(outfileindex, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
-         "w lp lw 2 pt 7  ps 0.2, 0 w l"
-      close(outfileindex)
-   endif
-
-202 format('set xtics (',20('"',A3,'" ',F10.5,','))
-203 format(A3,'" ',F10.5,')')
-204 format('set arrow from ',F10.5,',',F10.5,' to ',F10.5,',',F10.5, ' nohead')
+   call generate_ek_kpath_gnu('bulkek.dat', 'bulkek.gnu', 'bulkek.pdf', &
+                                 emin, emax, knv3, Nk3lines, &
+                                 k3line_name, k3line_stop, k3len)
 
    deallocate(W)
    deallocate(Hamk_bulk)
@@ -2919,7 +2625,7 @@ subroutine ek_bulk_mirror_x
       open(unit=outfileindex, file='bulkek.dat')
       do i=1, Num_wann
          do ik=1, knv3
-            write(outfileindex, '(1000f19.9)')k3len(ik),eigv_mpi(i, ik)
+            write(outfileindex, '(1000f19.9)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik)
          enddo
          write(outfileindex, *)' '
       enddo
@@ -2932,7 +2638,7 @@ subroutine ek_bulk_mirror_x
       do i=1, Num_wann
          do ik=1, knv3
             if (mirror_plus(i, ik)) then
-               write(outfileindex, '(1000f19.9)')k3len(ik),eigv_mpi(i, ik)
+               write(outfileindex, '(1000f19.9)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik)
             endif
          enddo
          write(outfileindex, *)' '
@@ -2946,7 +2652,7 @@ subroutine ek_bulk_mirror_x
       do i=1, Num_wann
          do ik=1, knv3
             if (.not.mirror_plus(i, ik)) then
-               write(outfileindex, '(1000f19.9)')k3len(ik),eigv_mpi(i, ik)
+               write(outfileindex, '(1000f19.9)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik)
             endif
          enddo
          write(outfileindex, *)' '
@@ -2958,48 +2664,9 @@ subroutine ek_bulk_mirror_x
    emin= minval(eigv_mpi)-0.5d0
    emax= maxval(eigv_mpi)+0.5d0
 
-   !> write script for gnuplot
-   outfileindex= outfileindex+ 1
-   if (cpuid==0) then
-      open(unit=outfileindex, file='bulkek.gnu')
-      write(outfileindex, '(a)') 'set terminal  postscript enhanced color'
-      write(outfileindex,'(2a)') '#set palette defined ( 0  "green", ', &
-         '5 "yellow", 10 "red" )'
-      write(outfileindex, '(a)')"set output 'bulkek.eps'"
-      write(outfileindex, '(a)')'set style data linespoints'
-      write(outfileindex, '(a)')'unset ztics'
-      write(outfileindex, '(a)')'unset key'
-      write(outfileindex, '(a)')'set pointsize 0.8'
-      write(outfileindex, '(a)')'set view 0,0'
-      write(outfileindex, '(a)')'set xtics font ",24"'
-      write(outfileindex, '(a)')'set ytics font ",24"'
-      write(outfileindex, '(a)')'set ylabel font ",24"'
-      write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
-      if (index(Particle,'phonon')/=0) then
-         write(outfileindex, '(a, f10.5, a)')'set yrange [0:', emax, ']'
-         write(outfileindex, '(a)')'set ylabel "Frequency (THz)"'
-      else
-         write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
-         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
-      endif
-      write(outfileindex, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
-      write(outfileindex, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
-
-      do i=1, nk3lines-1
-         if (index(Particle,'phonon')/=0) then
-            write(outfileindex, 204)k3line_stop(i+1), 0.0, k3line_stop(i+1), emax
-         else
-            write(outfileindex, 204)k3line_stop(i+1), emin, k3line_stop(i+1), emax
-         endif
-      enddo
-      write(outfileindex, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
-         "w lp lw 2 pt 7  ps 0.2, 0 w l"
-      close(outfileindex)
-   endif
-
-202 format('set xtics (',20('"',A3,'" ',F10.5,','))
-203 format(A3,'" ',F10.5,')')
-204 format('set arrow from ',F10.5,',',F10.5,' to ',F10.5,',',F10.5, ' nohead')
+   call generate_ek_kpath_gnu('bulkek.dat', 'bulkek.gnu', 'bulkek.pdf', &
+                                 emin, emax, knv3, Nk3lines, &
+                                 k3line_name, k3line_stop, k3len)
 
    deallocate(W)
    deallocate(Hamk_bulk)
@@ -3014,148 +2681,6 @@ subroutine ek_bulk_mirror_x
 
    return
 end subroutine ek_bulk_mirror_x
-
-
-subroutine ek_bulk_out
-   ! Calculate bulk's energy bands using wannier TB method
-   !
-   ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
-
-   use wmpi
-   use para
-
-   implicit none
-
-   integer :: ik, i, j
-   integer :: knv3
-!~    integer :: Nwann
-   integer :: ierr
-   real(Dp) :: k(3)
-   real(Dp), allocatable :: W(:)
-
-   ! Hamiltonian of bulk system
-   complex(Dp), allocatable :: Hamk_bulk(:, :)
-
-   ! eigen value of H
-   real(dp), allocatable :: eigv(:,:)
-   real(dp), allocatable :: eigv_mpi(:,:)
-   real(dp), allocatable :: weight(:,:,:)
-   real(dp), allocatable :: weight_mpi(:,:,:)
-   real(dp), allocatable :: weight_sum(:,:)
-
-   knv3= nk3_band
-   allocate(W(Num_wann))
-   allocate(Hamk_bulk(Num_wann, Num_wann))
-   allocate( eigv    (Num_wann, knv3))
-   allocate( eigv_mpi(Num_wann, knv3))
-   allocate( weight    (Num_wann,Num_wann, knv3))
-   allocate( weight_mpi(Num_wann,Num_wann, knv3))
-   allocate( weight_sum(Num_wann, knv3))
-   eigv    = 0d0
-   eigv_mpi= 0d0
-   weight = 0d0
-   weight_sum = 0d0
-   weight_mpi = 0d0
-
-   do ik= 1+cpuid, knv3, num_cpu
-      !if (cpuid==0) write(stdout, *)'BulkBand, ik, knv3 ', ik, knv3
-
-      k = k3points(:, ik)
-
-      ! calculation bulk hamiltonian
-      Hamk_bulk= 0d0
-
-      ! generate bulk Hamiltonian
-      if (index(KPorTB, 'KP')/=0)then
-         call ham_bulk_kp(k, Hamk_bulk)
-      else
-         !> deal with phonon system
-         if (index(Particle,'phonon')/=0.and.LOTO_correction) then
-            call ham_bulk_LOTO(k, Hamk_bulk)
-         else
-            call ham_bulk_atomicgauge        (k, Hamk_bulk)
-            Hamk_bulk= Hamk_bulk/eV2Hartree
-         endif
-      endif
-
-      !> diagonalization by call zheev in lapack
-      W= 0d0
-      call eigensystem_c('V', 'U', Num_wann ,Hamk_bulk, W)
-
-      !if (sum(abs(k))<1e-5) call  orbital_momenta(k, Hamk_bulk)
-
-      eigv(:, ik)= W
-      do i=1, Num_wann  !> band
-         if (soc==0) then
-            do j=1, Num_wann  !> projector
-               weight(j, i, ik)= abs(Hamk_bulk(j, i))**2
-            enddo ! j
-         else
-            do j=1, Num_wann/2  !> projector
-               weight(j, i, ik)= (abs(Hamk_bulk(j, i))**2+ &
-                  abs(Hamk_bulk(j+ Num_wann/2, i))**2)
-            enddo ! j
-         endif
-      enddo ! i
-   enddo ! ik
-
-#if defined (MPI)
-   call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
-      mpi_dp,mpi_sum,mpi_cmw,ierr)
-   call mpi_allreduce(weight, weight_mpi,size(weight),&
-      mpi_dp,mpi_sum,mpi_cmw,ierr)
-#else
-   eigv_mpi= eigv
-   weight_mpi= weight
-#endif
-
-   if (index(Particle,'phonon')/=0) then
-      eigv_mpi = eigv_mpi - MINVAL(eigv_mpi)
-   endif
-
-   !> deal with phonon system
-   if (index(Particle,'phonon')/=0) then
-      do ik=1, knv3
-         do j=1, Num_wann
-            eigv_mpi(j, ik)= sqrt(abs(eigv_mpi(j, ik)))*sign(1d0, eigv_mpi(j, ik))
-            !eigv_mpi(j, ik)=     (abs(eigv_mpi(j, ik)))*sign(1d0, eigv_mpi(j, ik))
-         enddo
-      enddo
-   endif
-
-   do i=1, Num_wann
-      do ik=1, knv3
-         weight_sum(i, ik)= sum(weight_mpi(:, i, ik))
-      enddo
-   enddo
-
-   weight= weight_mpi/maxval(weight_sum)*255d0
-
-   outfileindex= outfileindex+ 1
-   if (cpuid==0)then
-      open(unit=outfileindex, file='bulkek.txt')
-      write(outfileindex, "('#', a18, 3a19, 1000(9x,' band', i5))")&
-         'klen (1/A)', 'k1 (Fractional)', 'k2 (Fractional)', 'k3 (fractional)', &
-         (i, i=1, Num_wann) 
-
-      do ik=1, knv3
-        !write(outfileindex, '(200f19.9)')k3len(ik),(eigv_mpi(i, ik), i=Numoccupied-1, Numoccupied+2)
-         write(outfileindex, '(200f19.9)')k3len(ik),k3points(:, ik),(eigv_mpi(i, ik), i=1, Num_wann)
-      enddo
-      close(outfileindex)
-   endif
-
-   deallocate(W)
-   deallocate(Hamk_bulk)
-   deallocate( eigv    )
-   deallocate( eigv_mpi)
-   deallocate( weight    )
-   deallocate( weight_mpi)
-   deallocate( weight_sum)
-
-   return
-end subroutine ek_bulk_out
-
 
 subroutine get_projection_weight_bulk(k_SBZ_direct, numk, psi, weight)
    !> calculate the weights of given selected orbitals and mode for given wavefunction psi
@@ -3209,3 +2734,78 @@ subroutine get_projection_weight_bulk(k_SBZ_direct, numk, psi, weight)
    return
 end subroutine get_projection_weight_bulk
 
+subroutine generate_ek_kpath_gnu(datafilename, gnufilename, gnuoutfilename, &
+                                 emin, emax, num_k, nklines, &
+                                 kname, k_stop, klen)
+   use para
+   implicit none
+
+   character(*), intent(in) :: gnufilename, datafilename, gnuoutfilename
+
+   !> in unit of eV
+   real(dp), intent(in) :: emin, emax
+
+   !> number of segments of the kpath
+   integer, intent(in) :: nklines, num_k
+   character(*), intent(in) :: kname(nklines+1)
+   real(dp), intent(in) :: k_stop(nklines+1)
+   real(dp), intent(in) :: klen(num_k)
+
+   integer :: i
+
+    !> write script for gnuplot
+   outfileindex= outfileindex+ 1
+   if (cpuid==0) then
+      open(unit=outfileindex, file=gnufilename)
+      write(outfileindex, '(a)') 'set terminal pdf enhanced color font ",30"'
+      write(outfileindex,'(2a)') 'set palette defined ( 0  "green", ', &
+         '5 "yellow", 10 "red" )'
+      write(outfileindex, '(3a)')"set output '", trim(adjustl(gnuoutfilename)), "' "
+      write(outfileindex, '(a)')'set style data linespoints'
+      write(outfileindex, '(a)')'unset key'
+      write(outfileindex, '(a)')'set pointsize 0.8'
+      write(outfileindex, '(a)')'#set xtics font ",24"'
+      write(outfileindex, '(a)')'#set ytics font ",24"'
+      write(outfileindex, '(a)')'set ylabel font ",24"'
+      write(outfileindex, '(a)')'set ylabel offset 1.5,0'
+      write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(klen*Angstrom2atomic), ']'
+      write(outfileindex, '(a,f12.6)')'emin=', emin
+      write(outfileindex, '(a,f12.6)')'emax=', emax
+      if (index(Particle,'phonon')/=0) then
+         write(outfileindex, '(a)')'set yrange [0: emax]'
+         write(outfileindex, '(a)')'set ylabel "Frequency (THz)"'
+      else
+         write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+         write(outfileindex, '(a)')'set yrange [ emin : emax ]'
+      endif
+      write(outfileindex, 202, advance="no") (kname(i), k_stop(i)*Angstrom2atomic, i=1, nklines)
+      write(outfileindex, 203)kname(nklines+1), k_stop(nklines+1)*Angstrom2atomic
+
+      do i=1, nklines-1
+         if (index(Particle,'phonon')/=0) then
+            write(outfileindex, 204)k_stop(i+1)*Angstrom2atomic, '0.0', k_stop(i+1)*Angstrom2atomic, 'emax'
+         else
+            write(outfileindex, 204)k_stop(i+1)*Angstrom2atomic, 'emin', k_stop(i+1)*Angstrom2atomic, 'emax'
+         endif
+      enddo
+      write(outfileindex, '(2a)')"# please comment the following lines to plot the fatband "
+      write(outfileindex, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
+         " w lp lw 2 pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2"
+      write(outfileindex, '(2a)')" " 
+      write(outfileindex, '(2a)')"# uncomment the following lines to plot the fatband "
+      write(outfileindex, '(2a)')"#plot 'bulkek.dat' u 1:2:3 ",  &
+         " w lp lw 2 pt 7  ps 0.2 lc palette, 0 w l lw 2"
+      write(outfileindex, '(2a)')"# uncomment the following lines to plot the spin if necessary"
+      write(outfileindex, '(2a)')"#plot 'bulkek.dat' u 1:2 ",  &
+         "w lp lw 2 pt 7  ps 0.2, \"
+      write(outfileindex, '(2a)')"     'bulkek.dat' u 1:2:($3/6):($4/6) ",  &
+         "w vec"
+      close(outfileindex)
+   endif
+
+202 format('set xtics (',20('"',A3,'" ',F10.5,','))
+203 format(A3,'" ',F10.5,')')
+204 format('set arrow from ',F10.5,',',A5,' to ',F10.5,',',A5, ' nohead')
+
+    return
+end subroutine

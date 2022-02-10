@@ -802,7 +802,7 @@
                   write(outfileindex, '(20E16.6)') &
                      BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau, &
                      BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau*0.175874356d0, &
-                     sigma_ohe_tensor(:, i, ie, ikt, iband)
+                     sigma_ohe_tensor(:, i, ie, ikt, ib)
                enddo ! i, NBTau
                close(outfileindex)
             endif ! cpuid=0

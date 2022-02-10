@@ -327,11 +327,11 @@
         write(outfileindex, '(80a16, a)')'# kx', 'ky', 'kz', 'kp1', 'kp2', 'kp3', 'total A', 'A1(k,E)', 'A2(k,E)'
         do ik=1, knv3
            if (dos_total(ik)>dos_max) then
-              write(outfileindex, '(3000f16.8)')kxy_shape(:, ik), kxy_plane(:, ik), &
+              write(outfileindex, '(3000f16.8)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, &
                 dos_total(ik), ((dos_selected(ik, ig))/dos_total(ik)*500d0+100, &
                 (dos_unselected(ik, ig))/dos_total(ik)*500d0+100, ig=1, NumberofSelectedOrbitals_groups)
            else
-              write(outfileindex, '(3000f16.8)')kxy_shape(:, ik), kxy_plane(:, ik), &
+              write(outfileindex, '(3000f16.8)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, &
                  dos_total(ik), ((dos_selected(ik, ig)), (dos_unselected(ik, ig)), &
                  ig=1, NumberofSelectedOrbitals_groups)
            endif
@@ -350,7 +350,7 @@
         write(outfileindex, '(80a16, a)')'% kx', 'ky', 'kz', 'kp1', 'kp2', 'kp3', 'total A', 'A1(k,E)', 'A2(k,E)'
         write(outfileindex, '(a16, 2i16)')'% Nk1, Nk2=', Nk1, Nk2
         do ik=1, knv3
-           write(outfileindex, '(3000f16.8)')kxy_shape(:, ik), kxy_plane(:, ik), &
+           write(outfileindex, '(3000f16.8)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, &
                 dos_total(ik), ((dos_selected(ik, ig)), (dos_unselected(ik, ig)), &
                 ig=1, NumberofSelectedOrbitals_groups)
         enddo
@@ -367,7 +367,7 @@
         write(outfileindex, '(8a16, a)')'# kx', 'ky', 'kz', 'kp1', 'kp2', 'kp3', '(A1(k,E))', 'A2(k,E)'
         do ik=1, knv3
            if (dos_total(ik)>dos_max) then
-              write(outfileindex, '(300f16.8)')kxy_shape(:, ik), kxy_plane(:, ik), &
+              write(outfileindex, '(300f16.8)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, &
                    (dos_selected(ik, ig), dos_unselected(ik, ig), ig=1, NumberofSelectedOrbitals_groups)
            endif
 
@@ -680,7 +680,7 @@
                  s0(3)= sz_selected_mpi(ik, ig)  /dos_selected_mpi(ik, ig)
                  call rotate_k3_to_kplane(s0, s1(:, ig))
               enddo
-              write(outfileindex, '(3000f16.8)')kxy_shape(:, ik), kxy_plane(:, ik), &
+              write(outfileindex, '(3000f16.8)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, &
                  dos_total_mpi(ik), (dos_selected_mpi(ik, ig), s1(:, ig), ig=1, NumberofSelectedOrbitals_groups)
               if (mod(ik, nky)==0) write(outfileindex, *)' '
            enddo
@@ -694,7 +694,7 @@
               (i, i=1, NumberofSelectedOrbitals_groups)
            write(outfileindex, "('#column', i5, 3000i16)")(i, i=1, 7+NumberofSelectedOrbitals_groups)
            do ik=1, knv3
-              write(outfileindex, '(3000f16.8)')kxy_shape(:, ik), kxy_plane(:, ik), &
+              write(outfileindex, '(3000f16.8)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, &
                  dos_total_mpi(ik), (dos_selected_mpi(ik, ig), ig=1, NumberofSelectedOrbitals_groups)
               if (mod(ik, nky)==0) write(outfileindex, *)' '
            enddo
@@ -945,7 +945,7 @@ subroutine fermisurface_stack
         open(unit=outfileindex, file='fs_stack.dat')
         write(outfileindex, '(7a16, a)')'# kx', 'ky', 'kz', 'kp1', 'kp2', 'kp3', '(A(k,E))', 'A(i,k,E),i=1,numatoms'
         do ik=1, knv3
-           write(outfileindex, '(3000f16.8)')kxy_shape(:, ik), kxy_plane(:, ik), &
+           write(outfileindex, '(3000f16.8)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, &
              (dos_total(ik, ig), ig=1, NumberofSelectedOrbitals_groups), (dos_atom_mpi(ik, :))
            if (mod(ik, nky)==0) write(outfileindex, *)' '
         enddo
@@ -1285,7 +1285,7 @@ subroutine fermisurface_stack
          write(outfileindex, '(100a16)')'# kx', 'ky', 'kz', "kx'", "ky'", "kz'", 'gap', 'Ev4', 'Ev3', &
             'Ev2', 'Ev1', 'Ec1', 'Ec2', 'Ec3', 'Ec4', 'k1', 'k2', 'k3'
          do ik=1, knv3
-            write(outfileindex, '(300f16.8)')kxy_shape(:, ik), kxy_plane(:, ik), (gap_mpi(:, ik)), kxy(:, ik)
+            write(outfileindex, '(300f16.8)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, (gap_mpi(:, ik)), kxy(:, ik)
             if (mod(ik, nky)==0) write(outfileindex, *)' '
          enddo
          close(outfileindex)
@@ -1299,7 +1299,7 @@ subroutine fermisurface_stack
             'Ec2', 'k1', 'k2', 'k3'
          do ik=1, knv3
             if (abs(gap_mpi(1, ik))< Gap_threshold) then
-               write(outfileindex, '(800f16.8)')kxy_shape(:, ik), kxy_plane(:, ik), (gap_mpi(:, ik)), kxy(:, ik)
+               write(outfileindex, '(800f16.8)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, (gap_mpi(:, ik)), kxy(:, ik)
             endif
          enddo
          close(outfileindex)
@@ -1311,7 +1311,7 @@ subroutine fermisurface_stack
          write(outfileindex, '(100a16)')'% kx', 'ky', 'kz', 'gap', 'Ev2', 'Ev1', 'Ec1', &
             'Ec2', 'k1', 'k2', 'k3'
          do ik=1, knv3
-            write(outfileindex, '(300f16.8)')kxy_shape(:, ik), kxy_plane(:, ik), (gap_mpi(:, ik)), kxy(:, ik)
+            write(outfileindex, '(300f16.8)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, (gap_mpi(:, ik)), kxy(:, ik)
          enddo
          close(outfileindex)
       endif
@@ -1691,5 +1691,50 @@ subroutine fermisurface_stack
 
       return
    end subroutine  rotate_kplane_to_k3
+
+   subroutine project_k3_to_kplane_defined_by_direction(k3, direction, kplane)
+      !> In this subroutine, we define a new coordinate system. z axis is parallel to direction
+      !> x axis is generated by the cross product of direction and [0 1 0]
+      !> y axis is generated by the cross product of direction and x
+      use para, only : dp, eps6
+      implicit none
+
+      real(dp), intent(in) :: k3(3)
+      real(dp), intent(in) :: direction(3)
+      real(dp), intent(out) :: kplane(3)
+
+      !> three new unit vectors
+      real(dp), allocatable :: Urot_t(:, :)
+
+      real(dp) :: kvec1(3), kvec2(3), kvec3(3)
+
+      real(dp), external :: norm
+
+      allocate(Urot_t(3, 3))
+
+      kvec1= direction/norm(direction)
+      kvec2=(/0.d0, 1.d0, 0.d0/) 
+      call cross_product(kvec1, kvec2, kvec3)
+      if (norm(kvec3)<eps6) then
+         kvec2=(/1.d0, 0.d0, 0.d0/) 
+         call cross_product(kvec1, kvec2, kvec3)
+      endif
+
+      !> e_z'
+      Urot_t(3, :)= kvec1/norm(kvec1) 
+
+      !> e_x'
+      Urot_t(1, :)= kvec3/norm(kvec3) 
+
+      !> e_y'=e_z' x e_x'
+      call cross_product(kvec1, kvec3, kvec2)
+      Urot_t(2, :)= kvec2/norm(kvec2) 
+
+      kplane(1)= Urot_t(1, 1)*k3(1)+ Urot_t(1, 2)*k3(2)+ Urot_t(1, 3)*k3(3)
+      kplane(2)= Urot_t(2, 1)*k3(1)+ Urot_t(2, 2)*k3(2)+ Urot_t(2, 3)*k3(3)
+      kplane(3)= Urot_t(3, 1)*k3(1)+ Urot_t(3, 2)*k3(2)+ Urot_t(3, 3)*k3(3)
+
+      return
+   end subroutine  project_k3_to_kplane_defined_by_direction
 
 

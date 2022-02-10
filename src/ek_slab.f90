@@ -149,7 +149,7 @@
            do i=1, knv2
              !write(outfileindex,'(3f15.7, i8)')k2len(i), ekslab(j,i), &
              !   (surf_weight(j, i))
-              write(outfileindex,'(2f15.7, 2f16.7)')k2len(i), ekslab(j,i), &
+              write(outfileindex,'(2f15.7, 2f16.7)')k2len(i)*Angstrom2atomic, ekslab(j,i), &
                  (surf_l_weight(j, i)), &
                  (surf_r_weight(j, i))
            enddo
@@ -186,7 +186,7 @@
         write(outfileindex, '(a)')'#set ylabel font ",36"'
         write(outfileindex, '(a)')'#set xtics offset 0, -1'
         write(outfileindex, '(a)')'set ylabel offset -1, 0 '
-        write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k2len), ']'
+        write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k2len)*Angstrom2atomic, ']'
         if (index(Particle,'phonon')/=0) then
            write(outfileindex, '(a, f10.5, a)')'set yrange [0:', emax, ']'
            write(outfileindex, '(a)')'set ylabel "Frequency (THz)"'
@@ -443,7 +443,7 @@ subroutine ek_slab_sparseHR
       write(outfileindex, '("#", a14, a15, a)')'k ', ' E', ' Weight on the selected orbitals'
       do j=1, neval
          do i=1,knv2
-            write(outfileindex,'(200f16.8)')k2len(i), eigv_mpi(j, i), &
+            write(outfileindex,'(200f16.8)')k2len(i)*Angstrom2atomic, eigv_mpi(j, i), &
                (dos_l_selected_mpi(j, i, ig), dos_r_selected_mpi(j, i, ig), &
                ig=1, NumberofSelectedOrbitals_groups)
          enddo
@@ -482,7 +482,7 @@ subroutine ek_slab_sparseHR
       write(outfileindex, '(a)')'#set ylabel font ",36"'
       write(outfileindex, '(a)')'#set xtics offset 0, -1'
       write(outfileindex, '(a)')'set ylabel offset -1, 0 '
-      write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k2len), ']'
+      write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k2len*Angstrom2atomic), ']'
       if (index(Particle,'phonon')/=0) then
          write(outfileindex, '(a, f10.5, a)')'set yrange [0:', emax, ']'
          write(outfileindex, '(a)')'set ylabel "Frequency (THz)"'
