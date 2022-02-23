@@ -2638,7 +2638,7 @@ subroutine readinput
       write(stdout, '(8f10.5)') "It should be like this:"
       write(stdout, '(8f10.5)') "SINGLEKPOINT_2D"
       write(stdout, '(8f10.5)') "Direct"
-      write(stdout, '(8f10.5)') "0.0  0.0  0.0"
+      write(stdout, '(8f10.5)') "0.0  0.0"
    endif
 
    !> print out the single kpoint positions

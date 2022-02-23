@@ -34,15 +34,16 @@ SURFACE            ! See doc for details
 
 !> bulk band structure calculation flag
 &CONTROL
+SlabBandWaveFunc_calc = T
 BulkBand_calc         = F
 BulkBand_points_calc  = F
 BulkFS_calc           = F
 BulkGap_cube_calc     = F
 BulkGap_plane_calc    = F
-SlabBand_calc         = F
-WireBand_calc         = T
-SlabSS_calc           = T
-SlabArc_calc          = T
+SlabBand_calc         = T
+WireBand_calc         = F
+SlabSS_calc           = F
+SlabArc_calc          = F
 Z2_3D_calc            = F
 SlabSpintexture_calc  = F
 Wanniercenter_calc    = F
@@ -114,6 +115,15 @@ Direct
 0.5  0.0  0.0
 0.0  0.5  0.0
 0.0  0.0  0.5
+
+SINGLEKPOINT_2D
+Direct 
+0.0 0.0
+
+SELECTED_BANDS
+4  ! number of selected bands
+179 180 181 182 ! band indices
+
 
 WANNIER_CENTRES     ! copy from wannier90.wout
 Cartesian
