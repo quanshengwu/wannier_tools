@@ -451,7 +451,9 @@
      do i=1, 3
         do n=1, Num_wann
            do m=1, Num_wann
-              Dmn_Ham(m,n,i)=velocity_Ham(m,n,i)/(W(n)-W(m))
+              if (abs(W(n)-W(m))>eps12) then
+                 Dmn_Ham(m,n,i)=velocity_Ham(m,n,i)/(W(n)-W(m))
+              endif
            enddo
            Dmn_Ham(n, n, i)=zzero
         enddo
