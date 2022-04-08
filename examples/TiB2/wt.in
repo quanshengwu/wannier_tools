@@ -30,12 +30,12 @@ SURFACE            ! See doc for details
 
 &CONTROL
 BulkBand_calc         = F
-BulkFS_calc           = F
+BulkFS_calc           = T
 BulkFS_plane_calc     = F
 FindNodes_calc        = F
 SlabBand_calc         = F
-SlabSS_calc           = T
-SlabArc_calc          = T
+SlabSS_calc           = F
+SlabArc_calc          = F
 BerryPhase_calc       = F
 Translate_to_WS_calc  = F
 /

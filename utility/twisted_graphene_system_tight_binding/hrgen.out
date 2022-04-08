@@ -23,7 +23,7 @@
  >> We will generate POSCAR
 >> hr_cutoff=     0.000100
 >> vpppi=    -2.810000
->> iR_cut=      1
+>> iR_cut=      8
  >> We don't generate tight-binding model
  
 << Index-angle table >>
@@ -93,10 +93,10 @@ No. atoms:  275428  279076  282748  286444  290164  293908  297676  301468  3052
         
 >>Index-angle table<<
  
-m=    3
-twisted angle     9.43
-length of lattice vector:  14.940 Angstrom
-number of atoms per cell       148
-         148         148
+m=    0
+twisted angle    60.00
+length of lattice vector:   2.456 Angstrom
+number of atoms per cell         4
+           4           4
  Congratulations! you finished the calculation.
  See you next time :)

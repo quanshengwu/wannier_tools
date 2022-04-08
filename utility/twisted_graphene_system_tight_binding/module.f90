@@ -67,13 +67,20 @@
      real(dp) :: hr_cutoff
      real(dp) :: vpppi
 
+     !> in-plane lattice constant of Graphene
+     real(dp) :: lattice_constant_a
+
+     !> out of plane lattice constant of Graphene
+     real(dp) :: lattice_constant_c
+
+
      !>  iR_cut
      integer :: iR_cut
 
      namelist / PARAMETERS / number_layers, twisted_index_m, &
         twisted_angle_array_input, stacking_sequences_input , &
         use_poscar, hr_generate, gen_sparse_hr, hr_cutoff, vpppi, &
-        iR_cut
+        iR_cut, lattice_constant_a, lattice_constant_c
 
  end module para
 

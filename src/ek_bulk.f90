@@ -946,7 +946,7 @@ subroutine sparse_ekbulk
    !> ncv
    nvecs=int(2*neval)
 
-   if (nvecs<50) nvecs= 50
+   if (nvecs<20) nvecs= 20
    if (nvecs>Num_wann) nvecs= Num_wann
 
    if (trim(adjustl(projection_weight_mode))=='FOLDEDKPOITNS') then
@@ -2789,8 +2789,13 @@ subroutine generate_ek_kpath_gnu(datafilename, gnufilename, gnuoutfilename, &
          endif
       enddo
       write(outfileindex, '(2a)')"# please comment the following lines to plot the fatband "
-      write(outfileindex, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
-         " w lp lw 2 pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2"
+      if (Is_Sparse_Hr) then
+         write(outfileindex, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
+            " w p pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2"
+      else
+         write(outfileindex, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
+            " w lp lw 2 pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2"
+      endif
       write(outfileindex, '(2a)')" " 
       write(outfileindex, '(2a)')"# uncomment the following lines to plot the fatband "
       write(outfileindex, '(2a)')"#plot 'bulkek.dat' u 1:2:3 ",  &

@@ -388,7 +388,13 @@
       write(wt_in_unit,*)''
       write(wt_in_unit,*)'&PARAMETERS'
       write(wt_in_unit,*)'Nk1 = 21           ! number k points'
-      write(wt_in_unit,*)'OmegaNum = 40            ! number k points'
+      if (.not.gen_sparse_hr) then
+         write(wt_in_unit,*)'OmegaNum = 40            ! number k points'
+      endif
+      if (gen_sparse_hr) then
+         write(wt_in_unit,*)'E_arc = 0.00   ! get eigenvalues around E_arc '
+         write(wt_in_unit,*)'NumSelectedEigenVals = 10  ! number of selected eigenvalues '
+      endif
       write(wt_in_unit,*)'/'
       write(wt_in_unit,*)''
       
@@ -400,9 +406,9 @@
       write(wt_in_unit,*)''
       write(wt_in_unit,*)'KPATH_BULK'
       write(wt_in_unit,*)'3  ! number of k-path'
-      write(wt_in_unit,*)'  M   0.00000  0.50000  0.00000   K   0.33333  0.33333  0.00000'
-      write(wt_in_unit,*)'  K   0.33333  0.33333  0.00000   G   0.00000  0.00000  0.00000'
-      write(wt_in_unit,*)'  G   0.00000  0.00000  0.00000   M   0.00000  0.50000  0.00000'
+      write(wt_in_unit,*)'  G   0.00000  0.00000  0.00000  K   0.33333  0.33333  0.00000'
+      write(wt_in_unit,*)'  K   0.33333  0.33333  0.00000  M   0.00000  0.50000  0.00000'
+      write(wt_in_unit,*)'  M   0.00000  0.50000  0.00000  G   0.00000  0.00000  0.00000'
 
 
       write(wt_in_unit,*)''

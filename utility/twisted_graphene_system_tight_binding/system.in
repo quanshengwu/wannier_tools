@@ -1,14 +1,13 @@
-
 ! an example for Twisted A-AB system
 &PARAMETERS
 number_layers = 3    ! Two layers for TBG
-twisted_index_m= 3   ! twisted index m, theta= acos((3d0*m*m + 3d0*m + 0.5d0)/(3d0*m*m + 3d0*m + 1d0));
+twisted_index_m= 1   ! twisted index m, theta= acos((3d0*m*m + 3d0*m + 0.5d0)/(3d0*m*m + 3d0*m + 1d0));
 twisted_angle_array_input = 0 1 1  ! twisted angle array, unit is theta; Number_of_layers numbers
 stacking_sequences_input = "A" "A"  "B" ! AB stacking sequences, only three values "A", "B", "C"; Number_of_layers numbers
 use_poscar = F    ! use POSCAR or not,  T: we will use POSCAR, F: will generate POSCAR
 hr_generate = T    ! use POSCAR or not,  T: we will generate hr.dat
-gen_sparse_hr = T   ! use POSCAR or not,  T: we will generate hr.dat in sparse format
+gen_sparse_hr = F   ! use POSCAR or not,  T: we will generate hr.dat in sparse format
 hr_cutoff=0.00010000  ! set HmnR=0 if HmnR<hr_cutoff
 vpppi=-2.81       !  pi bond of p orbital, unit eV  
-iR_cut = 1   ! R is in [-iR_cut, -iR_cut+1, ..., iR_cut]
+iR_cut = 8   ! R is in [-iR_cut, -iR_cut+1, ..., iR_cut]
 /

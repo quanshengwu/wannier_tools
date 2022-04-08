@@ -3218,6 +3218,7 @@ subroutine readinput
    endif
 
    !> setup SELECTEDOccupiedBANDS
+   !> if not given SELECTED_OCCUPIED_BANDS section, we will use NumOccupied as the inputs
    if (.not.allocated(Selected_Occupiedband_index))then
       NumberofSelectedOccupiedBands= NumOccupied
       allocate(Selected_Occupiedband_index(NumberofSelectedOccupiedBands))
@@ -4409,7 +4410,7 @@ subroutine param_get_range_vector(keyword,inline,length,lcount,i_value)
     character(len=2) , parameter :: c_range="-:"
     character(len=3) , parameter :: c_sep=" ,;"
     character(len=5) , parameter :: c_punc=" ,;-:"
-    character(len=2) , parameter :: comment_punc="#!"
+    character(len=2) , parameter :: comment_punc="#!%"
     character(len=5)  :: c_num1,c_num2
 
     !> remove the comment part

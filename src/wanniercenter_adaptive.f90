@@ -25,8 +25,8 @@
       real(dp), allocatable :: largestgap(:)
       real(dp), allocatable :: largestgap_all(:,:)
 
-      allocate(wcc(Numoccupied, Nk2_max))
-      allocate(wcc_all(Numoccupied, Nk2_max, 6))
+      allocate(wcc(NumberofSelectedOccupiedBands, Nk2_max))
+      allocate(wcc_all(NumberofSelectedOccupiedBands, Nk2_max, 6))
       allocate(largestgap(Nk2_max))
       allocate(largestgap_all(Nk2_max,6))
       allocate(kpath_wcc(Nk2_max))
@@ -46,7 +46,7 @@
       outfileindex= outfileindex+ 1
       if (cpuid==0) then
          open(unit=outfileindex, file='wanniercenter3D_Z2_1.dat')
-         do i=1, Numoccupied
+         do i=1, NumberofSelectedOccupiedBands
             do ik2=1, Nk2_adaptive
                write(outfileindex, '(10000f16.8)') kpath_wcc(ik2), &
                   (dmod((wcc(i, ik2)), 1d0))
@@ -69,7 +69,7 @@
       outfileindex= outfileindex+ 1
       if (cpuid==0) then
          open(unit=outfileindex, file='wanniercenter3D_Z2_2.dat')
-         do i=1, Numoccupied
+         do i=1, NumberofSelectedOccupiedBands
             do ik2=1, Nk2_adaptive
                write(outfileindex, '(10000f16.8)') kpath_wcc(ik2), &
                   (dmod((wcc(i, ik2)), 1d0))
@@ -93,7 +93,7 @@
       outfileindex= outfileindex+ 1
       if (cpuid==0) then
          open(unit=outfileindex, file='wanniercenter3D_Z2_3.dat')
-         do i=1, Numoccupied
+         do i=1, NumberofSelectedOccupiedBands
             do ik2=1, Nk2_adaptive
                write(outfileindex, '(10000f16.8)') kpath_wcc(ik2), &
                   (dmod((wcc(i, ik2)), 1d0))
@@ -115,7 +115,7 @@
       outfileindex= outfileindex+ 1
       if (cpuid==0) then
          open(unit=outfileindex, file='wanniercenter3D_Z2_4.dat')
-         do i=1, Numoccupied
+         do i=1, NumberofSelectedOccupiedBands
             do ik2=1, Nk2_adaptive
                write(outfileindex, '(10000f16.8)') kpath_wcc(ik2), &
                   (dmod((wcc(i, ik2)), 1d0))
@@ -137,7 +137,7 @@
       outfileindex= outfileindex+ 1
       if (cpuid==0) then
          open(unit=outfileindex, file='wanniercenter3D_Z2_5.dat')
-         do i=1, Numoccupied
+         do i=1, NumberofSelectedOccupiedBands
             do ik2=1, Nk2_adaptive
                write(outfileindex, '(10000f16.8)') kpath_wcc(ik2), &
                   (dmod((wcc(i, ik2)), 1d0))
@@ -159,7 +159,7 @@
       outfileindex= outfileindex+ 1
       if (cpuid==0) then
          open(unit=outfileindex, file='wanniercenter3D_Z2_6.dat')
-         do i=1, Numoccupied
+         do i=1, NumberofSelectedOccupiedBands
             do ik2=1, Nk2_adaptive
                write(outfileindex, '(10000f16.8)') kpath_wcc(ik2), &
                   (dmod((wcc(i, ik2)), 1d0))
@@ -286,7 +286,7 @@
 
       integer :: Nk2_adaptive
 
-      allocate(wcc(Numoccupied, Nk2_max))
+      allocate(wcc(NumberofSelectedOccupiedBands, Nk2_max))
       allocate(largestgap(Nk2_max))
       allocate(kpath_wcc(Nk2_max))
       kpath_wcc= 0d0
@@ -301,7 +301,7 @@
       if (cpuid==0) then
          open(unit=outfileindex, file='wcc.dat')
          write(outfileindex, '(4A16, A)')'#      k', 'largestgap', 'sum(wcc(:,ik))', &
-                                          'wcc(i, ik)', '(i=1, NumOccupied)'
+                                          'wcc(i, ik)', '(i=1, NumberofSelectedOccupiedBands)'
          do ik2=1, Nk2_adaptive
             write(outfileindex, '(10000f16.8)')kpath_wcc(ik2), &
                largestgap(ik2), dmod(sum(wcc(:, ik2)), 1d0), & 
@@ -332,7 +332,7 @@
          write(outfileindex, '(a)')'set ylabel offset 0, 0.0 '
          write(outfileindex, '(a)')'set xrange [0: 0.5]'
          write(outfileindex, '(a)')'set yrange [0:1]'
-         write(outfileindex, '(a, i5, a)')"plot for [i=4: ", Numoccupied+3, "] 'wcc.dat' u 1:i w p  pt 7  ps 1.1 lc 'red'"
+         write(outfileindex, '(a, i5, a)')"plot for [i=4: ", NumberofSelectedOccupiedBands+3, "] 'wcc.dat' u 1:i w p  pt 7  ps 1.1 lc 'red'"
          close(outfileindex)
       endif
 
@@ -358,7 +358,7 @@
       real(dp), intent(in) :: kvec1(3)  ! the integration direction
       real(dp), intent(in) :: kvec2(3)
       real(dp), intent(out) :: largestgap(Nk2_max)
-      real(dp), intent(out) :: wcc(Numoccupied, Nk2_max)
+      real(dp), intent(out) :: wcc(NumberofSelectedOccupiedBands, Nk2_max)
       real(dp), intent(out) :: kpath_wcc(Nk2_max)
       integer , intent(out) :: Nk2_adaptive  ! number of k points in end
 
@@ -401,13 +401,13 @@
       real(dp) :: zm1, xnm1, Deltam, dis
       real(dp), allocatable :: xnm(:)
 
-      allocate(xnm(Numoccupied))
-      allocate(wcc_one_k(Numoccupied))
-      allocate(wcc_gap(Numoccupied))
-      allocate(wcc_current(Numoccupied))
-      allocate(wcc_next(Numoccupied))
-      allocate(wcc_k(Numoccupied, Nk2_max))
-      allocate(wcc_k_mpi(Numoccupied, Nk2_max))
+      allocate(xnm(NumberofSelectedOccupiedBands))
+      allocate(wcc_one_k(NumberofSelectedOccupiedBands))
+      allocate(wcc_gap(NumberofSelectedOccupiedBands))
+      allocate(wcc_current(NumberofSelectedOccupiedBands))
+      allocate(wcc_next(NumberofSelectedOccupiedBands))
+      allocate(wcc_k(NumberofSelectedOccupiedBands, Nk2_max))
+      allocate(wcc_k_mpi(NumberofSelectedOccupiedBands, Nk2_max))
       allocate(largestgap_val_arr(Nk2_max))
       allocate(largestgap_val_arr_mpi(Nk2_max))
       allocate(largestgap_pos_i_arr(Nk2_max))
@@ -435,8 +435,8 @@
          kline_wcc(ik2)%largestgap_val= 0d0
          kline_wcc(ik2)%converged= .False.
          kline_wcc(ik2)%calculated= .False.
-         allocate(kline_wcc(ik2)%wcc(Numoccupied))
-         allocate(kline_wcc(ik2)%gap(Numoccupied))
+         allocate(kline_wcc(ik2)%wcc(NumberofSelectedOccupiedBands))
+         allocate(kline_wcc(ik2)%gap(NumberofSelectedOccupiedBands))
          kline_wcc(ik2)%wcc= 0d0
          kline_wcc(ik2)%gap= 0d0
       enddo
@@ -510,12 +510,12 @@
                kline_wcc(ik2+1)%largestgap_pos_val)  
             wcc_current= dmod(kline_wcc(ik2)%wcc+10d0-largestgap_val, 1d0)
             wcc_next= dmod(kline_wcc(ik2+1)%wcc+10d0-largestgap_val, 1d0)
-            call sortheap(Numoccupied, wcc_current)
-            call sortheap(Numoccupied, wcc_next)
+            call sortheap(NumberofSelectedOccupiedBands, wcc_current)
+            call sortheap(NumberofSelectedOccupiedBands, wcc_next)
 
             !> get the largest gap
             wcc_tol=-1d0
-            do i=1, Numoccupied
+            do i=1, NumberofSelectedOccupiedBands
                call dis_phase(wcc_next(i), wcc_current(i), dis)
                if ( dis>wcc_tol) wcc_tol= dis
             enddo ! i
@@ -553,8 +553,8 @@
                ik= ik+ 1 !> add to the bottom of kline_wcc
                kline_wcc(ik)%k= (kline_wcc(ik2)%k+ kline_wcc(ik2+1)%k)/2d0 
                kline_wcc(ik)%delta= (kline_wcc(ik2)%delta+ kline_wcc(ik2+1)%delta)/2d0 
-               if (.not.allocated(kline_wcc(ik)%wcc))allocate(kline_wcc(ik)%wcc(Numoccupied))
-               if (.not.allocated(kline_wcc(ik)%gap))allocate(kline_wcc(ik)%gap(Numoccupied))
+               if (.not.allocated(kline_wcc(ik)%wcc))allocate(kline_wcc(ik)%wcc(NumberofSelectedOccupiedBands))
+               if (.not.allocated(kline_wcc(ik)%gap))allocate(kline_wcc(ik)%gap(NumberofSelectedOccupiedBands))
                kline_wcc(ik)%calculated= .False.
                kline_wcc(ik)%converged= .False.
                kline_wcc(ik)%largestgap_val= 0d0
@@ -600,7 +600,7 @@
          zm1= kline_wcc(ik2+1)%largestgap_pos_val         
          xnm= kline_wcc(ik2+1)%wcc
          Deltam= 1
-         do i=1, Numoccupied
+         do i=1, NumberofSelectedOccupiedBands
             xnm1= xnm(i)
             phi1= 2d0*pi*zm
             phi2= 2d0*pi*zm1
@@ -625,6 +625,7 @@
       !> this suboutine is used for wannier center calculation for 3D system
       !> only for one plane
 
+      use sparse
       use para
       use wcc_module
       use wmpi
@@ -632,8 +633,8 @@
 
       real(dp), intent(in) :: kvec1(3)  ! the integration direction
       real(dp), intent(in) :: k2(3)
-      real(dp), intent(out) :: wcc(Numoccupied)
-      real(dp), intent(out) :: wcc_gap(Numoccupied)
+      real(dp), intent(out) :: wcc(NumberofSelectedOccupiedBands)
+      real(dp), intent(out) :: wcc_gap(NumberofSelectedOccupiedBands)
       real(dp), intent(out) :: largestgap_val
       real(dp), intent(out) :: largestgap_pos_i
       real(dp), intent(out) :: largestgap_pos_val
@@ -708,20 +709,20 @@
 
       wcc_tol= wcc_calc_tol
 
-      allocate(Lambda_eig(Numoccupied))
-      allocate(Lambda(Numoccupied, Numoccupied))
-      allocate(Lambda0(Numoccupied, Numoccupied))
-      allocate(Mmnkb(Numoccupied, Numoccupied))
-      allocate(Mmnkb_com(Numoccupied, Numoccupied))
+      allocate(Lambda_eig(NumberofSelectedOccupiedBands))
+      allocate(Lambda(NumberofSelectedOccupiedBands, NumberofSelectedOccupiedBands))
+      allocate(Lambda0(NumberofSelectedOccupiedBands, NumberofSelectedOccupiedBands))
+      allocate(Mmnkb(NumberofSelectedOccupiedBands, NumberofSelectedOccupiedBands))
+      allocate(Mmnkb_com(NumberofSelectedOccupiedBands, NumberofSelectedOccupiedBands))
       allocate(eigenvalue(Num_wann))
-      allocate(U(Numoccupied, Numoccupied))
-      allocate(Sigma(Numoccupied, Numoccupied))
-      allocate(VT(Numoccupied, Numoccupied))
-      allocate(wcc_new(Numoccupied))
-      allocate(wcc_old(Numoccupied))
+      allocate(U(NumberofSelectedOccupiedBands, NumberofSelectedOccupiedBands))
+      allocate(Sigma(NumberofSelectedOccupiedBands, NumberofSelectedOccupiedBands))
+      allocate(VT(NumberofSelectedOccupiedBands, NumberofSelectedOccupiedBands))
+      allocate(wcc_new(NumberofSelectedOccupiedBands))
+      allocate(wcc_old(NumberofSelectedOccupiedBands))
       if (Is_Sparse) then
-         allocate(hamk(Num_wann, NumOccupied))
-         allocate(hamk_dag(Num_wann, NumOccupied))
+         allocate(hamk(Num_wann, NumberofSelectedOccupiedBands))
+         allocate(hamk_dag(Num_wann, NumberofSelectedOccupiedBands))
       else
          allocate(hamk(Num_wann, Num_wann))
          allocate(hamk_dag(Num_wann, Num_wann))
@@ -787,7 +788,7 @@
             kline_integrate(ik1)%b= b
          endif
          if (.not.allocated(kline_integrate(ik1)%eig_vec)) &
-            allocate(kline_integrate(ik1)%eig_vec(Num_wann, NumOccupied))
+            allocate(kline_integrate(ik1)%eig_vec(Num_wann, NumberofSelectedOccupiedBands))
          kline_integrate(ik1)%eig_vec= (0d0, 0d0)
          kline_integrate(ik1)%calculated= .False. ! not calculated
       enddo
@@ -823,7 +824,7 @@
                kline_integrate(it)%k= kpoints(:, ik1)
                kline_integrate(it)%delta= (ik1-1d0)/Nk_adaptive
                if (.not. allocated(kline_integrate(it)%eig_vec))&
-                   allocate(kline_integrate(it)%eig_vec(Num_wann, NumOccupied))
+                   allocate(kline_integrate(it)%eig_vec(Num_wann, NumberofSelectedOccupiedBands))
                kline_integrate(it)%eig_vec= 0d0
                kline_integrate(it)%calculated= .False.
             endif
@@ -845,9 +846,8 @@
                nnz= splen
               
                ritzvec= .true.
-               stop " we don't support sparse hr in this version"
-              !call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,eigenvalue,shiftsigma, zeigv, ritzvec)
-              !kline_integrate(ik1)%eig_vec(1:Num_wann, 1:NumOccupied)= zeigv(1:Num_wann, 1:NumOccupied)
+               call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,eigenvalue,shiftsigma, zeigv, ritzvec)
+               kline_integrate(ik1)%eig_vec(1:Num_wann, 1:NumberofSelectedOccupiedBands)= zeigv(1:Num_wann, 1:NumberofSelectedOccupiedBands)
 
             else
                !> get the TB hamiltonian in k space
@@ -855,7 +855,7 @@
       
                !> diagonal hamk
                call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
-               kline_integrate(ik1)%eig_vec(1:Num_wann, 1:NumOccupied)= hamk(1:Num_wann, 1:NumOccupied)
+               kline_integrate(ik1)%eig_vec(1:Num_wann, 1:NumberofSelectedOccupiedBands)= hamk(1:Num_wann, 1:NumberofSelectedOccupiedBands)
  
             endif
    
@@ -866,7 +866,7 @@
          enddo
 
          Lambda0=0d0
-         do i=1, Numoccupied
+         do i=1, NumberofSelectedOccupiedBands
             Lambda0(i, i)= 1d0
          enddo
   
@@ -874,11 +874,11 @@
          do ik1=1, Nk_adaptive
             !> <u_k|u_k+1>
             Mmnkb= 0d0
-            hamk_dag(:, 1:NumOccupied)= kline_integrate(ik1)%eig_vec
+            hamk_dag(:, 1:NumberofSelectedOccupiedBands)= kline_integrate(ik1)%eig_vec
             if (ik1==Nk_adaptive) then
-               hamk(:, 1:NumOccupied)= kline_integrate(1)%eig_vec     
+               hamk(:, 1:NumberofSelectedOccupiedBands)= kline_integrate(1)%eig_vec     
             else
-               hamk(:, 1:NumOccupied)= kline_integrate(ik1+1)%eig_vec 
+               hamk(:, 1:NumberofSelectedOccupiedBands)= kline_integrate(ik1+1)%eig_vec 
             endif
 
             b= kline_integrate(ik1)%b
@@ -888,8 +888,8 @@
                    b(3)*Origin_cell%wannier_centers_cart(3, m)
                ratio= cos(br)- zi* sin(br)
          
-               do j=1, Numoccupied
-                  do i=1, Numoccupied
+               do j=1, NumberofSelectedOccupiedBands
+                  do i=1, NumberofSelectedOccupiedBands
                      Mmnkb(i, j)=  Mmnkb(i, j)+ &
                         conjg(hamk_dag(m, i))* hamk(m, j)* ratio
                   enddo ! i
@@ -897,25 +897,25 @@
             enddo ! m
    
             !> perform Singluar Value Decomposed of Mmnkb
-            call zgesvd_pack(Numoccupied, Mmnkb, U, Sigma, VT)
+            call zgesvd_pack(NumberofSelectedOccupiedBands, Mmnkb, U, Sigma, VT)
    
             !> after the calling of zgesvd_pack, Mmnkb becomes a temporal matrix
             U = conjg(transpose(U))
             VT= conjg(transpose(VT))
-            call mat_mul(Numoccupied, VT, U, Mmnkb)
+            call mat_mul(NumberofSelectedOccupiedBands, VT, U, Mmnkb)
    
-            call mat_mul(Numoccupied, Mmnkb, Lambda0, Lambda)
+            call mat_mul(NumberofSelectedOccupiedBands, Mmnkb, Lambda0, Lambda)
             Lambda0 = Lambda
          enddo  !< ik1
    
          !> diagonalize Lambda to get the eigenvalue 
-         call zgeev_pack(Numoccupied, Lambda, Lambda_eig)
-         do i=1, Numoccupied
+         call zgeev_pack(NumberofSelectedOccupiedBands, Lambda, Lambda_eig)
+         do i=1, NumberofSelectedOccupiedBands
             wcc(i)= aimag(log(Lambda_eig(i)))/2d0/pi
             wcc(i)= dmod(wcc(i)+10d0, 1d0) 
          enddo
   
-         call sortheap(Numoccupied, wcc(:))
+         call sortheap(NumberofSelectedOccupiedBands, wcc(:))
 
          wcc_new= wcc
          call largest_gap_find(wcc_new, maxgap_new)
@@ -924,12 +924,12 @@
          maxgap_new= max(maxgap_new, maxgap_old)
          wcc_new= dmod(wcc_new+ 10d0- maxgap_new, 1d0)
          wcc_old= dmod(wcc_old+ 10d0- maxgap_old, 1d0)
-         call sortheap(Numoccupied, wcc_new)
-         call sortheap(Numoccupied, wcc_old)
+         call sortheap(NumberofSelectedOccupiedBands, wcc_new)
+         call sortheap(NumberofSelectedOccupiedBands, wcc_old)
 
          !>> check the convergence
          max_diff= -1d0
-         do i=1, Numoccupied
+         do i=1, NumberofSelectedOccupiedBands
             call dis_phase(wcc_new(i), wcc_old(i), dis)
             if (dis>max_diff) max_diff= dis
          enddo
@@ -941,12 +941,12 @@
 
 
       maxgap0= -99999d0
-      imax= Numoccupied
-      do i=1, Numoccupied
-         if (i/=Numoccupied) then
+      imax= NumberofSelectedOccupiedBands
+      do i=1, NumberofSelectedOccupiedBands
+         if (i/=NumberofSelectedOccupiedBands) then
             maxgap= wcc(i+1)- wcc(i)
          else
-            maxgap=1d0+ wcc(1)- wcc(Numoccupied)
+            maxgap=1d0+ wcc(1)- wcc(NumberofSelectedOccupiedBands)
          endif
          wcc_gap(i)= maxgap
 
@@ -956,9 +956,9 @@
          endif
       enddo
 
-      if (imax==Numoccupied) then
+      if (imax==NumberofSelectedOccupiedBands) then
          largestgap_pos_val= (wcc(1)+ &
-            wcc(Numoccupied) +1d0)/2d0
+            wcc(NumberofSelectedOccupiedBands) +1d0)/2d0
          largestgap_pos_val= mod(largestgap_pos_val, 1d0)
       else
          largestgap_pos_val= (wcc(imax+1)+ &
@@ -988,9 +988,9 @@
       real(dp) :: delta ! apart from the start point
       real(dp) :: b(3)  ! dis
       logical  :: calculated
-      complex(dp), allocatable :: eig_vec(:, :)  !dim= (num_wann, NumOccupied)
+      complex(dp), allocatable :: eig_vec(:, :)  !dim= (num_wann, NumberofSelectedOccupiedBands)
 
-      allocate(eig_vec(num_wann, NumOccupied))
+      allocate(eig_vec(num_wann, NumberofSelectedOccupiedBands))
       eig_vec= 0d0
 
       do i= Nk_adaptive-1, 1, -1  ! > start n-1 sweeping
@@ -1055,11 +1055,11 @@
       real(dp) :: largestgap_pos_i     ! largest gap position
       real(dp) :: largestgap_pos_val   ! largest gap position value
       real(dp) :: largestgap_val       ! largest gap value
-      real(dp), allocatable :: wcc(:)  !dim= (NumOccupied)
-      real(dp), allocatable :: gap(:)  !dim= (NumOccupied)
+      real(dp), allocatable :: wcc(:)  !dim= (NumberofSelectedOccupiedBands)
+      real(dp), allocatable :: gap(:)  !dim= (NumberofSelectedOccupiedBands)
 
-      allocate(wcc(Numoccupied))
-      allocate(gap(Numoccupied))
+      allocate(wcc(NumberofSelectedOccupiedBands))
+      allocate(gap(NumberofSelectedOccupiedBands))
       wcc= 0d0
       gap= 0d0
 
@@ -1117,21 +1117,21 @@
 
    subroutine largest_gap_find(wcc, maxgap0)
 
-      use para, only : dp, Numoccupied
+      use para, only : dp, NumberofSelectedOccupiedBands
       use wmpi
       implicit none
 
-      real(dp), intent(in) :: wcc(Numoccupied)
+      real(dp), intent(in) :: wcc(NumberofSelectedOccupiedBands)
       real(dp) :: maxgap0, maxgap
 
       integer :: i
 
       maxgap0= -99999d0
-      do i=1, Numoccupied
-         if (i/=Numoccupied) then
+      do i=1, NumberofSelectedOccupiedBands
+         if (i/=NumberofSelectedOccupiedBands) then
             maxgap= wcc(i+1)- wcc(i)
          else
-            maxgap=1d0+ wcc(1)- wcc(Numoccupied)
+            maxgap=1d0+ wcc(1)- wcc(NumberofSelectedOccupiedBands)
          endif
 
          if (maxgap>maxgap0) then

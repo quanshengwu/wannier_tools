@@ -27,8 +27,8 @@
 
 
       !> primitive lattice vectors of Graphene 
-      lattice_constant= 1.418d0*sqrt_3
-      interlayer_distance= 3.36d0
+      lattice_constant= lattice_constant_a
+      interlayer_distance= lattice_constant_c
       a1(1)=lattice_constant*0.5d0*sqrt_3; a1(2)=lattice_constant*0.5d0; a1(3)= 0d0
       a2(1)=lattice_constant*0.5d0*sqrt_3; a2(2)=-lattice_constant*0.5d0; a2(3)= 0d0
 
