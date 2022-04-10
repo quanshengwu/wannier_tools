@@ -32,12 +32,12 @@
 
       integer :: Nk_total, Nk_current, Nk_start, Nk_end
       integer  :: knv3_left, knv3_left_mod, knv3, knv3_mod
-      integer :: ik, ib, ik1, ik2, ik3, ik_temp
+      integer :: ik, iband, ik1, ik2, ik3, ik_temp
       integer :: ierr, it, i, ix, j1, j2, j
       integer :: nrecevs
 
-      real(dp) :: v_t(3), v_k(3)
-      real(dp) :: k(3), k_start(3)
+      real(dp) :: v_t(3), vo_k, v_k(3)
+      real(dp) :: k(3), k_start(3), magnetic_field(3)
       real(dp) :: sigma_symm_t(9), rho(3, 3)
       
       real(dp) :: time_start, time_end
@@ -114,6 +114,8 @@
       !> inverse of group operator
       real(dp) :: Tmat(3, 3)
       real(dp), allocatable :: pgop_cart_inverse(:, :, :)
+
+      real(dp), external :: det3
 
       allocate(pgop_cart_inverse(3, 3, number_group_operators))
       do i= 1, number_group_operators
@@ -219,85 +221,86 @@
       enddo
 
       !> exclude all kpoints with zero velocity x B and large energy away from Fermi level
-      do ib= 1, Nband_Fermi_Level 
+      do iband= 1, Nband_Fermi_Level 
 
          !> first check howmany k points left
          it= 0
          do ik= Nk_start, Nk_end
             !> check whether v x B=0, which means the magnetic field is parallel with velocity
-            v_t= velocity(:, ik, ib)
+            v_t= velocity(:, ik, iband)
            !vcrossB(1)= -v_t(2)*Bdirection(3)+ v_t(3)*Bdirection(2)
            !vcrossB(2)= -v_t(3)*Bdirection(1)+ v_t(1)*Bdirection(3)
            !vcrossB(3)= -v_t(1)*Bdirection(2)+ v_t(2)*Bdirection(1)
-           !if (abs(Enk(ik, ib))<0.05d0.and.dsqrt(sum((abs(vcrossB)**2)))>eps3) then
-            if (abs(Enk(ik, ib))/eV2Hartree<0.05d0) then
+           !if (abs(Enk(ik, iband))<0.05d0.and.dsqrt(sum((abs(vcrossB)**2)))>eps3) then
+            if (abs(Enk(ik, iband))/eV2Hartree<0.05d0) then
                it = it+ 1
             endif
          enddo ! ik
 
-         KCube3D_left(ib)%Nk_current= it
+         KCube3D_left(iband)%Nk_current= it
          if (it>0) then
-            allocate(KCube3D_left(ib)%ik_array(it))
-            allocate(KCube3D_left(ib)%Ek_local(it))
-            allocate(KCube3D_left(ib)%vx_local(it))
-            allocate(KCube3D_left(ib)%vy_local(it))
-            allocate(KCube3D_left(ib)%vz_local(it))
-            allocate(KCube3D_left(ib)%weight_k_local(it))
+            allocate(KCube3D_left(iband)%ik_array(it))
+            allocate(KCube3D_left(iband)%Ek_local(it))
+            allocate(KCube3D_left(iband)%vx_local(it))
+            allocate(KCube3D_left(iband)%vy_local(it))
+            allocate(KCube3D_left(iband)%vz_local(it))
+            allocate(KCube3D_left(iband)%weight_k_local(it))
          else 
-            allocate(KCube3D_left(ib)%ik_array(1))  !> only useful for mpi_allgatherv
-            allocate(KCube3D_left(ib)%Ek_local(1))
-            allocate(KCube3D_left(ib)%vx_local(1))
-            allocate(KCube3D_left(ib)%vy_local(1))
-            allocate(KCube3D_left(ib)%vz_local(1))
-            allocate(KCube3D_left(ib)%weight_k_local(1))
+            allocate(KCube3D_left(iband)%ik_array(1))  !> only useful for mpi_allgatherv
+            allocate(KCube3D_left(iband)%Ek_local(1))
+            allocate(KCube3D_left(iband)%vx_local(1))
+            allocate(KCube3D_left(iband)%vy_local(1))
+            allocate(KCube3D_left(iband)%vz_local(1))
+            allocate(KCube3D_left(iband)%weight_k_local(1))
          endif
-         KCube3D_left(ib)%ik_array= 0
-         KCube3D_left(ib)%Ek_local= 0d0
-         KCube3D_left(ib)%vx_local= 0d0
-         KCube3D_left(ib)%vy_local= 0d0
-         KCube3D_left(ib)%vz_local= 0d0
-         KCube3D_left(ib)%weight_k_local= 0d0
+         KCube3D_left(iband)%ik_array= 0
+         KCube3D_left(iband)%Ek_local= 0d0
+         KCube3D_left(iband)%vx_local= 0d0
+         KCube3D_left(iband)%vy_local= 0d0
+         KCube3D_left(iband)%vz_local= 0d0
+         KCube3D_left(iband)%weight_k_local= 0d0
 
 
          it= 0
          do ik= Nk_start, Nk_end
             !> check whether v x B=0, which means the magnetic field is parallel with velocity
-            v_t= velocity(:, ik, ib)
+            v_t= velocity(:, ik, iband)
            !vcrossB(1)= -v_t(2)*Bdirection(3)+ v_t(3)*Bdirection(2)
            !vcrossB(2)= -v_t(3)*Bdirection(1)+ v_t(1)*Bdirection(3)
            !vcrossB(3)= -v_t(1)*Bdirection(2)+ v_t(2)*Bdirection(1)
-           !if (abs(Enk(ik, ib))<0.05d0.and.dsqrt(sum((abs(vcrossB)**2)))>eps3) then
-            if (abs(Enk(ik, ib))<0.05d0) then
+           !if (abs(Enk(ik, iband))<0.05d0.and.dsqrt(sum((abs(vcrossB)**2)))>eps3) then
+            if (abs(Enk(ik, iband))/eV2Hartree<0.05d0) then
                it = it+ 1
-               KCube3D_left(ib)%weight_k_local(it) = KCube3D_symm%weight_k(ik)
-               KCube3D_left(ib)%ik_array(it) = KCube3D_symm%ik_array_symm(ik)
-               KCube3D_left(ib)%Ek_local(it) = Enk(ik, ib)
-               KCube3D_left(ib)%vx_local(it) = v_t(1)
-               KCube3D_left(ib)%vy_local(it) = v_t(2)
-               KCube3D_left(ib)%vz_local(it) = v_t(3)
+               KCube3D_left(iband)%weight_k_local(it) = KCube3D_symm%weight_k(ik)
+               KCube3D_left(iband)%ik_array(it) = KCube3D_symm%ik_array_symm(ik)
+               KCube3D_left(iband)%Ek_local(it) = Enk(ik, iband)
+               KCube3D_left(iband)%vx_local(it) = v_t(1)
+               KCube3D_left(iband)%vy_local(it) = v_t(2)
+               KCube3D_left(iband)%vz_local(it) = v_t(3)
             endif
          enddo ! ik
-      enddo ! ib
+      enddo ! iband
+
       !> try to get the total number of k points left for each band 
-      do ib=1, Nband_Fermi_Level
+      do iband=1, Nband_Fermi_Level
 #if defined (MPI)
-         call mpi_allreduce(KCube3D_left(ib)%Nk_current,KCube3D_left(ib)%Nk_total,1,&
+         call mpi_allreduce(KCube3D_left(iband)%Nk_current,KCube3D_left(iband)%Nk_total,1,&
                       mpi_in,mpi_sum,mpi_cmw,ierr)
 #else
-         KCube3D_left(ib)%Nk_total= KCube3D_left(ib)%Nk_current
+         KCube3D_left(iband)%Nk_total= KCube3D_left(iband)%Nk_current
 #endif
       enddo
 
       !> gather the number of k points left into a array info
       allocate(info(num_cpu, Nband_Fermi_Level))
       info= -1
-      do ib= 1, Nband_Fermi_Level
-         nrecevs= KCube3D_left(ib)%Nk_current
+      do iband= 1, Nband_Fermi_Level
+         nrecevs= KCube3D_left(iband)%Nk_current
          if (nrecevs<0) nrecevs= 0
 #if defined (MPI)
-         call mpi_allgather(nrecevs, 1, mpi_in, info(:, ib), 1, mpi_in, mpi_cmw, ierr)
+         call mpi_allgather(nrecevs, 1, mpi_in, info(:, iband), 1, mpi_in, mpi_cmw, ierr)
 #else
-         info(1, ib)= KCube3D_left(ib)%Nk_current
+         info(1, iband)= KCube3D_left(iband)%Nk_current
 #endif
       enddo
 
@@ -305,171 +308,171 @@
       !> An array for mpi_allgatherv
       allocate(Displs(num_cpu+1, Nband_Fermi_Level))
       Displs= 0
-      do ib=1, Nband_Fermi_Level
-         Displs(1, ib)=0
+      do iband=1, Nband_Fermi_Level
+         Displs(1, iband)=0
          do i=2, num_cpu+1
-            Displs(i, ib)=Displs(i-1, ib)+ info(i-1, ib)
+            Displs(i, iband)=Displs(i-1, iband)+ info(i-1, iband)
          enddo
-      enddo ! ib
+      enddo ! iband
 #if defined (MPI)
      call mpi_barrier(mpi_cmw, ierr)
 #endif
 
       !> put all the kpoints left together
-      do ib=1, Nband_Fermi_Level
-         allocate(KCube3D_left(ib)%IKleft_array(KCube3D_left(ib)%Nk_total))
-         allocate(KCube3D_left(ib)%Ek_total(KCube3D_left(ib)%Nk_total))
-         allocate(KCube3D_left(ib)%vx_total(KCube3D_left(ib)%Nk_total))
-         allocate(KCube3D_left(ib)%vy_total(KCube3D_left(ib)%Nk_total))
-         allocate(KCube3D_left(ib)%vz_total(KCube3D_left(ib)%Nk_total))
-         allocate(KCube3D_left(ib)%weight_k(KCube3D_left(ib)%Nk_total))
-         KCube3D_left(ib)%IKleft_array = 0
-         KCube3D_left(ib)%Ek_total= 0d0
-         KCube3D_left(ib)%vx_total= 0d0
-         KCube3D_left(ib)%vy_total= 0d0
-         KCube3D_left(ib)%vz_total= 0d0
-         KCube3D_left(ib)%weight_k= 0d0
-      enddo  ! ib
+      do iband=1, Nband_Fermi_Level
+         allocate(KCube3D_left(iband)%IKleft_array(KCube3D_left(iband)%Nk_total))
+         allocate(KCube3D_left(iband)%Ek_total(KCube3D_left(iband)%Nk_total))
+         allocate(KCube3D_left(iband)%vx_total(KCube3D_left(iband)%Nk_total))
+         allocate(KCube3D_left(iband)%vy_total(KCube3D_left(iband)%Nk_total))
+         allocate(KCube3D_left(iband)%vz_total(KCube3D_left(iband)%Nk_total))
+         allocate(KCube3D_left(iband)%weight_k(KCube3D_left(iband)%Nk_total))
+         KCube3D_left(iband)%IKleft_array = 0
+         KCube3D_left(iband)%Ek_total= 0d0
+         KCube3D_left(iband)%vx_total= 0d0
+         KCube3D_left(iband)%vy_total= 0d0
+         KCube3D_left(iband)%vz_total= 0d0
+         KCube3D_left(iband)%weight_k= 0d0
+      enddo  ! iband
      !> gather Enk and velocity 
 #if defined (MPI)
-      do ib=1, Nband_Fermi_Level
-        !nrecevs= KCube3D_left(ib)%Nk_end-KCube3D_left(ib)%Nk_start+ 1
-         nrecevs= KCube3D_left(ib)%Nk_current
+      do iband=1, Nband_Fermi_Level
+        !nrecevs= KCube3D_left(iband)%Nk_end-KCube3D_left(iband)%Nk_start+ 1
+         nrecevs= KCube3D_left(iband)%Nk_current
          if (nrecevs<0) nrecevs= 0
-         call mpi_allgatherv(KCube3D_left(ib)%ik_array, nrecevs, &
-                             mpi_in, KCube3D_left(ib)%IKleft_array, &
-                             info(:, ib), Displs(:, ib), mpi_in, mpi_cmw, ierr)
-         call mpi_allgatherv(KCube3D_left(ib)%Ek_local, nrecevs, &
-                             mpi_dp, KCube3D_left(ib)%Ek_total, &
-                             info(:, ib), Displs(:, ib), mpi_dp, mpi_cmw, ierr)
-         call mpi_allgatherv(KCube3D_left(ib)%vx_local, nrecevs, &
-                             mpi_dp, KCube3D_left(ib)%vx_total, &
-                             info(:, ib), Displs(:, ib), mpi_dp, mpi_cmw, ierr)
-         call mpi_allgatherv(KCube3D_left(ib)%vy_local, nrecevs, &
-                             mpi_dp, KCube3D_left(ib)%vy_total, &
-                             info(:, ib), Displs(:, ib), mpi_dp, mpi_cmw, ierr)
-         call mpi_allgatherv(KCube3D_left(ib)%vz_local, nrecevs, &
-                             mpi_dp, KCube3D_left(ib)%vz_total, &
-                             info(:, ib), Displs(:, ib), mpi_dp, mpi_cmw, ierr)
-         call mpi_allgatherv(KCube3D_left(ib)%weight_k_local, nrecevs, &
-                             mpi_dp, KCube3D_left(ib)%weight_k, &
-                             info(:, ib), Displs(:, ib), mpi_dp, mpi_cmw, ierr)
-      enddo ! ib
+         call mpi_allgatherv(KCube3D_left(iband)%ik_array, nrecevs, &
+                             mpi_in, KCube3D_left(iband)%IKleft_array, &
+                             info(:, iband), Displs(:, iband), mpi_in, mpi_cmw, ierr)
+         call mpi_allgatherv(KCube3D_left(iband)%Ek_local, nrecevs, &
+                             mpi_dp, KCube3D_left(iband)%Ek_total, &
+                             info(:, iband), Displs(:, iband), mpi_dp, mpi_cmw, ierr)
+         call mpi_allgatherv(KCube3D_left(iband)%vx_local, nrecevs, &
+                             mpi_dp, KCube3D_left(iband)%vx_total, &
+                             info(:, iband), Displs(:, iband), mpi_dp, mpi_cmw, ierr)
+         call mpi_allgatherv(KCube3D_left(iband)%vy_local, nrecevs, &
+                             mpi_dp, KCube3D_left(iband)%vy_total, &
+                             info(:, iband), Displs(:, iband), mpi_dp, mpi_cmw, ierr)
+         call mpi_allgatherv(KCube3D_left(iband)%vz_local, nrecevs, &
+                             mpi_dp, KCube3D_left(iband)%vz_total, &
+                             info(:, iband), Displs(:, iband), mpi_dp, mpi_cmw, ierr)
+         call mpi_allgatherv(KCube3D_left(iband)%weight_k_local, nrecevs, &
+                             mpi_dp, KCube3D_left(iband)%weight_k, &
+                             info(:, iband), Displs(:, iband), mpi_dp, mpi_cmw, ierr)
+      enddo ! iband
 #else
-      do ib=1, Nband_Fermi_Level
-         KCube3D_left(ib)%IKleft_array= KCube3D_left(ib)%ik_array
-         KCube3D_left(ib)%Ek_total= KCube3D_left(ib)%Ek_local
-         KCube3D_left(ib)%vx_total= KCube3D_left(ib)%vx_local
-         KCube3D_left(ib)%vy_total= KCube3D_left(ib)%vy_local
-         KCube3D_left(ib)%vz_total= KCube3D_left(ib)%vz_local
-         KCube3D_left(ib)%weight_k= KCube3D_left(ib)%weight_k_local
-      enddo ! ib
+      do iband=1, Nband_Fermi_Level
+         KCube3D_left(iband)%IKleft_array= KCube3D_left(iband)%ik_array
+         KCube3D_left(iband)%Ek_total= KCube3D_left(iband)%Ek_local
+         KCube3D_left(iband)%vx_total= KCube3D_left(iband)%vx_local
+         KCube3D_left(iband)%vy_total= KCube3D_left(iband)%vy_local
+         KCube3D_left(iband)%vz_total= KCube3D_left(iband)%vz_local
+         KCube3D_left(iband)%weight_k= KCube3D_left(iband)%weight_k_local
+      enddo ! iband
 #endif
 
       !> redistribute all those k points into different cpus
       if (cpuid.eq.0) then
          write(stdout, '(a)')' '
          write(stdout, '(a, i10, a)')' There are ', KCube3D_total%Nk_total, ' k points generated by the input files' 
-         do ib= 1, Nband_Fermi_Level
-            write(stdout, '(a, i10, a, i10)')' However there are only ', KCube3D_left(ib)%Nk_total, &
-               ' k points contribute to the conductance calculations for band ', bands_fermi_level(ib)
+         do iband= 1, Nband_Fermi_Level
+            write(stdout, '(a, i10, a, i10)')' However there are only ', KCube3D_left(iband)%Nk_total, &
+               ' k points contribute to the conductance calculations for band ', bands_fermi_level(iband)
          enddo
       endif
 
 
       !> redistribute the left kpoints into different processors
       !> for different bands, the number of left kpoints is different.
-      do ib= 1, Nband_Fermi_Level
-         knv3_left= KCube3D_left(ib)%Nk_total
+      do iband= 1, Nband_Fermi_Level
+         knv3_left= KCube3D_left(iband)%Nk_total
          knv3_left_mod= mod(knv3_left, num_cpu)
          if (knv3_left_mod==0) then  !> perfect divided
-            KCube3D_left(ib)%Nk_current= knv3_left/num_cpu
-            KCube3D_left(ib)%Nk_start=1+ knv3_left*cpuid/num_cpu
-            KCube3D_left(ib)%Nk_end  =(1+cpuid)*knv3_left/num_cpu
+            KCube3D_left(iband)%Nk_current= knv3_left/num_cpu
+            KCube3D_left(iband)%Nk_start=1+ knv3_left*cpuid/num_cpu
+            KCube3D_left(iband)%Nk_end  =(1+cpuid)*knv3_left/num_cpu
          else if (knv3_left/num_cpu==0) then    !> Number of MPI threads is large than knv3_left
-            KCube3D_left(ib)%Nk_current= 1 !> one k piont per MPI thread
-            KCube3D_left(ib)%Nk_start= cpuid+ 1 !> one k piont per MPI thread
-            KCube3D_left(ib)%Nk_end  = cpuid+ 1
+            KCube3D_left(iband)%Nk_current= 1 !> one k piont per MPI thread
+            KCube3D_left(iband)%Nk_start= cpuid+ 1 !> one k piont per MPI thread
+            KCube3D_left(iband)%Nk_end  = cpuid+ 1
             if (cpuid+1 > knv3_left) then
-               KCube3D_left(ib)%Nk_start= 1
-               KCube3D_left(ib)%Nk_end  = 0
+               KCube3D_left(iband)%Nk_start= 1
+               KCube3D_left(iband)%Nk_end  = 0
             endif
          else
-            KCube3D_left(ib)%Nk_current= knv3_left/num_cpu+ 1
+            KCube3D_left(iband)%Nk_current= knv3_left/num_cpu+ 1
             if (cpuid< knv3_left_mod) then
-               KCube3D_left(ib)%Nk_start= 1+ cpuid*KCube3D_left(ib)%Nk_current
-               KCube3D_left(ib)%Nk_end  = (1+cpuid)*KCube3D_left(ib)%Nk_current
+               KCube3D_left(iband)%Nk_start= 1+ cpuid*KCube3D_left(iband)%Nk_current
+               KCube3D_left(iband)%Nk_end  = (1+cpuid)*KCube3D_left(iband)%Nk_current
             else
-               KCube3D_left(ib)%Nk_start= knv3_left_mod*KCube3D_left(ib)%Nk_current+ &
-                  (cpuid-knv3_left_mod)*(KCube3D_left(ib)%Nk_current-1)+1
-               KCube3D_left(ib)%Nk_end  = knv3_left_mod*KCube3D_left(ib)%Nk_current+ &
-                  (cpuid-knv3_left_mod+1)*(KCube3D_left(ib)%Nk_current-1)
+               KCube3D_left(iband)%Nk_start= knv3_left_mod*KCube3D_left(iband)%Nk_current+ &
+                  (cpuid-knv3_left_mod)*(KCube3D_left(iband)%Nk_current-1)+1
+               KCube3D_left(iband)%Nk_end  = knv3_left_mod*KCube3D_left(iband)%Nk_current+ &
+                  (cpuid-knv3_left_mod+1)*(KCube3D_left(iband)%Nk_current-1)
             endif
          endif
 
 
-         allocate(KCube3D_left(ib)%k_direct(3, KCube3D_left(ib)%Nk_start:KCube3D_left(ib)%Nk_end))
+         allocate(KCube3D_left(iband)%k_direct(3, KCube3D_left(iband)%Nk_start:KCube3D_left(iband)%Nk_end))
    
-         do ik= KCube3D_left(ib)%Nk_start, KCube3D_left(ib)%Nk_end
-            i= KCube3D_left(ib)%IKleft_array(ik)
+         do ik= KCube3D_left(iband)%Nk_start, KCube3D_left(iband)%Nk_end
+            i= KCube3D_left(iband)%IKleft_array(ik)
             ik1= (i-1)/(Nk2*Nk3)+1
             ik2= ((i-1-(ik1-1)*Nk2*Nk3)/Nk3)+1
             ik3= (i-(ik2-1)*Nk3- (ik1-1)*Nk2*Nk3)
-            KCube3D_left(ib)%k_direct(1, ik)= (ik1-1)/dble(Nk1) 
-            KCube3D_left(ib)%k_direct(2, ik)= (ik2-1)/dble(Nk2) 
-            KCube3D_left(ib)%k_direct(3, ik)= (ik3-1)/dble(Nk3) 
+            KCube3D_left(iband)%k_direct(1, ik)= (ik1-1)/dble(Nk1) 
+            KCube3D_left(iband)%k_direct(2, ik)= (ik2-1)/dble(Nk2) 
+            KCube3D_left(iband)%k_direct(3, ik)= (ik3-1)/dble(Nk3) 
          enddo ! ik
          
          !> allocate array to store the conductivity for eack k point  
-         allocate( sigma_iband_k(ib)%sigma_ohe_tensor_k(9, NBTau, OmegaNum, NumT, KCube3D_left(ib)%Nk_total), stat= ierr)
-         if (ierr>0) stop ' Error : not enough memory'
-         allocate( sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(9, NBTau, OmegaNum, NumT, KCube3D_left(ib)%Nk_current), stat= ierr)
-         if (ierr>0) stop ' Error : not enough memory'
-         allocate( sigma_iband_k(ib)%sigma_ohe_tensor_kz(9, NBTau, OmegaNum, NumT, Nk3))
-         allocate( sigma_iband_k(ib)%time_cost(KCube3D_left(ib)%Nk_total))
-         allocate( sigma_iband_k(ib)%time_cost_mpi(KCube3D_left(ib)%Nk_total))
-         sigma_iband_k(ib)%time_cost= 0d0
-         sigma_iband_k(ib)%time_cost_mpi= 0d0
-         sigma_iband_k(ib)%sigma_ohe_tensor_k= 0d0
-         sigma_iband_k(ib)%sigma_ohe_tensor_kz= 0d0
-         sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi= 0d0
-      enddo  ! ib=1, Nband_Fermi_Level
+         allocate( sigma_iband_k(iband)%sigma_ohe_tensor_k(9, NBTau, OmegaNum, NumT, KCube3D_left(iband)%Nk_total), stat= ierr)
+         if (ierr>0) stop ' Error : no enough memory'
+         allocate( sigma_iband_k(iband)%sigma_ohe_tensor_k_mpi(9, NBTau, OmegaNum, NumT, KCube3D_left(iband)%Nk_current), stat= ierr)
+         if (ierr>0) stop ' Error : no enough memory'
+         allocate( sigma_iband_k(iband)%sigma_ohe_tensor_kz(9, NBTau, OmegaNum, NumT, Nk3))
+         allocate( sigma_iband_k(iband)%time_cost(KCube3D_left(iband)%Nk_total))
+         allocate( sigma_iband_k(iband)%time_cost_mpi(KCube3D_left(iband)%Nk_total))
+         sigma_iband_k(iband)%time_cost= 0d0
+         sigma_iband_k(iband)%time_cost_mpi= 0d0
+         sigma_iband_k(iband)%sigma_ohe_tensor_k= 0d0
+         sigma_iband_k(iband)%sigma_ohe_tensor_kz= 0d0
+         sigma_iband_k(iband)%sigma_ohe_tensor_k_mpi= 0d0
+      enddo  ! iband=1, Nband_Fermi_Level
 
 
       !> gather the number of receive buffs left into a array info
       info= -1
-      do ib= 1, Nband_Fermi_Level
-         nrecevs= (KCube3D_left(ib)%Nk_end-KCube3D_left(ib)%Nk_start+1)*9*NBTau*OmegaNum*NumT
+      do iband= 1, Nband_Fermi_Level
+         nrecevs= (KCube3D_left(iband)%Nk_end-KCube3D_left(iband)%Nk_start+1)*9*NBTau*OmegaNum*NumT
          if (nrecevs<0) nrecevs=0
 #if defined (MPI)
-         call mpi_allgather(nrecevs, 1, mpi_in, info(:, ib), 1, mpi_in, mpi_cmw, ierr)
+         call mpi_allgather(nrecevs, 1, mpi_in, info(:, iband), 1, mpi_in, mpi_cmw, ierr)
 #else
-         info(1, ib)= nrecevs
+         info(1, iband)= nrecevs
 #endif
       enddo
 
       if (cpuid.eq.0) write(stdout, '(a, 10i8)') ' '
-      do ib=1, Nband_Fermi_Level
-         if (cpuid.eq.0) write(stdout, '(a, i7)')'>> Number of k points at different CPUs at band', ib
-         if (cpuid.eq.0) write(stdout, '(10i8)')info(:, ib)/9/NBTau/OmegaNum/NumT
+      do iband=1, Nband_Fermi_Level
+         if (cpuid.eq.0) write(stdout, '(a, i7)')'>> Number of k points at different CPUs at band', iband
+         if (cpuid.eq.0) write(stdout, '(10i8)')info(:, iband)/9/NBTau/OmegaNum/NumT
       enddo
       if (cpuid.eq.0) write(stdout, '(a, 10i8)') ' '
 
 
       !> An array for mpi_allgatherv
       Displs= 0
-      do ib=1, Nband_Fermi_Level
-         Displs(1, ib)=0
+      do iband=1, Nband_Fermi_Level
+         Displs(1, iband)=0
          do i=2, num_cpu+1
-            Displs(i, ib)=Displs(i-1, ib)+ info(i-1, ib)
+            Displs(i, iband)=Displs(i-1, iband)+ info(i-1, iband)
          enddo
-      enddo ! ib
+      enddo ! iband
 
-      do ib=1, Nband_Fermi_Level
-         allocate(klist_iband(ib)%klist_rkfs(3, NSlice_Btau))
-         allocate(klist_iband(ib)%velocity_k(3, NSlice_Btau))
-         klist_iband(ib)%klist_rkfs= 0d0
-         klist_iband(ib)%velocity_k= 0d0
+      do iband=1, Nband_Fermi_Level
+         allocate(klist_iband(iband)%klist_rkfs(3, NSlice_Btau))
+         allocate(klist_iband(iband)%velocity_k(3, NSlice_Btau))
+         klist_iband(iband)%klist_rkfs= 0d0
+         klist_iband(iband)%velocity_k= 0d0
       enddo
 
       !> a temp array used in RKFS
@@ -481,25 +484,291 @@
       time_start= 0d0
       time_end  = 0d0
 
-      do ib= 1, Nband_Fermi_Level
+      do iband= 1, Nband_Fermi_Level
          call now(time_start0)
       
          !> dim=(Nk_start: Nk_end, NumT, OmegaNum))
-         allocate(klist_iband(ib)%minusdfde(OmegaNum, NumT))
-         do ik= KCube3D_left(ib)%Nk_start, KCube3D_left(ib)%Nk_end
+         allocate(klist_iband(iband)%minusdfde(OmegaNum, NumT))
+         call cal_sigma_iband_k
+
+#if defined (MPI)
+         call mpi_allreduce(sigma_iband_k(iband)%time_cost_mpi, sigma_iband_k(iband)%time_cost, &
+                            size(sigma_iband_k(iband)%time_cost), &
+                            mpi_dp,mpi_sum,mpi_cmw,ierr)
+         nrecevs= (KCube3D_left(iband)%Nk_end-KCube3D_left(iband)%Nk_start+1)*9*NBTau*OmegaNum*NumT
+         if (nrecevs<0) nrecevs=0
+         call mpi_allgatherv(sigma_iband_k(iband)%sigma_ohe_tensor_k_mpi, nrecevs, &
+                                mpi_dp, sigma_iband_k(iband)%sigma_ohe_tensor_k, &
+                                info(:, iband), Displs(:, iband), mpi_dp, mpi_cmw, ierr)
+         if (ierr>0) then
+            write(stdout, *)'>>>Error happends in mpi_allgatherv at cpuid', cpuid, ' ierr=', ierr
+            stop
+         endif
+
+#else
+         sigma_iband_k(iband)%sigma_ohe_tensor_k= sigma_iband_k(iband)%sigma_ohe_tensor_k_mpi
+#endif
+
+        !call mpi_barrier(mpi_cmw, ierr)
+        !call now(time_2)
+        !if (cpuid.eq.0) write(stdout, *) 'after mpi_allgatherv in sigma_ohe_calc', time_2-time_1, 's'
+
+         if (cpuid.eq.0) then
+            write(stdout, '(a)')' '
+            write(stdout, '(a, i10)')'>> Time cost for each k point at iband ', iband
+            write(stdout, '(10f16.2)')(sigma_iband_k(iband)%time_cost(ik), ik= 1, KCube3D_left(iband)%Nk_total)
+            write(stdout, '(a)')' '
+         endif
+   
+   
+         !> sum over all the kpoints to get the band dependent conductivity/tau 
+         do ikt=1, NumT
+            do ie=1, OmegaNum
+               do ibtau=1, NBTau
+                  do i=1, 9
+                     sigma_ohe_tensor(i, ibtau, ie, ikt, iband)=  &
+                     sum(sigma_iband_k(iband)%sigma_ohe_tensor_k(i, ibtau, ie, ikt, :))
+                !print *, i, ibtau, ie, ikt, sigma_ohe_tensor(i, ibtau, ie, ikt, iband)
+                !pause
+                  enddo ! i
+               enddo ! ibtau
+            enddo ! ie
+         enddo ! ikt
+   
+         call now(time_end0)
+         if (cpuid.eq.0) write(stdout, '(a, i6, a, f16.2, a)')'>> Time cost for calculate MR at iband=', iband, &
+         'is ', time_end0- time_start0, ' s'
+   
+         !> In the end, we start to care about the units of the conductivity/tau
+         !> change from the Hatree Atomic units to SI units
+         !> the conductivity/tau is in units of Ohm^-1*m^-1*s^-1
+         !> 
+         coeff= Echarge**2/hbar/Bohr_radius/Origin_cell%CellVolume/kCubeVolume*Origin_cell%ReciprocalCellVolume
+         coeff= coeff/Time_atomic 
+         sigma_ohe_tensor(:, :, :, :, iband)= sigma_ohe_tensor(:, :, :, :, iband)*coeff
+   
+         !calculate sigma_kz
+         do ik3=1, Nk3
+            do ik= 1, KCube3D_left(iband)%Nk_total
+               i= KCube3D_left(iband)%IKleft_array(ik)
+               ik1= (i-1)/(Nk2*Nk3)+1
+               ik2= ((i-1-(ik1-1)*Nk2*Nk3)/Nk3)+1
+               if (ik3== (i-(ik2-1)*Nk3- (ik1-1)*Nk2*Nk3)) then
+                  do  ikt=1, NumT
+                     do ie=1, OmegaNum
+                        do ibtau=1, NBTau
+                           do ix=1, 9
+                              sigma_iband_k(iband)%sigma_ohe_tensor_kz(ix, ibtau, ie, ikt, ik3)= &
+                              sigma_iband_k(iband)%sigma_ohe_tensor_kz(ix, ibtau, ie, ikt, ik3)+ &
+                              sigma_iband_k(iband)%sigma_ohe_tensor_k (ix, ibtau, ie, ikt, ik )   
+                           enddo ! ix
+                        enddo ! ibtau
+                     enddo ! ie
+                  enddo ! ikt
+               endif
+            enddo ! ik
+         enddo ! ik3
+
+         sigma_iband_k(iband)%sigma_ohe_tensor_kz= &
+         sigma_iband_k(iband)%sigma_ohe_tensor_kz*coeff
+   
+        !allocate(myfileindex(Nband_Fermi_Level))
+        !!> file index for different bands
+        !do iband=1, Nband_Fermi_Level
+        !   outfileindex= outfileindex+ 1
+        !   myfileindex(iband)= outfileindex
+        !enddo
+ 
+         do ikt=1, NumT
+            do ie=1, OmegaNum
+            outfileindex= outfileindex+ 1
+            KBT= KBT_array(ikt)/8.6173324E-5/eV2Hartree
+            write(tname, '(f12.2)')KBT
+            write(muname, '(f12.2)')mu_array(ie)/eV2Hartree
+            if (cpuid.eq.0) then
+               write(bandname, '(i10)')bands_fermi_level(iband)
+               write(sigmafilename, '(7a)')'sigma_kz_band_', trim(adjustl(bandname)),'_mu_',&
+                  trim(adjustl(muname)),'eV_T_', trim(adjustl(tname)), 'K.dat'
+               open(unit=outfileindex, file=sigmafilename)
+               write(outfileindex, '(a20, i5, 2(a, f16.4, a))')'# sigma_k at band ', & 
+                  bands_fermi_level(iband), ' temperature at ', KBT, ' K', ' chemical potential at ', mu_array(ie), ' eV'
+               write(outfileindex, '("#",a12,20a16)')'ik3', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
+            endif
+   
+            if (cpuid.eq.0) then
+               do ibtau=1, NBTau
+                  !> write out the conductivity/tau into file
+                  write(outfileindex, '(a6, f16.8, a12, f16.8)')'# Btau', &
+                     BTau_array(ibtau)*Magneticfluxdensity_atomic/Relaxation_Time_Tau, &
+                     ' omega*tau', BTau_array(ibtau)*Magneticfluxdensity_atomic/Relaxation_Time_Tau*0.175874356d0
+                  write(outfileindex, '("#",a12,20a16)')'ik3', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
+                  do ik3=1, Nk3
+                     write(outfileindex, '(i6,20E16.6)')ik3, sigma_iband_k(iband)%sigma_ohe_tensor_kz(:, ibtau, ie, ikt, ik3)
+                  enddo
+               enddo ! ibtau
+            endif ! cpuid=0
+            
+            if (cpuid.eq.0) then
+               close(outfileindex)
+            endif ! cpuid=0
+            
+#if defined (MPI)
+            call mpi_barrier(mpi_cmw, ierr)
+#endif
+
+            outfileindex= outfileindex+ 1
+            if (cpuid.eq.0) then
+               write(bandname, '(i10)')bands_fermi_level(iband)
+               write(sigmafilename, '(7a)')'sigma_band_', trim(adjustl(bandname)),'_mu_',&
+                  trim(adjustl(muname)),'eV_T_', trim(adjustl(tname)), 'K.dat'
+               open(unit=outfileindex, file=sigmafilename)
+               write(outfileindex, '(a40, i5, 2(a, f16.4, a))')'# Conductivity tensor/tau (in unit of (\Omega*m*s)^-1) for band  ', & 
+                  bands_fermi_level(iband), ' temperature at ', KBT, ' K', ' chemical potential at ', mu_array(ie), ' eV'
+               write(outfileindex, '("#",20a16)')'BTau (T.ps)', 'OmegaTau (eV.ps)', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
+               !> write out the conductivity/tau into file
+               do i=1, NBTau
+                  write(outfileindex, '(20E16.6)') &
+                     BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau, &
+                     BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau*0.175874356d0, &
+                     sigma_ohe_tensor(:, i, ie, ikt, iband)
+               enddo ! i, NBTau
+               close(outfileindex)
+            endif ! cpuid=0
+            
+            outfileindex= outfileindex+ 1
+            if (cpuid.eq.0) then
+               write(bandname, '(i10)')bands_fermi_level(iband)
+               write(sigmafilename, '(7a)')'rho_band_', trim(adjustl(bandname)),'_mu_',&
+                  trim(adjustl(muname)),'eV_T_', trim(adjustl(tname)), 'K.dat'
+               open(unit=outfileindex, file=sigmafilename)
+               write(outfileindex, '(a, i5, 2(a, f16.4, a))')'# \tau*\rho  (in unit of \Omega*m*s)is the inverse of Conductivity tensor \sigma/\tau for band  ', & 
+                  bands_fermi_level(iband), ' temperature at ', KBT, ' K', ' chemical potential at ', mu_array(ie), ' eV'
+               write(outfileindex, '("#",20a16)')'BTau (T.ps)', 'OmegaTau (eV.ps)', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
+               
+               !> write out the inverse of conductivity/tau into file
+               do i=1, NBTau
+                  rho(1, 1:3)=sigma_ohe_tensor(1:3, i, ie, ikt, iband)
+                  rho(2, 1:3)=sigma_ohe_tensor(4:6, i, ie, ikt, iband)
+                  rho(3, 1:3)=sigma_ohe_tensor(7:9, i, ie, ikt, iband)
+                  if (abs(det3(rho))>eps6) then
+                     call inv_r(3, rho)
+                     write(outfileindex, '(20E16.6)')& 
+                        BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau, &
+                        BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau*0.175874356d0, &
+                        rho(1, 1:3), rho(2, 1:3), rho(3, 1:3)
+                  else
+                     write(outfileindex, '(a)')'# error: sigma is zero since no k points contribute to the calculations of MR'
+                  endif
+               enddo ! i, NBTau
+               close(outfileindex)
+            endif ! cpuid=0
+ 
+#if defined (MPI)
+            call mpi_barrier(mpi_cmw, ierr)
+#endif
+         enddo  ! ie=1, OmegaNum
+         enddo  ! ikt=1, numT
+
+      enddo ! iband=1, Nband_Fermi_Level
+
+      !> write out the total conductivity with the same relaxation time for all bands
+      outfileindex= outfileindex+ 1
+      if (cpuid.eq.0) then
+         do ikt=1, NumT
+            do ie=1, OmegaNum
+               KBT= KBT_array(ikt)/8.6173324E-5/eV2Hartree
+               write(tname, '(f12.2)')KBT
+               write(muname, '(f12.2)')mu_array(ie)/eV2Hartree
+               write(sigmafilename, '(7a)')'sigma_total_mu_',&
+                  trim(adjustl(muname)),'eV_T_', trim(adjustl(tname)), 'K.dat'
+               open(unit=outfileindex, file=sigmafilename)
+               write(outfileindex, '(a)')'# \sigma/\tau with unit (Ohm*m*s)^-1 is the summation of all bands \sum_n\sigma_n/\tau_n ' 
+               write(outfileindex, '(a)')'# relaxation time \tau_n=\tau is the same for all bands. '
+               write(outfileindex, '(2a, 2(f16.4, a))')'# ', & 
+                  ' temperature at ', KBT, ' K with chemical potential at ', mu_array(ie)/eV2Hartree, ' eV'
+               write(outfileindex, '("#",20a16)')'BTau (T.ps)', 'OmegaTau (eV.ps)', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
+               
+               !> write out the inverse of conductivity/tau into file
+               !> the name of rho is meaningless here, just a temp variable
+               do i=1, NBTau
+                  rho(1, 1:3)=sum(sigma_ohe_tensor(1:3, i, ie, ikt, :), dim=2)
+                  rho(2, 1:3)=sum(sigma_ohe_tensor(4:6, i, ie, ikt, :), dim=2)
+                  rho(3, 1:3)=sum(sigma_ohe_tensor(7:9, i, ie, ikt, :), dim=2)
+                  write(outfileindex, '(20E16.6)')&
+                     BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau, &
+                     BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau*0.175874356d0, &
+                     rho(1, 1:3), rho(2, 1:3), rho(3, 1:3)
+               enddo ! i, NBTau
+            enddo  ! ie=1, OmegaNum
+         enddo  ! ikt=1, numT
+         close(outfileindex)
+      endif ! cpuid=0
+       
+            
+#if defined (MPI)
+            call mpi_barrier(mpi_cmw, ierr)
+#endif
+
+      !> write out the total resistivity with the same relaxation time for all bands
+      outfileindex= outfileindex+ 1
+      if (cpuid.eq.0) then
+         do ikt=1, NumT
+            do ie=1, OmegaNum
+               KBT= KBT_array(ikt)/8.6173324E-5/eV2Hartree
+               write(tname, '(f12.2)')KBT
+               write(muname, '(f12.2)')mu_array(ie)/eV2Hartree
+               write(sigmafilename, '(7a)')'rho_total_mu_',&
+                  trim(adjustl(muname)),'eV_T_', trim(adjustl(tname)), 'K.dat'
+               open(unit=outfileindex, file=sigmafilename)
+               write(outfileindex, '(a)')'# \tau*\rho with unit (Ohm*m*s) is the inverse of Conductivity tensor \sum_n\sigma_n/\tau ' 
+               write(outfileindex, '(a)')'# relaxation time \tau_n=\tau is the same for all bands. '
+               write(outfileindex, '(2a, 2(f16.4, a))')'# ', & 
+                  ' temperature at ', KBT, ' K with chemical potential at ', mu_array(ie)/eV2Hartree, ' eV'
+               write(outfileindex, '("#",20a16)')'BTau (T.ps)', 'OmegaTau (eV.ps)', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
+               
+               !> write out the inverse of conductivity/tau into file
+               do i=1, NBTau
+                  rho(1, 1:3)=sum(sigma_ohe_tensor(1:3, i, ie, ikt, :), dim=2)
+                  rho(2, 1:3)=sum(sigma_ohe_tensor(4:6, i, ie, ikt, :), dim=2)
+                  rho(3, 1:3)=sum(sigma_ohe_tensor(7:9, i, ie, ikt, :), dim=2)
+                  if (abs(det3(rho))>eps6) then
+                     call inv_r(3, rho)
+                     write(outfileindex, '(20E16.6)')&
+                        BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau, &
+                        BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau*0.175874356d0, &
+                        rho(1, 1:3), rho(2, 1:3), rho(3, 1:3)
+                  else
+                     write(outfileindex, '(a)')'# error: sigma is zero since no k points contribute to the calculations of MR'
+                  endif
+               enddo ! i, NBTau
+            enddo  ! ie=1, OmegaNum
+         enddo  ! ikt=1, numT
+         close(outfileindex)
+      endif ! cpuid=0
+       
+
+#if defined (MPI)
+      call mpi_barrier(mpi_cmw, ierr)
+#endif
+
+      contains
+   
+      subroutine cal_sigma_iband_k
+   
+         do ik= KCube3D_left(iband)%Nk_start, KCube3D_left(iband)%Nk_end
             if (cpuid.eq.0) &
                write(stdout, '(a, i8, a, i18, "   /", i18, a, f10.3, "s", a, f10.3, "s")') &
-               'In sigma_OHE iband', ib, ' ik/NK', &
-               ik-KCube3D_left(ib)%Nk_start+1,KCube3D_left(ib)%Nk_current, &
+               'In sigma_OHE iband', iband, ' ik/NK', &
+               ik-KCube3D_left(iband)%Nk_start+1,KCube3D_left(iband)%Nk_current, &
                ' time cost', time_end-time_start, &
                ' time left', &
-               (KCube3D_left(ib)%Nk_current+KCube3D_left(ib)%Nk_start-ik)*(time_end-time_start)
-
+               (KCube3D_left(iband)%Nk_current+KCube3D_left(iband)%Nk_start-ik)*(time_end-time_start)
+   
             call now(time_start)
-            EE= KCube3D_left(ib)%Ek_total(ik)
-            v_k(1)= KCube3D_left(ib)%vx_total(ik)
-            v_k(2)= KCube3D_left(ib)%vy_total(ik)
-            v_k(3)= KCube3D_left(ib)%vz_total(ik)
+            EE= KCube3D_left(iband)%Ek_total(ik)
+            v_k(1)= KCube3D_left(iband)%vx_total(ik)
+            v_k(2)= KCube3D_left(iband)%vy_total(ik)
+            v_k(3)= KCube3D_left(iband)%vz_total(ik)
             
             !> calculate df/de for each k point and each band
             do ikt=1, NumT
@@ -507,46 +776,45 @@
                do ie=1, OmegaNum
                   mu= mu_array(ie)
                   call minusdfde_calc_single(EE, KBT, mu,  minusdfde)
-                  klist_iband(ib)%minusdfde(ie, ikt)= minusdfde
+                  klist_iband(iband)%minusdfde(ie, ikt)= minusdfde
                enddo ! ie
             enddo ! ikt
-
-
+   
+   
             !> start to get the evolution of k points under magnetic field using Runge-Kutta method
-            k_start= KCube3D_left(ib)%k_direct(:, ik)
+            k_start= KCube3D_left(iband)%k_direct(:, ik)
             kout= 0d0
             Btau_start= 0d0
-
+   
             !> we get the kpath by Btau_final=-30*BTauMax, but we only use half of them
             Btau_final= -30d0*BTauMax   !< -15 means that we can reach the accuracy as to exp(-15d0)
-
+   
             !> Runge-Kutta only applied with BTauMax>0
             !> if the magnetic field is zero. 
             if (BTauMax>eps3) then
-               call RKF45_pack(bands_fermi_level(ib),  &
-                    NSlice_Btau, k_start, Btau_start, Btau_final, kout, icycle, fail)
                NSlice_Btau_inuse= NSlice_Btau
+               call RKF45_pack(magnetic_field, bands_fermi_level(iband),  &
+                    NSlice_Btau_inuse, k_start, Btau_start, Btau_final, kout, icycle, fail)
             else
-               NSlice_Btau_inuse = 1
                do ibtau=1, NSlice_Btau
                   kout(:, ibtau)= k_start(:)
                enddo
                NSlice_Btau_inuse = NSlice_Btau
             endif
-
+   
             if (NSlice_Btau_inuse==1) then
-              !write(stdout, '(a, i6, a, i4, a, i6, a, 3f12.6)')&
-              !   '>>> NSlice_Btau_inuse=1 at cpuid=', cpuid, ' ib=', bands_fermi_level(ib), ' ik', ik, ' k', k_start
+               write(stdout, '(a, i6, a, i4, a, i6, a, 3f12.6)')&
+                  '>>> NSlice_Btau_inuse=1 at cpuid=', cpuid, ' iband=', iband, ' ik', ik, ' k', k_start
             endif
-
+   
             !> we omit the 
             if (fail) then
                write(stdout, '(a, i6, a, i4, a, i6, a, 3f12.6)')&
-                  '>>> Runge-Kutta integration fails at cpuid=', cpuid, ' ib=', bands_fermi_level(ib), ' ik', ik, ' k', k_start
+                  '>>> Runge-Kutta integration fails at cpuid=', cpuid, ' iband=', iband, ' ik', ik, ' k', k_start
                write(stdout, *)' '
                cycle
             endif
-
+   
             if (NSlice_Btau_inuse==1)then
                do ibtau=1, NSlice_Btau
                   kout(:, ibtau)= k_start(:)
@@ -554,24 +822,25 @@
                NSlice_Btau_inuse = NSlice_Btau
             endif
    
-            klist_iband(ib)%klist_rkfs= kout
-
+            klist_iband(iband)%klist_rkfs= kout
+   
             do it= 1, NSlice_Btau_inuse
                k= kout(:, it) 
-               call velocity_calc_iband(bands_fermi_level(ib), k, v_t)
-               klist_iband(ib)%velocity_k(:, it)= v_t
+               call velocity_calc_iband(bands_fermi_level(iband), k, v_t)
+               klist_iband(iband)%velocity_k(:, it)= v_t
             enddo ! integrate over time step
-
-
+   
+   
             !> calculate the conductivity/tau
             do ikt=1, NumT
                KBT= KBT_array(ikt)
                do ie=1, OmegaNum
                   mu= mu_array(ie)
-                  minusdfde= klist_iband(ib)%minusdfde(ie, ikt)
-
+                  minusdfde= klist_iband(iband)%minusdfde(ie, ikt)
+   
                   do ibtau=1, NBTau
                      BTau= BTau_array(ibtau)
+
                      if (NBTau==1)then
                         NSlice_Btau_local= 2
                      else
@@ -582,28 +851,29 @@
                            DeltaBtau= 30d0/2d0/NSlice_Btau_local
                         endif
                      endif
-
-                     do ishift=0, NSlice_Btau_local-1
+   
+                    !do ishift=0, NSlice_Btau_local-1
+                     do ishift=0, 0
                         !> here, velocity is in the cartesian coordinate
                         !> The core of Chamber formular is to get the average of velocity 
                         !> in the relaxation time approximation
-                        v_k= klist_iband(ib)%velocity_k(:, 1+ishift)
+                        v_k= klist_iband(iband)%velocity_k(:, 1+ishift)
                         if (BTau>eps3.and.NSlice_Btau_local>2) then
                            velocity_bar_k= 0d0
                            do it=1, NSlice_Btau_local
                              velocity_bar_k= velocity_bar_k+ &
-                                DeltaBtau*exp(-(it-1d0)*DeltaBtau)*klist_iband(ib)%velocity_k(:, it+ishift)
+                                DeltaBtau*exp(-(it-1d0)*DeltaBtau)*klist_iband(iband)%velocity_k(:, it+ishift)
                            enddo
                            velocity_bar_k= velocity_bar_k &
                            - 0.5d0*DeltaBtau*(exp(-(NSlice_Btau_local-1d0)*DeltaBtau)&
-                           * klist_iband(ib)%velocity_k(:, NSlice_Btau_local+ishift)  &
-                           + klist_iband(ib)%velocity_k(:, 1+ishift))
+                           * klist_iband(iband)%velocity_k(:, NSlice_Btau_local+ishift)  &
+                           + klist_iband(iband)%velocity_k(:, 1+ishift))
                         else
                            velocity_bar_k= v_k
                         endif
        
                         !> calculate the conductivity now
-                        ik_temp= ik - KCube3D_left(ib)%Nk_start+ 1
+                        ik_temp= ik - KCube3D_left(iband)%Nk_start+ 1
                         sigma_symm_t= 0d0
        
                         !> Apply point group operations to the velocities, and average them
@@ -649,941 +919,23 @@
                         enddo
                         enddo
                         enddo
-                        sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(:, ibtau, ie, ikt, ik_temp) = &
-                        sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(:, ibtau, ie, ikt, ik_temp) + &
-                           sigma_symm_t/dble(number_group_operators)*minusdfde*KCube3D_left(ib)%weight_k(ik)/NSlice_Btau_local
-
+                        sigma_iband_k(iband)%sigma_ohe_tensor_k_mpi(:, ibtau, ie, ikt, ik_temp) = &
+                        sigma_iband_k(iband)%sigma_ohe_tensor_k_mpi(:, ibtau, ie, ikt, ik_temp) + &
+                           sigma_symm_t/dble(number_group_operators)*minusdfde*KCube3D_left(iband)%weight_k(ik)
+                          !sigma_symm_t/dble(number_group_operators)*minusdfde*KCube3D_left(iband)%weight_k(ik)/NSlice_Btau_local
+   
                      enddo ! ishift
                   enddo ! ibtau  Btau
                enddo ! ie  mu
             enddo ! ikt KBT
             call now(time_end)
-            sigma_iband_k(ib)%time_cost_mpi(ik)= time_end- time_start
+            sigma_iband_k(iband)%time_cost_mpi(ik)= time_end- time_start
             if (cpuid.eq.0) write(stdout, '(a, f16.2, a)')'>> time cost for this loop is ', time_end- time_start, ' s'
          enddo ! ik  kpoints
-
-
-#if defined (MPI)
-         call mpi_allreduce(sigma_iband_k(ib)%time_cost_mpi, sigma_iband_k(ib)%time_cost, &
-                            size(sigma_iband_k(ib)%time_cost), &
-                            mpi_dp,mpi_sum,mpi_cmw,ierr)
-         nrecevs= (KCube3D_left(ib)%Nk_end-KCube3D_left(ib)%Nk_start+1)*9*NBTau*OmegaNum*NumT
-         if (nrecevs<0) nrecevs=0
-         call mpi_allgatherv(sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi, nrecevs, &
-                                mpi_dp, sigma_iband_k(ib)%sigma_ohe_tensor_k, &
-                                info(:, ib), Displs(:, ib), mpi_dp, mpi_cmw, ierr)
-         if (ierr>0) then
-            write(stdout, *)'>>>Error happends in mpi_allgatherv at cpuid', cpuid, ' ierr=', ierr
-            stop
-         endif
-
-#else
-         sigma_iband_k(ib)%sigma_ohe_tensor_k= sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi
-#endif
-
-        !call mpi_barrier(mpi_cmw, ierr)
-        !call now(time_2)
-        !if (cpuid.eq.0) write(stdout, *) 'after mpi_allgatherv in sigma_ohe_calc', time_2-time_1, 's'
-
-         if (cpuid.eq.0) then
-            write(stdout, '(a)')' '
-            write(stdout, '(a, i10)')'>> Time cost for each k point at iband ', ib
-            write(stdout, '(10f16.2)')(sigma_iband_k(ib)%time_cost(ik), ik= 1, KCube3D_left(ib)%Nk_total)
-            write(stdout, '(a)')' '
-         endif
    
-   
-         !> sum over all the kpoints to get the band dependent conductivity/tau 
-         do ikt=1, NumT
-            do ie=1, OmegaNum
-               do ibtau=1, NBTau
-                  do i=1, 9
-                     sigma_ohe_tensor(i, ibtau, ie, ikt, ib)=  &
-                     sum(sigma_iband_k(ib)%sigma_ohe_tensor_k(i, ibtau, ie, ikt, :))
-                  enddo ! i
-               enddo ! ibtau
-            enddo ! ie
-         enddo ! ikt
-   
-         call now(time_end0)
-         if (cpuid.eq.0) write(stdout, '(a, i6, a, f16.2, a)')'>> Time cost for calculate MR at ib=', ib, &
-         'is ', time_end0- time_start0, ' s'
-   
-         !> In the end, we start to care about the units of the conductivity/tau
-         !> the conductivity/tau is in units of Ohm^-1*m^-1*s^-1
-         !> 
-         coeff= Echarge**3/hbar/hbar*2d0/Origin_cell%CellVolume*1E10/kCubeVolume*Origin_cell%ReciprocalCellVolume
-         sigma_ohe_tensor(:, :, :, :, ib)= sigma_ohe_tensor(:, :, :, :, ib)*coeff
-   
-         sigma_ohe_tensor(:, :, :, :, ib)= sigma_ohe_tensor(:, :, :, :, ib)
-   
-   
-         !calculate sigma_kz
-         do ik3=1, Nk3
-            do ik= 1, KCube3D_left(ib)%Nk_total
-               i= KCube3D_left(ib)%IKleft_array(ik)
-               ik1= (i-1)/(Nk2*Nk3)+1
-               ik2= ((i-1-(ik1-1)*Nk2*Nk3)/Nk3)+1
-               if (ik3== (i-(ik2-1)*Nk3- (ik1-1)*Nk2*Nk3)) then
-                  do  ikt=1, NumT
-                     do ie=1, OmegaNum
-                        do ibtau=1, NBTau
-                           do ix=1, 9
-                              sigma_iband_k(ib)%sigma_ohe_tensor_kz(ix, ibtau, ie, ikt, ik3)= &
-                              sigma_iband_k(ib)%sigma_ohe_tensor_kz(ix, ibtau, ie, ikt, ik3)+ &
-                              sigma_iband_k(ib)%sigma_ohe_tensor_k (ix, ibtau, ie, ikt, ik )   
-                           enddo ! ix
-                        enddo ! ibtau
-                     enddo ! ie
-                  enddo ! ikt
-               endif
-            enddo ! ik
-         enddo ! ik3
-         coeff= Echarge**3/hbar/hbar*2d0/Origin_cell%CellVolume*1E10/kCubeVolume*Origin_cell%ReciprocalCellVolume
-         sigma_iband_k(ib)%sigma_ohe_tensor_kz= &
-         sigma_iband_k(ib)%sigma_ohe_tensor_kz*coeff
-   
-        !allocate(myfileindex(Nband_Fermi_Level))
-        !!> file index for different bands
-        !do ib=1, Nband_Fermi_Level
-        !   outfileindex= outfileindex+ 1
-        !   myfileindex(ib)= outfileindex
-        !enddo
- 
-         do ikt=1, NumT
-            do ie=1, OmegaNum
-            outfileindex= outfileindex+ 1
-            KBT= KBT_array(ikt)/8.6173324E-5/eV2Hartree
-            write(tname, '(f12.2)')KBT
-            write(muname, '(f12.2)')mu_array(ie)
-            if (cpuid.eq.0) then
-               write(bandname, '(i10)')bands_fermi_level(ib)
-               write(sigmafilename, '(7a)')'sigma_kz_band_', trim(adjustl(bandname)),'_mu_',&
-                  trim(adjustl(muname)),'eV_T_', trim(adjustl(tname)), 'K.dat'
-               open(unit=outfileindex, file=sigmafilename)
-               write(outfileindex, '(a20, i5, 2(a, f16.4, a))')'# sigma_k at band ', & 
-                  bands_fermi_level(ib), ' temperature at ', KBT, ' K', ' chemical potential at ', mu_array(ie), ' eV'
-               write(outfileindex, '("#",a12,20a16)')'ik3', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
-            endif
-   
-            if (cpuid.eq.0) then
-               do ibtau=1, NBTau
-                  !> write out the conductivity/tau into file
-                  write(outfileindex, '(a6, f16.8, a12, f16.8)')'# Btau', &
-                     BTau_array(ibtau)*Magneticfluxdensity_atomic/Relaxation_Time_Tau, &
-                     ' omega*tau', BTau_array(ibtau)*Magneticfluxdensity_atomic/Relaxation_Time_Tau*0.175874356d0
-                  write(outfileindex, '("#",a12,20a16)')'ik3', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
-                  do ik3=1, Nk3
-                     write(outfileindex, '(i6,20E16.6)')ik3, sigma_iband_k(ib)%sigma_ohe_tensor_kz(:, ibtau, ie, ikt, ik3)
-                  enddo
-               enddo ! ibtau
-            endif ! cpuid=0
-            
-            if (cpuid.eq.0) then
-               close(outfileindex)
-            endif ! cpuid=0
-            
-#if defined (MPI)
-            call mpi_barrier(mpi_cmw, ierr)
-#endif
+      end subroutine cal_sigma_iband_k
 
-            outfileindex= outfileindex+ 1
-            if (cpuid.eq.0) then
-               write(bandname, '(i10)')bands_fermi_level(ib)
-               write(sigmafilename, '(7a)')'sigma_band_', trim(adjustl(bandname)),'_mu_',&
-                  trim(adjustl(muname)),'eV_T_', trim(adjustl(tname)), 'K.dat'
-               open(unit=outfileindex, file=sigmafilename)
-               write(outfileindex, '(a, i5, 2(a, f16.4, a))')'# Conductivity tensor \sigma/\tau with unit 1/(Ohm*m*s) for band  ', & 
-                  bands_fermi_level(ib), ' temperature at ', KBT, ' K', ' chemical potential at ', mu_array(ie), ' eV'
-               write(outfileindex, '("#",20a16)')'BTau (T.ps)', 'OmegaTau (eV.ps)', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
-               
-               !> write out the conductivity/tau into file
-               do i=1, NBTau
-                  write(outfileindex, '(20E16.6)') &
-                     BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau, &
-                     BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau*0.175874356d0, &
-                     sigma_ohe_tensor(:, i, ie, ikt, ib)
-               enddo ! i, NBTau
-               close(outfileindex)
-            endif ! cpuid=0
-
-            outfileindex= outfileindex+ 1
-            if (cpuid.eq.0) then
-               write(bandname, '(i10)')bands_fermi_level(ib)
-               write(sigmafilename, '(7a)')'rho_band_', trim(adjustl(bandname)),'_mu_',&
-                  trim(adjustl(muname)),'eV_T_', trim(adjustl(tname)), 'K.dat'
-               open(unit=outfileindex, file=sigmafilename)
-               write(outfileindex, '(a, i5, 2(a, f16.4, a))')'# \tau*\rho with unit (Ohm*m*s) is the inverse of Conductivity tensor \sigma/\tau for band  ', & 
-                  bands_fermi_level(ib), ' temperature at ', KBT, ' K', ' chemical potential at ', mu_array(ie), ' eV'
-               write(outfileindex, '("#",20a16)')'BTau (T.ps)', 'OmegaTau (eV.ps)', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
-               
-               !> write out the inverse of conductivity/tau into file
-               do i=1, NBTau
-                  rho(1, 1:3)=sigma_ohe_tensor(1:3, i, ie, ikt, ib)
-                  rho(2, 1:3)=sigma_ohe_tensor(4:6, i, ie, ikt, ib)
-                  rho(3, 1:3)=sigma_ohe_tensor(7:9, i, ie, ikt, ib)
-                  call inv_r(3, rho)
-                  write(outfileindex, '(20E16.6)')&
-                     BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau, &
-                     BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau*0.175874356d0, &
-                     rho(1, 1:3), rho(2, 1:3), rho(3, 1:3)
-               enddo ! i, NBTau
-               close(outfileindex)
-            endif ! cpuid=0
-            
-#if defined (MPI)
-            call mpi_barrier(mpi_cmw, ierr)
-#endif
-         enddo  ! ie=1, OmegaNum
-         enddo  ! ikt=1, numT
-
-      enddo ! ib=1, Nband_Fermi_Level
-
-#if defined (MPI)
-      call mpi_barrier(mpi_cmw, ierr)
-#endif
-      return
    end subroutine sigma_ohe_calc_symm
-
-
-!> Calculate magnetoresistance with R.G.Chambers's formula based on Boltzmann transport
-!> Written By QuanSheng Wu (wuquansheng@gmail.com)
-!> Thanks Yi Liu for help discussions
-!> References : 
-!> [1] Electrons in metals and semiconductors, R.G. Chambers,
-!> [2] Ab initio investigation of magnetic transport properties by Wannier interpolation, 
-!> PHYSICAL REVIEW B 79, 245123 (2009), Yi Liu, Hai-Jun Zhang, and Yugui Yao
-!> [3] Magnetoresistance from Fermi surface topology, ShengNan Zhang, QuanSheng Wu, Yi Liu, and Oleg V. Yazyev
-!> Phys. Rev. B 99, 035142 (2019)
-!> In this subroutine, we can calculate the total conductivity and
-!> resistivity under the band-resolved constantly relaxation time
-!> approximation.
-!> Implemented on Oct. 07 2017
-!> uploaded on Sep. 05. 2017
-!> this subroutine will only give the conductivity/tau instead of conductivity
-!> This version don't use symmetry
- 
-
-  subroutine sigma_ohe_calc(mu_array, KBT_array, BTau_array, Nband_Fermi_Level, bands_fermi_level, sigma_ohe_tensor)
-      use wmpi
-      use para
-      implicit none
-     
-      integer, intent(inout) :: Nband_Fermi_Level
-      integer, intent(inout) :: bands_fermi_level(Nband_Fermi_Level)
-      real(dp), intent(in) :: KBT_array(NumT) ! K_Boltzmann*Temperature in eV
-      real(dp), intent(in) :: mu_array(OmegaNum) ! chemical potential relative to Fermi level in eV
-      real(dp), intent(in) :: BTau_array(NBTau) ! omega*tau without units
-      real(dp), intent(inout) :: sigma_ohe_tensor(9, NBTau, OmegaNum, NumT, Nband_Fermi_Level) 
-
-      !real(dp) :: OmegaTau  !> e*B/m*Tau
-      real(dp) :: coeff
-
-      real(dp) :: mu, BTau, KBT
-      integer :: ie, ibtau, ikt
-
-      integer :: Nk_total
-      integer :: Nk_current
-      integer :: Nk_start
-      integer :: Nk_end
-      integer  :: knv3_left, knv3_left_mod
-      integer :: ik, ib, ik1, ik2, ik3, ik_temp
-      integer :: ierr, it, i, ix
-      integer :: nrecevs
-
-      real(dp) :: v_t(3), v_k(3)
-
-      real(dp) :: k(3), k_start(3)
-      
-      real(dp) :: time_start, time_end
-      real(dp) :: time_start0, time_end0
-      integer :: NSlice_Btau_inuse
-
-      !> Btau slices for Runge-Kutta integration
-      real(dp) :: Btau_start
-      real(dp) :: Btau_final
-      real(dp) :: DeltaBtau
-      logical :: fail
-      integer :: icycle
-
-
-      !> energy bands 
-      real(dp) :: EE
-      real(dp), allocatable :: Ek(:)  ! in eV
-      real(dp), allocatable :: Enk(:, :)
-
-      !> minus fermi derivation
-      real(dp) :: minusdfde
-
-      !> 3-component velocity for each band and each k point 
-      real(dp), allocatable :: velocity_k(:, :)
-      real(dp), allocatable :: velocity_bar_k(:)
-      real(dp), allocatable :: velocity(:, :, :)
-      
-      !> 3-component velocity for each band and each k point 
-      !> Eq.(3) in PRB 79, 245123(2009)
-      real(dp), allocatable :: velocity_bar(:, :, :)
-
-      type(kcube_type) :: KCube3D_left(Nband_Fermi_Level)
-
-      !> some arrays for mpi
-      integer, allocatable :: info(:, :) !> howmany integers to be sent on each cpu 
-      integer, allocatable :: Displs(:, :)
-
-      !> number of steps used in the Runge-Kutta integration
-      integer :: NSlice_Btau, ishift
-      integer :: NSlice_Btau_local
-      real(dp), allocatable :: kout(:, :)
-
-      !> define some arrays for different bands. Since there are different number
-      !> of k points left for different bands.
-      type klist_iband_type
-         !> dim=3*NSlice_Btau
-         real(dp), allocatable :: klist_rkfs(:, :)
-         !> dim=3*NSlice_Btau
-         real(dp), allocatable :: velocity_k(:, :)
-
-         !> calculate -df(e)/de, where f(e) is the Fermi-Dirac distribution
-         !> dim=(NumT, OmegaNum))
-         real(dp), allocatable :: minusdfde(:, :)
-      end type klist_iband_type
-      type(klist_iband_type) :: klist_iband(Nband_Fermi_Level)
-
-      type sigma_iband_type
-           ! sigma_ohe_tensor_k(9, NBTau, OmegaNum, NumT, Nk_left) 
-           real(dp), allocatable :: sigma_ohe_tensor_k_mpi(:, :, :, :, :)
-           real(dp), allocatable :: sigma_ohe_tensor_k(:, :, :, :, :)
-           ! sigma_ohe_tensor_kz(9, NBTau, OmegaNum, NumT, Nk3) 
-           real(dp), allocatable :: sigma_ohe_tensor_kz(:, :, :, :, :)
-
-           !> time cost for k point
-           real(dp), allocatable :: time_cost(:)
-           real(dp), allocatable :: time_cost_mpi(:)
-      end type sigma_iband_type
-      type(sigma_iband_type) :: sigma_iband_k(Nband_Fermi_Level)
-
-      !> file index
-      !integer, allocatable  :: myfileindex(:)
-      character(80) :: sigmafilename, bandname, tname
-
-      call set_kcube3d
-
-#if defined (MPI)
-      call mpi_barrier(mpi_cmw, ierr)
-#endif
-
-      !> setup NSlice_Btau
-      !> NSlice_Btau should be the integer times of NBTau
-      if (NBTau>1) then
-         NSlice_Btau= (NBTau-1)*(Nslice_BTau_Max/(NBTau-1))
-      else
-         NSlice_Btau= 1
-      endif
-
-      if (cpuid.eq.0) write(stdout, *) ' NSlice_Btau :', NSlice_Btau
-
-      Nk_end= KCube3D%Nk_end
-      Nk_total= KCube3D%Nk_total
-      Nk_start= KCube3D%Nk_start
-      Nk_current= KCube3D%Nk_current
-
-      allocate( Ek(Nband_Fermi_Level))
-      allocate( Enk(Nk_start:Nk_end, Nband_Fermi_Level))
-      allocate( velocity(3, Nk_start:Nk_end, Nband_Fermi_Level))
-      allocate( velocity_k(3, Nband_Fermi_Level))
-      allocate( velocity_bar(3, Nk_start:Nk_end, Nband_Fermi_Level))
-      allocate( velocity_bar_k(3))
-      Ek= 0d0
-      Enk= 0d0
-      velocity= 0d0
-      velocity_k= 0d0
-      velocity_bar= 0d0
-      velocity_bar_k= 0d0
-
-      time_start= 0d0
-      time_end= 0d0
-      do ik= Nk_start, Nk_end
-         if (cpuid.eq.0.and. mod(ik, 100).eq.0) &
-            write(stdout, '(a, i18, "   /", i18, a, f10.3, "s")') 'ik/NK', &
-            ik-Nk_start,Nk_current, 'time left', &
-            (Nk_current+Nk_start-ik)*(time_end-time_start)/num_cpu
-
-         call now(time_start)
-         k= KCube3D%k_direct(:, ik)
-
-         call velocity_calc(Nband_Fermi_Level, bands_fermi_level, k, velocity_k, Ek)
-         velocity(:, ik, :)= velocity_k
-         Enk(ik, :)= Ek
-         call now(time_end)
-      enddo
-
-      !> exclude all kpoints with zero velocity x B and large energy away from Fermi level
-      do ib= 1, Nband_Fermi_Level 
-
-         !> first check howmany k points left
-         it= 0
-         do ik= Nk_start, Nk_end
-            !> check whether v x B=0, which means the magnetic field is parallel with velocity
-            v_t= velocity(:, ik, ib)
-           !vcrossB(1)= -v_t(2)*Bdirection(3)+ v_t(3)*Bdirection(2)
-           !vcrossB(2)= -v_t(3)*Bdirection(1)+ v_t(1)*Bdirection(3)
-           !vcrossB(3)= -v_t(1)*Bdirection(2)+ v_t(2)*Bdirection(1)
-           !if (abs(Enk(ik, ib))<0.05d0.and.dsqrt(sum((abs(vcrossB)**2)))>eps3) then
-            if (abs(Enk(ik, ib))<0.05d0) then
-               it = it+ 1
-            endif
-         enddo ! ik
-
-         KCube3D_left(ib)%Nk_current= it
-         if (it>0) then
-            allocate(KCube3D_left(ib)%ik_array(it))
-            allocate(KCube3D_left(ib)%Ek_local(it))
-            allocate(KCube3D_left(ib)%vx_local(it))
-            allocate(KCube3D_left(ib)%vy_local(it))
-            allocate(KCube3D_left(ib)%vz_local(it))
-         else 
-            allocate(KCube3D_left(ib)%ik_array(1))  !> only useful for mpi_allgatherv
-            allocate(KCube3D_left(ib)%Ek_local(1))
-            allocate(KCube3D_left(ib)%vx_local(1))
-            allocate(KCube3D_left(ib)%vy_local(1))
-            allocate(KCube3D_left(ib)%vz_local(1))
-         endif
-         KCube3D_left(ib)%ik_array= 0
-         KCube3D_left(ib)%Ek_local= 0d0
-         KCube3D_left(ib)%vx_local= 0d0
-         KCube3D_left(ib)%vy_local= 0d0
-         KCube3D_left(ib)%vz_local= 0d0
-
-
-         it= 0
-         do ik= Nk_start, Nk_end
-            !> check whether v x B=0, which means the magnetic field is parallel with velocity
-            v_t= velocity(:, ik, ib)
-           !vcrossB(1)= -v_t(2)*Bdirection(3)+ v_t(3)*Bdirection(2)
-           !vcrossB(2)= -v_t(3)*Bdirection(1)+ v_t(1)*Bdirection(3)
-           !vcrossB(3)= -v_t(1)*Bdirection(2)+ v_t(2)*Bdirection(1)
-           !if (abs(Enk(ik, ib))<0.05d0.and.dsqrt(sum((abs(vcrossB)**2)))>eps3) then
-            if (abs(Enk(ik, ib))<0.05d0) then
-               it = it+ 1
-               KCube3D_left(ib)%ik_array(it) = ik
-               KCube3D_left(ib)%Ek_local(it) = Enk(ik, ib)
-               KCube3D_left(ib)%vx_local(it) = v_t(1)
-               KCube3D_left(ib)%vy_local(it) = v_t(2)
-               KCube3D_left(ib)%vz_local(it) = v_t(3)
-            endif
-         enddo ! ik
-      enddo ! ib
-
-      !> try to get the total number of k points left for each band 
-      do ib=1, Nband_Fermi_Level
-#if defined (MPI)
-         call mpi_allreduce(KCube3D_left(ib)%Nk_current,KCube3D_left(ib)%Nk_total,1,&
-                      mpi_in,mpi_sum,mpi_cmw,ierr)
-#else
-         KCube3D_left(ib)%Nk_total= KCube3D_left(ib)%Nk_current
-#endif
-      enddo
-
-      !> gather the number of k points left into a array info
-      allocate(info(num_cpu, Nband_Fermi_Level))
-      info= -1
-      do ib= 1, Nband_Fermi_Level
-         nrecevs= KCube3D_left(ib)%Nk_current
-         if (nrecevs<0) nrecevs= 0
-#if defined (MPI)
-         call mpi_allgather(nrecevs, 1, mpi_in, info(:, ib), 1, mpi_in, mpi_cmw, ierr)
-#else
-         info(1, ib)= KCube3D_left(ib)%Nk_current
-#endif
-      enddo
-
-
-      !> An array for mpi_allgatherv
-      allocate(Displs(num_cpu+1, Nband_Fermi_Level))
-      Displs= 0
-      do ib=1, Nband_Fermi_Level
-         Displs(1, ib)=0
-         do i=2, num_cpu+1
-            Displs(i, ib)=Displs(i-1, ib)+ info(i-1, ib)
-         enddo
-      enddo ! ib
-#if defined (MPI)
-      call mpi_barrier(mpi_cmw, ierr)
-#endif
-
-      !> put all the kpoints left together
-      do ib=1, Nband_Fermi_Level
-         allocate(KCube3D_left(ib)%IKleft_array(KCube3D_left(ib)%Nk_total))
-         allocate(KCube3D_left(ib)%Ek_total(KCube3D_left(ib)%Nk_total))
-         allocate(KCube3D_left(ib)%vx_total(KCube3D_left(ib)%Nk_total))
-         allocate(KCube3D_left(ib)%vy_total(KCube3D_left(ib)%Nk_total))
-         allocate(KCube3D_left(ib)%vz_total(KCube3D_left(ib)%Nk_total))
-         KCube3D_left(ib)%IKleft_array = 0
-         KCube3D_left(ib)%Ek_total= 0d0
-         KCube3D_left(ib)%vx_total= 0d0
-         KCube3D_left(ib)%vy_total= 0d0
-         KCube3D_left(ib)%vz_total= 0d0
-      enddo  ! ib
-     !> gather Enk and velocity 
-#if defined (MPI)
-      do ib=1, Nband_Fermi_Level
-        !nrecevs= KCube3D_left(ib)%Nk_end-KCube3D_left(ib)%Nk_start+ 1
-         nrecevs= KCube3D_left(ib)%Nk_current
-         if (nrecevs<0) nrecevs= 0
-         call mpi_allgatherv(KCube3D_left(ib)%ik_array, nrecevs, &
-                             mpi_in, KCube3D_left(ib)%IKleft_array, &
-                             info(:, ib), Displs(:, ib), mpi_in, mpi_cmw, ierr)
-         call mpi_allgatherv(KCube3D_left(ib)%Ek_local, nrecevs, &
-                             mpi_dp, KCube3D_left(ib)%Ek_total, &
-                             info(:, ib), Displs(:, ib), mpi_dp, mpi_cmw, ierr)
-         call mpi_allgatherv(KCube3D_left(ib)%vx_local, nrecevs, &
-                             mpi_dp, KCube3D_left(ib)%vx_total, &
-                             info(:, ib), Displs(:, ib), mpi_dp, mpi_cmw, ierr)
-         call mpi_allgatherv(KCube3D_left(ib)%vy_local, nrecevs, &
-                             mpi_dp, KCube3D_left(ib)%vy_total, &
-                             info(:, ib), Displs(:, ib), mpi_dp, mpi_cmw, ierr)
-         call mpi_allgatherv(KCube3D_left(ib)%vz_local, nrecevs, &
-                             mpi_dp, KCube3D_left(ib)%vz_total, &
-                             info(:, ib), Displs(:, ib), mpi_dp, mpi_cmw, ierr)
-      enddo ! ib
-#else
-#endif
-
-      !> redistribute all those k points into different cpus
-      if (cpuid.eq.0) then
-         write(stdout, '(a)')' '
-         write(stdout, '(a, i10, a)')' There are ', KCube3D%Nk_total, ' k points generated by the input files' 
-         do ib= 1, Nband_Fermi_Level
-            write(stdout, '(a, i10, a, i10)')' However there are only ', KCube3D_left(ib)%Nk_total, &
-               ' k points contribute to the conductance calculations for band ', bands_fermi_level(ib)
-         enddo
-      endif
-
-
-
-      !> redistribute the left kpoints into different processors
-      !> for different bands, the number of left kpoints is different.
-      do ib= 1, Nband_Fermi_Level
-         knv3_left= KCube3D_left(ib)%Nk_total
-         knv3_left_mod= mod(knv3_left, num_cpu)
-         if (knv3_left_mod==0) then  !> perfect divided
-            KCube3D_left(ib)%Nk_current= knv3_left/num_cpu
-            KCube3D_left(ib)%Nk_start=1+ knv3_left*cpuid/num_cpu
-            KCube3D_left(ib)%Nk_end  =(1+cpuid)*knv3_left/num_cpu
-         else if (knv3_left/num_cpu==0) then    !> Number of MPI threads is large than knv3_left
-            KCube3D_left(ib)%Nk_current= 1 !> one k piont per MPI thread
-            KCube3D_left(ib)%Nk_start= cpuid+ 1 !> one k piont per MPI thread
-            KCube3D_left(ib)%Nk_end  = cpuid+ 1
-            if (cpuid+1 > knv3_left) then
-               KCube3D_left(ib)%Nk_start= 1
-               KCube3D_left(ib)%Nk_end  = 0
-            endif
-         else
-            KCube3D_left(ib)%Nk_current= knv3_left/num_cpu+ 1
-            if (cpuid< knv3_left_mod) then
-               KCube3D_left(ib)%Nk_start= 1+ cpuid*KCube3D_left(ib)%Nk_current
-               KCube3D_left(ib)%Nk_end  = (1+cpuid)*KCube3D_left(ib)%Nk_current
-            else
-               KCube3D_left(ib)%Nk_start= knv3_left_mod*KCube3D_left(ib)%Nk_current+ &
-                  (cpuid-knv3_left_mod)*(KCube3D_left(ib)%Nk_current-1)+1
-               KCube3D_left(ib)%Nk_end  = knv3_left_mod*KCube3D_left(ib)%Nk_current+ &
-                  (cpuid-knv3_left_mod+1)*(KCube3D_left(ib)%Nk_current-1)
-            endif
-         endif
-
-
-         allocate(KCube3D_left(ib)%k_direct(3, KCube3D_left(ib)%Nk_start:KCube3D_left(ib)%Nk_end))
-    
-         do ik= KCube3D_left(ib)%Nk_start, KCube3D_left(ib)%Nk_end
-            i= KCube3D_left(ib)%IKleft_array(ik)
-            ik1= (i-1)/(Nk2*Nk3)+1
-            ik2= ((i-1-(ik1-1)*Nk2*Nk3)/Nk3)+1
-            ik3= (i-(ik2-1)*Nk3- (ik1-1)*Nk2*Nk3)
-            KCube3D_left(ib)%k_direct(:, ik)= K3D_start_cube+ K3D_vec1_cube*(ik1-1)/dble(Nk1)  &
-             + K3D_vec2_cube*(ik2-1)/dble(Nk2)  &
-             + K3D_vec3_cube*(ik3-1)/dble(Nk3)
-         enddo ! ik
-         
-         !> allocate array to store the conductivity for eack k point  
-         allocate( sigma_iband_k(ib)%sigma_ohe_tensor_k(9, NBTau, OmegaNum, NumT, KCube3D_left(ib)%Nk_total), stat= ierr)
-         if (ierr>0) stop ' Error : not enough memory'
-         allocate( sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(9, NBTau, OmegaNum, NumT, KCube3D_left(ib)%Nk_current), stat= ierr)
-         if (ierr>0) stop ' Error : not enough memory'
-         allocate( sigma_iband_k(ib)%sigma_ohe_tensor_kz(9, NBTau, OmegaNum, NumT, Nk3))
-         allocate( sigma_iband_k(ib)%time_cost(KCube3D_left(ib)%Nk_total))
-         allocate( sigma_iband_k(ib)%time_cost_mpi(KCube3D_left(ib)%Nk_total))
-         sigma_iband_k(ib)%time_cost= 0d0
-         sigma_iband_k(ib)%time_cost_mpi= 0d0
-         sigma_iband_k(ib)%sigma_ohe_tensor_k= 0d0
-         sigma_iband_k(ib)%sigma_ohe_tensor_kz= 0d0
-         sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi= 0d0
-      enddo  ! ib=1, Nband_Fermi_Level
-
-
-      !> gather the number of receive buffs left into a array info
-      info= -1
-      do ib= 1, Nband_Fermi_Level
-         nrecevs= (KCube3D_left(ib)%Nk_end-KCube3D_left(ib)%Nk_start+1)*9*NBTau*OmegaNum*NumT
-         if (nrecevs<0) nrecevs=0
-#if defined (MPI)
-         call mpi_allgather(nrecevs, 1, mpi_in, info(:, ib), 1, mpi_in, mpi_cmw, ierr)
-#else
-         info(1, ib)= nrecevs
-#endif
-      enddo
-
-      if (cpuid.eq.0) write(stdout, '(a, 10i8)') ' '
-      do ib=1, Nband_Fermi_Level
-         if (cpuid.eq.0) write(stdout, '(a, i7)')'>> Number of k points at different CPUs at band', ib
-         if (cpuid.eq.0) write(stdout, '(10i8)')info(:, ib)/9/NBTau/OmegaNum/NumT
-      enddo
-      if (cpuid.eq.0) write(stdout, '(a, 10i8)') ' '
-
-
-      !> An array for mpi_allgatherv
-      Displs= 0
-      do ib=1, Nband_Fermi_Level
-         Displs(1, ib)=0
-         do i=2, num_cpu+1
-            Displs(i, ib)=Displs(i-1, ib)+ info(i-1, ib)
-         enddo
-      enddo ! ib
-
-      do ib=1, Nband_Fermi_Level
-         allocate(klist_iband(ib)%klist_rkfs(3, NSlice_Btau))
-         allocate(klist_iband(ib)%velocity_k(3, NSlice_Btau))
-         klist_iband(ib)%klist_rkfs= 0d0
-         klist_iband(ib)%velocity_k= 0d0
-      enddo
-
-      !> a temp array used in RKFS
-      allocate(kout(3, NSlice_Btau))
-      kout= 0d0
-
-      !> now we turn to use Runge-Kutta method to get all the kpoints from (0, BTauMax)
-      !> and we calculate the conductivity/Tau over different bands and different k points
-      time_start= 0d0
-      time_end  = 0d0
-
-      do ib= 1, Nband_Fermi_Level
-         call now(time_start0)
-      
-         !> dim=(Nk_start: Nk_end, NumT, OmegaNum))
-         allocate(klist_iband(ib)%minusdfde(OmegaNum, NumT))
-         do ik= KCube3D_left(ib)%Nk_start, KCube3D_left(ib)%Nk_end
-            if (cpuid.eq.0) &
-               write(stdout, '(a, i8, a, i18, "   /", i18, a, f10.3, "s", a, f10.3, "s")') &
-               'In sigma_OHE iband', ib, ' ik/NK', &
-               ik-KCube3D_left(ib)%Nk_start+1,KCube3D_left(ib)%Nk_current, &
-               ' time cost', time_end-time_start, &
-               ' time left', &
-               (KCube3D_left(ib)%Nk_current+KCube3D_left(ib)%Nk_start-ik)*(time_end-time_start)
-
-            call now(time_start)
-            EE= KCube3D_left(ib)%Ek_total(ik)
-            v_k(1)= KCube3D_left(ib)%vx_total(ik)
-            v_k(2)= KCube3D_left(ib)%vy_total(ik)
-            v_k(3)= KCube3D_left(ib)%vz_total(ik)
-            
-            !> calculate df/de for each k point and each band
-            do ikt=1, NumT
-               KBT= KBT_array(ikt)
-               do ie=1, OmegaNum
-                  mu= mu_array(ie)
-                  call minusdfde_calc_single(EE, KBT, mu,  minusdfde)
-                  klist_iband(ib)%minusdfde(ie, ikt)= minusdfde
-               enddo ! ie
-            enddo ! ikt
-
-
-            !> start to get the evolution of k points under magnetic field using Runge-Kutta method
-            k_start= KCube3D_left(ib)%k_direct(:, ik)
-            kout= 0d0
-            Btau_start= 0d0
-            Btau_final= -30d0*BTauMax   !< -15 means that we can reach the accuracy as to exp(-15d0)
-
-            !> Runge-Kutta only applied with BTauMax>0
-            !> if the magnetic field is zero. 
-            NSlice_Btau_inuse= NSlice_Btau
-            if (BTauMax>eps3) then
-               call RKF45_pack(bands_fermi_level(ib),  &
-                    NSlice_Btau, k_start, Btau_start, Btau_final, kout, icycle, fail)
-            else
-               NSlice_Btau_inuse = 1
-               do ibtau=1, NSlice_Btau
-                  kout(:, ibtau)= k_start(:)
-               enddo
-            endif
-
-            !> we omit the 
-            if (fail) then
-               write(stdout, '(a, i6, a, i4, a, i6, a, 3f12.6)')&
-                  '>>> Runge-Kutta integration fails at cpuid=', cpuid, ' ib=', ib, ' ik', ik, ' k', k_start
-               write(stdout, *)' '
-               cycle
-            endif
-
-            if (NSlice_Btau_inuse==1)then
-               do ibtau=1, NSlice_Btau
-                  kout(:, ibtau)= k_start(:)
-               enddo
-               NSlice_Btau_inuse = NSlice_Btau
-            endif
-   
-            klist_iband(ib)%klist_rkfs= kout
-
-            do it= 1, NSlice_Btau_inuse
-               k= kout(:, it) 
-               call velocity_calc_iband(bands_fermi_level(ib), k, v_t)
-               klist_iband(ib)%velocity_k(:, it)= v_t
-            enddo ! integrate over time step
-
-
-            !> calculate the conductivity/tau
-            do ikt=1, NumT
-               KBT= KBT_array(ikt)
-               do ie=1, OmegaNum
-                  mu= mu_array(ie)
-                  minusdfde= klist_iband(ib)%minusdfde(ie, ikt)
-
-                  do ibtau=1, NBTau
-                     BTau= BTau_array(ibtau)
-
-                     if (NBTau==1)then
-                        !> it means there is no magnetic field
-                        NSlice_Btau_local= 2
-                     else
-                        NSlice_Btau_local= (ibtau-1)*NSlice_Btau_inuse/(NBTau-1)/2
-                        if (NSlice_Btau_local==0)then
-                           NSlice_Btau_local= 2
-                        else
-                           DeltaBtau= 30d0/2d0/NSlice_Btau_local
-                        endif
-                     endif
-
-
-                     do ishift=0, NSlice_Btau_local-1
-
-                        if (BTau>eps3 .and. NSlice_Btau_local>2) then
-                           velocity_bar_k= 0d0
-                           do it=1, NSlice_Btau_local
-                             velocity_bar_k= velocity_bar_k+ &
-                                DeltaBtau*exp(-(it-1d0)*DeltaBtau)*klist_iband(ib)%velocity_k(:, it+ishift)
-                           enddo
-                           velocity_bar_k= velocity_bar_k &
-                           - 0.5d0*DeltaBtau*(exp(-(NSlice_Btau_local-1d0)*DeltaBtau)&
-                           * klist_iband(ib)%velocity_k(:, NSlice_Btau_local+ishift)  &
-                           + klist_iband(ib)%velocity_k(:, 1+ishift))
-                        else
-                           velocity_bar_k= v_k
-                        endif
-   
-                        !> calculate the conductivity now
-                        !> sigma_xx
-                        ik_temp= ik - KCube3D_left(ib)%Nk_start+ 1
-                        sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(1, ibtau, ie, ikt, ik_temp) = &
-                        sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(1, ibtau, ie, ikt, ik_temp) + &
-                           v_k(1)*velocity_bar_k(1)*minusdfde
-                        !> sigma_xy
-                        sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(2, ibtau, ie, ikt, ik_temp) = &
-                        sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(2, ibtau, ie, ikt, ik_temp) + &
-                           v_k(1)*velocity_bar_k(2)*minusdfde
-                        !> sigma_xz
-                        sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(3, ibtau, ie, ikt, ik_temp) = &
-                        sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(3, ibtau, ie, ikt, ik_temp) + &
-                           v_k(1)*velocity_bar_k(3)*minusdfde
-                        !> sigma_yx
-                        sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(4, ibtau, ie, ikt, ik_temp) = &
-                        sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(4, ibtau, ie, ikt, ik_temp) + &
-                           v_k(2)*velocity_bar_k(1)*minusdfde
-                        !> sigma_yy
-                        sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(5, ibtau, ie, ikt, ik_temp) = &
-                        sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(5, ibtau, ie, ikt, ik_temp) + &
-                           v_k(2)*velocity_bar_k(2)*minusdfde
-                        !> sigma_yz
-                        sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(6, ibtau, ie, ikt, ik_temp) = &
-                        sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(6, ibtau, ie, ikt, ik_temp) + &
-                           v_k(2)*velocity_bar_k(3)*minusdfde
-                        !> sigma_zx
-                        sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(7, ibtau, ie, ikt, ik_temp) = &
-                        sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(7, ibtau, ie, ikt, ik_temp) + &
-                           v_k(3)*velocity_bar_k(1)*minusdfde
-                        !> sigma_zy
-                        sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(8, ibtau, ie, ikt, ik_temp) = &
-                        sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(8, ibtau, ie, ikt, ik_temp) + &
-                           v_k(3)*velocity_bar_k(2)*minusdfde
-                        !> sigma_zz
-                        sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(9, ibtau, ie, ikt, ik_temp) = &
-                        sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(9, ibtau, ie, ikt, ik_temp) + &
-                           v_k(3)*velocity_bar_k(3)*minusdfde
-                     enddo ! ishift
-                     sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(:, ibtau, ie, ikt, ik_temp) = &
-                     sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi(:, ibtau, ie, ikt, ik_temp)/NSlice_Btau_local
-                  enddo ! ibtau  Btau
-               enddo ! ie  mu
-            enddo ! ikt KBT
-            call now(time_end)
-            sigma_iband_k(ib)%time_cost_mpi(ik)= time_end- time_start
-            if (cpuid.eq.0) write(stdout, '(a, f16.2, a)')'>> time cost for this loop is ', time_end- time_start, ' s'
-         enddo ! ik  kpoints
-
-
-#if defined (MPI)
-         call mpi_allreduce(sigma_iband_k(ib)%time_cost_mpi, sigma_iband_k(ib)%time_cost, &
-                            size(sigma_iband_k(ib)%time_cost), &
-                            mpi_dp,mpi_sum,mpi_cmw,ierr)
-         nrecevs= (KCube3D_left(ib)%Nk_end-KCube3D_left(ib)%Nk_start+1)*9*NBTau*OmegaNum*NumT
-         if (nrecevs<0) nrecevs=0
-         call mpi_allgatherv(sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi, nrecevs, &
-                                mpi_dp, sigma_iband_k(ib)%sigma_ohe_tensor_k, &
-                                info(:, ib), Displs(:, ib), mpi_dp, mpi_cmw, ierr)
-         if (ierr>0) then
-            write(stdout, *)'>>>Error happends in mpi_allgatherv at cpuid', cpuid, ' ierr=', ierr
-            stop
-         endif
-
-#else
-         sigma_iband_k(ib)%sigma_ohe_tensor_k= sigma_iband_k(ib)%sigma_ohe_tensor_k_mpi
-#endif
-
-        !call mpi_barrier(mpi_cmw, ierr)
-        !call now(time_2)
-        !if (cpuid.eq.0) write(stdout, *) 'after mpi_allgatherv in sigma_ohe_calc', time_2-time_1, 's'
-
-         if (cpuid.eq.0) then
-            write(stdout, '(a)')' '
-            write(stdout, '(a, i10)')'>> Time cost for each k point at iband ', ib
-            write(stdout, '(10f16.2)')(sigma_iband_k(ib)%time_cost(ik), ik= 1, KCube3D_left(ib)%Nk_total)
-            write(stdout, '(a)')' '
-         endif
-   
-   
-         !> sum over all the kpoints to get the band dependent conductivity/tau 
-         do ikt=1, NumT
-            do ie=1, OmegaNum
-               do ibtau=1, NBTau
-                  do i=1, 9
-                     sigma_ohe_tensor(i, ibtau, ie, ikt, ib)=  &
-                     sum(sigma_iband_k(ib)%sigma_ohe_tensor_k(i, ibtau, ie, ikt, :))
-                  enddo ! i
-               enddo ! ibtau
-            enddo ! ie
-         enddo ! ikt
-   
-         call now(time_end0)
-         if (cpuid.eq.0) write(stdout, '(a, i6, a, f16.2, a)')'>> Time cost for calculate MR at ib=', ib, &
-         'is ', time_end0- time_start0, ' s'
-   
-         !> In the end, we start to care about the units of the conductivity/tau
-         !> the conductivity/tau is in units of Ohm^-1*m^-1*s^-1
-         !> 
-         coeff= Echarge**3/hbar/hbar*2d0/Origin_cell%CellVolume*1E10/kCubeVolume*Origin_cell%ReciprocalCellVolume
-         sigma_ohe_tensor(:, :, :, :, ib)= sigma_ohe_tensor(:, :, :, :, ib)*coeff
-   
-         sigma_ohe_tensor(:, :, :, :, ib)= sigma_ohe_tensor(:, :, :, :, ib)/Nk_total
-   
-   
-         !calculate sigma_kz
-         do ik3=1, Nk3
-            do ik= 1, KCube3D_left(ib)%Nk_total
-               i= KCube3D_left(ib)%IKleft_array(ik)
-               ik1= (i-1)/(Nk2*Nk3)+1
-               ik2= ((i-1-(ik1-1)*Nk2*Nk3)/Nk3)+1
-               if (ik3== (i-(ik2-1)*Nk3- (ik1-1)*Nk2*Nk3)) then
-                  do  ikt=1, NumT
-                     do ie=1, OmegaNum
-                        do ibtau=1, NBTau
-                           do ix=1, 9
-                              sigma_iband_k(ib)%sigma_ohe_tensor_kz(ix, ibtau, ie, ikt, ik3)= &
-                              sigma_iband_k(ib)%sigma_ohe_tensor_kz(ix, ibtau, ie, ikt, ik3)+ &
-                              sigma_iband_k(ib)%sigma_ohe_tensor_k (ix, ibtau, ie, ikt, ik )   
-                           enddo ! ix
-                        enddo ! ibtau
-                     enddo ! ie
-                  enddo ! ikt
-               endif
-            enddo ! ik
-         enddo ! ik3
-         coeff= Echarge**3/hbar/hbar*2d0/Origin_cell%CellVolume*1E10/kCubeVolume*Origin_cell%ReciprocalCellVolume
-         sigma_iband_k(ib)%sigma_ohe_tensor_kz= &
-         sigma_iband_k(ib)%sigma_ohe_tensor_kz*coeff/Nk_total
-   
-        !allocate(myfileindex(Nband_Fermi_Level))
-        !!> file index for different bands
-        !do ib=1, Nband_Fermi_Level
-        !   outfileindex= outfileindex+ 1
-        !   myfileindex(ib)= outfileindex
-        !enddo
- 
-         do ikt=1, NumT
-            outfileindex= outfileindex+ 1
-            KBT= KBT_array(ikt)/8.6173324E-5/eV2Hartree
-            write(tname, '(f12.2)')KBT
-            if (cpuid.eq.0) then
-               write(bandname, '(i10)')bands_fermi_level(ib)
-               write(sigmafilename, '(5a)')'sigma_kz_band_', trim(adjustl(bandname)),'_T_', trim(adjustl(tname)), 'K.dat'
-               open(unit=outfileindex, file=sigmafilename)
-               write(outfileindex, '(a20, i5, a, f16.4, a)')'# sigma_k at band ', & 
-                  bands_fermi_level(ib), ' temperature at ', KBT, ' K'
-               write(outfileindex, '("#",a12,20a16)')'ik3', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
-            endif
-   
-            if (cpuid.eq.0) then
-               do ibtau=1, NBTau
-                  !> write out the conductivity/tau into file
-                  write(outfileindex, '(a6, f16.8, a12, f16.8)')'# Btau', BTau_array(ibtau), &
-                     ' omega*tau', BTau_array(ibtau)*0.175874356d0
-                  write(outfileindex, '("#",a12,20a16)')'ik3', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
-                  do ik3=1, Nk3
-                     write(outfileindex, '(i6,20E16.6)')ik3, sigma_iband_k(ib)%sigma_ohe_tensor_kz(:, ibtau, 1, ikt, ik3)
-                  enddo
-               enddo ! ibtau
-            endif ! cpuid=0
-            
-            if (cpuid.eq.0) then
-               close(outfileindex)
-            endif ! cpuid=0
-            
-#if defined (MPI)
-            call mpi_barrier(mpi_cmw, ierr)
-#endif
-
-            outfileindex= outfileindex+ 1
-            if (cpuid.eq.0) then
-               write(bandname, '(i10)')bands_fermi_level(ib)
-               write(sigmafilename, '(5a)')'sigma_band_', trim(adjustl(bandname)),'_T_', trim(adjustl(tname)), 'K.dat'
-               open(unit=outfileindex, file=sigmafilename)
-               write(outfileindex, '(a, i5, a, f16.4, a)')'# Conductivity tensor \sigma/\tau for band ', &
-                  bands_fermi_level(ib), ' temperature at ', KBT, ' K'
-               write(outfileindex, '("#",20a16)')'BTau (T.ps)', 'OmegaTau', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
-            endif
-            
-            
-            if (cpuid.eq.0) then
-               if (OmegaNum==1)then
-                  !> write out the conductivity/tau into file
-                  do i=1, NBTau
-                     write(outfileindex, '(20E16.6)')BTau_array(i), BTau_array(i)*0.175874356d0, sigma_ohe_tensor(:, i, 1, ikt, ib)
-                  enddo ! i, NBTau
-               endif !> only one T and one mu
-            endif ! cpuid=0
-            
-            
-            if (cpuid.eq.0) then
-               close(outfileindex)
-            endif
-#if defined (MPI)
-            call mpi_barrier(mpi_cmw, ierr)
-#endif
-         enddo
-
-      enddo ! ib=1, Nband_Fermi_Level
-
-#if defined (MPI)
-      call mpi_barrier(mpi_cmw, ierr)
-#endif
-      return
-   end subroutine sigma_ohe_calc
 
    !> calculate -df(e)/de, where f(e) is the Fermi-Dirac distribution
    !> KBT, mu, and e is in unit of Hartree
@@ -1625,20 +977,20 @@
       real(dp), intent(in) :: Enk(Nk_start:Nk_end, Nband_Fermi_Level)
       real(dp), intent(out) :: minusdfde(Nk_start:Nk_end, Nband_Fermi_Level)
 
-      integer :: ib, ik
+      integer :: iband, ik
       real(dp) :: factor
       real(dp), parameter :: maxexp= 37d0
 
-      do ib=1, Nband_Fermi_Level
+      do iband=1, Nband_Fermi_Level
          do ik= Nk_start, Nk_end
-            factor= (Enk(ik, ib)- mu)/KBT
+            factor= (Enk(ik, iband)- mu)/KBT
             if (abs(factor)> maxexp) then
-               minusdfde(ik, ib) = 0d0
+               minusdfde(ik, iband) = 0d0
             else
-               minusdfde(ik, ib) = 1d0/KBT* exp(factor)/ ((exp(factor)+1d0)**2)
+               minusdfde(ik, iband) = 1d0/KBT* exp(factor)/ ((exp(factor)+1d0)**2)
             endif
          enddo !ik
-      enddo !ib
+      enddo !iband
 
       return
    end subroutine minusdfde_calc
@@ -1660,7 +1012,7 @@
       real(dp), intent(inout) :: velocity_k(3, Nband_Fermi_Level)
       real(dp), intent(out) :: Ek(Nband_Fermi_Level) 
 
-      integer :: iR, ib
+      integer :: iR, iband
       real(dp) :: kdotr
       complex(dp) :: factor
       !> velocity operator
@@ -1685,8 +1037,8 @@
       W= 0d0
       UU=Hamk_bulk
       call eigensystem_c( 'V', 'U', Num_wann, UU, W)
-      do ib=1, Nband_Fermi_Level
-         Ek(ib)= W(bands_fermi_level(ib))
+      do iband=1, Nband_Fermi_Level
+         Ek(iband)= W(bands_fermi_level(iband))
       enddo
 
       vx= 0d0
@@ -1700,10 +1052,10 @@
          vz= vz+ zi*crvec(3, iR)*HmnR(:,:,iR)*factor
       enddo ! iR
 
-      do ib= 1, Nband_Fermi_Level
-         velocity_k(1, ib )= dot_product(UU(:, bands_fermi_level(ib)), matmul(vx, UU(:, bands_fermi_level(ib)))) 
-         velocity_k(2, ib )= dot_product(UU(:, bands_fermi_level(ib)), matmul(vy, UU(:, bands_fermi_level(ib)))) 
-         velocity_k(3, ib )= dot_product(UU(:, bands_fermi_level(ib)), matmul(vz, UU(:, bands_fermi_level(ib)))) 
+      do iband= 1, Nband_Fermi_Level
+         velocity_k(1, iband )= dot_product(UU(:, bands_fermi_level(iband)), matmul(vx, UU(:, bands_fermi_level(iband)))) 
+         velocity_k(2, iband )= dot_product(UU(:, bands_fermi_level(iband)), matmul(vy, UU(:, bands_fermi_level(iband)))) 
+         velocity_k(3, iband )= dot_product(UU(:, bands_fermi_level(iband)), matmul(vz, UU(:, bands_fermi_level(iband)))) 
       enddo
 
       if (allocated(W))deallocate(W)
@@ -1717,9 +1069,9 @@
    end subroutine velocity_calc
 
 
-   !> calculate velocity for given k points for all bands in bands_fermi_level
+   !> calculate averaged velocity for given k points and a given band index
    !> Eq.(3) in PRB 79, 245123(2009)
-   subroutine velocity_bar_calc(Nband_Fermi_Level, bands_fermi_level, Btau, k0, velocity_bar_k)
+   subroutine velocity_bar_calc(magnetic_field, Nband_Fermi_Level, bands_fermi_level, Btau, k0, velocity_bar_k)
 
       use wmpi
       use para
@@ -1731,6 +1083,7 @@
 
       !> B*tau in Tesla*ps
       real(dp), intent(in) :: BTau
+      real(dp), intent(in) :: magnetic_field(3)
 
       !> k must be in fractional coordinates
       real(dp), intent(in) :: k0(3) 
@@ -1780,15 +1133,13 @@
       !> calculate velocity for a given k point
       do iband=1, Nband_Fermi_Level
          !> skip the values far away from the fermi surface
-        !if (abs(W(iband+bands_fermi_level(1))-1.0)>0.05d0)then
-         if (abs(W(bands_fermi_level(iband))-1.0)>0.05d0)then
+         if (abs(W(bands_fermi_level(iband)))/eV2Hartree>0.05d0)then
             cycle
          endif
 
          k_start= k0
          NSlice_Btau_inuse= NSlice_Btau
-         !call RKF45_pack(iband+bands_fermi_level(1)-1,  
-         call RKF45_pack(bands_fermi_level(iband),  &
+         call RKF45_pack(magnetic_field, bands_fermi_level(iband),  &
               NSlice_Btau, k_start, Btau_start, Btau_final, kout, icycle, fail)
 
          k= kout(:, 1) 
@@ -1819,7 +1170,7 @@
    !> iband is the band index
    !> \hbar*dkn(t)/d(Bt)= − e \vec{vn(kn(t))} \times \vec{Bdirection}  
    !> this subroutine would be called by RKFS as an external subroutine
-   subroutine dkdt(Btau, kt, kdot, iband)
+   subroutine dkdt(magnetic_field, Btau, kt, kdot, iband)
 
       use wmpi
       use para, only : dp, Bdirection, Echarge, hbar, eps3
@@ -1827,6 +1178,7 @@
 
       !> inout variables
       integer, intent(in) :: iband
+      real(dp), intent(in) :: magnetic_field(3)
       real(dp), intent(in) :: Btau !> not used in this subroutine
       real(dp), intent(in) :: kt(3)  !> 3 means the three axias x, y and z
       real(dp), intent(inout) :: kdot(3)
@@ -1854,9 +1206,9 @@
       !> \hbar dk/d(Bt)=-e\vec{v(k)}\times \vec{e_B}
       !> \vec{v(k)}= 1/\hbar*\partitial Hmn(k)/\partitial k
       !> In the velocity subroutine, we don't consider the 1/\hbar
-      kdot= kdot*(Echarge/hbar)**2*1E-10*1E-12   ! 1/m
+     !kdot= kdot*(Echarge/hbar)**2*1E-10*1E-12   ! 1/m
       !> 1E-10 comes from Angstrom
-      kdot= kdot*1E-10   ! 1/Angstrom
+     !kdot= kdot*1E-10   ! 1/Angstrom
 
       return
    end subroutine dkdt
@@ -1906,7 +1258,7 @@
 
       E_iband= W(1)
       !> Only the energy levels close to the Fermi level contribute to the conductivity
-      if (abs(W(1))>0.05d0) then
+      if (abs(W(1))/eV2Hartree>0.05d0) then
          velocity_k= 0d0
          return
       endif
@@ -1937,7 +1289,6 @@
 
 
 
-
    !> calculate velocity for given k points for all bands in bands_fermi_level
    !> Eq.(2) in PRB 79, 245123(2009)
    subroutine velocity_calc_iband(iband, k, velocity_k)
@@ -1957,7 +1308,7 @@
       real(dp) :: kdotr
       complex(dp) :: factor
       !> velocity operator
-	   real(dp), allocatable :: W(:)
+      real(dp), allocatable :: W(:)
       complex(dp), allocatable :: vx(:, :)
       complex(dp), allocatable :: vy(:, :)
       complex(dp), allocatable :: vz(:, :)
@@ -1980,10 +1331,11 @@
       call zheevx_pack('V', 'U', Num_wann, iband, iband, Hamk_bulk, W, UU)
 
       !> Only the energy levels close to the Fermi level contribute to the conductivity
-      if (abs(W(1))>0.05d0) then
+      if (abs(W(1))/eV2Hartree>0.05d0) then
          velocity_k= 0d0
          return
       endif
+
 
       vx= 0d0
       vy= 0d0
@@ -2011,13 +1363,14 @@
 
 
    !> a pack for rkf45
-   subroutine RKF45_pack(iband, NSlice_Btau, k_start, Btau_start, Btau_final, kout, icycle, fail)
+   subroutine RKF45_pack(magnetic_field, iband, NSlice_Btau, k_start, Btau_start, Btau_final, kout, icycle, fail)
       use wmpi
       use para, only : dp, eps9, eps8, cpuid, stdout, eps6, Bdirection, eps3
       implicit none
 
       !> inout variable 
       integer , intent(in) :: iband
+      real(dp), intent(in) :: magnetic_field(3)
       integer , intent(inout) :: NSlice_Btau
       real(dp), intent(in) :: k_start(3)
       real(dp), intent(in) :: Btau_start
@@ -2043,6 +1396,7 @@
 
       real(dp) :: velocity_k0(3), vcrossB(3)
 
+
       icycle=0
       fail= .false.
 
@@ -2058,9 +1412,9 @@
 
       !> check whether the velocity is zero, if so, we just abandom those points
       call velocity_calc_iband(iband, k_start, velocity_k0)
-      vcrossB(1)= -velocity_k0(2)*Bdirection(3)+ velocity_k0(3)*Bdirection(2)
-      vcrossB(2)= -velocity_k0(3)*Bdirection(1)+ velocity_k0(1)*Bdirection(3)
-      vcrossB(3)= -velocity_k0(1)*Bdirection(2)+ velocity_k0(2)*Bdirection(1)
+
+      !> Vk x B
+      call cross_product(-velocity_k0, Bdirection, vcrossB)
 
       if (sum(abs(vcrossB))<eps6) then
          NSlice_Btau= 1
@@ -2084,7 +1438,7 @@
             goto 80
          endif
 
-         call r8_rkf45(dkdt, neqn, kt, kdot, t, tout, relerr, abserr, iflag, iband)
+         call r8_rkf45(dkdt, neqn, kt, kdot, t, tout, relerr, abserr, iflag, iband, magnetic_field)
         !if (iter>0) print*, 'iter', iter, 'cpuid', cpuid, kt, iflag
         !call now(time_end)
 
@@ -2213,6 +1567,7 @@
       real(dp) :: v_t(3), v_t2(3)
 
       real(dp) :: k(3), k_start(3)
+      real(dp) :: magnetic_field(3)
       
       !> Btau slices for Runge-Kutta integration
       real(dp) :: Btau, Btau_start, Btau_final
@@ -2226,8 +1581,9 @@
       !> 3-component velocity for each band and each k point 
       real(dp), allocatable :: velocity_k(:, :)
       
-      integer :: NSlice_Btau
-      real(dp), allocatable :: kout(:, :)
+      integer :: NSlice_Btau 
+      integer, allocatable :: NSlice_Btau_all(:), NSlice_Btau_all_mpi(:)
+      real(dp), allocatable :: kout(:, :), kout_all(:, :, :), kout_all_mpi(:, :, :)
 
       !> Bands crossing Fermi level
       integer :: Nband_Fermi_Level
@@ -2238,6 +1594,7 @@
       integer, allocatable  :: myfileindex(:)
       character(40) :: evolvefilename
       character(40) :: bandname
+
 
       !> First we calculate howmany and which bands cross the Fermi level
       !> Nband_Fermi_Level and bands_fermi_level will be updated after
@@ -2266,37 +1623,54 @@
       !> NSlice_Btau should be the integer times of NBTau
       NSlice_Btau= Nslice_BTau_Max
       if (cpuid.eq.0) write(stdout, *) ' NSlice_Btau :', NSlice_Btau
+      allocate(NSlice_Btau_all(nk3_band))
+      allocate(NSlice_Btau_all_mpi(nk3_band))
       allocate(kout(3, NSlice_Btau))
+      allocate(kout_all(3, NSlice_Btau, nk3_band))
+      allocate(kout_all_mpi(3, NSlice_Btau, nk3_band))
+      kout_all_mpi= 0d0; kout_all=0d0; kout=0d0
+      NSlice_Btau_all= 0; NSlice_Btau_all_mpi= 0
 
       allocate( velocity_k(3, Nband_Fermi_Level))
       velocity_k= 0d0
    
+   
+      k= Single_KPOINT_3D_DIRECT
+      call velocity_calc(Nband_Fermi_Level, bands_fermi_level, k, velocity_k, Ek)
+ 
+      !> file index for different bands
+      do ib=1, Nband_Fermi_Level
+         outfileindex= outfileindex+ 1
+         myfileindex(ib)= outfileindex
+      enddo
+
+      do ib=1, Nband_Fermi_Level
+         if (cpuid.eq.0) then
+            write(bandname, '(i10)')bands_fermi_level(ib)
+            write(evolvefilename, '(3a)')'evolve_band_', trim(adjustl(bandname)), '.dat'
+            open(unit=myfileindex(ib), file=evolvefilename)
+            write(myfileindex(ib), '(a10, i5, a16, f16.8)')'# evolve k ', bands_fermi_level(ib), 'energy level', Ek(ib)
+            write(myfileindex(ib), '("#", a13, 24a16)')'BTau (T.ps)', &
+               'OmegaTau', 'kx', 'ky', 'kz', 'vx', 'vy', 'vz', 'k1', 'k2','k3', 'Energy(ev)', "vx'", "vy'", "vz'"
+         endif
+      enddo
 #if defined (MPI)
       call mpi_barrier(mpi_cmw, ierr)
 #endif
-  
-     !> exclude all kpoints with zero velocity x B and large energy away from Fermi level
-     do ib= 1, Nband_Fermi_Level 
-         !> file index for different bands
-         outfileindex= outfileindex+ 1
-         myfileindex(ib)= outfileindex
-        if (cpuid.eq.0) then
-           write(bandname, '(i10)')bands_fermi_level(ib)
-           write(evolvefilename, '(3a)')'evolve_band_', trim(adjustl(bandname)), '.dat'
-           open(unit=myfileindex(ib), file=evolvefilename)
-        endif
 
-        do ik= 1, nk3_band
+     magnetic_field(1)=Bx
+     magnetic_field(2)=By
+     magnetic_field(3)=Bz
+  
+      !> exclude all kpoints with zero velocity x B and large energy away from Fermi level
+     do ib= 1, Nband_Fermi_Level 
+
+        NSlice_Btau_all_mpi = 0; NSlice_Btau_all=0
+        kout_all= 0d0; kout_all_mpi= 0d0
+        do ik= 1+cpuid, nk3_band, num_cpu
            k_start = k3points(:, ik)
-           call velocity_calc(Nband_Fermi_Level, bands_fermi_level, k_start, velocity_k, Ek)
            if (cpuid.eq.0) then
-              write(myfileindex(ib), '(a)')" "
-              write(myfileindex(ib), '(a)')"# Quasi-particle's trajectory under magnetic field"
-              write(myfileindex(ib), '(a, 3f12.5)')'# Magnetic field is along (cartesian coordinates)', Bdirection
-              write(myfileindex(ib), '(1X, a, 3f12.5, a, i8)')"# Starting k point (fractional coordinates) :", k_start, ' ith-band ', bands_fermi_level(ib)
-              write(myfileindex(ib), '(a, f16.8, a)')'# At energy level', Ek(ib), ' eV'
-              write(myfileindex(ib), '("#", a13, 20a16)')'BTau (T.ps)', &
-                 'Omega*Tau', 'kx', 'ky', 'kz', 'vx', 'vy', 'vz', 'k1', 'k2','k3'
+              write( stdout, *)'ib, ik', ib, ik
            endif
  
            !> start to get the evolution of k points under magnetic field using Runge-Kutta method
@@ -2310,28 +1684,58 @@
            !> if the magnetic field is zero. 
            icycle = 0
            if (BTauMax>eps3) then
-              call RKF45_pack(bands_fermi_level(ib),  &
+              call RKF45_pack(magnetic_field, bands_fermi_level(ib),  &
                  NSlice_Btau, k_start, Btau_start, Btau_final, kout, icycle, fail)
            else
+              stop "ERROR: please set finite BtauMax in the file wt.in"
               do ibtau=1, NSlice_Btau
                  kout(:, ibtau)= k_start(:)
               enddo
            endif
+           NSlice_Btau_all_mpi(ik)= NSlice_Btau
+           kout_all_mpi(:, :, ik)= kout
+        enddo
+
+#if defined (MPI)
+        call mpi_allreduce(NSlice_Btau_all_mpi,NSlice_Btau_all,size(NSlice_Btau_all),&
+                         mpi_in,mpi_sum,mpi_cmw,ierr)
+        call mpi_allreduce(kout_all_mpi,kout_all,size(kout_all),&
+                         mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+        NSlice_Btau_all= NSlice_Btau_all_mpi
+        kout_all= kout_all_mpi
+#endif
+ 
+
+        do ik= 1, nk3_band
+           k_start = k3points(:, ik)
+           call velocity_calc(Nband_Fermi_Level, bands_fermi_level, k_start, velocity_k, Ek)
+           if (cpuid.eq.0) then
+           endif
        
            if (cpuid.eq.0) then
-              if (NSlice_Btau==1) then
+              if (NSlice_Btau_all(ik)==1) then
+                 write(myfileindex(ib), '(1X, a, 3f12.5, a, i8)')"# Starting k point (fractional coordinates) :", k_start, ' ith-band ', bands_fermi_level(ib)
+                 write(myfileindex(ib), '(a, f16.8, a)')'# At energy level', Ek(ib)/eV2Hartree, ' eV'
                  write(myfileindex(ib), '(a)')">> No data for output since VxB=0 or far away from Fermi level |E-E_F|>0.05eV" 
                  write(myfileindex(ib), '(a)')" "
               else
-                 do it=1, NSlice_Btau
-                    k= kout(:, it) 
+                 write(myfileindex(ib), '(a)')" "
+                 write(myfileindex(ib), '(a)')"# Quasi-particle's trajectory under magnetic field"
+                 write(myfileindex(ib), '(a, 3f12.5)')'# Magnetic field is along (cartesian coordinates)', Bdirection
+                 write(myfileindex(ib), '(1X, a, 3f12.5, a, i8)')"# Starting k point (fractional coordinates) :", k_start, ' ith-band ', bands_fermi_level(ib)
+                 write(myfileindex(ib), '(a, f16.8, a)')'# At energy level', Ek(ib)/eV2Hartree, ' eV'
+                 write(myfileindex(ib), '("#", a13, 20a16)')'BTau (T.ps)', &
+                    'Omega*Tau', 'kx', 'ky', 'kz', 'vx', 'vy', 'vz', 'k1', 'k2','k3'
+                 do it=1, NSlice_Btau_all(ik)
+                    k= kout_all(:, it, ik) 
                     !call velocity_calc_iband(ib+bands_fermi_level(1)-1, k, v_t)
                     call velocity_calc_iband2(bands_fermi_level(ib), k, v_t, E_iband)
-                    BTau = -(it-1.0)/NSlice_Btau*15d0*BTauMax
-                    call direct_cart_rec(kout(:, it), k)
+                    BTau = -(it-1.0)/NSlice_Btau_all(ik)*15d0*BTauMax
+                    call direct_cart_rec(kout_all(:, it, ik), k)
                     call project_k3_to_kplane_defined_by_direction(v_t, Bdirection, v_t2)
                     write(myfileindex(ib), '(100f16.8)')Btau*Magneticfluxdensity_atomic/Relaxation_Time_Tau, &
-                       Btau*Magneticfluxdensity_atomic/Relaxation_Time_Tau*0.175874356d0, k, v_t, kout(:, it), E_iband, v_t2
+                       Btau*Magneticfluxdensity_atomic/Relaxation_Time_Tau*0.175874356d0, k, v_t, kout_all(:, it, ik), E_iband, v_t2
                  enddo
               endif
            endif
@@ -2375,7 +1779,7 @@
       logical :: fail
       integer :: icycle
 
-      real(dp) :: v_t(3), v_k(3), k(3), k_start(3)
+      real(dp) :: v_t(3), v_k(3), k(3), k_start(3), magnetic_field(3)
       
       real(dp) :: time_start, time_end, time_start0, time_end0
       integer :: NSlice_Btau_inuse
@@ -2570,8 +1974,8 @@
               !vcrossB(1)= -v_t(2)*Bdirection(3)+ v_t(3)*Bdirection(2)
               !vcrossB(2)= -v_t(3)*Bdirection(1)+ v_t(1)*Bdirection(3)
               !vcrossB(3)= -v_t(1)*Bdirection(2)+ v_t(2)*Bdirection(1)
-              !if (abs(Enk(ik, ib))<0.05d0.and.dsqrt(sum((abs(vcrossB)**2)))>eps3) then
-               if (abs(Enk(ik, ib))<0.05d0) then
+              !if (abs(Enk(ik, ib))/eV2Hartree<0.05d0.and.dsqrt(sum((abs(vcrossB)**2)))>eps3) then
+               if (abs(Enk(ik, ib))/eV2Hartree<0.05d0) then
                   it = it+ 1
                endif
             enddo ! ik
@@ -2604,8 +2008,8 @@
               !vcrossB(1)= -v_t(2)*Bdirection(3)+ v_t(3)*Bdirection(2)
               !vcrossB(2)= -v_t(3)*Bdirection(1)+ v_t(1)*Bdirection(3)
               !vcrossB(3)= -v_t(1)*Bdirection(2)+ v_t(2)*Bdirection(1)
-              !if (abs(Enk(ik, ib))<0.05d0.and.dsqrt(sum((abs(vcrossB)**2)))>eps3) then
-               if (abs(Enk(ik, ib))<0.05d0) then
+              !if (abs(Enk(ik, ib))/eV2Hartree<0.05d0.and.dsqrt(sum((abs(vcrossB)**2)))>eps3) then
+               if (abs(Enk(ik, ib))/eV2Hartree<0.05d0) then
                   it = it+ 1
                   KCube2D_left(ib)%ik_array(it) = ik
                   KCube2D_left(ib)%Ek_local(it) = Enk(ik, ib)
@@ -2752,7 +2156,10 @@
          !> and we calculate the conductivity/Tau over different bands and different k points
          time_start= 0d0
          time_end  = 0d0
-     
+    
+         magnetic_field(1)=Bx
+         magnetic_field(2)=By
+         magnetic_field(3)=Bz
          call now(time_start0)
          do ib= 1, Nband_Fermi_Level
 !           print *, 'cpuid, ib, nk', cpuid, ib, KCube2D_left(ib)%Nk_current
@@ -2768,7 +2175,7 @@
                v_k(1)= KCube2D_left(ib)%vx_total(ik)
                v_k(2)= KCube2D_left(ib)%vy_total(ik)
                v_k(3)= KCube2D_left(ib)%vz_total(ik)
-               
+              
                !> Kelvin to Hartree
                KBT= Tmin*8.6173324E-5*eV2Hartree
                mu= OmegaMin
@@ -2784,8 +2191,7 @@
                !> if the magnetic field is zero. 
                NSlice_Btau_inuse= NSlice_Btau
                if (BTauMax>eps3) then
-                 !call RKF45_pack(ib+bands_fermi_level(1)-1,  
-                  call RKF45_pack(bands_fermi_level(ib),  &
+                  call RKF45_pack(magnetic_field, bands_fermi_level(ib),  &
                        NSlice_Btau, k_start, Btau_start, Btau_final, kout, icycle, fail)
                else
                   NSlice_Btau_inuse = 1
@@ -2905,7 +2311,8 @@
          if (cpuid.eq.0) then
             !> write out the conductivity/tau into file
             do ib=1, Nband_Fermi_Level
-               coeff= Echarge**3/hbar/hbar*2d0/Origin_cell%CellVolume*1E10/kCubeVolume*Origin_cell%ReciprocalCellVolume
+               coeff= Echarge**2/hbar/Bohr_radius/Origin_cell%CellVolume/kCubeVolume*Origin_cell%ReciprocalCellVolume*1E-12
+               coeff= coeff/Time_atomic 
                write(myfileindex(ib), '(i6,20E16.6)')ik3, sigma_k_ohe_tensor(:, ib)*coeff
             enddo ! ib, band
          endif ! cpuid=0
@@ -2924,7 +2331,7 @@
       return
    end subroutine sigma_k_ohe
 
-subroutine r8_rkf45 ( f, neqn, y, yp, t, tout, relerr, abserr, flag, iband)
+subroutine r8_rkf45 (f, neqn, y, yp, t, tout, relerr, abserr, flag, iband, magnetic_field)
 
 !*****************************************************************************80
 !
@@ -3091,6 +2498,7 @@ subroutine r8_rkf45 ( f, neqn, y, yp, t, tout, relerr, abserr, flag, iband)
 
   integer ( kind = 4 ) neqn
   integer ( kind = 4 ) iband
+  real ( kind=8) ::  magnetic_field(3)
 
   real ( kind = 8 ) abserr
   real ( kind = 8 ), save :: abserr_save = -1.0D+00
@@ -3291,7 +2699,7 @@ subroutine r8_rkf45 ( f, neqn, y, yp, t, tout, relerr, abserr, flag, iband)
 
     init = 0
     kop = 0
-    call f ( t, y, yp, iband )
+    call f (magnetic_field, t, y, yp, iband )
     nfe = 1
 
     if ( abs(t- tout)<eps ) then
@@ -3352,7 +2760,7 @@ subroutine r8_rkf45 ( f, neqn, y, yp, t, tout, relerr, abserr, flag, iband)
   if ( abs ( dt ) <= 26.0D+00 * eps * abs ( t ) ) then
     t = tout
     y(1:neqn) = y(1:neqn) + dt * yp(1:neqn)
-    call f ( t, y, yp, iband )
+    call f (magnetic_field, t, y, yp, iband )
     nfe = nfe + 1
     flag = 2
     return
@@ -3439,7 +2847,7 @@ subroutine r8_rkf45 ( f, neqn, y, yp, t, tout, relerr, abserr, flag, iband)
 !
 !  Advance an approximate solution over one step of length H.
 !
-      call r8_fehl ( f, neqn, y, t, h, yp, f1, f2, f3, f4, f5, f1, iband )
+      call r8_fehl ( f, neqn, y, t, h, yp, f1, f2, f3, f4, f5, f1, iband, magnetic_field)
       nfe = nfe + 5
 !
 !  Compute and test allowable tolerances versus local error estimates
@@ -3502,7 +2910,7 @@ subroutine r8_rkf45 ( f, neqn, y, yp, t, tout, relerr, abserr, flag, iband)
 !
     t = t + h
     y(1:neqn) = f1(1:neqn)
-    call f ( t, y, yp, iband )
+    call f (magnetic_field, t, y, yp, iband )
     nfe = nfe + 1
 !
 !  Choose the next stepsize.  The increase is limited to a factor of 5.
@@ -3543,7 +2951,7 @@ subroutine r8_rkf45 ( f, neqn, y, yp, t, tout, relerr, abserr, flag, iband)
   return
 end subroutine r8_rkf45
 
-subroutine r8_fehl ( f, neqn, y, t, h, yp, f1, f2, f3, f4, f5, s, iband)
+subroutine r8_fehl ( f, neqn, y, t, h, yp, f1, f2, f3, f4, f5, s, iband, magnetic_field)
 
 !*****************************************************************************80
 !
@@ -3635,18 +3043,20 @@ subroutine r8_fehl ( f, neqn, y, t, h, yp, f1, f2, f3, f4, f5, s, iband)
   real ( kind = 8 ) t
   real ( kind = 8 ) y(neqn)
   real ( kind = 8 ) yp(neqn)
+  real ( kind = 8 ) magnetic_field(3)
+
 
   ch = h / 4.0D+00
 
   f5(1:neqn) = y(1:neqn) + ch * yp(1:neqn)
 
-  call f ( t + ch, f5, f1, iband)
+  call f (magnetic_field, t + ch, f5, f1, iband)
 
   ch = 3.0D+00 * h / 32.0D+00
 
   f5(1:neqn) = y(1:neqn) + ch * ( yp(1:neqn) + 3.0D+00 * f1(1:neqn) )
 
-  call f ( t + 3.0D+00 * h / 8.0D+00, f5, f2, iband)
+  call f (magnetic_field, t + 3.0D+00 * h / 8.0D+00, f5, f2, iband)
 
   ch = h / 2197.0D+00
 
@@ -3655,7 +3065,7 @@ subroutine r8_fehl ( f, neqn, y, t, h, yp, f1, f2, f3, f4, f5, s, iband)
   + ( 7296.0D+00 * f2(1:neqn) - 7200.0D+00 * f1(1:neqn) ) &
   )
 
-  call f ( t + 12.0D+00 * h / 13.0D+00, f5, f3, iband)
+  call f (magnetic_field, t + 12.0D+00 * h / 13.0D+00, f5, f3, iband)
 
   ch = h / 4104.0D+00
 
@@ -3665,7 +3075,7 @@ subroutine r8_fehl ( f, neqn, y, t, h, yp, f1, f2, f3, f4, f5, s, iband)
   + ( 29440.0D+00 * f2(1:neqn) - 32832.0D+00 * f1(1:neqn) ) &
   )
 
-  call f ( t + h, f5, f4, iband)
+  call f (magnetic_field, t + h, f5, f4, iband)
 
   ch = h / 20520.0D+00
 
@@ -3677,7 +3087,7 @@ subroutine r8_fehl ( f, neqn, y, t, h, yp, f1, f2, f3, f4, f5, s, iband)
   + ( 41040.0D+00 * f1(1:neqn) - 28352.0D+00 * f2(1:neqn) ) &
   )
 
-  call f ( t + h / 2.0D+00, f1, f5, iband)
+  call f (magnetic_field, t + h / 2.0D+00, f1, f5, iband)
 !
 !  Ready to compute the approximate solution at T+H.
 !

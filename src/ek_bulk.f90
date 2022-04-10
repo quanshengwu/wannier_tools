@@ -2757,7 +2757,7 @@ subroutine generate_ek_kpath_gnu(datafilename, gnufilename, gnuoutfilename, &
    outfileindex= outfileindex+ 1
    if (cpuid==0) then
       open(unit=outfileindex, file=gnufilename)
-      write(outfileindex, '(a)') 'set terminal pdf enhanced color font ",30"'
+      write(outfileindex, '(a)') 'set terminal pdf enhanced color font ",24"'
       write(outfileindex,'(2a)') 'set palette defined ( 0  "green", ', &
          '5 "yellow", 10 "red" )'
       write(outfileindex, '(3a)')"set output '", trim(adjustl(gnuoutfilename)), "' "
@@ -2766,8 +2766,8 @@ subroutine generate_ek_kpath_gnu(datafilename, gnufilename, gnuoutfilename, &
       write(outfileindex, '(a)')'set pointsize 0.8'
       write(outfileindex, '(a)')'#set xtics font ",24"'
       write(outfileindex, '(a)')'#set ytics font ",24"'
-      write(outfileindex, '(a)')'set ylabel font ",24"'
-      write(outfileindex, '(a)')'set ylabel offset 1.5,0'
+      write(outfileindex, '(a)')'#set ylabel font ",24"'
+      write(outfileindex, '(a)')'set ylabel offset 0.5,0'
       write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(klen*Angstrom2atomic), ']'
       write(outfileindex, '(a,f12.6)')'emin=', emin
       write(outfileindex, '(a,f12.6)')'emax=', emax

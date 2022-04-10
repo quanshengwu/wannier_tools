@@ -3,10 +3,10 @@ Hrfile = 'Graphene_hr.dat'
 /
 
 &CONTROL
-LandauLevel_B_dos_calc = T   ! Hofstadter butterfly by Lanczos method
-LandauLevel_B_calc = F  ! Hofstadter butterfly by diagonalization
-LandauLevel_k_calc = F  ! energy bands at a fixed magnetic flux magp/Nslab*\Phi_0 using diagonalization method
-LandauLevel_k_dos_calc = F  ! energy bands at a fixed magnetic flux magp/Nslab*\Phi_0 using Laczos method
+LandauLevel_B_dos_calc = F   ! Hofstadter butterfly by Lanczos method
+LandauLevel_B_calc = T       ! Hofstadter butterfly by diagonalization
+LandauLevel_k_calc = F       ! energy bands at a fixed magnetic flux magp/Nslab*\Phi_0 using diagonalization method
+LandauLevel_k_dos_calc = F   ! energy bands at a fixed magnetic flux magp/Nslab*\Phi_0 using Laczos method
 /
 
 &SYSTEM

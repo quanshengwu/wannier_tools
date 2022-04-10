@@ -11,7 +11,6 @@
 ! QuanSheng Wu (wuquansheng@gmail.com)
 !------------------------------------------------------------------------------
 
-
   subroutine DefineBasicOperations(BasicOperations_space, BasicOperations_spin, BasicOperations_inversion)
      !> We adopt the definations from Z.Fang, There are 18 basic operations.
      !> The cartesian coordinates are used.
@@ -725,9 +724,9 @@
 
      !> magnetic moment after considering the magnetic field
      do ia=1, Origin_cell%Num_atoms
-        Atom_magnetic_moment_field(1, ia)= Origin_cell%Atom_magnetic_moment(1, ia)+ Bx
-        Atom_magnetic_moment_field(2, ia)= Origin_cell%Atom_magnetic_moment(2, ia)+ By
-        Atom_magnetic_moment_field(3, ia)= Origin_cell%Atom_magnetic_moment(3, ia)+ Bz
+        Atom_magnetic_moment_field(1, ia)= Origin_cell%Atom_magnetic_moment(1, ia)+ Bx*Magneticfluxdensity_atomic
+        Atom_magnetic_moment_field(2, ia)= Origin_cell%Atom_magnetic_moment(2, ia)+ By*Magneticfluxdensity_atomic
+        Atom_magnetic_moment_field(3, ia)= Origin_cell%Atom_magnetic_moment(3, ia)+ Bz*Magneticfluxdensity_atomic
      enddo
      if (cpuid==0) write(stdout, '(a)', advance='no')'>>> Check the consistance of the symmetry'
      if (cpuid==0) write(stdout, '(a)')  'operators with the magnetic configuration.'
@@ -884,7 +883,7 @@
      pgop_direct= 0d0; pgop_cart= 0d0
      pggen_cart= 0d0; pggen_direct= 0d0
      tau_cart= 0d0; tau_direct= 0d0 ; spatial_inversion= 0d0
-     if (.not.Symmetry_Import_calc) return
+    !if (.not.Symmetry_Import_calc) return
 
      !> define 18 basic operations
      call DefineBasicOperations(BasicOperations_space, BasicOperations_spin, BasicOperations_inversion)
@@ -929,14 +928,13 @@
            ik1= (ik-1)/(Nk2*Nk3)+1
            ik2= ((ik-1-(ik1-1)*Nk2*Nk3)/Nk3)+1
            ik3= (ik-(ik2-1)*Nk3- (ik1-1)*Nk2*Nk3)
-          !write(1001, '(3i10)')ik1, ik2, ik3
+          !write(1001, '(4i5)')ik1, ik2, ik3, ik
            k3_in_cart = Origin_cell%Kua*(ik1-1d0)/dble(Nk1)  &
               + Origin_cell%Kub*(ik2-1d0)/dble(Nk2)  &
               + Origin_cell%Kuc*(ik3-1d0)/dble(Nk3)
            if (KCube3D_symm%ik_relate(ik).eq.ik) then
               Nk_reduced= Nk_reduced+ 1
               KCube3D_symm%ik_array_symm(Nk_reduced)= ik
-             !write(1002, '(3i10)')ik1, ik2, ik3
               k_deg= 1
               do j=1, number_group_operators
                  symm_matrix= pgop_cart(:, :, j)
@@ -966,7 +964,6 @@
      endif
 
      if (cpuid.eq.0) then
-        write(stdout, *)' '
         write(stdout, *)' '
         write(stdout, *)'>> We finished the symmetry reducing of the kpoints in the kcube'
         write(stdout, '(2x, a, i10)')"Number of kpoints mesh is ", Nk1*Nk2*Nk3

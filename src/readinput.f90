@@ -221,7 +221,7 @@ subroutine readinput
    BulkBand_line_calc= BulkBand_line_calc.or.BulkBand_calc
    BulkBand_unfold_line_calc= BulkBand_unfold_line_calc.or.Landaulevel_unfold_line_calc
 
-   if (MirrorChern_calc.or.Boltz_OHE_calc) Symmetry_Import_calc = .true.
+   if (MirrorChern_calc) Symmetry_Import_calc = .true.
 
    !> control parameters
    if (cpuid==0) then
@@ -278,6 +278,7 @@ subroutine readinput
       write(stdout, *) "LandauLevel_k_dos_calc            : ", LandauLevel_k_dos_calc
       write(stdout, *) "LandauLevel_B_dos_calc            : ", LandauLevel_B_dos_calc
       write(stdout, *) "FermiLevel_calc                   : ", FermiLevel_calc
+      write(stdout, *) "Symmetry_Import_calc              : ", Symmetry_Import_calc
       write(stdout, *) "ChargeDensity_selected_bands_calc : ", ChargeDensity_selected_bands_calc
       write(stdout, *) "ChargeDensity_selected_energies_calc : ", ChargeDensity_selected_energies_calc
    endif
@@ -3828,7 +3829,7 @@ subroutine cart_direct_rec(k1, k2)
    mata(3, :)= Origin_cell%Kuc
 
    call inv_r(3, mata)
-   K2= k1(1)*mata(1, :)+ k1(2)*mata(2, :)+ k1(3)*mata(3, :)
+   k2= k1(1)*mata(1, :)+ k1(2)*mata(2, :)+ k1(3)*mata(3, :)
 
    deallocate(mata)
 

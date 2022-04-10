@@ -321,18 +321,18 @@
          write(outfileindex, '(a)')"set output 'wcc.eps'"
          write(outfileindex, '(a)')'unset key '
          write(outfileindex, '(a)')'set border lw 3 '
-         write(outfileindex, '(a)')'set xtics offset 0, 0.0'
+         write(outfileindex, '(a)')'set xtics offset 0, 0.2'
          write(outfileindex, '(a)')'set xtics format "%4.1f" nomirror out '
          write(outfileindex, '(a)')'set xlabel "k" '
          write(outfileindex, '(a)')'set xlabel offset 0, 0.7 '
          write(outfileindex, '(a)')'set ytics 0.5 '
-         write(outfileindex, '(a)')'unset xtics '
          write(outfileindex, '(a)')'set ytics format "%4.1f" nomirror out'
          write(outfileindex, '(a)')'set ylabel "WCC"'
-         write(outfileindex, '(a)')'set ylabel offset 0, 0.0 '
+         write(outfileindex, '(a)')'set ylabel offset 2, 0.0 '
          write(outfileindex, '(a)')'set xrange [0: 0.5]'
          write(outfileindex, '(a)')'set yrange [0:1]'
-         write(outfileindex, '(a, i5, a)')"plot for [i=4: ", NumberofSelectedOccupiedBands+3, "] 'wcc.dat' u 1:i w p  pt 7  ps 1.1 lc 'red'"
+         write(outfileindex, '(a)')"plot 'wcc.dat' u 1:2 w l lw 2  lc 'blue', \"   
+         write(outfileindex, '(a, i5, a)')" for [i=4: ", NumberofSelectedOccupiedBands+3, "] 'wcc.dat' u 1:i w p  pt 7  ps 1.1 lc 'red'"
          close(outfileindex)
       endif
 
@@ -847,7 +847,8 @@
               
                ritzvec= .true.
                call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,eigenvalue,shiftsigma, zeigv, ritzvec)
-               kline_integrate(ik1)%eig_vec(1:Num_wann, 1:NumberofSelectedOccupiedBands)= zeigv(1:Num_wann, 1:NumberofSelectedOccupiedBands)
+               kline_integrate(ik1)%eig_vec(1:Num_wann, 1:NumberofSelectedOccupiedBands)= &
+                  zeigv(1:Num_wann, Selected_Occupiedband_index(1):Selected_Occupiedband_index(NumberofSelectedOccupiedBands))
 
             else
                !> get the TB hamiltonian in k space
@@ -855,7 +856,8 @@
       
                !> diagonal hamk
                call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
-               kline_integrate(ik1)%eig_vec(1:Num_wann, 1:NumberofSelectedOccupiedBands)= hamk(1:Num_wann, 1:NumberofSelectedOccupiedBands)
+               kline_integrate(ik1)%eig_vec(1:Num_wann, 1:NumberofSelectedOccupiedBands)= &
+                  hamk(1:Num_wann, Selected_Occupiedband_index(1):Selected_Occupiedband_index(NumberofSelectedOccupiedBands))
  
             endif
    

@@ -105,7 +105,7 @@
 
      call dgesv(ndim,ndim,Amat,ndim,ipiv,Bmat,ndim,info)
 
-     if(info.ne.0)print *,'something wrong with dgesv'
+     if(info.ne.0)stop 'something wrong with dgesv in inverse.f90'
 
      Amat=Bmat
      

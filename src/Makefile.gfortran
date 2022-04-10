@@ -12,17 +12,18 @@ obj =  module.o sparse.o wt_aux.o math_lib.o symmetry.o readHmnR.o inverse.o pro
        main.o
 
 # compiler
-f90  = gfortran -cpp                                              
+f90  = gfortran -cpp -DINTELMKL
 
 flag = -O3 -ffree-line-length-512  #-g -Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=nan
 
+ARPACK=/Users/quan/work/workplace/ARPACK/libarpack_gfortran.a
 
 # blas and lapack libraries
-libs = -L/usr/lib/ -llapack -lblas
+#libs = -L/usr/lib/ -llapack -lblas
  
 # Intel MKL also supports with gfortran comipler
 # dynamic linking
-# libs = -L/${MKLROOT}/lib/intel64 -lmkl_core -lmkl_sequential -lmkl_intel_lp64 -lpthread
+libs = ${ARPACK} -L/${MKLROOT}/lib -lmkl_core -lmkl_sequential -lmkl_intel_lp64 -lpthread
  
  
 main :  $(obj)

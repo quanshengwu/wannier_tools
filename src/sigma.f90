@@ -159,23 +159,8 @@
       time_start= 0d0
       time_end= 0d0
 
-      if (Symmetry_Import_calc) then
-         call sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Level, bands_fermi_level, sigma_ohe_tensor)
-      else
-         call sigma_ohe_calc     (mu_array, KBT_array, BTau_array, Nband_Fermi_Level, bands_fermi_level, sigma_ohe_tensor)
-      endif
-     !if (cpuid.eq.0) then
-     !   if (NumT==1.and.OmegaNum==1)then
-     !      !> write out the conductivity/tau into file
-     !      do i=1, NBTau
-     !      do ib=1, Nband_Fermi_Level
-     !         write(myfileindex(ib), '(20E16.6)')BTau_array(i), BTau_array(i)*0.175874356d0, sigma_ohe_tensor(:, i, 1, 1, ib)
-     !      enddo ! ib, band
-     !      enddo ! i, NBTau
-     !   endif !> only one T and one mu
-     !endif ! cpuid=0
- 
-
+      call sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Level, bands_fermi_level, sigma_ohe_tensor)
+     
      !if (cpuid.eq.0) then
      !   do ib=1, Nband_Fermi_Level
      !      close(myfileindex(ib))

@@ -21,6 +21,7 @@
 ! version     2.5.0  At EPFL, Switzerland, Dec. 9. 2019, magnetoresistance, band unfolding
 ! version     2.5.1  At EPFL, Switzerland, Mar. 6. 2020, For WannierTools tutorial 2020
 ! version     2.6.0  At EPFL, Switzerland, Feb.15. 2021, Landau level, sparse Hamiltonian, TBG
+! version     2.6.1  At Beijing, China, April 10. 2022 clean for the Wannier90 tutorial 2022
 !
 ! Corresponding to : wuquansheng@gmail.com
 !
@@ -43,7 +44,7 @@
 
 
      !> version of WannierTools
-     version='2.6.0'
+     version='2.6.1'
 
      ierr = 0
      cpuid= 0

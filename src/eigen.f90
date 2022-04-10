@@ -280,6 +280,7 @@
 
      mdim= iu-il+1
      lwork= 64*N
+     vl=0d0; vu=0d0 
 
      allocate(ifail(N))
      allocate(iwork(5*N))
@@ -296,7 +297,12 @@
      vl=0d0; vu=0d0
 
      call zheevx(JOBZ,'I',UPLO,N,A,N,vl,vu,il,iu,abstol,&
+         mdim,eigenvalues,eigvec,N,work,-1,rwork,iwork,ifail,info)
+     lwork=int(work(1))
+
+     call zheevx(JOBZ,'I',UPLO,N,A,N,vl,vu,il,iu,abstol,&
          mdim,eigenvalues,eigvec,N,work,lwork,rwork,iwork,ifail,info)
+
 
      if (info/=0) then
         print *, ' Error info in zheevx: ', info
@@ -310,5 +316,91 @@
      return
   end subroutine  zheevx_pack
 
+  subroutine zgeev_sys(N, A, W,JOBVL,VL,JOBVR,VR )
+     ! a pack of Lapack subroutine zgeev, which is a subroutine to
+     ! calculate eigenvector and eigenvalue of a complex hermite matrix
 
+     use para, only : Dp
+     implicit none
+
+!  JOBVL   (input) CHARACTER*1
+!  JOBVR   (input) CHARACTER*1
+!          = 'N':  Compute eigenvalues only;
+!          = 'V':  Compute eigenvalues and eigenvectors.
+!
+     character*1 :: JOBVL
+     character*1 :: JOBVR
+
+!  N       (input) INTEGER
+!          The order of the matrix A.  N >= 0.
+     integer,   intent(in) :: N
+
+!~         A is COMPLEX*16 array, dimension (LDA,N)
+!~           On entry, the N-by-N matrix A.
+!~           On exit, A has been overwritten.
+
+     complex(Dp),intent(inout) :: A(N, N)
+
+!  W       (output) DOUBLE PRECISION array, dimension (N)
+!          If INFO = 0, the eigenvalues in ascending order.
+
+!    eigenvalues
+     complex(Dp), intent(out) :: W(N)
+    
+!    left eigenvectors
+     complex(dp) :: VL(N,N)
+
+!    right eigenvectors
+     complex(dp) :: VR(N,N)
+
+     integer :: info
+
+     integer :: lda
+     integer :: ldvl
+     integer :: ldvr
+
+     integer :: lwork
+
+     real(dp),allocatable ::  rwork(:)
+
+     complex(dp),allocatable :: work(:)
+
+     !> only calculate eigenvalues
+!~      JOBVL= 'N'
+!~      JOBVR= 'N'
+
+     lda=N
+     ldvl=N
+     ldvr=N
+     lwork= 16*N
+
+     allocate(rwork(16*N))
+     allocate( work(lwork))
+     VL= (0d0, 0d0)
+     VR= (0d0, 0d0)
+     rwork= 0d0
+     work= (0d0, 0d0)
+
+     info=0
+     W=(0d0, 0d0)
+
+     if (N==1) then 
+        W=A(1, 1)
+        VL(1, 1)= 1d0
+        VR(1, 1)= 1d0
+        return
+     endif
+
+     call  ZGEEV( JOBVL, JOBVR, N, A, LDA, W, VL, LDVL, VR, LDVR, &
+                        WORK, LWORK, RWORK, INFO )
+     if (info /= 0) then
+        stop ">>> Error : something wrong happens in zgeev_pack" 
+     endif
+
+
+     deallocate(rwork)
+     deallocate( work)
+
+     return
+  end subroutine zgeev_sys
 
