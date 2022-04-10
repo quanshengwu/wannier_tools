@@ -1,0 +1,72 @@
+&TB_FILE
+Hrfile = 'Free_compensate_model_hr.dat'
+/
+
+
+&CONTROL
+BulkBand_calc         = T ! band structure calculation
+BulkFS_calc           = T ! Fermi surface calculation
+Boltz_OHE_calc        = T ! ordinary magnetoresistance
+Symmetry_Import_calc  = F ! impose the symmetry. please set it to be true for magnetoresistance calculation
+/
+
+&SYSTEM
+NumOccupied =  1        ! Number of Occupied bands, set it even not used
+SOC = 0                 ! without soc : SOC=0; with soc : SOC=1
+E_FERMI =  0.0000        ! e-fermi
+Btheta=0, Bphi= 90    ! magnetic field direction, Btheta is the angle with z axial, Bphi is the angle with respect to x axial in the x-y plane
+/
+
+&PARAMETERS
+OmegaNum = 1        ! omega number       
+OmegaMin =  0.00     ! energy interval
+OmegaMax =  0.00    ! energy interval
+Nk1 = 68          ! number k points 
+Nk2 = 68          ! number k points 
+Nk3 = 68          ! number k points 
+BTauNum= 100        ! Number of B*tau we calculate
+BTauMax = 40.0      ! The maximum B*tau, starting from Btau=0.
+Tmin = 30           ! Temperature in Kelvin
+Tmax = 330          ! Temperature in Kelvin
+NumT = 11           ! number temperature we calculate. T=Tmin+(Tmax-Tmin)/(NumT-1)
+/
+
+LATTICE
+Angstrom
+2 0 0
+0 2 0
+0 0 2
+
+ATOM_POSITIONS
+1                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+X    0 0 0 
+
+PROJECTORS
+2              ! number of projectors
+X s s
+
+SURFACE            ! TaAs2 conventional (010) surface
+ 1  0  0
+ 0  1  0
+ 0  0  1
+
+KPATH_BULK            ! k point path
+5              ! number of k line only for bulk band
+   X 0.50000  0.00000  0.00000    G  0.00000  0.00000  0.00000  
+   G 0.00000  0.00000  0.00000    Z  0.00000  0.00000  0.50000  
+   Z 0.00000  0.00000  0.50000    L  0.50000  0.50000  0.50000  
+   L 0.50000  0.50000  0.50000    Y  0. 0000  0.50000  0.00000  
+   Y 0.00000  0.50000  0.00000    G  0.00000  0.00000  0.00000  
+
+KPLANE_BULK
+-0.50 -0.50 -0.00   ! Original point for 3D k plane 
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  1.00  0.00   ! The second vector to define 3d k space plane
+
+KCUBE_BULK
+-0.50 -0.50 -0.50   ! Original point for 3D k plane 
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  1.00  0.00   ! The second vector to define 3d k space plane
+ 0.00  0.00  1.00   ! The third vector to define 3d k cube
+
