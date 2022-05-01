@@ -19,9 +19,9 @@ NumOccupied = 6        ! set it anyway even don't use it.
 OmegaNum = 2        ! omega number       
 OmegaMin = -0.1     ! energy interval
 OmegaMax =  0.0     ! energy interval
-Nk1 =61            ! Kmesh(1) for KCUBE_BULK
-Nk2 =61            ! Kmesh(2) for KCUBE_BULK
-Nk3 =61            ! Kmesh(3) for KCUBE_BULK
+Nk1 =41            ! Kmesh(1) for KCUBE_BULK
+Nk2 =41            ! Kmesh(2) for KCUBE_BULK
+Nk3 =41            ! Kmesh(3) for KCUBE_BULK
 BTauNum= 100        ! Number of B*tau we calculate
 BTauMax = 40.0      ! The maximum B*tau, starting from Btau=0.
 Tmin = 30           ! Temperature in Kelvin

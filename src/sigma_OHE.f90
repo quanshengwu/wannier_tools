@@ -814,23 +814,33 @@
                write(stdout, *)' '
                cycle
             endif
-   
-            if (NSlice_Btau_inuse==1)then
+  
+            if (NSlice_Btau_inuse==1)then  ! vxB=0
+               call velocity_calc_iband(bands_fermi_level(iband), k_start, v_t)
                do ibtau=1, NSlice_Btau
                   kout(:, ibtau)= k_start(:)
+                  klist_iband(iband)%velocity_k(:, it)= v_t
                enddo
                NSlice_Btau_inuse = NSlice_Btau
+            else
+               do it= 1, icycle
+                  k= kout(:, it) 
+                  call velocity_calc_iband(bands_fermi_level(iband), k, v_t)
+                  klist_iband(iband)%velocity_k(:, it)= v_t
+               enddo ! integrate over time step
+   
+               !> periodic kpath in the BZ can be reused
+               do i=2, NSlice_Btau_inuse/icycle
+                  do j=1, icycle
+                     klist_iband(iband)%velocity_k(:, j+(i-1)*icycle)= klist_iband(iband)%velocity_k(:, j)
+                  enddo
+               enddo
+               do i=(NSlice_Btau_inuse/icycle)*icycle+1, NSlice_Btau
+                  klist_iband(iband)%velocity_k(:, i)= klist_iband(iband)%velocity_k(:, i-(NSlice_Btau_inuse/icycle)*icycle)
+               enddo
             endif
-   
-            klist_iband(iband)%klist_rkfs= kout
-   
-            do it= 1, NSlice_Btau_inuse
-               k= kout(:, it) 
-               call velocity_calc_iband(bands_fermi_level(iband), k, v_t)
-               klist_iband(iband)%velocity_k(:, it)= v_t
-            enddo ! integrate over time step
-   
-   
+
+ 
             !> calculate the conductivity/tau
             do ikt=1, NumT
                KBT= KBT_array(ikt)
@@ -1388,7 +1398,7 @@
       !> parameters for RKFS
       integer  :: it, i, j
       real(dp) :: t, tout
-      real(dp) :: kt(neqn), kdot(neqn)
+      real(dp) :: kt(neqn), kdot(neqn), kdiff(3)
       real(dp) :: DeltaBtau, relerr, abserr 
       integer  :: iflag, iter
 
@@ -1397,7 +1407,7 @@
       real(dp) :: velocity_k0(3), vcrossB(3)
 
 
-      icycle=0
+      icycle=NSlice_Btau
       fail= .false.
 
       DeltaBtau = Btau_final/dble(NSlice_Btau)
@@ -1465,12 +1475,14 @@
          if (it+1> NSlice_Btau) goto 80
          
 
-         if (it>2)dis_smallest= norm(kout(:, 2)-kout(:, 1))
+         call periodic_diff(kout(:,2), kout(:,1), kdiff)
+         if (it>2)dis_smallest= norm(kdiff)
 
          !> check if kout(:, it)==kout(:, 1)
          !> if it's a close orbit, we don't have to calculate all of them.
          if (it>10) then
-            dis= norm(kout(:, it)-kout(:, 1)) 
+            call periodic_diff(kout(:,it), kout(:,1), kdiff)
+            dis= norm(kdiff)
             if (dis<dis_smallest) then
                icycle= it- 1
                do i=2, NSlice_Btau/icycle

@@ -16,12 +16,14 @@ subroutine ek_bulk_line
    integer :: ik, il, ig, io, i, j, knv3, ierr
    real(dp) :: emin,  emax,  k(3)
    character*40 :: filename
+
+   !> eigenvalues of H
    real(Dp), allocatable :: W(:)
 
    ! Hamiltonian of bulk system
    complex(Dp), allocatable :: Hamk_bulk(:, :)
 
-   ! eigen value of H
+   ! eigenectors of H
    real(dp), allocatable :: eigv(:,:), eigv_mpi(:,:)
    real(dp), allocatable :: weight(:,:,:), weight_mpi(:,:,:), weight_sum(:,:)
 
@@ -33,11 +35,9 @@ subroutine ek_bulk_line
    allocate( weight    (NumberofSelectedOrbitals_groups,Num_wann, knv3))
    allocate( weight_mpi(NumberofSelectedOrbitals_groups,Num_wann, knv3))
    allocate( weight_sum(Num_wann, knv3))
-   eigv    = 0d0
-   eigv_mpi= 0d0
-   weight = 0d0
-   weight_sum = 0d0
-   weight_mpi = 0d0
+   W       = 0d0; Hamk_bulk = 0d0
+   eigv    = 0d0; eigv_mpi= 0d0
+   weight  = 0d0; weight_sum = 0d0; weight_mpi = 0d0
 
 
    do ik= 1+cpuid, knv3, num_cpu

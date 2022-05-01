@@ -40,7 +40,7 @@
      character(8) :: cht
 
      !> time measure
-     real(dp) :: time_start, time_end, time_init
+     real(Dp) :: time_start, time_end, time_init
 
 
      !> version of WannierTools

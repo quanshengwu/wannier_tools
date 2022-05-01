@@ -211,9 +211,11 @@ subroutine ham_bulk_latticegauge(k,Hamk_bulk)
    ! loop index
    integer :: i1,i2,iR
 
-   real(dp) :: kdotr, k(3)
+   real(dp) :: kdotr
 
    complex(dp) :: factor
+
+   real(dp), intent(in) :: k(3)
 
    ! Hamiltonian of bulk system
    complex(Dp),intent(out) ::Hamk_bulk(Num_wann, Num_wann)

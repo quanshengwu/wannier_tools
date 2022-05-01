@@ -60,7 +60,7 @@ subroutine readinput
       write(*,'(A)') &
          '>>> ERROR : Invalid line in namelist TB_FILE : '//trim(inline)
 
-      if (.not.exists) stop "TB_FIlE namelist should be given or wannier90_hr.dat should exist"
+      if (.not.exists) stop "ERROR>> TB_FIlE namelist should be given or wannier90_hr.dat should exist"
 
    endif
    if(cpuid==0)write(stdout,'(1x, a, a6, a)')"You are using : ", KPorTB, " model"
