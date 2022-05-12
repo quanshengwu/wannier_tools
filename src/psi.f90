@@ -3,7 +3,7 @@
      ! for 2D slab system
 
      use para,only : Dp,Num_wann,Nslab, stdout, cpuid , outfileindex, Single_KPOINT_2D_DIRECT, &
-        NumberofSelectedBands, Selected_band_index
+        NumberofSelectedBands, Selected_band_index, Origin_cell
      
      implicit none 
 
@@ -18,6 +18,7 @@
      
      !> norm of psi |\psi|^2
      real(Dp), allocatable   :: psi2  (:, :)
+     !real(Dp), allocatable   :: psi_atom  (:, :)
 
      !> wave function for the given band and k point
      complex(Dp), allocatable:: psi(:, :)
@@ -28,10 +29,12 @@
      mdim= Nslab*Num_wann
 
      allocate(psi2(Nslab, NumberofSelectedBands))
+     ! allocate(psi_atom(Nslab*Origin_cell%Num_atoms, NumberofSelectedBands))
      allocate(psi (mdim, 1))
      allocate(W(mdim))
      allocate(hamk_slab(mdim,mdim), hamk_slab_t(mdim,mdim))
      psi2=0d0;  psi=0d0; W=0d0
+     ! psi_atom = 0d0
      hamk_slab_t= 0d0; hamk_slab= 0d0
 
 
@@ -63,6 +66,23 @@
               psi2(i, ib)=psi2(i, ib)+abs(psi((i-1)*Num_wann+j, 1))**2
            enddo
         enddo
+
+       !it = 0
+       !do i=1,Nslab
+       !   do ia=1, Origin_cell%Num_atoms 
+       !      it = it + 1
+       !      do j=1, Origin_cell%nprojs(ia)
+       !         psi_atom(it, ib)=psi_atom(it, ib) + abs(psi((i-1)*Num_wann+j+sum(Origin_cell%nprojs(1:ia))-Origin_cell%nprojs(1), 1))**2
+       !      enddo !j
+       !      if (SOC>0) then
+       !         do j=1, Origin_cell%nprojs(ia)
+       !            psi_atom(it, ib)=psi_atom(it, ib) + abs(psi((i-1)*Num_wann+j+sum(Origin_cell%nprojs(1:ia))-Origin_cell%nprojs(1),
+       !            1)+Num_wann/2)**2
+       !         enddo !j
+       !      endif
+       !   enddo !ia
+       !enddo ! i
+
      enddo
 
      outfileindex= outfileindex+ 1

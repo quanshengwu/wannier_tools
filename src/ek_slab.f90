@@ -83,6 +83,10 @@
        
         ekslab(:,i)=eigenvalue
 
+        ! H*chamk(:,n)=E(n)*chamk(:,n)
+        !> Nslab*Num_wann
+        !> rho(:)=abs(chamk(:,n))**2
+        !> (a1 o1, o2 o3, a2, o1, o2, o3; a1 o1, o2 o3, a2, o1, o2, o3), (a1 o1, o2 o3, a2, o1, o2, o3; a1 o1, o2 o3, a2, o1, o2, o3), (a1 o1, o2 o3, a2, o1, o2, o3; a1 o1, o2 o3, a2, o1, o2, o3), 
         do j=1, Nslab* Num_wann
            !> left is the bottom surface
            do l= 1, NBottomOrbitals

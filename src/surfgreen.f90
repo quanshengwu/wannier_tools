@@ -304,7 +304,7 @@
      !> usually Hs= H00
      !> but you can add static potential on the surface
      Hs= H00
-     do i=1, ndim
+     do i=1, num_wann
         Hs(i, i)=Hs(i, i)+ surf_onsite
      enddo
   
@@ -315,6 +315,13 @@
      ! g_00=(epsilon-Hs -H01*T)^-1
      GLL(1:ndim,1:ndim)=temp
 
+     !> usually Hs= H00
+     !> but you can add static potential on the surface
+     Hs= H00
+     do i=ndim-num_wann+1, ndim
+        Hs(i, i)=Hs(i, i)+ surf_onsite
+     enddo
+ 
      Tmatrixt=t0tilde+Tmatrixt
      temp=energy*ones-Hs -matmul(conjg(transpose(H01)),Tmatrixt)  
      call inv(ndim,temp)
