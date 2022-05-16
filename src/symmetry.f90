@@ -883,20 +883,27 @@
      pgop_direct= 0d0; pgop_cart= 0d0
      pggen_cart= 0d0; pggen_direct= 0d0
      tau_cart= 0d0; tau_direct= 0d0 ; spatial_inversion= 0d0
-    !if (.not.Symmetry_Import_calc) return
 
-     !> define 18 basic operations
-     call DefineBasicOperations(BasicOperations_space, BasicOperations_spin, BasicOperations_inversion)
+     !> This is the unitary operation (unchange)
+     do j=1, 3
+        pggen_cart(j, j, 1)= 1d0
+     enddo
 
-     !> get generators for the space group
-     call FindGenerators(BasicOperations_space, BasicOperations_inversion, number_group_generators, generators_find, tau_find)
+     if (Symmetry_Import_calc) then
 
-     !> setup pggen_direct, pggen_cart, pgop_direct, pgop_cart, tau_cart, tau_direct
-     !> get all the space group operators and the number of operators number_group_operators
-     call FindSymmetryOperators(BasicOperations_space, BasicOperations_inversion)
-
-     !> Reconsider the space group operators according to the atom's magnetic moment
-     call Magnetic_adapted_Operators()
+        !> define 18 basic operations
+        call DefineBasicOperations(BasicOperations_space, BasicOperations_spin, BasicOperations_inversion)
+   
+        !> get generators for the space group
+        call FindGenerators(BasicOperations_space, BasicOperations_inversion, number_group_generators, generators_find, tau_find)
+   
+        !> setup pggen_direct, pggen_cart, pgop_direct, pgop_cart, tau_cart, tau_direct
+        !> get all the space group operators and the number of operators number_group_operators
+        call FindSymmetryOperators(BasicOperations_space, BasicOperations_inversion)
+   
+        !> Reconsider the space group operators according to the atom's magnetic moment
+        call Magnetic_adapted_Operators()
+     endif
 
      if (.not.Symmetry_Import_calc) number_group_operators = 1
      
