@@ -1,0 +1,19 @@
+&PARAMETERS
+! vpppi (eV) p-p pi bond energy of Graphene, vpppi=-2.7 is a classical setting
+vpppi =    -2.810000
+ 
+! use POSCAR or not, use_poscar=F we will generate POSCAR, use_poscar=T use the given POSCAR
+use_poscar =   T
+ 
+! hr_generate = T, will generate hr.dat,  hr_generate = F, will not generate hr.dat
+hr_generate =   T
+ 
+! gen_sparse_hr = F, hr.dat is in wannier90 format,  hr_generate = T, hr.dat is in sparse format
+gen_sparse_hr =   T
+ 
+! hr_cutoff (eV) HmnR is set to zero if HmnR< hr_cutoff
+hr_cutoff =     0.000100
+ 
+! R is in [-iR_cut, -iR_cut+1, ..., iR_cut]
+iR_cut =    1
+/
