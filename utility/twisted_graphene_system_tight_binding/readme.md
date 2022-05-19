@@ -27,7 +27,7 @@ iR_cut = 1   ! R is in [-iR_cut, -iR_cut+1, ..., iR_cut]
 3. run it with 
 
 ```
-./tg\_tbgen
+./tgtbgen
 ```
 
 4. Then you can run WannierTools with the generated wt.in and TG\_hr.dat

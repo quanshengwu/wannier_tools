@@ -33,7 +33,7 @@ SURFACE            ! See doc for details
 
 !> bulk band structure calculation flag
 &CONTROL
-SlabBandWaveFunc_calc = T
+SlabBandWaveFunc_calc = F
 BulkBand_calc         = F
 BulkBand_points_calc  = F
 BulkFS_calc           = F
@@ -43,7 +43,7 @@ SlabBand_calc         = T
 WireBand_calc         = F
 SlabSS_calc           = F
 SlabArc_calc          = F
-Z2_3D_calc            = F
+Z2_3D_calc            = T
 SlabSpintexture_calc  = F
 Wanniercenter_calc    = F
 /
@@ -65,7 +65,7 @@ E_arc = 0.0         ! energy for calculate Fermi Arc
 OmegaNum = 300      ! omega number       
 OmegaMin = -0.6     ! energy interval
 OmegaMax =  0.5     ! energy interval
-Nk1 =200            ! number k points  odd number would be better
+Nk1 = 60            ! number k points  odd number would be better
 Nk2 = 60            ! number k points  odd number would be better
 Nk3 = 6             ! number k points  odd number would be better
 NP = 2              ! number of principle layers

@@ -977,11 +977,11 @@ subroutine readinput
    do while (.true.)
       read(1001, *, end= 110)inline
       inline=upper(inline)
-      if (trim(adjustl(inline))=='Origin_cell%wannier_ceters' &
+      if (trim(adjustl(inline))=='WANNIER_CENTERS' &
          .or. trim(adjustl(inline))=='WANNIER_CENTRES') then
          lfound= .true.
          if (cpuid==0) write(stdout, *)' '
-         if (cpuid==0) write(stdout, *)'We found Origin_cell%wannier_ceters card'
+         if (cpuid==0) write(stdout, *)'We found WANNIER_CENTERS card'
          exit
       endif
    enddo
@@ -1017,6 +1017,7 @@ subroutine readinput
          if (SOC==0.and.Add_Zeeman_Field) then
             do i=1, NumberOfspinorbitals/2
                read(1001, *, end=207, err=207) Origin_cell%wannier_centers_cart(:, i)
+               Origin_cell%wannier_centers_cart(:, i)= Origin_cell%wannier_centers_cart(:, i)*Angstrom2atomic
                it= it+ 2
                call cart_direct_real(Origin_cell%wannier_centers_cart(:, i), &
                   Origin_cell%wannier_centers_direct(:, i), Origin_cell%lattice)
@@ -1028,6 +1029,7 @@ subroutine readinput
          else
             do i=1, NumberOfspinorbitals
                read(1001, *, end=207, err=207) Origin_cell%wannier_centers_cart(:, i)
+               Origin_cell%wannier_centers_cart(:, i)= Origin_cell%wannier_centers_cart(:, i)*Angstrom2atomic
                it= it+ 1
                call cart_direct_real(Origin_cell%wannier_centers_cart(:, i), &
                   Origin_cell%wannier_centers_direct(:, i), Origin_cell%lattice)
@@ -1057,7 +1059,8 @@ subroutine readinput
          write(stdout, *)">> Wannier centers from wt.in, in unit of unit lattice vectors"
          write(stdout, '(a6, 6a10)')'iwann', 'R1', 'R2', 'R3', 'x', 'y', 'z'
          do i=1, NumberOfspinorbitals
-            write(stdout, '(i6, 6f10.6)')i, Origin_cell%wannier_centers_direct(:, i), Origin_cell%wannier_centers_cart(:, i)
+            write(stdout, '(i6, 6f10.6)')i, Origin_cell%wannier_centers_direct(:, i), &
+               Origin_cell%wannier_centers_cart(:, i)/Angstrom2atomic
          enddo
       endif
    else
@@ -1066,7 +1069,8 @@ subroutine readinput
          write(stdout, *)">> Wannier centers by default, in unit of unit lattice vectors"
          write(stdout, '(a6, 6a10)')'iwann', 'R1', 'R2', 'R3', 'x', 'y', 'z'
          do i=1, NumberOfspinorbitals
-            write(stdout, '(i6, 6f10.6)')i, Origin_cell%wannier_centers_direct(:, i), Origin_cell%wannier_centers_cart(:, i)
+            write(stdout, '(i6, 6f10.6)')i, Origin_cell%wannier_centers_direct(:, i),  &
+               Origin_cell%wannier_centers_cart(:, i)/Angstrom2atomic
          enddo
       endif
    endif
