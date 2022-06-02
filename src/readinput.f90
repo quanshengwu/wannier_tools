@@ -773,6 +773,10 @@ subroutine readinput
          if (index(DirectOrCart, "D")>0)then
             pos= Origin_cell%Atom_position_cart(:, i)
             Origin_cell%Atom_position_cart(:, i)= pos(1)*Origin_cell%Rua+ pos(2)*Origin_cell%Rub+ pos(3)*Origin_cell%Ruc
+         else
+            if (index(AngOrBohr, 'ANG')>0) then
+               Origin_cell%Atom_position_cart(:, i)= Origin_cell%Atom_position_cart(:, i)*Angstrom2atomic
+            endif
          endif
       enddo
       go to 133
@@ -803,6 +807,10 @@ subroutine readinput
          if (index(DirectOrCart, "D")>0)then
             pos= Origin_cell%Atom_position_cart(:, i)
             Origin_cell%Atom_position_cart(:, i)= pos(1)*Origin_cell%Rua+ pos(2)*Origin_cell%Rub+ pos(3)*Origin_cell%Ruc
+         else
+            if (index(AngOrBohr, 'ANG')>0) then
+               Origin_cell%Atom_position_cart(:, i)= Origin_cell%Atom_position_cart(:, i)*Angstrom2atomic
+            endif
          endif
       enddo
       go to 133
@@ -821,13 +829,13 @@ subroutine readinput
 
       if(cpuid==0)write(stdout,'(a)')' '
       if(cpuid==0)write(stdout,'(a)')'>> Atom position and magnetic moment of Original lattice'
-      if(cpuid==0)write(stdout,'(13X, 2a36, a24)')' Catesian', 'Fractional(Direct)', 'Magnetic moment'
+      if(cpuid==0)write(stdout,'(13X, 2a36, a24)')' Catesian(Ang)', 'Fractional(Direct)', 'Magnetic moment'
       if(cpuid==0)write(stdout,'(a)')'------------------------------------------------------------------------------------------------------------------'
       if(cpuid==0)write(stdout,'(a6, 2X, a10, 6a12, 3a8)')'index', 'Atom Name ', ' x', ' y', ' z', 'a', 'b', 'c', 'Mx', 'My', 'Mz'
       if(cpuid==0)write(stdout,'(a)')'------------------------------------------------------------------------------------------------------------------'
       do i=1, Origin_cell%Num_atoms
          if(cpuid==0)write(stdout, '(i6,2X, a10,6f12.6,3f8.3)')i, Origin_cell%atom_name(i), &
-            Origin_cell%Atom_position_cart(:, i), Origin_cell%Atom_position_direct(:,i), Origin_cell%Atom_magnetic_moment(:, i)
+            Origin_cell%Atom_position_cart(:, i)/Angstrom2atomic, Origin_cell%Atom_position_direct(:,i), Origin_cell%Atom_magnetic_moment(:, i)
       enddo
 
    else
@@ -1029,7 +1037,9 @@ subroutine readinput
          else
             do i=1, NumberOfspinorbitals
                read(1001, *, end=207, err=207) Origin_cell%wannier_centers_cart(:, i)
-               Origin_cell%wannier_centers_cart(:, i)= Origin_cell%wannier_centers_cart(:, i)*Angstrom2atomic
+               if (index(AngOrBohr, 'ANG')>0) then
+                  Origin_cell%wannier_centers_cart(:, i)= Origin_cell%wannier_centers_cart(:, i)*Angstrom2atomic
+               endif
                it= it+ 1
                call cart_direct_real(Origin_cell%wannier_centers_cart(:, i), &
                   Origin_cell%wannier_centers_direct(:, i), Origin_cell%lattice)
@@ -1216,6 +1226,10 @@ subroutine readinput
          if (index(DirectOrCart, "D")>0)then
             pos= Folded_cell%Atom_position_cart(:, i)
             Folded_cell%Atom_position_cart(:, i)= pos(1)*Folded_cell%Rua+ pos(2)*Folded_cell%Rub+ pos(3)*Folded_cell%Ruc
+         else
+            if (index(AngOrBohr, 'ANG')>0) then
+               Folded_cell%Atom_position_cart(:, i)= Folded_cell%Atom_position_cart(:, i)*Angstrom2atomic
+            endif
          endif
       enddo
       go to 1330
@@ -1246,6 +1260,10 @@ subroutine readinput
          if (index(DirectOrCart, "D")>0)then
             pos= Folded_cell%Atom_position_cart(:, i)
             Folded_cell%Atom_position_cart(:, i)= pos(1)*Folded_cell%Rua+ pos(2)*Folded_cell%Rub+ pos(3)*Folded_cell%Ruc
+         else
+            if (index(AngOrBohr, 'ANG')>0) then
+               Folded_cell%Atom_position_cart(:, i)= Folded_cell%Atom_position_cart(:, i)*Angstrom2atomic
+            endif
          endif
       enddo
       go to 1330

@@ -40,7 +40,7 @@ subroutine unfolding_kpath
    complex(dp) :: sigma=(0d0,0d0)
    !> shift-invert sigma
 
-   integer :: n, i, ie, ik, ig, iq, ierr, ieta,NumberofEta, Ndimq
+   integer :: n, i, ie, ik, ig, iq, io, ierr, ieta,NumberofEta, Ndimq
   
    !> selected atoms and orbitals
    integer :: NumberofSelectedOrbitals_groups_local
@@ -368,7 +368,7 @@ subroutine unfolding_kplane
 
    integer :: nnzmax, nnz, knv3, Ndimq, nkx, nky, Nk1_half, Nk2_half 
    integer :: iq, iq1, iq2, imin1, imin2, imax1, imax2
-   integer :: n, i, j, ie, ik, ik1, ik2, ig, ierr, ieta,NumberofEta
+   integer :: n, i, j, ie, ik, io, ik1, ik2, ig, ierr, ieta,NumberofEta
     
    
    ! time measurement
@@ -461,7 +461,7 @@ subroutine unfolding_kplane
    do ik= 1+cpuid, knv3, num_cpu
       ik1= ik12(1, ik)
       ik2= ik12(2, ik)
-      if (cpuid==0.and.mod(ik, 40)==1) write(stdout, '(a, i10," /", i1)') 'BulkBand unfolding at :', ik, knv3
+      if (cpuid==0.and.mod(ik, 40)==1) write(stdout, '(a, i10," /", i10)') 'BulkBand unfolding at :', ik, knv3
       k_PBZ_direct= kxy(:, ik)
       call direct_cart_rec_unfold(k_PBZ_direct, k_cart)
       call cart_direct_rec(k_cart, k_PBZ_direct_in_SBZ)
@@ -527,7 +527,8 @@ subroutine unfolding_kplane
          do ig=1, NumberofSelectedOrbitals_groups
             do ieta= 1, NumberofEta
                spectrum_unfold(ieta, ig, ik1, ik2)= spectrum_unfold(ieta, ig, ik1, ik2) + &
-                  weight(ig)*delta(eta_array(ieta), W(n)-E_arc)
+                 abs(sum(psi))**2*delta(eta_array(ieta), W(n)-E_arc)
+                 !weight(ig)*delta(eta_array(ieta), W(n)-E_arc)
             enddo ! ieta
          enddo ! ig
       enddo ! sum over n

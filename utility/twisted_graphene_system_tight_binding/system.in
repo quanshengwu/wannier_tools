@@ -9,5 +9,5 @@ hr_generate = T    ! use POSCAR or not,  T: we will generate hr.dat
 gen_sparse_hr = F   ! use POSCAR or not,  T: we will generate hr.dat in sparse format
 hr_cutoff=0.00010000  ! set HmnR=0 if HmnR<hr_cutoff
 vpppi=-2.81       !  pi bond of p orbital, unit eV  
-iR_cut = 8   ! R is in [-iR_cut, -iR_cut+1, ..., iR_cut]
+iR_cut = 1   ! R is in [-iR_cut, -iR_cut+1, ..., iR_cut]
 /
