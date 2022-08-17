@@ -187,13 +187,15 @@ subroutine readNormalHmnR()
       SOC = 1
    endif ! Add_Zeeman_Field
 
+
    call get_stacking_direction_and_pos(add_electric_field, pos)
+   ir0=0
+   do ir=1, nrpts
+      if (irvec(1, ir)==0.and.irvec(2, ir)==0.and.irvec(3, ir)==0) ir0=ir
+   enddo
+ 
    if (add_electric_field>0) then
-      ir0=0
-      do ir=1, nrpts
-         if (irvec(1, ir)==0.and.irvec(2, ir)==0.and.irvec(3, ir)==0) ir0=ir
-      enddo
-      io=0
+     io=0
       do ia=1, Origin_cell%Num_atoms
          !static_potential= pos(ia)*Origin_cell%cell_parameters(add_electric_field)*Electric_field_in_eVpA
          !if (Inner_symmetrical_Electric_Field) then
@@ -213,6 +215,21 @@ subroutine readNormalHmnR()
          enddo ! nproj
       enddo ! ia
    endif  ! add electric field or not
+
+   !> write out Hmn(R=0)
+   if (cpuid.eq.0)then
+      write(stdout, '(a)')" "
+      write(stdout, '(a)')" >> H00= Hmn(R=0) real part"
+      do i=1, Num_wann
+         write(stdout, '(50000f6.2)') real(HmnR(i, :, ir0))/eV2Hartree
+      enddo
+      write(stdout, '(a)')" "
+      write(stdout, '(a)')" >> H00= Hmn(R=0) imagary part"
+      do i=1, Num_wann
+         write(stdout, '(50000f6.2)') aimag(HmnR(i, :, ir0))/eV2Hartree
+      enddo
+      write(stdout, '(a)')" "
+   endif
 
    call get_hmnr_cell(Cell_defined_by_surface)
 

@@ -97,7 +97,7 @@
            !if (gap_minimal_mpi(ik)< Gap_threshold.and.In_KCUBE(kabc_minimal_mpi(:, ik))) then
             if (gap_minimal_mpi(ik)< Gap_threshold) then
                call direct_cart_rec(kabc_minimal_mpi(:, ik), k_cart)
-               write(outfileindex, '(80f14.8)') k_cart, gap_minimal_mpi(ik)/eV2Hartree, &
+               write(outfileindex, '(80f14.8)') k_cart*Angstrom2atomic, gap_minimal_mpi(ik)/eV2Hartree, &
                   func_energy(kabc_minimal_mpi(:, ik))/eV2Hartree, kabc_minimal_mpi(:, ik)
             endif
          enddo

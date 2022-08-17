@@ -1448,14 +1448,14 @@ subroutine fermisurface_stack
       lmax0= lmax
 
       do ibeta= 1, Beta_num
-         Beta_fake= Beta_array(ibeta)
+         Beta_fake= Beta_array(ibeta)/eV2Hartree
          lmin= lmin0
          lmax= lmax0
          tot= 9999d0
          iter = 0
          
          if (cpuid==0) then
-             write(stdout, '(a,f12.6,a,f12.6,a)') ' Beta :' , Beta_fake, ' T: ', 11600d0/Beta_fake, ' Kelvin'
+             write(stdout, '(a,f12.6,a,f12.6,a)') ' Beta :' , Beta_fake*eV2Hartree, ' T: ', 11600d0/Beta_fake/eV2Hartree, ' Kelvin'
          endif
          do while( abs(tot- Ntotch).gt. eps6 .and. iter.lt.itermax)
          
@@ -1492,7 +1492,7 @@ subroutine fermisurface_stack
             endif
          
             if (cpuid==0) then
-                write(stdout, 100)iter, tot-Ntotch, EF, '  Charge: ', tot
+                write(stdout, 100)iter, tot-Ntotch, EF/eV2Hartree, '  Charge: ', tot
             endif
          100   format(2x,">iter",i4,2x,"diff:",f12.6,2x,"EF: ",f12.6,a,f12.6)
          
@@ -1508,7 +1508,7 @@ subroutine fermisurface_stack
          write(stdout, '(a, f12.6)') 'Number of electrons : ', Ntotch
          write(stdout, '(3a12)') 'Beta    ', ' T (Kelvin)  ', ' E_F (eV)   '
          do ibeta=1, Beta_num
-            write(stdout, '(3f12.6)') Beta_array(ibeta), 11600d0/Beta_array(ibeta), EF_array(ibeta)
+            write(stdout, '(3f12.6)') Beta_array(ibeta), 11600d0/Beta_array(ibeta), EF_array(ibeta)/eV2Hartree
          enddo
          write(stdout, '(3a12)') ' '
       endif
