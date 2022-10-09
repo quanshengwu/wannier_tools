@@ -2958,7 +2958,7 @@ subroutine readinput
          it = it+ 1
       else
          read(1001, *, end=209, err=209)weyl_position_cart(:, i)
-         weyl_position_cart = weyl_position_cart/Angstrom2atomic
+         weyl_position_cart(:, i) = weyl_position_cart(:, i)/Angstrom2atomic
          call cart_direct_rec(weyl_position_cart(:, i), weyl_position_direct(:, i))
          it = it+ 1
       endif
