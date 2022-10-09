@@ -7,17 +7,18 @@ obj =  module.o eigen.o readinput.o gen_hk.o \
 #flag = -O3 ${fcheck} #-nogen-interface #  -warn all 
 
 #f90  = mpif90  -fpp -DMPI
-f90  = gfortran -cpp
+#f90  = gfortran -cpp
+f90  = ifort -fpp
 
 FLAGS =  -O3 #-nogen-interface  
 flag = ${FLAGS}  # -check all -traceback -pg
 
 # blas and lapack libraries
-#libs = -L/opt/intel/mkl/lib/ \
+ libs = -L/opt/intel/mkl/lib/ \
 		-lmkl_intel_lp64 -lmkl_sequential \
 		-lmkl_core        
 
-libs = -L/usr/lib/ -llapack  
+#libs = -L/usr/lib/ -llapack  
 
 main :  $(obj)
 	$(f90) $(obj) -o tg_kpgen $(libs) 

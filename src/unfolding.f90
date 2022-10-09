@@ -207,7 +207,7 @@ subroutine unfolding_kpath
             
             ! diagonalize the Hamiltonian, zeigv is the Hamiltonian matrix before eigensystem_c calling.
             ! It will be replaced by the eigenvectors after eigensystem_c calling. 
-            call eigensystem_c('V', 'U', Num_wann ,zeigv, W)
+            call eigensystem_c('V', 'U', Num_wann, zeigv, W)
          endif
       endif  ! unfold landaulevel or not
 
