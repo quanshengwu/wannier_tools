@@ -45,6 +45,27 @@ function norm(R1)
 end function norm
 
 !> the shortest difference betwerrn two vectors with respect to the lattice vectors
+subroutine periodic_diff_1D(R2, R1, diff)
+   !> diff= mod(R2-R1, 1)
+   use para, only : dp
+
+   implicit none
+
+   real(dp), intent(in) :: R1, R2
+   real(dp), intent(out) :: diff
+
+   integer :: i
+
+   diff= R2-R1
+   diff= diff-floor(diff)
+
+   if (diff>0.5000000d0) diff= diff-1d0
+
+   return
+end subroutine periodic_diff_1D
+
+
+!> the shortest difference betwerrn two vectors with respect to the lattice vectors
 subroutine periodic_diff(R2, R1, diff)
    !> diff= mod(R2-R1, 1)
    use para, only : dp

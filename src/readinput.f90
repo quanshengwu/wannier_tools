@@ -4296,7 +4296,8 @@ subroutine FindTheThirdLatticeVector()
       + R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
       + R1(3)*(R2(1)*R3(2)- R2(2)*R3(1))
 
-   if (abs(cell_volume- Origin_cell%CellVolume)< eps9 .and. cpuid==0) then
+   if (cpuid.eq.0) then
+   if (abs(cell_volume- Origin_cell%CellVolume)< eps9) then
       write(stdout, *)'  Congratulations, you got a unit cell that has ', &
          ' the same volume as the original unit cell '
       write(stdout, *)' The unitary rotation matrix is : '
@@ -4310,7 +4311,7 @@ subroutine FindTheThirdLatticeVector()
       write(stdout, '(a,3f10.3)')' R2=', R2
       write(stdout, '(a,3f10.3)')' R3=', R3
       write(stdout, *)' Where R1, R2, R3 are in cartesian coordinates'
-   else
+   else 
       write(stdout, *) &
          " Warning:  I am sorry that I can't properly find unit cell with the first two vectors", &
          " defined in the SURFACE card that have the same volume as the original one." , &
@@ -4319,6 +4320,7 @@ subroutine FindTheThirdLatticeVector()
          " you should notice that the first and the second vectors in the SURFACE card ", &
          " could be changed which would affect the slab reciprocal lattice vectors."
 
+   endif
    endif
 
    !> use MillerIndicestoumatrix

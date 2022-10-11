@@ -43,7 +43,8 @@ SlabBand_calc         = T
 WireBand_calc         = F
 SlabSS_calc           = F
 SlabArc_calc          = F
-Z2_3D_calc            = T
+Z2_3D_calc            = F
+Chern_3D_calc            = T
 SlabSpintexture_calc  = F
 Wanniercenter_calc    = F
 /
@@ -124,8 +125,8 @@ SELECTED_BANDS
 179 180 181 182 ! band indices
 
 
-WANNIER_CENTRES     ! copy from wannier90.wout
-Cartesian
+!WANNIER_CENTRES     ! copy from wannier90.wout
+!Cartesian
  -0.000040  -1.194745   6.638646 
   0.000038  -1.196699   6.640059 
  -0.000032  -1.192363   6.640243 

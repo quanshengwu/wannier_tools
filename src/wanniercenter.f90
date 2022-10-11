@@ -1861,275 +1861,309 @@ subroutine  wannier_center3D_plane0
    return
 end subroutine  wannier_center3D_plane0
 
+   subroutine  wannier_center3D_plane_func(kstart, kvec1, kvec2, largest_gap, wcc, Z2)
+      !> this suboutine is used for wannier center calculation for 3D system
+      !> only for one plane
 
-subroutine  wannier_center3D_plane_func(kstart, kvec1, kvec2, largest_gap, wcc, Z2)
-   !> this suboutine is used for wannier center calculation for 3D system
-   !> only for one plane
+      use para
+      use wmpi
+      implicit none
 
-   use para
-   use wmpi
-   implicit none
+      integer :: i, j, l , m , ia, imax
+      integer :: ik1, ik2, ierr
 
-   integer :: i, j, m, imax
-   integer :: ik1, ik2, ierr
+      real(dp), intent(in) :: kstart(3)
+      real(dp), intent(in) :: kvec1(3)  ! the integration direction
+      real(dp), intent(in) :: kvec2(3)
+      real(dp), intent(out) :: largest_gap(Nk2)
+      real(dp), intent(out) :: wcc(Numoccupied, Nk2)
 
-   real(dp), intent(in) :: kstart(3)
-   real(dp), intent(in) :: kvec1(3)  ! the integration direction
-   real(dp), intent(in) :: kvec2(3)
-   real(dp), intent(out) :: largest_gap(Nk2)
-   real(dp), intent(out) :: wcc(NumberofSelectedOccupiedBands, Nk2)
+      !> k points in kx-ky plane
+      real(dp), allocatable :: kpoints(:, :, :)
 
-   !> k points in kx-ky plane
-   real(dp), allocatable :: kpoints(:, :, :)
+      !> hamiltonian for each k point
+      !> and also the eigenvector of hamiltonian after eigensystem_c
+      complex(dp), allocatable :: Hamk(:, :)
+      complex(dp), allocatable :: Hamk_dag(:, :)
 
-   !> hamiltonian for each k point
-   !> and also the eigenvector of hamiltonian after eigensystem_c
-   complex(dp), allocatable :: Hamk(:, :)
-!~    complex(dp), allocatable :: Hamk_dag(:, :)
+      !> eigenvector for each kx
+      complex(dp), allocatable :: Eigenvector(:, :, :)
 
-   !> eigenvector for each kx
-   complex(dp), allocatable :: Eigenvector(:, :, :)
+      !> Mmnkb=<u_n(k)|u_m(k+b)>
+      !> |u_n(k)> is the periodic part of wave function
+      complex(dp), allocatable :: Mmnkb(:, :)
+      complex(dp), allocatable :: Mmnkb_com(:, :)
+      complex(dp), allocatable :: Mmnkb_full(:, :)
 
+      !> 
+      complex(dp), allocatable :: Lambda_eig(:)
+      complex(dp), allocatable :: Lambda(:, :)
+      complex(dp), allocatable :: Lambda0(:, :)
 
-   complex(dp), allocatable :: Lambda(:, :)
-!~    complex(dp), allocatable :: Lambda0(:, :)
+      !> three matrix for SVD 
+      !> M= U.Sigma.V^\dag
+      !> VT= V^\dag
+      complex(dp), allocatable :: U(:, :)
+      real   (dp), allocatable :: Sigma(:, :)
+      complex(dp), allocatable :: VT(:, :)
+   
+      !> wannier centers for each ky, bands
+      real(dp), allocatable :: WannierCenterKy(:, :)
+      real(dp), allocatable :: WannierCenterKy_mpi(:, :)
 
-   !> three matrix for SVD
-   !> M= U.Sigma.V^\dag
-   !> VT= V^\dag
-!~    complex(dp), allocatable :: U(:, :)
-!~    real   (dp), allocatable :: Sigma(:, :)
-!~    complex(dp), allocatable :: VT(:, :)
+      !> larges gap of each two wannier centers for a given k point
+      !> dim= Nky
+      real(dp), allocatable :: largestgap(:)
+      real(dp), allocatable :: largestgap_mpi(:)
 
-   !> wannier centers for each ky, bands
-   real(dp), allocatable :: WannierCenterKy(:, :)
-   real(dp), allocatable :: WannierCenterKy_mpi(:, :)
+      !> eigenvalue
+      real(dp), allocatable :: eigenvalue(:)
 
-   !> larges gap of each two wannier centers for a given k point
-   !> dim= Nky
-   real(dp), allocatable :: largestgap(:)
-   real(dp), allocatable :: largestgap_mpi(:)
+      real(dp) :: Umatrix_t(3, 3)
 
-   !> eigenvalue
-   real(dp), allocatable :: eigenvalue(:)
+      !> b.r
+      real(dp) :: br
 
-   real(dp) :: Umatrix_t(3, 3)
+      !> exp(-i*b.R)
+      complex(dp) :: ratio
 
-   !> b.r
-   real(dp) :: br
+      real(dp) :: k(3)
+      real(dp) :: b(3)
 
-   !> exp(-i*b.R)
-   complex(dp) :: ratio
+      real(dp) :: maxgap
+      real(dp) :: maxgap0
 
-   real(dp) :: k(3)
-   real(dp) :: b(3)
+      !> Z2 calculation for time reversal invariant system
+      integer :: Z2
+      integer :: Delta
 
-   real(dp) :: maxgap
-   real(dp) :: maxgap0
+      real(dp) :: g
+      real(dp) :: phi1
+      real(dp) :: phi2
+      real(dp) :: phi3
+      real(dp) :: zm
+      real(dp) :: zm1
+      real(dp) :: xnm1
+      real(dp) :: Deltam
+      real(dp), allocatable :: xnm(:)
+      real(dp) :: k0(3), k1(3), k2(3)
 
-   !> Z2 calculation for time reversal invariant system
-   integer :: Z2
-   integer :: Delta
+      allocate(kpoints(3, Nk1, Nk2))
+      kpoints= 0d0
 
-   real(dp) :: g
-   real(dp) :: phi1
-   real(dp) :: phi2
-   real(dp) :: phi3
-   real(dp) :: zm
-   real(dp) :: zm1
-   real(dp) :: xnm1
-   real(dp) :: Deltam
-   real(dp), allocatable :: xnm(:)
-   real(dp) :: k0(3), k1(3), k2(3)
+      allocate(Lambda_eig(Numoccupied))
+      allocate(Lambda(Numoccupied, Numoccupied))
+      allocate(Lambda0(Numoccupied, Numoccupied))
+      allocate(Mmnkb(Numoccupied, Numoccupied))
+      allocate(Mmnkb_com(Numoccupied, Numoccupied))
+      allocate(Mmnkb_full(Num_wann, Num_wann))
+      allocate(hamk(Num_wann, Num_wann))
+      allocate(hamk_dag(Num_wann, Num_wann))
+      allocate(Eigenvector(Num_wann, Num_wann, Nk1))
+      allocate(eigenvalue(Num_wann))
+      allocate(U(Numoccupied, Numoccupied))
+      allocate(Sigma(Numoccupied, Numoccupied))
+      allocate(VT(Numoccupied, Numoccupied))
+      allocate(WannierCenterKy(Numoccupied, Nk2))
+      allocate(WannierCenterKy_mpi(Numoccupied, Nk2))
+      allocate(xnm(Numoccupied))
+      allocate(largestgap(Nk2))
+      allocate(largestgap_mpi(Nk2))
+      largestgap= 0d0
+      largestgap_mpi= 0d0
+      WannierCenterKy= 0d0
+      WannierCenterKy_mpi= 0d0
+      hamk=0d0
+      eigenvalue=0d0
+      Eigenvector=0d0
+      Mmnkb_full=0d0
+      Mmnkb=0d0
+      Mmnkb_com=0d0
+      Lambda =0d0
+      Lambda0=0d0
+      U= 0d0
+      Sigma= 0d0
+      VT= 0d0
 
-   complex(dp),allocatable :: gauge_shift(:,:)
+      !> set k plane
+      !> the first dimension should be in one primitive cell, [0, 1] 
+      !> the first dimension is the integration direction
+      !> the WCCs are calculated along the second k line
+      !> For chern number calculation, the second k line should be in one primitive
+      !> vector. 
+      !> For  Z2 number clculation, the second k line should 
+      !> from one TRIM to another TRIM, usually, we study half of the
+      !> reciprocal lattice vector
+      k0= kstart ! 
+      k1= kvec1   !  
+      k2= kvec2   ! 
 
-
-   allocate(kpoints(3, Nk1, Nk2))
-   kpoints= 0d0
-
-
-   allocate(Lambda(NumberofSelectedOccupiedBands, NumberofSelectedOccupiedBands))
-   allocate(hamk(Num_wann, Num_wann))
-   allocate(Eigenvector(Num_wann, Num_wann, Nk1))
-   allocate(eigenvalue(Num_wann))
-
-   allocate(WannierCenterKy(NumberofSelectedOccupiedBands, Nk2))
-   allocate(WannierCenterKy_mpi(NumberofSelectedOccupiedBands, Nk2))
-   allocate(xnm(NumberofSelectedOccupiedBands))
-   allocate(largestgap(Nk2))
-   allocate(largestgap_mpi(Nk2))
-
-   allocate(gauge_shift(Num_wann,Num_wann))
-   !~ the gauge shift matrix to guarantee the gauge consistency
-
-   largestgap= 0d0
-   largestgap_mpi= 0d0
-   WannierCenterKy= 0d0
-   WannierCenterKy_mpi= 0d0
-   hamk=0d0
-!~    eigenvalue=0d0
-   Eigenvector=0d0
-!~    Mmnkb_full=0d0
-!~    Mmnkb=0d0
-!~    Mmnkb_com=0d0
-   Lambda =0d0
-!~    Lambda0=0d0
-!~    U= 0d0
-!~    Sigma= 0d0
-!~    VT= 0d0
-   gauge_shift=0d0
-
-   !> set k plane
-   !> the first dimension should be in one primitive cell, [0, 1]
-   !> the first dimension is the integration direction
-   !> the WCCs are calculated along the second k line
-   !> For chern number calculation, the second k line should be in one primitive
-   !> vector.
-   !> For  Z2 number clculation, the second k line should
-   !> from one TRIM to another TRIM, usually, we study half of the
-   !> reciprocal lattice vector
-   k0= kstart !
-   k1= kvec1   !
-   k2= kvec2   !
-
-   do ik2=1, Nk2
-      do ik1=1, Nk1
-         kpoints(:, ik1, ik2)= k0+ k1*(ik1-1d0)/dble(Nk1-1)+ k2*(ik2-1d0)/dble(Nk2-1)
+      do ik2=1, Nk2
+         do ik1=1, Nk1
+            kpoints(:, ik1, ik2)= k0+ k1*(ik1-1d0)/dble(Nk1)+ k2*(ik2-1d0)/dble(Nk2-1)
+         enddo
       enddo
-   enddo
+      b= k1/dble(Nk1)
+      b= b(1)*Origin_cell%Kua+b(2)*Origin_cell%Kub+b(3)*Origin_cell%Kuc
 
-   do i=1,Num_wann
-      gauge_shift(i,i)=exp(-pi2zi*&
-         sum((kpoints(:, Nk1, 1)-kpoints(:, 1, 1))&
-         *Origin_cell%wannier_centers_direct(:, i)))
-   enddo
+      Umatrix_t= transpose(Umatrix)
+      call inv_r(3, Umatrix_t)
 
-   Umatrix_t= transpose(Umatrix)
-   call inv_r(3, Umatrix_t)
+      !>> Get wannier center for ky=0 plane
+      !> for each ky, we can get wanniercenter
+      do ik2=1+ cpuid, Nk2, num_cpu
+         if (cpuid.eq.0) write(stdout, *)' Wilson loop ',  'ik, Nk', ik2, nk2
+         Lambda0=0d0
+         do i=1, Numoccupied
+            Lambda0(i, i)= 1d0
+         enddo
 
-   !>> Get wannier center for ky=0 plane
-   !> for each ky, we can get wanniercenter
-   do ik2=1+ cpuid, Nk2, num_cpu
-      if (cpuid.eq.0) write(stdout, *)' Wilson loop ',  'ik, Nk', ik2, nk2
-      do i=1, NumberofSelectedOccupiedBands
-      enddo
+         !> for each k1, we get the eigenvectors
+         do ik1=1, Nk1
+            k= kpoints(:, ik1, ik2)
 
-      !> for each k1, we get the eigenvectors
-      do ik1=1, Nk1
-         k= kpoints(:, ik1, ik2)
 
-         ! generate bulk Hamiltonian
-         if (index(KPorTB, 'KP')/=0)then
-            call ham_bulk_kp(k, Hamk)
-         else
-            !> deal with phonon system
-            if (index(Particle,'phonon')/=0.and.LOTO_correction) then
-               call ham_bulk_LOTO(k, Hamk)
+            ! generate bulk Hamiltonian
+            if (index(KPorTB, 'KP')/=0)then
+               call ham_bulk_kp(k, Hamk)
             else
-               call ham_bulk_atomicgauge(k, Hamk)
-!~                call ham_bulk_latticegauge    (k, Hamk)
+              !> deal with phonon system
+              if (index(Particle,'phonon')/=0.and.LOTO_correction) then
+                 call ham_bulk_LOTO(k, Hamk)
+              else
+                 call ham_bulk_latticegauge    (k, Hamk)
+              endif
             endif
-         endif
-
-         call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
-
-         Eigenvector(:,:,ik1)=hamk
 
 
-!~          Eigenvector(:, :, ik1)= 0d0
-!~          do j=1,Num_wann
-!~             Eigenvector(j,j,ik1)= eigenvalue(j)
-!~          enddo
-!~          Eigenvector(:, :, ik1)=matmul(matmul(hamk,Eigenvector(:,:,ik1)),conjg(transpose(hamk)))
+            !> diagonal hamk
+            call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
 
-      enddo
+            Eigenvector(:, :, ik1)= hamk
+         enddo
 
-!~       Eigenvector(:, :, Nk1)= Eigenvector(:, :, 1)
-      Eigenvector(:, :, Nk1)= matmul(gauge_shift,Eigenvector(:, :, 1))
+         !> sum over k1 to get wanniercenters
+         do ik1=1, Nk1
+            !> <u_k|u_k+1>
+            Mmnkb= 0d0
+            hamk_dag= Eigenvector(:, :, ik1)
+            if (ik1==Nk1) then
+               hamk= Eigenvector(:, :, 1)
+            else
+               hamk= Eigenvector(:, :, ik1+ 1)
+            endif
+            do m=1, Num_wann
+               br= b(1)*Origin_cell%wannier_centers_cart(1, m)+ &
+                   b(2)*Origin_cell%wannier_centers_cart(2, m)+ &
+                   b(3)*Origin_cell%wannier_centers_cart(3, m)
+               ratio= cos(br)- zi* sin(br)
+         
+               do j=1, Numoccupied
+                  do i=1, Numoccupied
+                     Mmnkb(i, j)=  Mmnkb(i, j)+ &
+                        conjg(hamk_dag(m, i))* hamk(m, j)* ratio
+                  enddo ! i
+               enddo ! j
+            enddo ! m
 
-      !~ shift the gauge such that k1 and k1+2pi are in same wavefunction gauge
-      call wilson_loop(Eigenvector,Nk1,Num_wann,Lambda,NumberofSelectedOccupiedBands,WannierCenterKy(:, ik2))
-!~       WannierCenterKy(:, ik2)=WannierCenterKy(:, ik2)/2.00
-      call sortheap(NumberofSelectedOccupiedBands, WannierCenterKy(:, ik2))
+            !> perform Singluar Value Decomposed of Mmnkb
+            call zgesvd_pack(Numoccupied, Mmnkb, U, Sigma, VT)
 
-      maxgap0= -99999d0
-      imax= NumberofSelectedOccupiedBands
-      do i=1, NumberofSelectedOccupiedBands
-         if (i/=NumberofSelectedOccupiedBands) then
-            maxgap= WannierCenterKy(i+1, ik2)- WannierCenterKy(i, ik2)
+            !> after the calling of zgesvd_pack, Mmnkb becomes a temporal matrix
+            U = conjg(transpose(U))
+            VT= conjg(transpose(VT))
+            call mat_mul(Numoccupied, VT, U, Mmnkb)
+
+            call mat_mul(Numoccupied, Mmnkb, Lambda0, Lambda)
+            Lambda0 = Lambda
+         enddo  !< ik1
+
+         !> diagonalize Lambda to get the eigenvalue 
+         call zgeev_pack(Numoccupied, Lambda, Lambda_eig)
+         do i=1, Numoccupied
+            WannierCenterKy(i, ik2)= aimag(log(Lambda_eig(i)))/2d0/pi
+            WannierCenterKy(i, ik2)= mod(WannierCenterKy(i, ik2)+10d0, 1d0) 
+         enddo
+
+         call sortheap(Numoccupied, WannierCenterKy(:, ik2))
+
+         maxgap0= -99999d0
+         imax= Numoccupied
+         do i=1, Numoccupied
+            if (i/=Numoccupied) then
+               maxgap= WannierCenterKy(i+1, ik2)- WannierCenterKy(i, ik2)
+            else
+               maxgap=1d0+ WannierCenterKy(1, ik2)- WannierCenterKy(Numoccupied, ik2)
+            endif
+
+            if (maxgap>maxgap0) then
+               maxgap0= maxgap
+               imax= i
+            endif
+
+         enddo
+
+         if (imax==Numoccupied) then
+            largestgap(ik2)= (WannierCenterKy(1, ik2)+ &
+               WannierCenterKy(Numoccupied, ik2) +1d0)/2d0
+            largestgap(ik2)= mod(largestgap(ik2), 1d0)
          else
-            maxgap=1d0+ WannierCenterKy(1, ik2)- WannierCenterKy(NumberofSelectedOccupiedBands, ik2)
+            largestgap(ik2)= (WannierCenterKy(imax+1, ik2)+ &
+               WannierCenterKy(imax, ik2))/2d0
          endif
 
-         if (maxgap>maxgap0) then
-            maxgap0= maxgap
-            imax= i
-         endif
 
-      enddo
+      enddo !< ik2
 
-      if (imax==NumberofSelectedOccupiedBands) then
-         largestgap(ik2)= (WannierCenterKy(1, ik2)+ &
-            WannierCenterKy(NumberofSelectedOccupiedBands, ik2) +1d0)/2d0
-         largestgap(ik2)= mod(largestgap(ik2), 1d0)
-      else
-         largestgap(ik2)= (WannierCenterKy(imax+1, ik2)+ &
-            WannierCenterKy(imax, ik2))/2d0
-      endif
-
-
-   enddo !< ik2
-
-   WannierCenterKy_mpi= 0d0
-   largestgap_mpi= 0d0
+      WannierCenterKy_mpi= 0d0
+      largestgap_mpi= 0d0
 #if defined (MPI)
-   call mpi_allreduce(WannierCenterKy, WannierCenterKy_mpi, &
-      size(WannierCenterKy), mpi_dp, mpi_sum, mpi_cmw, ierr)
-   call mpi_allreduce(largestgap, largestgap_mpi, &
-      size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
+      call mpi_allreduce(WannierCenterKy, WannierCenterKy_mpi, &
+           size(WannierCenterKy), mpi_dp, mpi_sum, mpi_cmw, ierr)
+      call mpi_allreduce(largestgap, largestgap_mpi, &
+           size(largestgap), mpi_dp, mpi_sum, mpi_cmw, ierr)
 #else
-   WannierCenterKy_mpi= WannierCenterKy
-   largestgap_mpi= largestgap
+      WannierCenterKy_mpi= WannierCenterKy
+      largestgap_mpi= largestgap
 #endif
 
-   !> Z2 calculation Alexey Soluyanov arXiv:1102.5600
+      !> Z2 calculation Alexey Soluyanov arXiv:1102.5600
 
-   Delta= 0
-   !> for each iky, we get a Deltam
-   do ik2=1, nk2-1
+      Delta= 0
+      !> for each iky, we get a Deltam
+      do ik2=1, nk2-1
+      
+         !> largestgap position
+         zm= largestgap_mpi(ik2)
+        !if (ik2==nk2) then
+        !   zm1= largestgap_mpi(1)
+        !   xnm= WannierCenterKy_mpi(1:Numoccupied, 1)
+        !else
+            zm1= largestgap_mpi(ik2+1)
+            xnm= WannierCenterKy_mpi(1:Numoccupied, ik2+1)
+        !endif
+         Deltam= 1
+         do i=1, Numoccupied
+            xnm1= xnm(i)
+            phi1= 2d0*pi*zm
+            phi2= 2d0*pi*zm1
+            phi3= 2d0*pi*xnm1
+            
+            g= sin(phi2-phi1)+ sin(phi3-phi2)+  sin(phi1-phi3) 
+            Deltam= Deltam* sign(1d0, g)
+         enddo !i 
+         if (Deltam<0) then
+            Delta= Delta+ 1
+         endif
+      enddo !ik2
 
-      !> largestgap position
-      zm= largestgap_mpi(ik2)
-      !if (ik2==nk2) then
-      !   zm1= largestgap_mpi(1)
-      !   xnm= WannierCenterKy_mpi(1:NumberofSelectedOccupiedBands, 1)
-      !else
-      zm1= largestgap_mpi(ik2+1)
-      xnm= WannierCenterKy_mpi(1:NumberofSelectedOccupiedBands, ik2+1)
-      !endif
-      Deltam= 1
-      do i=1, NumberofSelectedOccupiedBands
-         xnm1= xnm(i)
-         phi1= 2d0*pi*zm
-         phi2= 2d0*pi*zm1
-         phi3= 2d0*pi*xnm1
+      Z2= mod(Delta, 2)
 
-         g= sin(phi2-phi1)+ sin(phi3-phi2)+  sin(phi1-phi3)
-         Deltam= Deltam* sign(1d0, g)
-      enddo !i
-      if (Deltam<0) then
-         Delta= Delta+ 1
-      endif
-   enddo !ik2
+      largest_gap= largestgap
+      wcc= WannierCenterKy_mpi
 
-   Z2= mod(Delta, 2)
-
-   largest_gap= largestgap
-   wcc= WannierCenterKy_mpi
-
-   return
-end subroutine  wannier_center3D_plane_func
+      return
+   end subroutine  wannier_center3D_plane_func
 
 
 subroutine  wannier_center3D_k
@@ -3065,8 +3099,8 @@ subroutine  Chern_3D
    real(dp) :: kvec1(3)
    real(dp) :: kvec2(3)
 
-   integer :: Chern
-   integer :: Chern_all(6)
+   real(dp) :: Chern
+   real(dp) :: Chern_all(6)
 
    !> wannier centers for each ky, bands
    real(dp), allocatable :: wcc(:, :)
@@ -3092,6 +3126,7 @@ subroutine  Chern_3D
 
    call  wannier_center3D_plane_func(kstart, kvec1, kvec2, &
       largestgap, wcc, Chern)
+   call get_chern_number_from_wcc(NumberofSelectedOccupiedBands, Nk2, wcc, Chern)
    Chern_all(1)= Chern
    wcc_all(:, :, 1)= wcc
    largestgap_all(:, 1)= largestgap
@@ -3103,6 +3138,7 @@ subroutine  Chern_3D
 
    call  wannier_center3D_plane_func(kstart, kvec1, kvec2, &
       largestgap, wcc, Chern)
+   call get_chern_number_from_wcc(NumberofSelectedOccupiedBands, Nk2, wcc, Chern)
    Chern_all(2)= Chern
    wcc_all(:, :, 2)= wcc
    largestgap_all(:, 2)= largestgap
@@ -3115,6 +3151,7 @@ subroutine  Chern_3D
 
    call  wannier_center3D_plane_func(kstart, kvec1, kvec2, &
       largestgap, wcc, Chern)
+   call get_chern_number_from_wcc(NumberofSelectedOccupiedBands, Nk2, wcc, Chern)
    Chern_all(3)= Chern
    wcc_all(:, :, 3)= wcc
    largestgap_all(:, 3)= largestgap
@@ -3126,6 +3163,7 @@ subroutine  Chern_3D
 
    call  wannier_center3D_plane_func(kstart, kvec1, kvec2, &
       largestgap, wcc, Chern)
+   call get_chern_number_from_wcc(NumberofSelectedOccupiedBands, Nk2, wcc, Chern)
    Chern_all(4)= Chern
    wcc_all(:, :, 4)= wcc
    largestgap_all(:, 4)= largestgap
@@ -3137,6 +3175,7 @@ subroutine  Chern_3D
 
    call  wannier_center3D_plane_func(kstart, kvec1, kvec2, &
       largestgap, wcc, Chern)
+   call get_chern_number_from_wcc(NumberofSelectedOccupiedBands, Nk2, wcc, Chern)
    Chern_all(5)= Chern
    wcc_all(:, :, 5)= wcc
    largestgap_all(:, 5)= largestgap
@@ -3148,6 +3187,7 @@ subroutine  Chern_3D
 
    call  wannier_center3D_plane_func(kstart, kvec1, kvec2, &
       largestgap, wcc, Chern)
+   call get_chern_number_from_wcc(NumberofSelectedOccupiedBands, Nk2, wcc, Chern)
    Chern_all(6)= Chern
    wcc_all(:, :, 6)= wcc
    largestgap_all(:, 6)= largestgap
@@ -3155,12 +3195,9 @@ subroutine  Chern_3D
    outfileindex= outfileindex+ 1
    if (cpuid==0) then
       open(unit=outfileindex, file='wanniercenter3D_Chern.dat')
-      do i=1, NumberofSelectedOccupiedBands
-         do ik2=1, Nk2
-            write(outfileindex, '(10000f16.8)') (ik2-1d0)/(Nk2-1), &
-               (dmod((wcc_all(i, ik2, j)), 1d0), j=1, 6)
-         enddo
-         write(outfileindex, *)' '
+      do ik2=1, Nk2
+         write(outfileindex, '(10000f16.8)') (ik2-1d0)/(Nk2-1), &
+            (dmod(sum((wcc_all(:, ik2, j))), 1d0), j=1, 6)
       enddo
       close(outfileindex)
    endif
@@ -3249,17 +3286,44 @@ subroutine  Chern_3D
 
    if (cpuid==0) then
       write(stdout, *)'# Chern number for 6 planes'
-      write(stdout, *)'k1=0.0, k2-k3 plane: ', Chern_all(1)
-      write(stdout, *)'k1=0.5, k2-k3 plane: ', Chern_all(2)
-      write(stdout, *)'k2=0.0, k1-k3 plane: ', Chern_all(3)
-      write(stdout, *)'k2=0.5, k1-k3 plane: ', Chern_all(4)
-      write(stdout, *)'k3=0.0, k1-k2 plane: ', Chern_all(5)
-      write(stdout, *)'k3=0.5, k1-k2 plane: ', Chern_all(6)
+      write(stdout, *)'k1=0.0, k2-k3 plane: ', int(Chern_all(1))
+      write(stdout, *)'k1=0.5, k2-k3 plane: ', int(Chern_all(2))
+      write(stdout, *)'k2=0.0, k1-k3 plane: ', int(Chern_all(3))
+      write(stdout, *)'k2=0.5, k1-k3 plane: ', int(Chern_all(4))
+      write(stdout, *)'k3=0.0, k1-k2 plane: ', int(Chern_all(5))
+      write(stdout, *)'k3=0.5, k1-k2 plane: ', int(Chern_all(6))
    endif
 
    return
 end subroutine  Chern_3D
 
+subroutine get_chern_number_from_wcc(Noccpied, Numk, wcc, Chern_number)
+   !> get chern number from the given wcc
+   use para
+   implicit none
+
+   integer, intent(in) :: Noccpied
+   integer, intent(in) :: Numk
+   real(dp), intent(out) :: Chern_number
+   real(dp), intent(in) :: wcc(Noccpied, Numk)
+
+   integer :: ik
+   real(dp) :: diff
+   real(dp), allocatable :: wcc_sum(:)
+
+   allocate(wcc_sum(Numk))
+   wcc_sum= 0d0
+
+   wcc_sum= dmod(sum(wcc, dim=1), 1d0)
+
+   Chern_number= 0d0
+   do ik=1, Numk-1
+      call periodic_diff_1D(wcc_sum(ik+1), wcc_sum(ik), diff )
+      Chern_number= Chern_number+ diff
+   enddo
+
+   return
+end subroutine get_chern_number_from_wcc
 
 subroutine  Z2_3D
    ! this suboutine is used for wannier center calculation for 3D system

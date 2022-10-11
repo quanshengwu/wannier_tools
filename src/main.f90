@@ -597,6 +597,7 @@
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating Z2 number for the bulk'
         call now(time_start)
+       !call Z2_3D         
         call Z2_3D_adaptive
         call now(time_end)
         call print_time_cost(time_start, time_end, 'Z2_calc')
