@@ -1026,7 +1026,7 @@
       real(dp) :: kdotr
       complex(dp) :: factor
       !> velocity operator
-	   real(dp), allocatable :: W(:)
+      real(dp), allocatable :: W(:)
       complex(dp), allocatable :: vx(:, :)
       complex(dp), allocatable :: vy(:, :)
       complex(dp), allocatable :: vz(:, :)

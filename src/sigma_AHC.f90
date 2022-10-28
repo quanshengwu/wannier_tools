@@ -116,7 +116,7 @@
            do m= 1, Num_wann
               Omega_BerryCurv_t(m, :)= Omega_BerryCurv(m, :)*fermi(W(m)-mu, Beta_fake)
            enddo
-           sigma_tensor_ahc_mpi(:, ie)= sigma_tensor_ahc_mpi(:, ie)+ &
+           sigma_tensor_ahc_mpi(:, ie)= sigma_tensor_ahc_mpi(:, ie)- &
               (sum(Omega_BerryCurv_t(:, :), dim=1))
         enddo ! ie
      enddo ! ik
