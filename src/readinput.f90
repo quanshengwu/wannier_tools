@@ -1523,9 +1523,9 @@ subroutine readinput
    !> check whether Umatrix is right
    !> the volume of the new cell should be the same as the old ones
    !> Here R1, R2, R3 are vectors defined by SURFACE CARD in original cartesian coordinates
-   R1= Umatrix(1, 1)*Origin_cell%Rua+ Umatrix(1, 2)*Origin_cell%Rub+ Umatrix(1, 3)*Origin_cell%Ruc
-   R2= Umatrix(2, 1)*Origin_cell%Rua+ Umatrix(2, 2)*Origin_cell%Rub+ Umatrix(2, 3)*Origin_cell%Ruc
-   R3= Umatrix(3, 1)*Origin_cell%Rua+ Umatrix(3, 2)*Origin_cell%Rub+ Umatrix(3, 3)*Origin_cell%Ruc
+   R1= Umatrix(1, 1)*Origin_cell%Rua+ Umatrix(2, 1)*Origin_cell%Rub+ Umatrix(3, 1)*Origin_cell%Ruc
+   R2= Umatrix(1, 2)*Origin_cell%Rua+ Umatrix(2, 2)*Origin_cell%Rub+ Umatrix(3, 2)*Origin_cell%Ruc
+   R3= Umatrix(1, 3)*Origin_cell%Rua+ Umatrix(2, 3)*Origin_cell%Rub+ Umatrix(3, 3)*Origin_cell%Ruc
 
    cell_volume2= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
       +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
@@ -1546,9 +1546,9 @@ subroutine readinput
    endif
    if (abs(abs(cell_volume2)-abs(Origin_cell%CellVolume))> 0.001d0) then
       call FindTheThirdLatticeVector()
-      R1= Umatrix(1, 1)*Origin_cell%Rua+ Umatrix(1, 2)*Origin_cell%Rub+ Umatrix(1, 3)*Origin_cell%Ruc
-      R2= Umatrix(2, 1)*Origin_cell%Rua+ Umatrix(2, 2)*Origin_cell%Rub+ Umatrix(2, 3)*Origin_cell%Ruc
-      R3= Umatrix(3, 1)*Origin_cell%Rua+ Umatrix(3, 2)*Origin_cell%Rub+ Umatrix(3, 3)*Origin_cell%Ruc
+      R1= Umatrix(1, 1)*Origin_cell%Rua+ Umatrix(2, 1)*Origin_cell%Rub+ Umatrix(3, 1)*Origin_cell%Ruc
+      R2= Umatrix(1, 2)*Origin_cell%Rua+ Umatrix(2, 2)*Origin_cell%Rub+ Umatrix(3, 2)*Origin_cell%Ruc
+      R3= Umatrix(1, 3)*Origin_cell%Rua+ Umatrix(2, 3)*Origin_cell%Rub+ Umatrix(3, 3)*Origin_cell%Ruc
       if (cpuid==0) then
          write(stdout, '(a)')' '
          write(stdout, '(a)')'>> New SURFACE CARD:'
@@ -4156,9 +4156,9 @@ subroutine FindTheThirdLatticeVector()
             if (i1==0 .and. i2==0 .and. i3==0) cycle
             !R= i1*Origin_cell%Rua+i2*Origin_cell%Rub+i3*Origin_cell%Ruc
             !dot=abs(R(1)*Rhkl(1)+ R(2)*Rhkl(2)+ R(3)*Rhkl(3))
-            cross(1)= Umatrix(2, 1)*i3- i2*Umatrix(3, 1)
-            cross(2)= Umatrix(3, 1)*i1- i3*Umatrix(1, 1)
-            cross(3)= Umatrix(1, 1)*i2- i1*Umatrix(2, 1)
+            cross(1)= Umatrix(1, 2)*i3- i2*Umatrix(1, 3)
+            cross(2)= Umatrix(1, 3)*i1- i3*Umatrix(1, 1)
+            cross(3)= Umatrix(1, 1)*i2- i1*Umatrix(1, 2)
             dot = i1*Umatrix(1, 1)+ i2*Umatrix(2, 1)+ i3*Umatrix(3, 1)
             if ((abs(cross(1))+abs(cross(2))+abs(cross(3)))<eps9.and.dot>0) then
                it= it+1
@@ -4180,12 +4180,12 @@ subroutine FindTheThirdLatticeVector()
       norm_3= dsqrt(R1(1)*R1(1)+ R1(2)*R1(2)+ R1(3)*R1(3))
       if (norm_3< smallest_length) then
          smallest_length= norm_3
-         Umatrix(:, 1) = vectors_parallel_umatrix1(:, it)
+         Umatrix(1, :) = vectors_parallel_umatrix1(:, it)
       endif
    enddo
 
 
-   !> secondly, find all vectors that are parallel to Umatrix(:,2)
+   !> secondly, find all vectors that are parallel to Umatrix(2,:)
    it= 0
    do i1=-iRmax, iRmax
       do i2=-iRmax, iRmax
@@ -4193,10 +4193,10 @@ subroutine FindTheThirdLatticeVector()
             if (i1==0 .and. i2==0 .and. i3==0) cycle
             !R= i1*Origin_cell%Rua+i2*Origin_cell%Rub+i3*Origin_cell%Ruc
             !dot=abs(R(1)*Rhkl(1)+ R(2)*Rhkl(2)+ R(3)*Rhkl(3))
-            cross(1)= Umatrix(2, 2)*i3- i2*Umatrix(3, 2)
-            cross(2)= Umatrix(3, 2)*i1- i3*Umatrix(1, 2)
-            cross(3)= Umatrix(1, 2)*i2- i1*Umatrix(2, 2)
-            dot = i1*Umatrix(1, 2)+ i2*Umatrix(2, 2)+ i3*Umatrix(3, 2)
+            cross(1)= Umatrix(2, 2)*i3- i2*Umatrix(2, 3)
+            cross(2)= Umatrix(2, 3)*i1- i3*Umatrix(2, 1)
+            cross(3)= Umatrix(2, 1)*i2- i1*Umatrix(2, 2)
+            dot = i1*Umatrix(2, 1)+ i2*Umatrix(2, 2)+ i3*Umatrix(2, 3)
             if ((abs(cross(1))+abs(cross(2))+abs(cross(3)))<eps9.and.dot>0) then
                it= it+1
                vectors_parallel_umatrix2(1, it)= i1
@@ -4217,7 +4217,7 @@ subroutine FindTheThirdLatticeVector()
       norm_3= dsqrt(R2(1)*R2(1)+ R2(2)*R2(2)+ R2(3)*R2(3))
       if (norm_3< smallest_length) then
          smallest_length= norm_3
-         Umatrix(:, 2) = vectors_parallel_umatrix2(:, it)
+         Umatrix(2, :) = vectors_parallel_umatrix2(:, it)
       endif
    enddo
 
