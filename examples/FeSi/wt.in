@@ -8,9 +8,9 @@ Particle = 'phonon'
 !> bulk band structure calculation flag
 BulkBand_calc         = T
 SlabBand_calc         = F
-SlabSS_calc           = T
-SlabArc_calc          = T
-WeylChirality_calc    = T
+SlabSS_calc           = F
+SlabArc_calc          = F
+WeylChirality_calc    = F
 BerryCurvature_calc   = F
 LOTO_correction       = F
 /

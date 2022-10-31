@@ -31,7 +31,7 @@
      integer :: ikp, ik1, ik2, iq, Nk1_half, Nk2_half
      integer :: imin1, imax1, imin2, imax2, iq1, iq2
 
-     real(dp) :: dos_l_max, dos_r_max
+     real(dp) :: dos_l_max, dos_r_max, time_q, time_ss, time1, time2
      real(dp) :: time_start, time_end
      real(dp) :: omega, k1min_shape, k1max_shape, k2min_shape, k2max_shape
 
@@ -185,6 +185,7 @@
 
      time_start= 0d0
      time_end= 0d0
+     time_q= 0d0; time_ss= 0d0
      do ikp= 1+cpuid, nkx*nky, num_cpu
         if (cpuid==0.and. mod(ikp/num_cpu, 100)==0) &
            write(stdout, *) 'Arc, ik ', ikp, 'Nk',nkx*nky, 'time left', &
@@ -193,19 +194,25 @@
         k(1)= k12(1, ikp)
         k(2)= k12(2, ikp)
 
+        call now(time1)
         if (index(Particle,'phonon')/=0.and.LOTO_correction) then
            call ham_qlayer2qlayer_LOTO(k,H00,H01)
         else
            call ham_qlayer2qlayer(k,H00,H01)
         endif
+        call now(time2)
+        time_q= time_q+time2-time1
 
 
         !> calculate surface green function
         ! there are two method to calculate surface green's function
         ! the method in 1985 is better, you can find the ref in the
         ! subroutine
+        call now(time1)
         call surfgreen_1985(omega,GLL,GRR,GB,H00,H01,ones)
         ! call surfgreen_1984(omega,GLL,GRR,H00,H01,ones)
+        call now(time2)
+        time_ss= time_ss+time2-time1
 
         ik1= ik12(1, ikp)
         ik2= ik12(2, ikp)
@@ -307,6 +314,7 @@
         call now(time_end)
 
      enddo
+     !print *, time_q, time_ss
 
 #if defined (MPI)
      !> we don't have to do allreduce operation

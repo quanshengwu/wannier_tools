@@ -886,7 +886,7 @@
 
      !> This is the unitary operation (unchange)
      do j=1, 3
-        pggen_cart(j, j, 1)= 1d0
+        pgop_cart(j, j, 1)= 1d0
      enddo
 
      if (Symmetry_Import_calc) then

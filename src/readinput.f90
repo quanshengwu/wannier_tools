@@ -4148,7 +4148,7 @@ subroutine FindTheThirdLatticeVector()
    vectors_parallel_umatrix1= 0
    vectors_parallel_umatrix2= 0
 
-   !> Firstly, find all vectors that are parallel to Umatrix(:,1)
+   !> Firstly, find all vectors that are parallel to Umatrix(1,:)
    it= 0
    do i1=-iRmax, iRmax
       do i2=-iRmax, iRmax
@@ -4159,7 +4159,7 @@ subroutine FindTheThirdLatticeVector()
             cross(1)= Umatrix(1, 2)*i3- i2*Umatrix(1, 3)
             cross(2)= Umatrix(1, 3)*i1- i3*Umatrix(1, 1)
             cross(3)= Umatrix(1, 1)*i2- i1*Umatrix(1, 2)
-            dot = i1*Umatrix(1, 1)+ i2*Umatrix(2, 1)+ i3*Umatrix(3, 1)
+            dot = i1*Umatrix(1, 1)+ i2*Umatrix(1, 2)+ i3*Umatrix(1, 3)
             if ((abs(cross(1))+abs(cross(2))+abs(cross(3)))<eps9.and.dot>0) then
                it= it+1
                vectors_parallel_umatrix1(1, it)= i1
