@@ -27,7 +27,7 @@
       real(dp), intent(in) :: BTau_array(NBTau) ! omega*tau without units
       real(dp), intent(inout) :: sigma_ohe_tensor(9, NBTau, OmegaNum, NumT, Nband_Fermi_Level) 
 
-      real(dp) :: coeff,  mu, BTau, KBT
+      real(dp) :: coeff,  mu, BTau, KBT, exponent_max
       integer :: ie, ibtau, ikt
 
       integer :: Nk_total, Nk_current, Nk_start, Nk_end
@@ -219,6 +219,10 @@
          Enk(ik, :)= Ek
          call now(time_end)
       enddo
+
+      !> we get the kpath by Btau_final=-exponent_max*BTauMax, but we only use half of them
+      !>  means that we can reach the accuracy as to exp(-exponent_max/2)
+      exponent_max= 30
 
       !> exclude all kpoints with zero velocity x B and large energy away from Fermi level
       do iband= 1, Nband_Fermi_Level 
@@ -787,7 +791,8 @@
             Btau_start= 0d0
    
             !> we get the kpath by Btau_final=-30*BTauMax, but we only use half of them
-            Btau_final= -30d0*BTauMax   !< -15 means that we can reach the accuracy as to exp(-15d0)
+            Btau_final= -exponent_max*BTauMax   !< -15 means that we can reach the accuracy as to exp(-15d0)
+            !Btau_final= -10d0*BTauMax   !< test for arXiv:2201.03292 (2022)
    
             !> Runge-Kutta only applied with BTauMax>0
             !> if the magnetic field is zero. 
@@ -795,6 +800,7 @@
                NSlice_Btau_inuse= NSlice_Btau
                call RKF45_pack(magnetic_field, bands_fermi_level(iband),  &
                     NSlice_Btau_inuse, k_start, Btau_start, Btau_final, kout, icycle, fail)
+
             else
                do ibtau=1, NSlice_Btau
                   kout(:, ibtau)= k_start(:)
@@ -858,7 +864,7 @@
                         if (NSlice_Btau_local==0)then
                            NSlice_Btau_local= 2
                         else
-                           DeltaBtau= 30d0/2d0/NSlice_Btau_local
+                           DeltaBtau= exponent_max/2d0/NSlice_Btau_local
                         endif
                      endif
    

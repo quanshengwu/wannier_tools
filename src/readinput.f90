@@ -1523,9 +1523,9 @@ subroutine readinput
    !> check whether Umatrix is right
    !> the volume of the new cell should be the same as the old ones
    !> Here R1, R2, R3 are vectors defined by SURFACE CARD in original cartesian coordinates
-   R1= Umatrix(1, 1)*Origin_cell%Rua+ Umatrix(2, 1)*Origin_cell%Rub+ Umatrix(3, 1)*Origin_cell%Ruc
-   R2= Umatrix(1, 2)*Origin_cell%Rua+ Umatrix(2, 2)*Origin_cell%Rub+ Umatrix(3, 2)*Origin_cell%Ruc
-   R3= Umatrix(1, 3)*Origin_cell%Rua+ Umatrix(2, 3)*Origin_cell%Rub+ Umatrix(3, 3)*Origin_cell%Ruc
+   R1= Umatrix(1, 1)*Origin_cell%Rua+  Umatrix(1, 2)*Origin_cell%Rub+ Umatrix(1, 3)*Origin_cell%Ruc
+   R2= Umatrix(2, 1)*Origin_cell%Rua+  Umatrix(2, 2)*Origin_cell%Rub+ Umatrix(2, 3)*Origin_cell%Ruc
+   R3= Umatrix(3, 1)*Origin_cell%Rua+  Umatrix(3, 2)*Origin_cell%Rub+ Umatrix(3, 3)*Origin_cell%Ruc
 
    cell_volume2= R1(1)*(R2(2)*R3(3)- R2(3)*R3(2)) &
       +R1(2)*(R2(3)*R3(1)- R2(1)*R3(3)) &
