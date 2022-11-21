@@ -13,16 +13,14 @@ OBJ =  module.o sparse.o wt_aux.o math_lib.o symmetry.o readHmnR.o inverse.o pro
 CUDA_OBJ = cuda_math.o
 
 # compiler
-F90  = ifort -fpp -DINTELMKL -fpe3
+F90  = nvfortran -Mpreprocess -DINTELMKL -DCUDA
 
-MKLROOT=~/intel/oneapi/mkl/2022.2.0
+MKLROOT=/home/quan/intel/oneapi/mkl/2022.2.0
 INCLUDE = -I${MKLROOT}/include
-WFLAG = -nogen-interface
-OFLAG = -O3 -static-intel
+WFLAG = 
+OFLAG = -O3
 FFLAG = $(OFLAG) $(WFLAG)
 LFLAG = $(OFLAG)
-
-ARPACK=-L/home/quan/local/lib/ -larpack
 
 # blas and lapack libraries
 # static linking
@@ -32,9 +30,12 @@ ARPACK=-L/home/quan/local/lib/ -larpack
 		  ${ARPACK}
 
 # dynamic linking
-LIBS = ${ARPACK} -L/${MKLROOT}/lib/ -lmkl_core -lmkl_sequential -lmkl_intel_lp64 -lpthread
+ARPACK=-L/home/quan/local/lib/ -larpack
+CUDA_LIB=-L/opt/nvidia/hpc_sdk/Linux_x86_64/22.5/math_libs/lib64 -lcuda -cudalib=cusparse,cublas,cusolver
+LIBS = ${ARPACK} -L/${MKLROOT}/lib/intel64 -lmkl_core -lmkl_sequential -lmkl_intel_lp64 -lpthread \
+		 ${CUDA_LIB}
  
-main : $(OBJ)
+main : $(OBJ) $(CUDA_OBJ)
 	$(F90) $(LFLAG) $(CUDA_OBJ) $(OBJ) -o wt.x $(LIBS)
 	cp -f wt.x ../bin
 
@@ -43,7 +44,7 @@ main : $(OBJ)
 .f90.o :
 	$(F90) $(FFLAG) $(INCLUDE) -c $*.f90
 
-cuda_math.o:
+cuda_math.o :
 	nvfortran -cuda -cudalib=cusparse,cublas,cusolver -Mpreprocess -C -traceback -c cuda_math.cuf
 
 clean :
