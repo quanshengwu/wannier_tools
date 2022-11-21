@@ -37,6 +37,9 @@
      complex(dp),allocatable :: Bmat(:,:)
 
 
+#if defined (CUDA)
+     call cusolver_zgesv(ndim, Amat)
+#else
      allocate(ipiv(ndim))
      allocate(Bmat(ndim,ndim))
 
@@ -53,6 +56,7 @@
      if(info.ne.0)print *,'something wrong with zgesv'
 
      Amat=Bmat
+#endif
      
      return
   end subroutine inv 

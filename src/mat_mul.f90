@@ -20,8 +20,12 @@
 
      C(:,:)=(0.0d0,0.0d0)
 
+#if defined (CUDA)
+     call mat_mul_cuda_z(nmatdim, A, B, C)
+#else
      call ZGEMM('N','N',nmatdim,nmatdim,nmatdim,ALPHA, &
                &  A,nmatdim,B,nmatdim,BETA,C,nmatdim)
+#endif
 
      return
   end subroutine mat_mul

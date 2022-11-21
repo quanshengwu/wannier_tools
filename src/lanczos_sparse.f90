@@ -83,8 +83,13 @@ subroutine lanczos_seqsparse_cpu_z(NumLczVectors, NumLczVectors_out, Mdim, nnz, 
    vec_0= 1d0/betan(1)* vec_0
 
    !* perform |vec(1,:)>=Ham |vec(0,:)>
+
+#if defined (CUDA)
+   call cusparse_zcsrmv(Mdim, nnz, vec_0, icsr, jcsr, acsr, vec_1)
+#else
 #if defined (INTELMKL)
    call mkl_zcsrgemv('N', Mdim, acsr, icsr, jcsr, vec_0, vec_1)
+#endif
 #endif
 
    !* a_0= <phi_0|H|phi_0>
@@ -114,8 +119,12 @@ subroutine lanczos_seqsparse_cpu_z(NumLczVectors, NumLczVectors_out, Mdim, nnz, 
       call now(time_start)
 
 
+#if defined (CUDA)
+   call cusparse_zcsrmv(Mdim, nnz, vec_1, icsr, jcsr, acsr, vec_2)
+#else
 #if defined (INTELMKL)
       call mkl_zcsrgemv('N', Mdim, acsr, icsr, jcsr, vec_1, vec_2)
+#endif
 #endif
 
       !* calculate alpha, betan
