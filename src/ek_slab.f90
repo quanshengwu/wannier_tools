@@ -726,7 +726,7 @@ end subroutine ek_slab_sparseHR
         write(outfileindex, '(a)')'unset colorbox'
         write(outfileindex, '(a)')'set autoscale fix'
         write(outfileindex, '(a)')'set pm3d interpolate 4,4'
-        write(outfileindex, '(2a)')"splot 'slabek_plane.dat' u 1:2:7 w pm3d, \"
+        write(outfileindex, '(2a)')"splot 'slabek_plane.dat' u 1:2:7 w pm3d, \ "
         write(outfileindex, '(2a)')"      'slabek_plane.dat' u 1:2:9 w pm3d"
 
         close(outfileindex)

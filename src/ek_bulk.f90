@@ -554,7 +554,7 @@ subroutine ek_bulk_plane_C2yT
       write(outfileindex, '(a)')'unset colorbox'
       write(outfileindex, '(a)')'set autoscale fix'
       write(outfileindex, '(a)')'set pm3d interpolate 4,4'
-      write(outfileindex, '(2a)')"splot 'bulkek_plane.dat' u 4:5:8 w pm3d, \"
+      write(outfileindex, '(2a)')"splot 'bulkek_plane.dat' u 4:5:8 w pm3d, \ "
       write(outfileindex, '(2a)')"      'bulkek_plane.dat' u 4:5:9 w pm3d"
 
       close(outfileindex)
@@ -735,7 +735,7 @@ subroutine ek_bulk_plane
       write(outfileindex, '(a)')'unset colorbox'
       write(outfileindex, '(a)')'set autoscale fix'
       write(outfileindex, '(a)')'set pm3d interpolate 4,4'
-      write(outfileindex, '(2a)')"splot 'bulkek_plane.dat' u 4:5:8 w pm3d, \"
+      write(outfileindex, '(2a)')"splot 'bulkek_plane.dat' u 4:5:8 w pm3d, \ "
       write(outfileindex, '(2a)')"      'bulkek_plane.dat' u 4:5:9 w pm3d"
 
       close(outfileindex)
@@ -1293,7 +1293,7 @@ subroutine sparse_ekbulk_plane
       write(outfileindex, '(a)')'unset colorbox'
       write(outfileindex, '(a)')'set autoscale fix'
       write(outfileindex, '(a)')'set pm3d interpolate 4,4'
-      write(outfileindex, '(2a)')"splot 'bulkek_plane.dat' u 4:5:8 w pm3d, \"
+      write(outfileindex, '(2a)')"splot 'bulkek_plane.dat' u 4:5:8 w pm3d, \ "
       write(outfileindex, '(2a)')"      'bulkek_plane.dat' u 4:5:9 w pm3d"
 
       close(outfileindex)
@@ -2802,7 +2802,7 @@ subroutine generate_ek_kpath_gnu(datafilename, gnufilename, gnuoutfilename, &
          " w lp lw 2 pt 7  ps 0.2 lc palette, 0 w l lw 2"
       write(outfileindex, '(2a)')"# uncomment the following lines to plot the spin if necessary"
       write(outfileindex, '(2a)')"#plot 'bulkek.dat' u 1:2 ",  &
-         "w lp lw 2 pt 7  ps 0.2, \"
+         "w lp lw 2 pt 7  ps 0.2, \ "
       write(outfileindex, '(2a)')"     'bulkek.dat' u 1:2:($3/6):($4/6) ",  &
          "w vec"
       close(outfileindex)

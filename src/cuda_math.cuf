@@ -1,5 +1,5 @@
 !> To generate cuda_blas.o
-!> nvfortran -cuda -cudalib=cusparse,cublas,cusolver -Mpreprocess -C -traceback -c cuda_blas.F90
+!> nvfortran -cuda -cudalib=cusparse,cusolver,cublas -Mpreprocess -C -traceback cuda_math.cuf
 !> written by QSWu on Nov 18 2022 at IOP CAS, Beijing
 !> Email: quansheng.wu@iphy.ac.cn or wuquansheng@gmail.com
 !> tested with CUDA Toolkit v11.8  CUDA 22.5
@@ -189,6 +189,63 @@ subroutine cusparse_zcsrmv(ndim, nnz, x, iA, jA, matA, y)
     return
 end subroutine cusparse_zcsrmv
 
+!> A subroutine computes eigenvalues and eigenvectors of a symmetric or
+!> Hermitian ndim x ndim matrix Amat(ndim, ndim)
+!> input/output : Amat(ndim, ndim), Amat will be overwritten as the eigenvectors on output
+!> use cusolver on GPU device
+subroutine cusolver_zheev(ndim, Amat, eigval)
+
+   use cudafor
+   use cusolverDn
+   implicit none
+
+   integer, parameter :: dp=kind(1d0)
+   integer, intent(in) :: ndim
+   complex(dp), intent(inout) :: Amat(ndim, ndim)
+   real(dp), intent(out) :: eigval(ndim)
+
+   integer :: istatus, lwork, info
+
+   !> variables related to GPU
+   type(cusolverDnHandle) :: handle
+   integer, device :: devinfo
+   complex(dp), device, allocatable :: d_A(:, :)
+   real(dp), device, allocatable :: d_eigval(:)
+   complex(dp), device, allocatable :: d_workspace(:)
+
+   integer :: jobz, uplo
+
+   jobz= CUSOLVER_EIG_MODE_VECTOR  ! compute eigenvalues and eigenvectors.
+   uplo= CUBLAS_FILL_MODE_UPPER
+
+   !> step 1: create cusolver handle 
+   istatus= cusolverDnCreate(handle)
+  
+   !> step 2: allocate memory on device and copy data from host to device
+   allocate(d_A(ndim, ndim), d_eigval(ndim))
+   d_A= Amat
+
+   !> step 3: query working space of getrf 
+   istatus= cusolverDnZheevd_buffersize(handle, jobz, uplo, ndim, d_A, ndim, d_eigval, lwork)
+   allocate(d_workspace(lwork))
+
+   istatus= cusolverDnZheevd(handle, &
+          jobz, uplo, ndim, d_A, ndim, d_eigval, d_workspace, lwork, devinfo)
+
+   if (istatus/=0) print *, 'ERROR: something wrong with cusolverDnZheevd on GPU'
+
+   !> step 4: copy data from device back to host
+   eigval= d_eigval
+   Amat= d_A
+
+   !> step 5: free memory on GPU
+   istatus=cusolverDnDestroy(handle)
+   deallocate(d_A, d_eigval, d_workspace)
+
+   return
+end subroutine cusolver_zheev
+
+
 !> subroutine to perform the inverse of a matrix Amat(ndim, ndim)
 !> input/output : Amat(ndim, ndim), Amat will be overwritten on output
 !> use cusolver on GPU device
@@ -250,7 +307,9 @@ subroutine cusolver_zgesv(ndim, Amat)
    !> step 4: copy data from device back to host
     Amat= d_B
 
+
    !> free memory on GPU
+   istatus=cusolverDnDestroy(handle)
    deallocate(d_A, d_B, d_workspace, d_devipiv)
    deallocate(Bmat, ipiv)
 
@@ -293,12 +352,16 @@ subroutine mat_mul_cuda_z(ndim, A, B, C)
    !> copy data from device to host
    C= d_C
 
+   !> Free memory on device
+   istatus= cublasDestroy(handle)
+   deallocate(d_A, d_B, d_C)
+
    return
 end subroutine mat_mul_cuda_z
 
 
 ! ! compile it with
-! !> nvfortran -cuda -cudalib=cusparse -Mpreprocess -C -traceback cusparse_blas.F90
+! !> nvfortran -cuda -cudalib=cusparse,cusolver,cublas -Mpreprocess -C -traceback cuda_math.cuf
 ! ! run it with 
 ! !  ./a.out
 ! !> modified by QSWu on Nov 17 2022
@@ -317,6 +380,8 @@ end subroutine mat_mul_cuda_z
 !     complex(8), allocatable :: matA_dense(:, :)
 !     complex(8), allocatable :: matB_dense(:, :)
 !     complex(8), allocatable :: matC_dense(:, :)
+
+!     real(8), allocatable :: eigval(:)
 ! 
 !     integer*4 :: start, end, countrate
 !     complex(8) :: t
@@ -329,6 +394,7 @@ end subroutine mat_mul_cuda_z
 !     allocate(matA_dense(nx, nx))
 !     allocate(matB_dense(nx, nx))
 !     allocate(matC_dense(nx, nx))
+!     allocate(eigval(nx))
 ! 
 !     !> a standard matrix used in the example of cusparse library
 !     !> https://github.com/NVIDIA/CUDALibrarySamples/tree/master/cuSPARSE/spmv_csr
@@ -374,5 +440,14 @@ end subroutine mat_mul_cuda_z
 !     do i=1, nx
 !        write(*, '(100f8.2)')real(matC_dense(i, :))
 !     enddo
+
+!     !> get eigenvalue of A
+!     matA_dense(1, :)=(/0, 1, 0, 0/)
+!     matA_dense(2, :)=(/1, 0, 1, 0/)
+!     matA_dense(3, :)=(/0, 1, 0, 1/)
+!     matA_dense(4, :)=(/0, 0, 1, 0/)
+!
+!     call cusolver_zheev(nx, matA_dense, eigval)
+!     print *, 'eigval:', eigval
 ! 
 ! end

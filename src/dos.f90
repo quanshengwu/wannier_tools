@@ -164,10 +164,10 @@ subroutine dos_sparse
       write(outfileindex, '(a)')'set xlabel "Energy (eV)"'
       write(outfileindex, '(a)')'set ylabel "DOS (states/eV/unit cell)"'
       write(outfileindex, '(a, f6.1, a)')"plot 'dos.dat' u 1:2 w l lw 2 title '",&
-         Eta_array(1)*1000/eV2Hartree, "meV', \"
+         Eta_array(1)*1000/eV2Hartree, "meV', \ "
       do ieta= 2, NumberofEta-1
          write(outfileindex, 201)" '' u 1:", ieta, " w l lw 2 title '", &
-            Eta_array(ieta)*1000/eV2Hartree, "meV', \"
+            Eta_array(ieta)*1000/eV2Hartree, "meV', \ "
       enddo
       write(outfileindex, '(a, f6.1, a)')" '' u 1:10 w l lw 2 title '",&
          Eta_array(NumberofEta)*1000/eV2Hartree, "meV'"
@@ -515,10 +515,10 @@ subroutine dos_sub
       write(outfileindex, '(a)')'set title "DOS with different broadenings"'
       write(outfileindex, '(a)')'set ylabel "DOS (states/eV/unit cell)"'
       write(outfileindex, '(a, f6.1, a)')"plot 'dos.dat' u 1:2 w l lw 2 title '",&
-         Eta_array(1)*1000/eV2Hartree, "meV', \"
+         Eta_array(1)*1000/eV2Hartree, "meV', \ "
       do ieta= 2, NumberofEta-1
          write(outfileindex, 202)" '' u 1:", ieta, " w l lw 2 title '", &
-            Eta_array(ieta)*1000/eV2Hartree, "meV', \"
+            Eta_array(ieta)*1000/eV2Hartree, "meV', \ "
       enddo
       write(outfileindex, '(a, f6.1, a)')" '' u 1:10 w l lw 2 title '",&
          Eta_array(NumberofEta)*1000/eV2Hartree, "meV'"

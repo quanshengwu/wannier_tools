@@ -1268,10 +1268,10 @@ subroutine bulk_dos_lanczos
       write(outfileindex,*)     'set xrange [',OmegaMin/eV2Hartree,':',OmegaMax/eV2Hartree,']'
       write(outfileindex,*)     'set yrange [ 0.0000 :', maxval(dos_lcz)+0.2 ,']'
       write(outfileindex,'(a,f6.1,a)') "plot 'bulkdoslcz.dat' u 1:2 w lp ps 0.2 lw 1.0 title ' ",&
-         eta_array(1)*1000," meV', \"
+         eta_array(1)*1000," meV', \ "
       do ieta=2, NumberofEta-1
          write(outfileindex,'(a,i1,a,f6.1,a)') "'' u 1:",ieta+1," w lp ps 0.2 lw 1.0 title ' ",&
-            eta_array(ieta)*1000," meV', \"
+            eta_array(ieta)*1000," meV', \ "
       enddo
       write(outfileindex,'(a,f6.1,a)') "'' u 1:10 w lp ps 0.2 lw 1.0 title ' ",&
          eta_array(9)*1000," meV'"

@@ -15,13 +15,14 @@ CUDA_OBJ = cuda_math.o
 # compiler
 F90  = ifort -fpp -DINTELMKL -fpe3
 
+MKLROOT=~/intel/oneapi/mkl/2022.2.0
 INCLUDE = -I${MKLROOT}/include
 WFLAG = -nogen-interface
 OFLAG = -O3 -static-intel
 FFLAG = $(OFLAG) $(WFLAG)
 LFLAG = $(OFLAG)
 
-ARPACK=/Users/user/quan/work/workplace/ARPACK/libarpack_MAC.a
+ARPACK=-L/home/quan/local/lib/ -larpack
 
 # blas and lapack libraries
 # static linking
