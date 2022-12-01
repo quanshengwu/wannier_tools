@@ -1,5 +1,4 @@
 
-#if defined (INTELMKL)
 subroutine dos_sparse
 !> calculate density of state for 3D bulk system
 !
@@ -188,10 +187,8 @@ subroutine dos_sparse
    return
 end subroutine dos_sparse
 
-#endif
 
 
-#if defined (INTELMKL)
 subroutine charge_density_sparse
 !> calculate charge density
 !
@@ -355,7 +352,6 @@ subroutine charge_density_sparse
    return
 end subroutine charge_density_sparse
 
-#endif
 
 
 

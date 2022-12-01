@@ -752,9 +752,7 @@ subroutine sparse_landau_level_B
 
       !> diagonalization by call zheev in lapack
       W= 0d0
-#if defined (INTELMKL)
       call arpack_sparse_coo_eigs(Ndimq,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, LandauLevel_wavefunction_calc)
-#endif
       call now(time3)
       eigv(:, ib)= W
       if (cpuid==0)write(stdout, '(a, f20.2, a)')'  >> Time cost for constructing H: ', time2-time1, ' s'
@@ -1072,9 +1070,7 @@ subroutine sparse_landau_level_k
 
       !> diagonalization by call zheev in lapack
       W= 0d0
-#if defined (INTELMKL)
       call arpack_sparse_coo_eigs(Ndimq,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, LandauLevel_wavefunction_calc)
-#endif
 
       call now(time3)
       eigv(1:neval, ik)= W(1:neval)
@@ -1403,9 +1399,7 @@ subroutine sparse_landau_dos
       !> diagonalization by call zheev in lapack
       W= 0d0
       !        call eigensystem_c( 'N', 'U', Ndimq ,ham_landau, W)
-#if defined (INTELMKL)
       call arpack_sparse_coo_eigs(Ndimq,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, LandauLevel_wavefunction_calc)
-#endif
       do ie= 1, NE
          do iv= 1, neval
             x= omega(ie)- W(iv)

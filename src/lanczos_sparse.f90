@@ -23,6 +23,9 @@ subroutine lanczos_seqsparse_cpu_z(NumLczVectors, NumLczVectors_out, Mdim, nnz, 
    use wmpi
    use sparse
    use para, only : stdout, eps12, OmegaNum
+#if defined (CUDA)
+         use cucsrmv_module
+#endif
    implicit none
 
    !* inout variables
@@ -55,6 +58,11 @@ subroutine lanczos_seqsparse_cpu_z(NumLczVectors, NumLczVectors_out, Mdim, nnz, 
 
    !if (cpuid==0) write(stdout, '(2x,a)')'>> Lanczos algorithm'
 
+
+#if defined (CUDA)
+   call cusparse_zcsrmv_allocate(Mdim, nnz, acsr, icsr, jcsr)
+#endif
+
    allocate(dos_old(OmegaNum))
    allocate(vec_0(Mdim), vec_1(Mdim), vec_2(Mdim))
    dos_old= 0d0
@@ -84,13 +92,7 @@ subroutine lanczos_seqsparse_cpu_z(NumLczVectors, NumLczVectors_out, Mdim, nnz, 
 
    !* perform |vec(1,:)>=Ham |vec(0,:)>
 
-#if defined (CUDA)
-   call cusparse_zcsrmv(Mdim, nnz, vec_0, icsr, jcsr, acsr, vec_1)
-#else
-#if defined (INTELMKL)
-   call mkl_zcsrgemv('N', Mdim, acsr, icsr, jcsr, vec_0, vec_1)
-#endif
-#endif
+   call csrmv_z(Mdim, nnz, acsr, icsr, jcsr, vec_0, vec_1)
 
    !* a_0= <phi_0|H|phi_0>
    alpha(1) = zdotc(Mdim, vec_0, 1, vec_1, 1)
@@ -119,13 +121,7 @@ subroutine lanczos_seqsparse_cpu_z(NumLczVectors, NumLczVectors_out, Mdim, nnz, 
       call now(time_start)
 
 
-#if defined (CUDA)
-   call cusparse_zcsrmv(Mdim, nnz, vec_1, icsr, jcsr, acsr, vec_2)
-#else
-#if defined (INTELMKL)
-      call mkl_zcsrgemv('N', Mdim, acsr, icsr, jcsr, vec_1, vec_2)
-#endif
-#endif
+      call csrmv_z(Mdim, nnz, acsr, icsr, jcsr, vec_1, vec_2)
 
       !* calculate alpha, betan
       t_z1= zdotc(Mdim, vec_1, 1, vec_2, 1)
@@ -178,6 +174,9 @@ subroutine lanczos_seqsparse_cpu_z(NumLczVectors, NumLczVectors_out, Mdim, nnz, 
        endif
     endif
 
+#if defined (CUDA)
+   call cusparse_zcsrmv_deallocate
+#endif
 
    !if (cpuid==0) then
    !   write(stdout, '(a)') '  ilcz       alpha           betan'

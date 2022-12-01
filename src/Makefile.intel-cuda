@@ -13,7 +13,7 @@ OBJ =  module.o sparse.o wt_aux.o math_lib.o symmetry.o readHmnR.o inverse.o pro
 CUDA_OBJ = cuda_math.o
 
 # compiler
-F90  = nvfortran -Mpreprocess -DINTELMKL -DCUDA
+F90  = nvfortran -Mpreprocess -DINTELMKL -DCUDA -g -traceback
 
 MKLROOT=/home/quan/intel/oneapi/mkl/2022.2.0
 INCLUDE = -I${MKLROOT}/include
