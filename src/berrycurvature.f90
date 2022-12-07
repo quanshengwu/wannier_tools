@@ -736,9 +736,9 @@
               write(outfileindex, 204)k3line_stop(i+1), ybound_min, k3line_stop(i+1), ybound_max
            endif
         enddo
-        write(outfileindex, '(a)')"plot 'Berrycurvature_line.dat' \"  
-        write(outfileindex, '(a)')"u 1:2 w lp lc rgb 'red'   lw 2 pt 7 ps 0.2 title '{/Symbol W}_x', \" 
-        write(outfileindex, '(a)')"'' u 1:3 w lp lc rgb 'green' lw 2 pt 7 ps 0.2 title '{/Symbol W}_y', \" 
+        write(outfileindex, '(a)')"plot 'Berrycurvature_line.dat' \ "  
+        write(outfileindex, '(a)')"u 1:2 w lp lc rgb 'red'   lw 2 pt 7 ps 0.2 title '{/Symbol W}_x', \ " 
+        write(outfileindex, '(a)')"'' u 1:3 w lp lc rgb 'green' lw 2 pt 7 ps 0.2 title '{/Symbol W}_y', \ " 
         write(outfileindex, '(a)')"'' u 1:4 w lp lc rgb 'blue'  lw 2 pt 7 ps 0.2 title '{/Symbol W}_z' "
         close(outfileindex)
      endif
@@ -1249,7 +1249,7 @@
         write(outfileindex, '(a)')'if (!exists("MP_GAP"))    MP_GAP = 0.08'
         write(outfileindex, '(3a)')'set label 1 "Sum over all bands below Occupied', &
           "'th band", ' " at screen 0.5 ,0.98 center'
-        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \'
+        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \ '
         write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
         write(outfileindex, '(a)')" "
         write(outfileindex, '(a)')"set palette rgbformulae 33,13,10"
@@ -1285,7 +1285,7 @@
         write(outfileindex, '(3a)')'set label 2 "Sum over all bands below Fermi level', &
           ' E\\\_arc" at screen 0.5 ,0.98 center'
         write(outfileindex, '(a)')"set output 'Berrycurvature_EF.png'"
-        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \'
+        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \ '
         write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
         vmin=minval(Omega_allk_EF_mpi(1, :, :))
         vmax=maxval(Omega_allk_EF_mpi(1, :, :))
@@ -1319,7 +1319,7 @@
         write(outfileindex, '(a)')'if (!exists("MP_BOTTOM")) MP_BOTTOM = .12'
         write(outfileindex, '(a)')'if (!exists("MP_TOP"))    MP_TOP = .88'
         write(outfileindex, '(a)')'if (!exists("MP_GAP"))    MP_GAP = 0.08'
-        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \'
+        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \ '
         write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
         write(outfileindex, '(a)')" "
         write(outfileindex, '(a)')"set palette rgbformulae 33,13,10"
@@ -1652,7 +1652,7 @@
         write(outfileindex, '(a)')'if (!exists("MP_BOTTOM")) MP_BOTTOM = .12'
         write(outfileindex, '(a)')'if (!exists("MP_TOP"))    MP_TOP = .88'
         write(outfileindex, '(a)')'if (!exists("MP_GAP"))    MP_GAP = 0.08'
-        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \'
+        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \ '
         write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
         write(outfileindex, '(a)')" "
         write(outfileindex, '(a)')"set palette rgbformulae 33,13,10"
@@ -1865,7 +1865,7 @@
         write(outfileindex, '(a)')'if (!exists("MP_BOTTOM")) MP_BOTTOM = .12'
         write(outfileindex, '(a)')'if (!exists("MP_TOP"))    MP_TOP = .88'
         write(outfileindex, '(a)')'if (!exists("MP_GAP"))    MP_GAP = 0.08'
-        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \'
+        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \ '
         write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
         write(outfileindex, '(a)')" "
         write(outfileindex, '(a)')"set palette rgbformulae 33,13,10"
@@ -2068,7 +2068,7 @@
         write(outfileindex, '(a)')'if (!exists("MP_BOTTOM")) MP_BOTTOM = .12'
         write(outfileindex, '(a)')'if (!exists("MP_TOP"))    MP_TOP = .88'
         write(outfileindex, '(a)')'if (!exists("MP_GAP"))    MP_GAP = 0.08'
-        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \'
+        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \ '
         write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
         write(outfileindex, '(a)')" "
         write(outfileindex, '(a)')"set palette rgbformulae 33,13,10"

@@ -878,7 +878,7 @@
            maxval(k12_shape(2, :)), "]"
         write(outfileindex, '(a)')"set pm3d interpolate 2,2"
         write(outfileindex, '(a)')"set label 1 'Spin texture' at graph 0.25, 1.10 front"
-        write(outfileindex, '(a)')"splot 'arc.dat_r' u 1:2:3 w pm3d, \"
+        write(outfileindex, '(a)')"splot 'arc.dat_r' u 1:2:3 w pm3d, \ "
         write(outfileindex, '(a)')"     'spindos.dat_r' u 1:2:(0):($3/5.00):($4/5.00):(0)  w vec  head lw 5 lc rgb 'orange' front"
   
         close(outfileindex)
@@ -913,7 +913,7 @@
            maxval(k12_shape(2, :)), "]"
         write(outfileindex, '(a)')"set pm3d interpolate 2,2"
         write(outfileindex, '(a)')"set label 1 'Spin texture' at graph 0.25, 1.10 front"
-        write(outfileindex, '(a)')"splot 'arc.dat_l' u 1:2:3 w pm3d, \"
+        write(outfileindex, '(a)')"splot 'arc.dat_l' u 1:2:3 w pm3d, \ "
         write(outfileindex, '(a)')"     'spindos.dat_l' u 1:2:(0):($3/5.00):($4/5.00):(0)  w vec  head lw 5 lc rgb 'orange' front"
   
         close(outfileindex)

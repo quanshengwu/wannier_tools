@@ -215,9 +215,7 @@
       if(cpuid.eq.0)write(stdout, *)'>> Start of calculating bulk band'
       call now(time_start)
       if(Is_Sparse_Hr) then
-#if defined (INTELMKL)
             call sparse_ekbulk
-#endif
       else
          call ek_bulk_line
       end if
@@ -245,9 +243,7 @@
       call now(time_start)
 
       if (Is_Sparse_Hr) then
-#if defined (INTELMKL)
          call sparse_ekbulk_plane
-#endif
       else
          call ek_bulk_plane
       endif
@@ -263,9 +259,7 @@
       if(cpuid.eq.0)write(stdout, *)' '
       if(cpuid.eq.0)write(stdout, *)'>> Start of calculating Landau level spectrum'
       call now(time_start)
-#if defined (INTELMKL)
       call LandauLevel_B_dos_Lanczos
-#endif
       call now(time_end)
       call print_time_cost(time_start, time_end, 'LandauLevel_B_dos_calc')
       if(cpuid.eq.0)write(stdout, *)'<< End of calculating Landau level spectrum'
@@ -276,9 +270,7 @@
       if(cpuid.eq.0)write(stdout, *)' '
       if(cpuid.eq.0)write(stdout, *)'>> Start of calculating Landau level spectrum'
       call now(time_start)
-#if defined (INTELMKL)
       call LandauLevel_k_dos_Lanczos
-#endif
       call now(time_end)
       call print_time_cost(time_start, time_end, 'LandauLevel_k_dos_calc')
       if(cpuid.eq.0)write(stdout, *)'<< End of calculating Landau level spectrum'
@@ -290,9 +282,7 @@
       call now(time_start)
       if (Is_HrFile) then
          if(Is_Sparse_Hr) then
-#if defined (INTELMKL)
             call sparse_landau_level_B
-#endif
          else
             call landau_level_B
          end if
@@ -324,9 +314,7 @@
       call now(time_start)
       if (Is_HrFile) then
          if(Is_Sparse_Hr.or.Num_wann*Magq>2000) then
-#if defined (INTELMKL)
             call sparse_landau_level_k
-#endif
          else
             call landau_level_k
          endif
@@ -410,9 +398,7 @@
            if(.not. Is_Sparse_Hr) then
               call dos_sub
            else
-#if defined (INTELMKL)
               call dos_sparse
-#endif     
            end if
            call now(time_end)
            call print_time_cost(time_start, time_end, 'Dos_calc')
@@ -496,9 +482,7 @@
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the slab band structure'
         call now(time_start)
         if (Is_Sparse_Hr) then
-#if defined (INTELMKL)
           call ek_slab_sparseHR
-#endif
         else
            call ek_slab
         endif

@@ -1,4 +1,4 @@
-OBJ =  module.o sparse.o wt_aux.o math_lib.o symmetry.o readHmnR.o inverse.o proteus.o \
+OBJ =  sparse.o wt_aux.o math_lib.o symmetry.o readHmnR.o inverse.o proteus.o \
        eigen.o ham_qlayer2qlayer.o psi.o unfolding.o rand.o \
   		 ham_slab.o ham_bulk.o ek_slab.o ek_bulk_polar.o ek_bulk.o \
        readinput.o fermisurface.o surfgreen.o surfstat.o \
@@ -10,18 +10,19 @@ OBJ =  module.o sparse.o wt_aux.o math_lib.o symmetry.o readHmnR.o inverse.o pro
   		 effective_mass.o findnodes.o \
 		 sigma_OHE.o sigma.o sigma_AHC.o \
        main.o
-CUDA_OBJ = cuda_math.o
+CUDA_OBJ =  cuda_math.o
 
 # compiler
-F90  = ifort -fpp -DINTELMKL -fpe3
+#F90  = nvfortran -Mpreprocess -pg -traceback
+#F90  = nvfortran -Mpreprocess -DINTELMKL -pg -traceback
+F90  = nvfortran -cuda  -Mpreprocess -DCUDA -pg -traceback
 
+MKLROOT=/home/quan/intel/oneapi/mkl/2022.2.0
 INCLUDE = -I${MKLROOT}/include
-WFLAG = -nogen-interface
-OFLAG = -O3 -static-intel
+WFLAG = 
+OFLAG = -O3
 FFLAG = $(OFLAG) $(WFLAG)
 LFLAG = $(OFLAG)
-
-ARPACK=/Users/user/quan/work/workplace/ARPACK/libarpack_MAC.a
 
 # blas and lapack libraries
 # static linking
@@ -31,10 +32,13 @@ ARPACK=/Users/user/quan/work/workplace/ARPACK/libarpack_MAC.a
 		  ${ARPACK}
 
 # dynamic linking
-LIBS = ${ARPACK} -L/${MKLROOT}/lib/ -lmkl_core -lmkl_sequential -lmkl_intel_lp64 -lpthread
+ARPACK=-L/home/quan/local/lib/ -larpack
+CUDA_LIB=-L/opt/nvidia/hpc_sdk/Linux_x86_64/22.5/math_libs/lib64 -lcuda -cudalib=cusparse,cublas,cusolver
+LIBS = ${ARPACK} -L/${MKLROOT}/lib/intel64 -lmkl_core -lmkl_sequential -lmkl_intel_lp64 -lpthread \
+		 ${CUDA_LIB}
  
-main : $(OBJ)
-	$(F90) $(LFLAG) $(CUDA_OBJ) $(OBJ) -o wt.x $(LIBS)
+main : module.o cuda_module.o $(OBJ) $(CUDA_OBJ)  
+	$(F90) $(LFLAG)  module.o cuda_module.o $(OBJ) $(CUDA_OBJ) -o wt.x $(LIBS)
 	cp -f wt.x ../bin
 
 .SUFFIXES: .o .f90
@@ -42,8 +46,10 @@ main : $(OBJ)
 .f90.o :
 	$(F90) $(FFLAG) $(INCLUDE) -c $*.f90
 
-cuda_math.o:
-	nvfortran -cuda -cudalib=cusparse,cublas,cusolver -Mpreprocess -C -traceback -c cuda_math.cuf
+cuda_module.o :
+	nvfortran  -pg -cuda -cudalib=cusparse,cublas,cusolver -Mpreprocess -C -traceback -c cuda_module.f90
+cuda_math.o :
+	nvfortran  -pg -cuda -cudalib=cusparse,cublas,cusolver -Mpreprocess -C -traceback -c cuda_math.f90
 
 clean :
 	rm -f *.o *.mod *~ wt.x

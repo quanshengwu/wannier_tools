@@ -377,9 +377,7 @@ subroutine ek_slab_sparseHR
       !> diagonalization by call zheev in lapack
       W= 0d0
 
-#if defined (INTELMKL)
       call arpack_sparse_coo_eigs(Ndimq,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
-#endif
 
       call now(time3)
       eigv(1:neval, ik)= W(1:neval)
@@ -726,7 +724,7 @@ end subroutine ek_slab_sparseHR
         write(outfileindex, '(a)')'unset colorbox'
         write(outfileindex, '(a)')'set autoscale fix'
         write(outfileindex, '(a)')'set pm3d interpolate 4,4'
-        write(outfileindex, '(2a)')"splot 'slabek_plane.dat' u 1:2:7 w pm3d, \"
+        write(outfileindex, '(2a)')"splot 'slabek_plane.dat' u 1:2:7 w pm3d, \ "
         write(outfileindex, '(2a)')"      'slabek_plane.dat' u 1:2:9 w pm3d"
 
         close(outfileindex)

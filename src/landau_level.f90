@@ -605,7 +605,7 @@ subroutine landau_level_kplane
       write(outfileindex, '(a)')'unset colorbox'
       write(outfileindex, '(a)')'set autoscale fix'
       write(outfileindex, '(a)')'set pm3d interpolate 4,4'
-      write(outfileindex, '(2a)')"splot 'landaulevel_kplane.dat' u 4:5:7 w pm3d, \"
+      write(outfileindex, '(2a)')"splot 'landaulevel_kplane.dat' u 4:5:7 w pm3d, \ "
       write(outfileindex, '(2a)')"      'landaulevel_kplane.dat' u 4:5:8 w pm3d"
 
       close(outfileindex)

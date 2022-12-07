@@ -205,7 +205,7 @@
          do ib=1, Nband_Fermi_Level-1
             write(bandname, '(i10)')bands_fermi_level(ib)
             write(sigmafilename, '(3a)')'sigma_band_',trim(adjustl(bandname)), '.dat'
-            write(outfileindex, '(3a)')"plot '",trim(adjustl(sigmafilename)), "' u 1:3 w lp lw 3 lc rgb 'black', \"
+            write(outfileindex, '(3a)')"plot '",trim(adjustl(sigmafilename)), "' u 1:3 w lp lw 3 lc rgb 'black', \ "
          enddo
          write(bandname, '(i10)')bands_fermi_level(Nband_Fermi_Level)
          write(sigmafilename, '(3a)')'sigma_band_',trim(adjustl(bandname)), '.dat'

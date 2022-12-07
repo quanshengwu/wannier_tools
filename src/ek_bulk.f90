@@ -554,7 +554,7 @@ subroutine ek_bulk_plane_C2yT
       write(outfileindex, '(a)')'unset colorbox'
       write(outfileindex, '(a)')'set autoscale fix'
       write(outfileindex, '(a)')'set pm3d interpolate 4,4'
-      write(outfileindex, '(2a)')"splot 'bulkek_plane.dat' u 4:5:8 w pm3d, \"
+      write(outfileindex, '(2a)')"splot 'bulkek_plane.dat' u 4:5:8 w pm3d, \ "
       write(outfileindex, '(2a)')"      'bulkek_plane.dat' u 4:5:9 w pm3d"
 
       close(outfileindex)
@@ -735,7 +735,7 @@ subroutine ek_bulk_plane
       write(outfileindex, '(a)')'unset colorbox'
       write(outfileindex, '(a)')'set autoscale fix'
       write(outfileindex, '(a)')'set pm3d interpolate 4,4'
-      write(outfileindex, '(2a)')"splot 'bulkek_plane.dat' u 4:5:8 w pm3d, \"
+      write(outfileindex, '(2a)')"splot 'bulkek_plane.dat' u 4:5:8 w pm3d, \ "
       write(outfileindex, '(2a)')"      'bulkek_plane.dat' u 4:5:9 w pm3d"
 
       close(outfileindex)
@@ -875,7 +875,6 @@ end subroutine ek_bulk_cube
 
 
 
-#if defined (INTELMKL)
 subroutine sparse_ekbulk
    use sparse
    use para
@@ -946,7 +945,7 @@ subroutine sparse_ekbulk
    !> ncv
    nvecs=int(2*neval)
 
-   if (nvecs<20) nvecs= 20
+   if (nvecs<50) nvecs= 50
    if (nvecs>Num_wann) nvecs= Num_wann
 
    if (trim(adjustl(projection_weight_mode))=='FOLDEDKPOITNS') then
@@ -988,7 +987,8 @@ subroutine sparse_ekbulk
       acoo= acoo/eV2Hartree
       nnz= splen
       call now(time2)
-      
+     
+      time_total_debug= 0d0
       !> diagonalization by call zheev in lapack
       W= 0d0
       !> after arpack_sparse_coo_eigs, nnz will be updated.
@@ -1014,6 +1014,7 @@ subroutine sparse_ekbulk
 
       if (cpuid==0)write(stdout, '(a, f20.2, a)')'  >> Time cost for constructing H: ', time2-time1, ' s'
       if (cpuid==0)write(stdout, '(a, f20.2, a)')'  >> Time cost for diagonalize H: ', time3-time2, ' s'
+      if (cpuid==0)write(stdout, '(a, f20.2, a)')'  >> Time cost for debug: ', time_total_debug, ' s'
    enddo !ik
 
 #if defined (MPI)
@@ -1222,8 +1223,9 @@ subroutine sparse_ekbulk_plane
       call now(time_end)
       eigv(1:neval, ik)= W(1:neval)
 
-      if (cpuid==0)write(stdout, '(a, f20.2, a)')'  >> Time cost for constructing H: ', time2-time_start, ' s'
-      if (cpuid==0)write(stdout, '(a, f20.2, a)')'  >> Time cost for diagonalize H: ', time_end-time2, ' s'
+      if (cpuid==0)write(stdout, '(a, f20.2, a )')'  >> Time cost for constructing H: ', time2-time_start, ' s'
+      if (cpuid==0)write(stdout, '(a, f20.2, a, 2(a, i6))')'  >> Time cost for diagonalize H: ', time_end-time2, ' s', &
+         ' neval:', neval, ' nvecs: ', nvecs
    enddo !ik
 
 #if defined (MPI)
@@ -1293,7 +1295,7 @@ subroutine sparse_ekbulk_plane
       write(outfileindex, '(a)')'unset colorbox'
       write(outfileindex, '(a)')'set autoscale fix'
       write(outfileindex, '(a)')'set pm3d interpolate 4,4'
-      write(outfileindex, '(2a)')"splot 'bulkek_plane.dat' u 4:5:8 w pm3d, \"
+      write(outfileindex, '(2a)')"splot 'bulkek_plane.dat' u 4:5:8 w pm3d, \ "
       write(outfileindex, '(2a)')"      'bulkek_plane.dat' u 4:5:9 w pm3d"
 
       close(outfileindex)
@@ -1316,8 +1318,6 @@ subroutine sparse_ekbulk_plane
 
    return
 end subroutine sparse_ekbulk_plane
-
-#endif
 
 #if defined (ELPA)
 subroutine ekbulk_elpa
@@ -2802,7 +2802,7 @@ subroutine generate_ek_kpath_gnu(datafilename, gnufilename, gnuoutfilename, &
          " w lp lw 2 pt 7  ps 0.2 lc palette, 0 w l lw 2"
       write(outfileindex, '(2a)')"# uncomment the following lines to plot the spin if necessary"
       write(outfileindex, '(2a)')"#plot 'bulkek.dat' u 1:2 ",  &
-         "w lp lw 2 pt 7  ps 0.2, \"
+         "w lp lw 2 pt 7  ps 0.2, \ "
       write(outfileindex, '(2a)')"     'bulkek.dat' u 1:2:($3/6):($4/6) ",  &
          "w vec"
       close(outfileindex)

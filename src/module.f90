@@ -552,6 +552,8 @@
      integer :: NBTau, BTauNum  
      integer :: Nslice_BTau_Max
 
+     real(dp) :: time_total_debug
+
      !> cut of radial for summation over R vectors
      real(dp) :: Rcut
 

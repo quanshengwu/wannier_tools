@@ -196,9 +196,8 @@ module sparse
    public :: WTParCSRMatrixCreate
    public :: csr_sort_indices
    public :: csr_sum_duplicates
-#if defined (INTELMKL)
    public :: arpack_sparse_coo_eigs
-#endif
+   public :: csrmv_z
 
 contains
 
@@ -2162,7 +2161,57 @@ contains
          return
       end subroutine csr_sum_duplicates
 
-# if defined (INTELMKL)
+      !> A naive implementation
+      !> csrmv_z multiplies a CSR matrix A times a vector x; y=A*x
+      !> inputs:
+      !> ndim, integer, the row dimension of the matrix
+      !> nnz, integer, number of non-zero entries, the dimension of A_csr, ja_csr
+      !> complex A_csr(nnz), integer ia_csr(ndim+1), ja_csr(nnz), the matrix in CSR Compresed Sparse Row format
+      !> complex x(ndim)
+      !> outputs:
+      !> complex y(ndim)
+      subroutine csrmv_z(ndim, nnz, A_csr, ia_csr, ja_csr, x, y)
+
+#if defined (CUDA)
+         use cucsrmv_module
+#endif
+         use para, only : dp
+         implicit none
+         
+         integer, intent(in) :: ndim
+         integer, intent(in) :: nnz
+         complex(dp), intent(in) :: A_csr(nnz)
+         integer, intent(in) :: ia_csr(ndim+1)
+         integer, intent(in) :: ja_csr(nnz)
+         complex(dp), intent(in) :: x(ndim)
+         complex(dp), intent(out) :: y(ndim)
+
+         integer :: i, k
+         complex(dp) :: t_z
+
+         real(dp) :: time1, time2
+
+         call now(time1)
+#if defined (CUDA)
+         call cusparse_zcsrmv_in(ndim, nnz, x, ia_csr, ja_csr, A_csr, y)
+#elif defined (INTELMKL)
+         call mkl_zcsrgemv('N', ndim, a_csr, ia_csr, ja_csr, x, y)
+#else
+         do i=1, ndim
+            t_z= 0d0
+            do k=ia_csr(i), ia_csr(i+1)-1
+               t_z= t_z+ A_csr(k)* x(ja_csr(k))
+            enddo
+            y(i) = t_z
+         enddo
+#endif
+
+         call now(time2)
+         time_total_debug= time_total_debug+ time2- time1
+         return
+
+      end subroutine csrmv_z
+
       subroutine arpack_sparse_coo_eigs(ndims,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,deval,sigma,zeigv, ritzvec)
          use para, only : dp
          implicit none
@@ -2202,21 +2251,33 @@ contains
          ! if we need to write out zeigv, then the dimension is (ndims, neval)
          ! otherwise, it will not be used
          complex(dp),intent(out) :: zeigv(ndims, nvecs)
-        
+
+         real(dp) :: time1, time2
+
+         call now(time1)
+
          zeigv= 0d0
          !> get eigenvalues of a sparse matrix by calling arpack subroutine
          !> here acoo, icoo, jcoo are stored in COO format
-         !call zmat_arpack_zndrv1(ndims, nnzmax, nnz,  acoo, jcoo, icoo, sigma, neval, nvecs, deval, zeigv)
+         call zmat_arpack_zndrv1(ndims, nnzmax, nnz,  acoo, jcoo, icoo, sigma, neval, nvecs, deval, zeigv)
+         call now(time2)
+        !time_total_debug= time_total_debug+ time2- time1
 
          !> acoo, jcoo, icoo would be converted in to A-sigma*I, then converted into CSR format
-         call zmat_arpack_zndrv2(ndims, nnzmax, nnz, acoo, jcoo, icoo, sigma, neval, nvecs, deval, zeigv, ritzvec)
+        !call zmat_arpack_zndrv2(ndims, nnzmax, nnz, acoo, jcoo, icoo, sigma, neval, nvecs, deval, zeigv, ritzvec)
 
+         call now(time1)
+         call now(time2)
+        !time_total_debug= time_total_debug+ time2- time1
 
          return
       end subroutine arpack_sparse_coo_eigs
 
 
       subroutine zmat_arpack_zndrv1(ndims, nnzmax, nnz, acsr, jcsr, icsr, sigma, neval, nvecs, deval, zeigv)
+#if defined (CUDA)
+         use cucsrmv_module
+#endif
          use para, only : dp, stdout, cpuid
          implicit none
 
@@ -2353,6 +2414,9 @@ contains
          call csr_sum_duplicates(ndims, nnz, icsr, jcsr, acsr)
          call csr_sort_indices(ndims, nnz, icsr, jcsr, acsr)
 
+#if defined (CUDA)
+         call cusparse_zcsrmv_allocate(ndims, nnz, acsr, icsr, jcsr)
+#endif
 !
 !     %---------------------------------------------------%
 !     | The work array WORKL is used in ZNAUPD as         |
@@ -2406,7 +2470,7 @@ contains
             zeigv, ldv, iparam, ipntr, workd, workl, lworkl, rwork, info )
 
          iter = iter + 1
-         if (mod(iter,100) .eq. 0 .and. cpuid==0) then
+         if (mod(iter,1000) .eq. 0 .and. cpuid==0) then
             write(stdout, '(A, I10)') '>>> Iteration with znaupd', iter
          endif
 
@@ -2422,7 +2486,8 @@ contains
 !           | product to workd(ipntr(2)).               |
 !           %-------------------------------------------%
 !
-            call mkl_zcsrgemv('N', ndims, acsr, icsr, jcsr, workd(ipntr(1)), workd(ipntr(2)))
+!           call mkl_zcsrgemv('N', ndims, acsr, icsr, jcsr, workd(ipntr(1)), workd(ipntr(2)))
+            call csrmv_z(ndims, nnz, acsr, icsr, jcsr, workd(ipntr(1):ipntr(1)+ndims-1), workd(ipntr(2):ipntr(2)+ndims-1))
 !
 !           %-----------------------------------------%
 !           | L O O P   B A C K to call ZNAUPD again. |
@@ -2514,7 +2579,8 @@ contains
                   !$ call av(nx, zeigv(1,j), ax)
 
                   !$ call zmat_sparse_csrmv0(ndims, nnzmax, acsr, jcsr, icsr, zeigv(1,j), ax)
-                  call mkl_zcsrgemv('N', ndims, acsr, icsr, jcsr, zeigV(1,j), ax)
+!                 call mkl_zcsrgemv('N', ndims, acsr, icsr, jcsr, zeigV(1,j), ax)
+                  call csrmv_z(ndims, nnz, acsr, icsr, jcsr, zeigV(:,j), ax)
                   call zaxpy(n, -d(j), zeigv(1,j), 1, ax, 1)
                   rd(j,1) = dble(d(j))
                   rd(j,2) = dimag(d(j))
@@ -2592,10 +2658,14 @@ contains
             endif
          enddo ! over ival={1,neval-1} loop
 
+#if defined (CUDA)
+         call cusparse_zcsrmv_deallocate
+#endif
          return
       end subroutine zmat_arpack_zndrv1
 
 
+# if defined (INTELMKL)
       subroutine zmat_arpack_zndrv2(ndims, nnzmax, nnz, acsr, jcsr, icsr, sigma,neval, nvecs, deval, zeigv, ritzvec)
          use para, only : dp, stdout, cpuid, LandauLevel_wavefunction_calc, SlabBand_calc
          implicit none
@@ -2929,7 +2999,8 @@ contains
                   !              %---------------------------%
                   !
                   !$ call av(n, zeigv(1,j), ax)
-                  call mkl_zcsrgemv('N', ndims, acsr, icsr, jcsr, zeigv(1,j), ax)
+!                 call mkl_zcsrgemv('N', ndims, acsr, icsr, jcsr, zeigv(1,j), ax)
+                  call csrmv_z(ndims, nnz, acsr, icsr, jcsr, zeigv(:,j), ax)
                   call zaxpy(n, -d(j), zeigv(1,j), 1, ax, 1)
                   rd(j,1) = dble(d(j))
                   rd(j,2) = dimag(d(j))
