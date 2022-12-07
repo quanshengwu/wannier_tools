@@ -166,8 +166,8 @@
         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set xrange [', OmegaMin/eV2Hartree, ':', OmegaMax/eV2Hartree, ']'
         write(outfileindex, '(a)')'set xlabel "Energy (eV)"'
         write(outfileindex, '(a)')'set ylabel "AHC \sigma (S/cm)"'
-        write(outfileindex, '(2a)')"plot 'sigma_ahc.txt' u 1:2 w l title '\sigma_{xy}' lc rgb 'red' lw 4, \ "
-        write(outfileindex, '(2a)')"     'sigma_ahc.txt' u 1:3 w l title '\sigma_{yz}' lc rgb 'blue' lw 4, \ "
+        write(outfileindex, '(2a)')"plot 'sigma_ahc.txt' u 1:2 w l title '\sigma_{xy}' lc rgb 'red' lw 4, \"
+        write(outfileindex, '(2a)')"     'sigma_ahc.txt' u 1:3 w l title '\sigma_{yz}' lc rgb 'blue' lw 4, \"
         write(outfileindex, '(2a)')"     'sigma_ahc.txt' u 1:4 w l title '\sigma_{zx}' lc rgb 'orange' lw 4 "
         close(outfileindex)
      endif
@@ -431,8 +431,8 @@
         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set xrange [', OmegaMin/eV2Hartree, ':', OmegaMax/eV2Hartree, ']'
         write(outfileindex, '(a)')'set xlabel "Energy (eV)"'
         write(outfileindex, '(a)')'set ylabel "SHC (\hbar/e)S/cm"'
-        write(outfileindex, '(2a)')"plot 'sigma_shc.txt' u 1:21 w l title '\sigma_{xy}^z' lc rgb 'red' lw 4, \ "
-        write(outfileindex, '(2a)')"     'sigma_shc.txt' u 1:17 w l title '\sigma_{zx}^y' lc rgb 'blue' lw 4, \ "
+        write(outfileindex, '(2a)')"plot 'sigma_shc.txt' u 1:21 w l title '\sigma_{xy}^z' lc rgb 'red' lw 4, \"
+        write(outfileindex, '(2a)')"     'sigma_shc.txt' u 1:17 w l title '\sigma_{zx}^y' lc rgb 'blue' lw 4, \"
         write(outfileindex, '(2a)')"     'sigma_shc.txt' u 1:13 w l title '\sigma_{xz}^y' lc rgb 'orange' lw 4 "
         close(outfileindex)
      endif

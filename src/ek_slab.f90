@@ -198,14 +198,14 @@
            write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
            write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
         endif
-        write(outfileindex, 202, advance="no") (trim(k2line_name(i)), k2line_stop(i), i=1, nk2lines)
-        write(outfileindex, 203)trim(k2line_name(nk2lines+1)), k2line_stop(nk2lines+1)
+        write(outfileindex, 202, advance="no") (trim(k2line_name(i)), k2line_stop(i)*Angstrom2atomic, i=1, nk2lines)
+        write(outfileindex, 203)trim(k2line_name(nk2lines+1)), k2line_stop(nk2lines+1)*Angstrom2atomic
 
         do i=1, nk2lines-1
            if (index(Particle,'phonon')/=0) then
-              write(outfileindex, 204)k2line_stop(i+1), 0.0, k2line_stop(i+1), emax
+              write(outfileindex, 204)k2line_stop(i+1)*Angstrom2atomic, 0.0, k2line_stop(i+1)*Angstrom2atomic, emax
            else
-              write(outfileindex, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
+              write(outfileindex, 204)k2line_stop(i+1)*Angstrom2atomic, emin, k2line_stop(i+1)*Angstrom2atomic, emax
            endif
         enddo
         write(outfileindex, '(a)')'#rgb(r,g,b) = int(r)*65536 + int(g)*256 + int(b)'
@@ -494,14 +494,14 @@ subroutine ek_slab_sparseHR
          write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
          write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
       endif
-      write(outfileindex, 202, advance="no") (trim(k2line_name(i)), k2line_stop(i), i=1, nk2lines)
-      write(outfileindex, 203)trim(k2line_name(nk2lines+1)), k2line_stop(nk2lines+1)
+      write(outfileindex, 202, advance="no") (trim(k2line_name(i)), k2line_stop(i)*Angstrom2atomic, i=1, nk2lines)
+      write(outfileindex, 203)trim(k2line_name(nk2lines+1)), k2line_stop(nk2lines+1)*Angstrom2atomic
 
       do i=1, nk2lines-1
          if (index(Particle,'phonon')/=0) then
-            write(outfileindex, 204)k2line_stop(i+1), 0.0, k2line_stop(i+1), emax
+            write(outfileindex, 204)k2line_stop(i+1)*Angstrom2atomic, 0.0, k2line_stop(i+1)*Angstrom2atomic, emax
          else
-            write(outfileindex, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
+            write(outfileindex, 204)k2line_stop(i+1)*Angstrom2atomic, emin, k2line_stop(i+1)*Angstrom2atomic, emax
          endif
       enddo
       write(outfileindex, '(a)')'#rgb(r,g,b) = int(r)*65536 + int(g)*256 + int(b)'

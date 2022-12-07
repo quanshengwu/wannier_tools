@@ -546,7 +546,7 @@
         do i= 1, nk1
            do j= 1, nk2
               ik= ik+ 1
-              write(outfileindex, '(20E28.10)')k12_xyz(:, ik), real(Omega_mpi(ik))/Angstrom2atomic**2
+              write(outfileindex, '(20E28.10)')k12_xyz(:, ik)*Angstrom2atomic, real(Omega_mpi(ik))/Angstrom2atomic**2
            enddo
            write(outfileindex, *) ' '
         enddo
@@ -699,7 +699,7 @@
 
         do ik= 1, nk3_band
            k=k3points(:, ik)
-           write(outfileindex, '(20E18.8)')k3len(ik), real(Omega_mpi(:, ik))/Angstrom2atomic**2
+           write(outfileindex, '(20E18.8)')k3len(ik)*Angstrom2atomic, real(Omega_mpi(:, ik))/Angstrom2atomic**2
         enddo
 
         close(outfileindex)
@@ -718,7 +718,7 @@
         write(outfileindex, '(a)')'unset key'
         write(outfileindex, '(a)')'set pointsize 0.8'
         write(outfileindex, '(a)')'set view 0,0'
-        write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len), ']'
+        write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len)*Angstrom2atomic, ']'
         if (index(Particle,'phonon')/=0) then
            write(outfileindex, '(a, f10.5, a)')'set yrange [0:', ybound_max, ']'
            write(outfileindex, '(a)')'set ylabel "Frequency (THz)"'
@@ -726,14 +726,14 @@
            write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
            write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', ybound_min, ':', ybound_max, ']'
         endif
-        write(outfileindex, 202, advance="no") (k3line_name(i), k3line_stop(i), i=1, nk3lines)
-        write(outfileindex, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)
+        write(outfileindex, 202, advance="no") (k3line_name(i), k3line_stop(i)*Angstrom2atomic, i=1, nk3lines)
+        write(outfileindex, 203)k3line_name(nk3lines+1), k3line_stop(nk3lines+1)*Angstrom2atomic
   
         do i=1, nk3lines-1
            if (index(Particle,'phonon')/=0) then
-              write(outfileindex, 204)k3line_stop(i+1), 0.0, k3line_stop(i+1), ybound_max
+              write(outfileindex, 204)k3line_stop(i+1)*Angstrom2atomic, 0.0, k3line_stop(i+1)*Angstrom2atomic, ybound_max
            else
-              write(outfileindex, 204)k3line_stop(i+1), ybound_min, k3line_stop(i+1), ybound_max
+              write(outfileindex, 204)k3line_stop(i+1)*Angstrom2atomic, ybound_min, k3line_stop(i+1)*Angstrom2atomic, ybound_max
            endif
         enddo
         write(outfileindex, '(a)')"plot 'Berrycurvature_line.dat' \"  
@@ -1186,7 +1186,7 @@
         do i= 1, nk1
            do j= 1, nk2
               ik= ik+ 1
-              write(outfileindex, '(3f12.6,2000E12.4)')kslice_xyz(:, ik), &
+              write(outfileindex, '(3f12.6,2000E12.4)')kslice_xyz(:, ik)*Angstrom2atomic, &
                  Omega_allk_Occ_mpi(1, :, ik)/Angstrom2atomic**2, &
                  Omega_allk_Occ_mpi(2, :, ik)/Angstrom2atomic**2, &
                  Omega_allk_EF_mpi(1, :, ik)/Angstrom2atomic**2, &
@@ -1221,7 +1221,7 @@
         do i= 1, nk1
            do j= 1, nk2
               ik= ik+ 1
-              write(outfileindex, '(3f12.6,2000E12.4)')kslice_xyz(:, ik), &
+              write(outfileindex, '(3f12.6,2000E12.4)')kslice_xyz(:, ik)*Angstrom2atomic, &
                  m_OrbMag_allk_Occ_mpi(1, :, ik),  m_OrbMag_allk_Occ_mpi(2, :, ik), &
                  m_OrbMag_allk_EF_mpi(1, :, ik), m_OrbMag_allk_EF_mpi(2, :, ik)
            enddo
@@ -1249,7 +1249,7 @@
         write(outfileindex, '(a)')'if (!exists("MP_GAP"))    MP_GAP = 0.08'
         write(outfileindex, '(3a)')'set label 1 "Sum over all bands below Occupied', &
           "'th band", ' " at screen 0.5 ,0.98 center'
-        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \'
+        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \ '
         write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
         write(outfileindex, '(a)')" "
         write(outfileindex, '(a)')"set palette rgbformulae 33,13,10"
@@ -1285,7 +1285,7 @@
         write(outfileindex, '(3a)')'set label 2 "Sum over all bands below Fermi level', &
           ' E\\\_arc" at screen 0.5 ,0.98 center'
         write(outfileindex, '(a)')"set output 'Berrycurvature_EF.png'"
-        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \'
+        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \ '
         write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
         vmin=minval(Omega_allk_EF_mpi(1, :, :))
         vmax=maxval(Omega_allk_EF_mpi(1, :, :))
@@ -1319,7 +1319,7 @@
         write(outfileindex, '(a)')'if (!exists("MP_BOTTOM")) MP_BOTTOM = .12'
         write(outfileindex, '(a)')'if (!exists("MP_TOP"))    MP_TOP = .88'
         write(outfileindex, '(a)')'if (!exists("MP_GAP"))    MP_GAP = 0.08'
-        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \'
+        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \ '
         write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
         write(outfileindex, '(a)')" "
         write(outfileindex, '(a)')"set palette rgbformulae 33,13,10"
@@ -1368,7 +1368,7 @@
               ik= ik+ 1
               o1= Omega_allk_Occ_mpi(1, :, ik)
               if (norm(o1)>eps4) o1= o1/norm(o1)
-              write(outfileindex, '(20f12.6)')kslice_xyz(:, ik), o1
+              write(outfileindex, '(20f12.6)')kslice_xyz(:, ik)*Angstrom2atomic, o1
            enddo
            write(outfileindex, *) ' '
         enddo
@@ -1627,7 +1627,7 @@
         do i= 1, nk1
            do j= 1, nk2
               ik= ik+ 1
-              write(outfileindex, '(3f12.6,2000E12.4)')kslice_xyz(:, ik), &
+              write(outfileindex, '(3f12.6,2000E12.4)')kslice_xyz(:, ik)*Angstrom2atomic, &
                  (Omega_allk_mpi(Selected_band_index(n), :, ik)/Angstrom2atomic**2, &
                  m_OrbMag_allk_mpi(Selected_band_index(n), :, ik), n=1, NumberofSelectedBands)   
            enddo
@@ -1652,7 +1652,7 @@
         write(outfileindex, '(a)')'if (!exists("MP_BOTTOM")) MP_BOTTOM = .12'
         write(outfileindex, '(a)')'if (!exists("MP_TOP"))    MP_TOP = .88'
         write(outfileindex, '(a)')'if (!exists("MP_GAP"))    MP_GAP = 0.08'
-        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \'
+        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \ '
         write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
         write(outfileindex, '(a)')" "
         write(outfileindex, '(a)')"set palette rgbformulae 33,13,10"
@@ -1840,7 +1840,7 @@
         do i= 1, nk1
            do j= 1, nk2
               ik= ik+ 1
-              write(outfileindex, '(3f12.6,2000E12.4)')kslice_xyz(:, ik), &
+              write(outfileindex, '(3f12.6,2000E12.4)')kslice_xyz(:, ik)*Angstrom2atomic, &
                  (Omega_allk_mpi(Selected_band_index(n), :, ik)/Angstrom2atomic**2, &
                  m_OrbMag_allk_mpi(Selected_band_index(n), :, ik), n=1, NumberofSelectedBands)   
            enddo
@@ -1865,7 +1865,7 @@
         write(outfileindex, '(a)')'if (!exists("MP_BOTTOM")) MP_BOTTOM = .12'
         write(outfileindex, '(a)')'if (!exists("MP_TOP"))    MP_TOP = .88'
         write(outfileindex, '(a)')'if (!exists("MP_GAP"))    MP_GAP = 0.08'
-        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \'
+        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \ '
         write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
         write(outfileindex, '(a)')" "
         write(outfileindex, '(a)')"set palette rgbformulae 33,13,10"
@@ -2023,7 +2023,7 @@
         do i= 1, nk1
            do j= 1, nk2
               ik= ik+ 1
-              write(outfileindex, '(20E28.10)')kslice_xyz(:, ik), &
+              write(outfileindex, '(20E28.10)')kslice_xyz(:, ik)*Angstrom2atomic, &
                  real(Omega_mpi(:, ik))/Angstrom2atomic**2
            enddo
            write(outfileindex, *) ' '
@@ -2047,7 +2047,7 @@
               ik= ik+ 1
               o1= real(Omega_mpi(:,ik))
               if (norm(o1)>eps9) o1= o1/norm(o1)
-              write(outfileindex, '(20f28.10)')kslice_xyz(:, ik), o1
+              write(outfileindex, '(20f28.10)')kslice_xyz(:, ik)*Angstrom2atomic, o1
            enddo
            write(outfileindex, *) ' '
         enddo
@@ -2068,7 +2068,7 @@
         write(outfileindex, '(a)')'if (!exists("MP_BOTTOM")) MP_BOTTOM = .12'
         write(outfileindex, '(a)')'if (!exists("MP_TOP"))    MP_TOP = .88'
         write(outfileindex, '(a)')'if (!exists("MP_GAP"))    MP_GAP = 0.08'
-        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \'
+        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \ '
         write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
         write(outfileindex, '(a)')" "
         write(outfileindex, '(a)')"set palette rgbformulae 33,13,10"

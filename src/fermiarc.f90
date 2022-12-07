@@ -423,11 +423,11 @@
         write(arcbulkfile,'(a)')"# y axis is parallel to z x x"
         write(arcbulkfile,'(30a16)')'#kx', 'ky', 'log(dos)'
         do ikp=1, nkx*nky
-           write(arclfile, '(30f16.8)')k12_shape(:, ikp), log(dos_l_mpi(ik12(1, ikp), ik12(2, ikp))) 
+           write(arclfile, '(30f16.8)')k12_shape(:, ikp)*Angstrom2atomic, log(dos_l_mpi(ik12(1, ikp), ik12(2, ikp))) 
            if (mod(ikp, nky)==0) write(arclfile, *)' '
-           write(arcrfile, '(30f16.8)')k12_shape(:, ikp), log(dos_r_mpi(ik12(1, ikp), ik12(2, ikp))) 
+           write(arcrfile, '(30f16.8)')k12_shape(:, ikp)*Angstrom2atomic, log(dos_r_mpi(ik12(1, ikp), ik12(2, ikp))) 
            if (mod(ikp, nky)==0) write(arcrfile, *)' '
-           write(arcbulkfile, '(30f16.8)')k12_shape(:, ikp), log(abs(dos_bulk_mpi(ik12(1, ikp), ik12(2, ikp))))
+           write(arcbulkfile, '(30f16.8)')k12_shape(:, ikp)*Angstrom2atomic, log(abs(dos_bulk_mpi(ik12(1, ikp), ik12(2, ikp))))
            if (mod(ikp, nky)==0) write(arcbulkfile, *)' '
         enddo
         close(arclfile)
@@ -456,14 +456,14 @@
               s0(2)= (sy_l_mpi(ik12(1, ikp), ik12(2, ikp)))/dos_l_mpi(ik12(1, ikp), ik12(2, ikp))
               s0(3)= (sz_l_mpi(ik12(1, ikp), ik12(2, ikp)))/dos_l_mpi(ik12(1, ikp), ik12(2, ikp))
               call rotate(s0, s1)
-              write(spindoslfile, '(30f16.8)')k12_shape(:, ikp), s1
+              write(spindoslfile, '(30f16.8)')k12_shape(:, ikp)*Angstrom2atomic, s1
            endif
            if (dos_r_only(ik12(1, ikp), ik12(2, ikp))>eps6)then
               s0(1)= (sx_r_mpi(ik12(1, ikp), ik12(2, ikp)))/dos_r_mpi(ik12(1, ikp), ik12(2, ikp))
               s0(2)= (sy_r_mpi(ik12(1, ikp), ik12(2, ikp)))/dos_r_mpi(ik12(1, ikp), ik12(2, ikp))
               s0(3)= (sz_r_mpi(ik12(1, ikp), ik12(2, ikp)))/dos_r_mpi(ik12(1, ikp), ik12(2, ikp))
               call rotate(s0, s1)
-              write(spindosrfile, '(30f16.8)')k12_shape(:, ikp), s1
+              write(spindosrfile, '(30f16.8)')k12_shape(:, ikp)*Angstrom2atomic, s1
            endif
         enddo
         close(spindoslfile)
@@ -555,7 +555,7 @@
         write(arcljfile,'(a)')"# y axis is parallel to z x x"
         write(arcljfile,'(30a16)')'#kx', 'ky', 'log(dos)'
         do ikp=1, nkx*nky
-           write(arcljfile, '(30f16.8)')k12_shape(:, ikp),  log(abs(jdos_l_mpi(ikp)))
+           write(arcljfile, '(30f16.8)')k12_shape(:, ikp)*Angstrom2atomic,  log(abs(jdos_l_mpi(ikp)))
            if (mod(ikp, nky)==0) write(arcljfile, *)' '
         enddo
         close(arcljfile)
@@ -568,7 +568,7 @@
         write(arcrjfile,'(a)')"# y axis is parallel to z x x"
         write(arcrjfile,'(30a16)')'#kx', 'ky', 'log(dos)'
         do ikp=1, nkx*nky
-           write(arcrjfile, '(30f16.8)')k12_shape(:, ikp),  log(abs(jdos_r_mpi(ikp)))
+           write(arcrjfile, '(30f16.8)')k12_shape(:, ikp)*Angstrom2atomic,  log(abs(jdos_r_mpi(ikp)))
            if (mod(ikp, nky)==0) write(arcrjfile, *)' '
         enddo
         close(arcrjfile)
@@ -583,7 +583,7 @@
         write(arcljsfile,'(a)')"# y axis is parallel to z x x"
         write(arcljsfile,'(30a16)')'#kx', 'ky', 'log(dos)'
         do ikp=1, nkx*nky
-           write(arcljsfile, '(30f16.8)')k12_shape(:, ikp), log(abs(jsdos_l_mpi(ikp)))
+           write(arcljsfile, '(30f16.8)')k12_shape(:, ikp)*Angstrom2atomic, log(abs(jsdos_l_mpi(ikp)))
            if (mod(ikp, nky)==0) write(arcljsfile, *)' '
         enddo
         close(arcljsfile)
@@ -596,7 +596,7 @@
         write(arcrjsfile,'(a)')"# y axis is parallel to z x x"
         write(arcrjsfile,'(30a16)')'#kx', 'ky', 'log(dos)'
         do ikp=1, nkx*nky
-           write(arcrjsfile, '(30f16.8)')k12_shape(:, ikp), log(abs(jsdos_r_mpi(ikp)))
+           write(arcrjsfile, '(30f16.8)')k12_shape(:, ikp)*Angstrom2atomic, log(abs(jsdos_r_mpi(ikp)))
            if (mod(ikp, nky)==0) write(arcrjsfile, *)' '
         enddo
         close(arcrjsfile)
@@ -872,10 +872,10 @@
         write(outfileindex, '(a)')"set size ratio -1"
         write(outfileindex, '(a)')"set view map"
         write(outfileindex, '(a)')"unset colorbox"
-        write(outfileindex, '(a, f10.5, a, f10.5, a)')"set xrange [", minval(k12_shape(1, :)), ":", &
-           maxval(k12_shape(1, :)), "]"
-        write(outfileindex, '(a, f10.5, a, f10.5, a)')"set yrange [", minval(k12_shape(2, :)), ":", &
-           maxval(k12_shape(2, :)), "]"
+        write(outfileindex, '(a, f10.5, a, f10.5, a)')"set xrange [", minval(k12_shape(1, :))*Angstrom2atomic, ":", &
+           maxval(k12_shape(1, :))*Angstrom2atomic, "]"
+        write(outfileindex, '(a, f10.5, a, f10.5, a)')"set yrange [", minval(k12_shape(2, :))*Angstrom2atomic, ":", &
+           maxval(k12_shape(2, :))*Angstrom2atomic, "]"
         write(outfileindex, '(a)')"set pm3d interpolate 2,2"
         write(outfileindex, '(a)')"set label 1 'Spin texture' at graph 0.25, 1.10 front"
         write(outfileindex, '(a)')"splot 'arc.dat_r' u 1:2:3 w pm3d, \"
@@ -907,10 +907,10 @@
         write(outfileindex, '(a)')"set size ratio -1"
         write(outfileindex, '(a)')"set view map"
         write(outfileindex, '(a)')"unset colorbox"
-        write(outfileindex, '(a, f10.5, a, f10.5, a)')"set xrange [", minval(k12_shape(1, :)), ":", &
-           maxval(k12_shape(1, :)), "]"
-        write(outfileindex, '(a, f10.5, a, f10.5, a)')"set yrange [", minval(k12_shape(2, :)), ":", &
-           maxval(k12_shape(2, :)), "]"
+        write(outfileindex, '(a, f10.5, a, f10.5, a)')"set xrange [", minval(k12_shape(1, :))*Angstrom2atomic, ":", &
+           maxval(k12_shape(1, :))*Angstrom2atomic, "]"
+        write(outfileindex, '(a, f10.5, a, f10.5, a)')"set yrange [", minval(k12_shape(2, :))*Angstrom2atomic, ":", &
+           maxval(k12_shape(2, :))*Angstrom2atomic, "]"
         write(outfileindex, '(a)')"set pm3d interpolate 2,2"
         write(outfileindex, '(a)')"set label 1 'Spin texture' at graph 0.25, 1.10 front"
         write(outfileindex, '(a)')"splot 'arc.dat_l' u 1:2:3 w pm3d, \"

@@ -221,7 +221,7 @@
       enddo
 
       !> we get the kpath by Btau_final=-exponent_max*BTauMax, but we only use half of them
-      !>  means that we can reach the accuracy as to exp(-exponent_max/2)
+      !>  means that we can reach the accuracy as to exp(-exponent_max)
       exponent_max= 30
 
       !> exclude all kpoints with zero velocity x B and large energy away from Fermi level
