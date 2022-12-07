@@ -15,10 +15,10 @@
      implicit none
     
      integer :: iR, ik, ikx, iky, ikz
-     integer :: m, n, i, j, ie
+     integer :: m, ie
      integer :: ierr, knv3
 
-     real(dp) :: kdotr, mu, Beta_fake
+     real(dp) :: mu, Beta_fake
      real(dp) :: k(3)
 
      real(dp) :: time_start, time_end
@@ -27,8 +27,6 @@
      real(dp), allocatable :: W(:)
      complex(dp), allocatable :: Hamk_bulk(:, :)
      complex(dp), allocatable :: UU(:, :)
-
-     complex(dp) :: ratio
 
      !> conductivity  dim= OmegaNum
      real(dp), allocatable :: energy(:)
@@ -104,6 +102,7 @@
 
         call get_Dmn_Ham(W, Vmn_Ham, Dmn_Ham)
 
+
         !> calculate Berry curvature at a single k point for all bands
         !> \Omega_n^{\gamma}(k)=i\sum_{\alpha\beta}\epsilon_{\gamma\alpha\beta}(D^{\alpha\dag}D^{\beta})_{nn}
         call berry_curvarture_singlek_allbands(Dmn_Ham, Omega_BerryCurv)
@@ -132,8 +131,12 @@
      !sigma_tensor_ahc= sigma_tensor_ahc/dble(knv3)/Origin_cell%CellVolume*24341d0*kCubeVolume/Origin_cell%ReciprocalCellVolume  ! in (Omega*cm)^-1
      
      !> in the latest version, we use the atomic unit
+     !> e^2/h*1/a0: the factor of unit conversion from atomic to SI 
+     !> 1/knv3/CellVolume : the factor of summation of k
+     !> 1/knv3/CellVolume\sum_k= \int_dk^3 /(2\pi)^3
      !> in unit of (Ohm*m)^-1
-     sigma_tensor_ahc= sigma_tensor_ahc/dble(knv3)/Origin_cell%CellVolume*Echarge**2/hbar/Bohr_radius*kCubeVolume/Origin_cell%ReciprocalCellVolume
+     sigma_tensor_ahc= sigma_tensor_ahc/dble(knv3)/Origin_cell%CellVolume*Echarge**2/hbar/&
+        Bohr_radius*kCubeVolume/Origin_cell%ReciprocalCellVolume
      !> in unit of (Ohm*cm)^-1
      sigma_tensor_ahc= sigma_tensor_ahc/100d0
 
@@ -162,16 +165,12 @@
         write(outfileindex, '(a)')'set ylabel offset 0.0,0'
         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set xrange [', OmegaMin/eV2Hartree, ':', OmegaMax/eV2Hartree, ']'
         write(outfileindex, '(a)')'set xlabel "Energy (eV)"'
-        write(outfileindex, '(a)')'set ylabel "\sigma (1/(Ohm*cm))"'
-        write(outfileindex, '(2a)')"plot 'sigma_ahc.txt' u 1:2 w l title '\sigma_{xy}' lc rgb 'red' lw 4, \"
-        write(outfileindex, '(2a)')"     'sigma_ahc.txt' u 1:3 w l title '\sigma_{yz}' lc rgb 'blue' lw 4, \"
+        write(outfileindex, '(a)')'set ylabel "AHC \sigma (S/cm)"'
+        write(outfileindex, '(2a)')"plot 'sigma_ahc.txt' u 1:2 w l title '\sigma_{xy}' lc rgb 'red' lw 4, \ "
+        write(outfileindex, '(2a)')"     'sigma_ahc.txt' u 1:3 w l title '\sigma_{yz}' lc rgb 'blue' lw 4, \ "
         write(outfileindex, '(2a)')"     'sigma_ahc.txt' u 1:4 w l title '\sigma_{zx}' lc rgb 'orange' lw 4 "
         close(outfileindex)
      endif
-
-202 format('set xtics (',20('"',A3,'" ',F10.5,','))
-203 format(A3,'" ',F10.5,')')
-204 format('set arrow from ',F10.5,',',A5,' to ',F10.5,',',A5, ' nohead')
 
 
      deallocate( W, Hamk_bulk, UU, energy)
@@ -179,3 +178,269 @@
  
      return
   end subroutine sigma_AHC
+
+
+  subroutine sigma_SHC
+     !> Calculate spin hall conductivity SHC
+     !
+     !> refs : 
+     ! [1] Y. Yao and Z. Fang, Phys.Rev.Lett.95, 156601 (2005).
+     ! [2] Junfeng Qiao et al., Plys.Rev.B 98, 214402 (2018)
+     !
+     !> Dec. 05 2022 by Quansheng Wu @ Beijing
+     !
+     ! Copyright (c) 2022 QuanSheng Wu. All rights reserved.
+
+     use wmpi
+     use para
+     implicit none
+    
+     integer :: ik, ikx, iky, ikz
+     integer :: m, n, i, j, ie, ialpha, ibeta, igamma
+     integer :: ierr, knv3, nwann
+
+     real(dp) :: mu, Beta_fake, deno_fac
+     real(dp) :: k(3)
+
+     real(dp) :: time_start, time_end
+
+     ! eigen value of H
+     real(dp), allocatable :: W(:)
+     complex(dp), allocatable :: Hamk_bulk(:, :)
+     complex(dp), allocatable :: UU(:, :)
+
+     !> energy  dim= OmegaNum
+     real(dp), allocatable :: energy(:)
+
+     !> sigma^gamma_{alpha, beta}, alpha, beta, gamma=1,2,3 for x, y, z
+     !>  sigma_tensor_shc(ie, igamma, ialpha, ibeta)
+     real(dp), allocatable :: sigma_tensor_shc(:, :, :, :)
+     real(dp), allocatable :: sigma_tensor_shc_mpi(:, :, :, :)
+     
+     !> Fermi-Dirac distribution
+     real(dp), external :: fermi
+
+     complex(dp), allocatable :: Vmn_Ham(:, :, :)
+     complex(dp), allocatable :: Vmn_wann(:, :, :)
+     complex(dp), allocatable :: spin_sigma(:, :)
+     complex(dp), allocatable :: j_spin_gamma_alpha(:, :)
+     complex(dp), allocatable :: mat_t(:, :)
+
+     !> Berry curvature vectors for all bands
+     real(dp),allocatable :: Omega_spin(:)
+     real(dp),allocatable :: Omega_spin_t(:)
+
+     ! spin operator matrix spin_sigma_x,spin_sigma_y in spin_sigma_z representation
+     complex(Dp),allocatable :: pauli_matrices(:, :, :) 
+
+
+     allocate(Vmn_Ham(Num_wann, Num_wann, 3))
+     allocate(Vmn_wann(Num_wann, Num_wann, 3))
+     allocate(spin_sigma(Num_wann, Num_wann))
+     allocate(j_spin_gamma_alpha(Num_wann, Num_wann))
+     allocate(Omega_spin(Num_wann))
+     allocate(Omega_spin_t(Num_wann))
+
+     allocate( W (Num_wann))
+     allocate( Hamk_bulk(Num_wann, Num_wann))
+     allocate( UU(Num_wann, Num_wann))
+     allocate( mat_t(Num_wann, Num_wann))
+     allocate( energy(OmegaNum))
+     allocate( sigma_tensor_shc    (OmegaNum, 3, 3, 3))
+     allocate( sigma_tensor_shc_mpi(OmegaNum, 3, 3, 3))
+
+     allocate(pauli_matrices(Num_wann, Num_wann, 3))
+     spin_sigma= 0d0
+     sigma_tensor_shc    = 0d0
+     sigma_tensor_shc_mpi= 0d0
+     Hamk_bulk=0d0
+     UU= 0d0
+     Vmn_wann= 0d0
+     pauli_matrices= 0d0
+ 
+     nwann= Num_wann/2
+     !> spin operator matrix
+     !> this part is package dependent. 
+     if (index( Package, 'VASP')/=0.or. index( Package, 'Wien2k')/=0 &
+        .or. index( Package, 'Abinit')/=0.or. index( Package, 'openmx')/=0) then
+        do j=1, nwann
+           pauli_matrices(j, nwann+j, 1)=1.0d0
+           pauli_matrices(j+nwann, j, 1)=1.0d0
+           pauli_matrices(j, nwann+j, 2)=-zi
+           pauli_matrices(j+nwann, j, 2)=zi
+           pauli_matrices(j, j, 3)= 1d0
+           pauli_matrices(j+nwann, j+nwann, 3)=-1d0
+        enddo
+     elseif (index( Package, 'QE')/=0.or.index( Package, 'quantumespresso')/=0 &
+        .or.index( Package, 'quantum-espresso')/=0.or.index( Package, 'pwscf')/=0) then
+        do j=1, nwann
+           pauli_matrices((2*j-1), 2*j, 1)=1.0d0
+           pauli_matrices(2*j, (2*j-1), 1)=1.0d0
+           pauli_matrices((2*j-1), 2*j, 2)=-zi
+           pauli_matrices(2*j, (2*j-1), 2)=zi
+           pauli_matrices((2*j-1), (2*j-1), 3)=1.0d0
+           pauli_matrices(2*j, 2*j, 3)=-1.0d0
+        enddo
+     else
+        if (cpuid.eq.0) write(stdout, *)'Error: please report your software and wannier90.wout to me'
+        if (cpuid.eq.0) write(stdout, *)'wuquansheng@gmail.com'
+        stop 'Error: please report your software and wannier90.wout to wuquansheng@gmail.com'
+     endif
+
+   
+     !> energy range (chemical potential range)
+     do ie=1, OmegaNum
+        if (OmegaNum>1) then
+           energy(ie)= OmegaMin+ (OmegaMax-OmegaMin)* (ie-1d0)/dble(OmegaNum-1)
+        else
+           energy= OmegaMin
+        endif
+     enddo ! ie
+
+     knv3= Nk1*Nk2*Nk3
+
+     call now(time_start) 
+     do ik= 1+ cpuid, knv3, num_cpu
+        if (cpuid.eq.0.and. mod(ik/num_cpu, 100).eq.0) then
+           call now(time_end) 
+           write(stdout, '(a, i18, "/", i18, a, f10.2, "s")') 'ik/knv3', &
+           ik, knv3, '  time left', (knv3-ik)*(time_end-time_start)/num_cpu/100d0
+           time_start= time_end
+        endif
+
+        ikx= (ik-1)/(nk2*nk3)+1
+        iky= ((ik-1-(ikx-1)*Nk2*Nk3)/nk3)+1
+        ikz= (ik-(iky-1)*Nk3- (ikx-1)*Nk2*Nk3)
+        k= K3D_start_cube+ K3D_vec1_cube*(ikx-1)/dble(nk1)  &
+         + K3D_vec2_cube*(iky-1)/dble(nk2)  &
+         + K3D_vec3_cube*(ikz-1)/dble(nk3)
+
+        ! calculation bulk hamiltonian by a direct Fourier transformation of HmnR
+        call ham_bulk_atomicgauge(k, Hamk_bulk)
+       !call ham_bulk_latticegauge(k, Hamk_bulk)
+   
+        !> diagonalization by call zheev in lapack
+        UU=Hamk_bulk
+        call eigensystem_c( 'V', 'U', Num_wann, UU, W)
+  
+        !> get velocity operator in Wannier basis
+        !> \partial_k H_nm
+        call dHdk_atomicgauge(k, Vmn_wann)
+
+        !> spin axis igamma= x, y, z
+        do igamma= 1, 3
+           !> set Pauli matrix
+           spin_sigma= pauli_matrices(:, :, igamma)
+   
+           !> calculate spin current operator j_spin_gamma_alpha^l_alpha= 1/2*{Sigma_l, v_alpha} 
+           ! in order to calculate SHC^z_xy
+           j_spin_gamma_alpha= 0d0
+           do ialpha= 1, 3
+              !> in Wannier basis
+              call mat_mul(Num_wann, spin_sigma, Vmn_wann(:, :, ialpha), j_spin_gamma_alpha(:, :))
+              call mat_mul(Num_wann, Vmn_wann(:, :, ialpha), spin_sigma, mat_t)
+              j_spin_gamma_alpha(:, :)= j_spin_gamma_alpha(:, :)+ mat_t
+              j_spin_gamma_alpha= j_spin_gamma_alpha/2d0
+         
+              !> rotate to Hamiltonian basis
+              mat_t= j_spin_gamma_alpha(:, :)
+              call rotation_to_Ham_basis(UU, mat_t, j_spin_gamma_alpha(:, :))
+              call rotation_to_Ham_basis(UU, Vmn_wann(:, :, ialpha), Vmn_Ham(:, :, ialpha))
+   
+              !> \Omega_spin^l_n^{\gamma}(k)=-2\sum_{m}*aimag(Im({js(\gamma),v(\alpha)}/2)_nm*v_beta_mn))/((w(n)-w(m))^2+eta_arc^2)
+              do ibeta= 1, 3
+                 Omega_spin= 0d0
+                 do n= 1, Num_wann
+                    do m= 1, Num_wann
+                       if (m==n) cycle
+                       deno_fac= -2d0/((W(n)-W(m))**2+ Eta_Arc**2)
+                       Omega_spin(n)= Omega_spin(n)+ &
+                          aimag(j_spin_gamma_alpha(n, m)*Vmn_Ham(m, n, ibeta))*deno_fac
+                    enddo
+                 enddo
+     
+                 !> consider the Fermi-distribution according to the broadening Earc_eta
+                 Beta_fake= 1d0/Eta_Arc
+         
+                 do ie=1, OmegaNum
+                    mu = energy(ie)
+                    do n= 1, Num_wann
+                       Omega_spin_t(n)= Omega_spin(n)*fermi(W(n)-mu, Beta_fake)
+                    enddo
+
+                    !> sum over all "spin" Berry curvature below chemical potential mu
+                    sigma_tensor_shc_mpi(ie, igamma, ialpha, ibeta)= &
+                       sigma_tensor_shc_mpi(ie, igamma, ialpha, ibeta)+ &
+                       sum(Omega_spin_t(:))
+                 enddo ! ie
+              enddo ! ibeta  v
+           enddo ! ialpha  j
+        enddo ! igamma  spin
+     enddo ! ik
+
+#if defined (MPI)
+     call mpi_allreduce(sigma_tensor_shc_mpi,sigma_tensor_shc,size(sigma_tensor_shc),&
+                       mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+     sigma_tensor_shc= sigma_tensor_shc_mpi
+#endif
+
+     !> in the latest version, we use the atomic unit
+     !> in unit of ((hbar/e)(Ohm*m)^-1
+     sigma_tensor_shc= sigma_tensor_shc/dble(knv3)/Origin_cell%CellVolume*&
+        Echarge**2/hbar/Bohr_radius*kCubeVolume/Origin_cell%ReciprocalCellVolume/2d0
+
+     !> in unit of ((hbar/e)(Ohm*cm)^-1
+     sigma_tensor_shc= sigma_tensor_shc/100d0
+
+
+     outfileindex= outfileindex+ 1
+     if (cpuid.eq.0) then
+        open(unit=outfileindex, file='sigma_shc.txt')
+        write(outfileindex, '("#",a)')' Spin hall conductivity in unit of (hbar/e)S/cm'
+        write(outfileindex, "('#column', i5, 3000i16)")(i, i=1, 28)
+        write(outfileindex, '("#",a13, 27a16)')'Eenergy (eV)', &
+          'xx^x', 'xy^x', 'xz^x', 'yx^x', 'yy^x', 'yz^x', 'zx^x', 'yy^x', 'zz^x', &
+          'xx^y', 'xy^y', 'xz^y', 'yx^y', 'yy^y', 'yz^y', 'zx^y', 'yy^y', 'zz^y', &
+          'xx^z', 'xy^z', 'xz^z', 'yx^z', 'yy^z', 'yz^z', 'zx^z', 'yy^z', 'zz^z'
+        do ie=1, OmegaNum
+           write(outfileindex, '(E16.8)', advance='no')energy(ie)/eV2Hartree
+           do igamma=1, 3
+           do ialpha=1, 3
+           do ibeta=1, 3
+              if (ialpha*ibeta*igamma/=27)then
+                 write(outfileindex, '(200E16.8)', advance='no') sigma_tensor_shc(ie, igamma, ialpha, ibeta)
+              else
+                 write(outfileindex, '(200E16.8)', advance='yes') sigma_tensor_shc(ie, igamma, ialpha, ibeta)
+              endif
+           enddo
+           enddo
+           enddo
+        enddo
+        close(outfileindex)
+     endif
+
+     !> write script for gnuplot
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+        open(unit=outfileindex, file='sigma_shc.gnu')
+        write(outfileindex, '(a)') 'set terminal pdf enhanced color font ",20"'
+        write(outfileindex, '(a)')"set output 'sigma_shc.pdf'"
+        write(outfileindex, '(a)')'set key samplen 0.8'
+        write(outfileindex, '(a)')'set ylabel offset 0.0,0'
+        write(outfileindex, '(a, f10.5, a, f10.5, a)')'set xrange [', OmegaMin/eV2Hartree, ':', OmegaMax/eV2Hartree, ']'
+        write(outfileindex, '(a)')'set xlabel "Energy (eV)"'
+        write(outfileindex, '(a)')'set ylabel "SHC (\hbar/e)S/cm"'
+        write(outfileindex, '(2a)')"plot 'sigma_shc.txt' u 1:21 w l title '\sigma_{xy}^z' lc rgb 'red' lw 4, \ "
+        write(outfileindex, '(2a)')"     'sigma_shc.txt' u 1:17 w l title '\sigma_{zx}^y' lc rgb 'blue' lw 4, \ "
+        write(outfileindex, '(2a)')"     'sigma_shc.txt' u 1:13 w l title '\sigma_{xz}^y' lc rgb 'orange' lw 4 "
+        close(outfileindex)
+     endif
+
+
+
+     deallocate( W, Hamk_bulk, UU, energy)
+     deallocate( sigma_tensor_shc, sigma_tensor_shc_mpi)
+ 
+     return
+  end subroutine sigma_SHC

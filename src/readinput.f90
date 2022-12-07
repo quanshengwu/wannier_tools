@@ -135,6 +135,7 @@ subroutine readinput
    Boltz_OHE_calc        = .FALSE.
    Boltz_Berry_correction= .FALSE.
    AHC_calc              = .FALSE.
+   SHC_calc              = .FALSE.
    Hof_Butt_calc         = .FALSE.
    LandauLevel_k_calc    = .FALSE.
    LandauLevel_B_calc    = .FALSE.
@@ -188,6 +189,7 @@ subroutine readinput
       write(*, *)"NLChirality_calc"
       write(*, *)"LOTO_correction"
       write(*, *)"AHC_calc"
+      write(*, *)"SHC_calc"
       write(*, *)"Hof_Butt_calc"
       write(*, *)"Boltz_OHE_calc"
       write(*, *)"Boltz_Berry_correction"
@@ -263,6 +265,7 @@ subroutine readinput
       write(stdout, *) "FindNodes_calc                    : ",  FindNodes_calc
       write(stdout, *) "EffectiveMass_calc                : ", EffectiveMass_calc
       write(stdout, *) "AHC_calc                          : ", AHC_calc
+      write(stdout, *) "SHC_calc                          : ", SHC_calc
       write(stdout, *) "Boltz_OHE_calc                    : ", Boltz_OHE_calc
       write(stdout, *) "Boltz_Berry_correction            : ", Boltz_Berry_correction
       write(stdout, *) "LOTO_correction                   : ", LOTO_correction

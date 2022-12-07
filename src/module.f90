@@ -425,6 +425,7 @@
      logical :: Boltz_evolve_k  ! Flag for Boltzmann tranport under magnetic field
      logical :: Boltz_k_calc  ! Flag for Boltzmann tranport under magnetic field
      logical :: AHC_calc  ! Flag for Boltzmann tranport under magnetic field
+     logical :: SHC_calc  ! Flag for spin Hall effect calculation
      logical :: LandauLevel_k_calc  ! Flag for landau level calculation along k direction with fixed B
      logical :: LandauLevel_kplane_calc  ! Flag for landau level calculation along in a kplane in the magnetic BZ
      logical :: LandauLevel_k_dos_calc  ! Flag for landau level spectrum mode calculation along k direction with fixed B
@@ -470,7 +471,7 @@
                           FindNodes_calc, TBtoKP_calc, LOTO_correction, &
                           BulkBand_plane_calc, Hof_Butt_calc, Symmetry_Import_calc, &
                           Boltz_Berry_correction, &
-                          Boltz_k_calc, Boltz_evolve_k, Boltz_OHE_calc, AHC_Calc, &
+                          Boltz_k_calc, Boltz_evolve_k, Boltz_OHE_calc, AHC_Calc, SHC_calc, &
                           LandauLevel_k_calc, OrbitalTexture_calc, OrbitalTexture_3D_calc, &
                           LandauLevel_wavefunction_calc, Fit_kp_calc, DMFT_MAG_calc, &
                           LanczosSeqDOS_calc, Translate_to_WS_calc, LandauLevel_k_dos_calc, &

@@ -659,6 +659,16 @@
         if(cpuid.eq.0)write(stdout, *)'End of OHE calculation'
      endif
 
+     !> calculate spin hall conductivity
+     if (SHC_calc)then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start to calculate spin hall conductivity'
+        call now(time_start)
+        call sigma_SHC
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'SHC_calc')
+        if(cpuid.eq.0)write(stdout, *)'End of SHC calculation'
+     endif
 
      !> calculate anomalouls hall conductivity
      if (AHC_calc)then
