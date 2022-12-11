@@ -43,6 +43,15 @@ subroutine ham_bulk_atomicgauge(k,Hamk_bulk)
   !      + HmnR(:, :, iR)*factor/ndegen(iR)
   !enddo ! iR
  
+  !mat1=0d0
+  !do i1=1,Num_wann
+  !   pos0=Origin_cell%wannier_centers_direct(:, i1)
+  !   kdotr= k(1)*pos0(1)+ k(2)*pos0(2)+ k(3)*pos0(3)
+  !   mat1(i1,i1)= exp(pi2zi*kdotr)
+  !enddo
+  !Hamk_bulk=matmul(conjg(mat1),matmul(Hamk_bulk,mat1))
+
+
    !> the first atom in home unit cell
    do iR=1, Nrpts
       do i2=1, Num_wann
@@ -66,14 +75,6 @@ subroutine ham_bulk_atomicgauge(k,Hamk_bulk)
          enddo ! i1
       enddo ! i2
    enddo ! iR
-
-   mat1=0d0
-   do i1=1,Num_wann
-      pos0=Origin_cell%wannier_centers_direct(:, i1)
-      kdotr= k(1)*pos0(1)+ k(2)*pos0(2)+ k(3)*pos0(3)
-      mat1(i1,i1)= exp(pi2zi*kdotr)
-   enddo
-   Hamk_bulk=matmul(conjg(mat1),matmul(Hamk_bulk,mat1))
 
    ! check hermitcity
    do i1=1, Num_wann
