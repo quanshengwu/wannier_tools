@@ -33,20 +33,16 @@ SURFACE            ! See doc for details
 
 !> bulk band structure calculation flag
 &CONTROL
-SlabBandWaveFunc_calc = F
-BulkBand_calc         = F
-BulkBand_points_calc  = F
-BulkFS_calc           = F
-BulkGap_cube_calc     = F
-BulkGap_plane_calc    = F
-SlabBand_calc         = F
+SlabBandWaveFunc_calc = T
+BulkBand_calc         = T
+BulkBand_points_calc  = T
+SlabBand_calc         = T
 WireBand_calc         = F
-SlabSS_calc           = F
+SlabSS_calc           = T
 SlabArc_calc          = T
-Z2_3D_calc            = F
-Chern_3D_calc         = F
-SlabSpintexture_calc  = F
-Wanniercenter_calc    = F
+Z2_3D_calc            = T
+SlabSpintexture_calc  = T
+Wanniercenter_calc    = T
 /
 
 &SYSTEM
@@ -56,8 +52,6 @@ NSLAB2= 4               ! nanowire system
 NumOccupied = 18        ! NumOccupied
 SOC = 1                 ! soc
 E_FERMI = 4.4195        ! e-fermi
-Bx= 0, By= 0, Bz= 0     ! Bx By Bz
-surf_onsite= 0.0        ! surf_onsite
 /
 
 &PARAMETERS
@@ -66,9 +60,9 @@ E_arc = 0.0         ! energy for calculate Fermi Arc
 OmegaNum = 300      ! omega number       
 OmegaMin = -0.6     ! energy interval
 OmegaMax =  0.5     ! energy interval
-Nk1 = 60            ! number k points  odd number would be better
-Nk2 = 60            ! number k points  odd number would be better
-Nk3 = 6             ! number k points  odd number would be better
+Nk1 = 41            ! number k points  odd number would be better
+Nk2 = 41            ! number k points  odd number would be better
+Nk3 = 41            ! number k points  odd number would be better
 NP = 2              ! number of principle layers
 Gap_threshold = 1.0 ! threshold for GapCube output
 /
@@ -120,13 +114,9 @@ SINGLEKPOINT_2D
 Direct 
 0.0 0.0
 
-SELECTED_BANDS
-4  ! number of selected bands
-179 180 181 182 ! band indices
 
-
-!WANNIER_CENTRES     ! copy from wannier90.wout
-!Cartesian
+WANNIER_CENTRES     ! copy from wannier90.wout
+Cartesian
  -0.000040  -1.194745   6.638646 
   0.000038  -1.196699   6.640059 
  -0.000032  -1.192363   6.640243 

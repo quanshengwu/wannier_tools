@@ -195,11 +195,12 @@
      use para
      implicit none
     
-     integer :: ik, ikx, iky, ikz
+     integer :: ik, ikx, iky, ikz, ieta
      integer :: m, n, i, j, ie, ialpha, ibeta, igamma
      integer :: ierr, knv3, nwann
+     integer :: NumberofEta
 
-     real(dp) :: mu, Beta_fake, deno_fac
+     real(dp) :: mu, Beta_fake, deno_fac, eta_local
      real(dp) :: k(3)
 
      real(dp) :: time_start, time_end
@@ -213,9 +214,9 @@
      real(dp), allocatable :: energy(:)
 
      !> sigma^gamma_{alpha, beta}, alpha, beta, gamma=1,2,3 for x, y, z
-     !>  sigma_tensor_shc(ie, igamma, ialpha, ibeta)
-     real(dp), allocatable :: sigma_tensor_shc(:, :, :, :)
-     real(dp), allocatable :: sigma_tensor_shc_mpi(:, :, :, :)
+     !>  sigma_tensor_shc(ie, igamma, ialpha, ibeta, ieta)
+     real(dp), allocatable :: sigma_tensor_shc(:, :, :, :, :)
+     real(dp), allocatable :: sigma_tensor_shc_mpi(:, :, :, :, :)
      
      !> Fermi-Dirac distribution
      real(dp), external :: fermi
@@ -232,7 +233,11 @@
 
      ! spin operator matrix spin_sigma_x,spin_sigma_y in spin_sigma_z representation
      complex(Dp),allocatable :: pauli_matrices(:, :, :) 
+    
+     real(dp), allocatable :: eta_array(:)
+     character(80) :: shcfilename, etaname
 
+     NumberofEta=9
 
      allocate(Vmn_Ham(Num_wann, Num_wann, 3))
      allocate(Vmn_wann(Num_wann, Num_wann, 3))
@@ -246,8 +251,9 @@
      allocate( UU(Num_wann, Num_wann))
      allocate( mat_t(Num_wann, Num_wann))
      allocate( energy(OmegaNum))
-     allocate( sigma_tensor_shc    (OmegaNum, 3, 3, 3))
-     allocate( sigma_tensor_shc_mpi(OmegaNum, 3, 3, 3))
+     allocate(eta_array(NumberofEta))
+     allocate( sigma_tensor_shc    (OmegaNum, 3, 3, 3, NumberofEta))
+     allocate( sigma_tensor_shc_mpi(OmegaNum, 3, 3, 3, NumberofEta))
 
      allocate(pauli_matrices(Num_wann, Num_wann, 3))
      spin_sigma= 0d0
@@ -258,6 +264,9 @@
      Vmn_wann= 0d0
      pauli_matrices= 0d0
  
+     eta_array=(/0.1d0, 0.2d0, 0.4d0, 0.8d0, 1.0d0, 2d0, 4d0, 8d0, 10d0/)
+     eta_array= eta_array*Eta_Arc
+
      nwann= Num_wann/2
      !> spin operator matrix
      !> this part is package dependent. 
@@ -346,34 +355,37 @@
               mat_t= j_spin_gamma_alpha(:, :)
               call rotation_to_Ham_basis(UU, mat_t, j_spin_gamma_alpha(:, :))
               call rotation_to_Ham_basis(UU, Vmn_wann(:, :, ialpha), Vmn_Ham(:, :, ialpha))
-   
-              !> \Omega_spin^l_n^{\gamma}(k)=-2\sum_{m}*aimag(Im({js(\gamma),v(\alpha)}/2)_nm*v_beta_mn))/((w(n)-w(m))^2+eta_arc^2)
-              do ibeta= 1, 3
-                 Omega_spin= 0d0
-                 do n= 1, Num_wann
-                    do m= 1, Num_wann
-                       if (m==n) cycle
-                       deno_fac= -2d0/((W(n)-W(m))**2+ Eta_Arc**2)
-                       Omega_spin(n)= Omega_spin(n)+ &
-                          aimag(j_spin_gamma_alpha(n, m)*Vmn_Ham(m, n, ibeta))*deno_fac
-                    enddo
-                 enddo
-     
-                 !> consider the Fermi-distribution according to the broadening Earc_eta
-                 Beta_fake= 1d0/Eta_Arc
-         
-                 do ie=1, OmegaNum
-                    mu = energy(ie)
-                    do n= 1, Num_wann
-                       Omega_spin_t(n)= Omega_spin(n)*fermi(W(n)-mu, Beta_fake)
-                    enddo
 
-                    !> sum over all "spin" Berry curvature below chemical potential mu
-                    sigma_tensor_shc_mpi(ie, igamma, ialpha, ibeta)= &
-                       sigma_tensor_shc_mpi(ie, igamma, ialpha, ibeta)+ &
-                       sum(Omega_spin_t(:))
-                 enddo ! ie
-              enddo ! ibeta  v
+              do ieta= 1, NumberofEta
+                 eta_local = eta_array(ieta)
+                 !> \Omega_spin^l_n^{\gamma}(k)=-2\sum_{m}*aimag(Im({js(\gamma),v(\alpha)}/2)_nm*v_beta_mn))/((w(n)-w(m))^2+eta_arc^2)
+                 do ibeta= 1, 3
+                    Omega_spin= 0d0
+                    do n= 1, Num_wann
+                       do m= 1, Num_wann
+                          if (m==n) cycle
+                          deno_fac= -2d0/((W(n)-W(m))**2+ eta_local**2)
+                          Omega_spin(n)= Omega_spin(n)+ &
+                             aimag(j_spin_gamma_alpha(n, m)*Vmn_Ham(m, n, ibeta))*deno_fac
+                       enddo
+                    enddo
+        
+                    !> consider the Fermi-distribution according to the broadening Earc_eta
+                    Beta_fake= 1d0/eta_local
+            
+                    do ie=1, OmegaNum
+                       mu = energy(ie)
+                       do n= 1, Num_wann
+                          Omega_spin_t(n)= Omega_spin(n)*fermi(W(n)-mu, Beta_fake)
+                       enddo
+   
+                       !> sum over all "spin" Berry curvature below chemical potential mu
+                       sigma_tensor_shc_mpi(ie, igamma, ialpha, ibeta, ieta)= &
+                          sigma_tensor_shc_mpi(ie, igamma, ialpha, ibeta, ieta)+ &
+                          sum(Omega_spin_t(:))
+                    enddo ! ie
+                 enddo ! ibeta  v
+              enddo ! ieta=1, NumberofEta
            enddo ! ialpha  j
         enddo ! igamma  spin
      enddo ! ik
@@ -396,33 +408,39 @@
 
      outfileindex= outfileindex+ 1
      if (cpuid.eq.0) then
-        open(unit=outfileindex, file='sigma_shc.txt')
-        write(outfileindex, '("#",a)')' Spin hall conductivity in unit of (hbar/e)S/cm'
-        write(outfileindex, "('#column', i5, 3000i16)")(i, i=1, 28)
-        write(outfileindex, '("#",a13, 27a16)')'Eenergy (eV)', &
-          'xx^x', 'xy^x', 'xz^x', 'yx^x', 'yy^x', 'yz^x', 'zx^x', 'yy^x', 'zz^x', &
-          'xx^y', 'xy^y', 'xz^y', 'yx^y', 'yy^y', 'yz^y', 'zx^y', 'yy^y', 'zz^y', &
-          'xx^z', 'xy^z', 'xz^z', 'yx^z', 'yy^z', 'yz^z', 'zx^z', 'yy^z', 'zz^z'
-        do ie=1, OmegaNum
-           write(outfileindex, '(E16.8)', advance='no')energy(ie)/eV2Hartree
-           do igamma=1, 3
-           do ialpha=1, 3
-           do ibeta=1, 3
-              if (ialpha*ibeta*igamma/=27)then
-                 write(outfileindex, '(200E16.8)', advance='no') sigma_tensor_shc(ie, igamma, ialpha, ibeta)
-              else
-                 write(outfileindex, '(200E16.8)', advance='yes') sigma_tensor_shc(ie, igamma, ialpha, ibeta)
-              endif
+        do ieta=1, NumberofEta
+           write(etaname, '(f12.2)')eta_array(ieta)*1000d0/eV2Hartree
+           write(shcfilename, '(7a)')'sigma_shc_eta', trim(adjustl(etaname)), 'meV.txt'
+           open(unit=outfileindex, file=shcfilename)
+           write(outfileindex, '("#",10a)')' Spin hall conductivity in unit of (hbar/e)S/cm,', 'Brodening eta= ',  trim(adjustl(etaname)), ' meV'
+           write(outfileindex, "('#column', i5, 3000i16)")(i, i=1, 28)
+           write(outfileindex, '("#",a13, 27a16)')'Eenergy (eV)', &
+             'xx^x', 'xy^x', 'xz^x', 'yx^x', 'yy^x', 'yz^x', 'zx^x', 'yy^x', 'zz^x', &
+             'xx^y', 'xy^y', 'xz^y', 'yx^y', 'yy^y', 'yz^y', 'zx^y', 'yy^y', 'zz^y', &
+             'xx^z', 'xy^z', 'xz^z', 'yx^z', 'yy^z', 'yz^z', 'zx^z', 'yy^z', 'zz^z'
+           do ie=1, OmegaNum
+              write(outfileindex, '(E16.8)', advance='no')energy(ie)/eV2Hartree
+              do igamma=1, 3
+              do ialpha=1, 3
+              do ibeta=1, 3
+                 if (ialpha*ibeta*igamma/=27)then
+                    write(outfileindex, '(200E16.8)', advance='no') sigma_tensor_shc(ie, igamma, ialpha, ibeta, ieta)
+                 else
+                    write(outfileindex, '(200E16.8)', advance='yes') sigma_tensor_shc(ie, igamma, ialpha, ibeta, ieta)
+                 endif
+              enddo
+              enddo
+              enddo
            enddo
-           enddo
-           enddo
-        enddo
+        enddo ! ieta
         close(outfileindex)
      endif
 
      !> write script for gnuplot
      outfileindex= outfileindex+ 1
      if (cpuid==0) then
+        write(etaname, '(f12.2)')Eta_Arc*1000d0/eV2Hartree
+        write(shcfilename, '(7a)')'sigma_shc_eta', trim(adjustl(etaname)), 'meV.txt'
         open(unit=outfileindex, file='sigma_shc.gnu')
         write(outfileindex, '(a)') 'set terminal pdf enhanced color font ",20"'
         write(outfileindex, '(a)')"set output 'sigma_shc.pdf'"
@@ -431,9 +449,9 @@
         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set xrange [', OmegaMin/eV2Hartree, ':', OmegaMax/eV2Hartree, ']'
         write(outfileindex, '(a)')'set xlabel "Energy (eV)"'
         write(outfileindex, '(a)')'set ylabel "SHC (\hbar/e)S/cm"'
-        write(outfileindex, '(2a)')"plot 'sigma_shc.txt' u 1:21 w l title '\sigma_{xy}^z' lc rgb 'red' lw 4, \"
-        write(outfileindex, '(2a)')"     'sigma_shc.txt' u 1:17 w l title '\sigma_{zx}^y' lc rgb 'blue' lw 4, \"
-        write(outfileindex, '(2a)')"     'sigma_shc.txt' u 1:13 w l title '\sigma_{xz}^y' lc rgb 'orange' lw 4 "
+        write(outfileindex, '(5a)')"plot '",  trim(adjustl(shcfilename)),  "' u 1:21 w l title '\sigma_{xy}^z' lc rgb 'red' lw 4, \"
+        write(outfileindex, '(5a)')"'",  trim(adjustl(shcfilename)), "' u 1:17 w l title '\sigma_{zx}^y' lc rgb 'blue' lw 4, \"
+        write(outfileindex, '(5a)')"'", trim(adjustl(shcfilename)), "' u 1:13 w l title '\sigma_{xz}^y' lc rgb 'orange' lw 4 "
         close(outfileindex)
      endif
 
