@@ -825,7 +825,7 @@
                call velocity_calc_iband(bands_fermi_level(iband), k_start, v_t)
                do ibtau=1, NSlice_Btau
                   kout(:, ibtau)= k_start(:)
-                  klist_iband(iband)%velocity_k(:, it)= v_t
+                  klist_iband(iband)%velocity_k(:, ibtau)= v_t
                enddo
                NSlice_Btau_inuse = NSlice_Btau
             else

@@ -15,10 +15,11 @@
      implicit none
     
      integer :: iR, ik, ikx, iky, ikz
-     integer :: m, ie
+     integer :: i, m, ie, ieta
      integer :: ierr, knv3
+     integer :: NumberofEta
 
-     real(dp) :: mu, Beta_fake
+     real(dp) :: mu, Beta_fake, eta_local
      real(dp) :: k(3)
 
      real(dp) :: time_start, time_end
@@ -30,11 +31,13 @@
 
      !> conductivity  dim= OmegaNum
      real(dp), allocatable :: energy(:)
-     real(dp), allocatable :: sigma_tensor_ahc(:, :)
-     real(dp), allocatable :: sigma_tensor_ahc_mpi(:, :)
+     real(dp), allocatable :: sigma_tensor_ahc(:, :, :)
+     real(dp), allocatable :: sigma_tensor_ahc_mpi(:, :, :)
      
      !> Fermi-Dirac distribution
      real(dp), external :: fermi
+
+     real(dp), allocatable :: eta_array(:)
 
      !> D_mn^H=V_mn/(En-Em) for m!=n
      !> D_nn^H=0 
@@ -45,22 +48,31 @@
      real(dp),allocatable :: Omega_BerryCurv(:, :)
      real(dp),allocatable :: Omega_BerryCurv_t(:, :)
 
+     character*40 :: ahefilename, etaname
+
+     NumberofEta = 9 
+
      allocate(Dmn_Ham(Num_wann, Num_wann, 3))
      allocate(Vmn_Ham(Num_wann, Num_wann, 3))
      allocate(Omega_BerryCurv(Num_wann, 3))
      allocate(Omega_BerryCurv_t(Num_wann, 3))
 
+     allocate(eta_array(NumberofEta))
      allocate( W (Num_wann))
      allocate( Hamk_bulk(Num_wann, Num_wann))
      allocate( UU(Num_wann, Num_wann))
      allocate( energy(OmegaNum))
-     allocate( sigma_tensor_ahc    (3, OmegaNum))
-     allocate( sigma_tensor_ahc_mpi(3, OmegaNum))
+     allocate( sigma_tensor_ahc    (3, OmegaNum, NumberofEta))
+     allocate( sigma_tensor_ahc_mpi(3, OmegaNum, NumberofEta))
      sigma_tensor_ahc    = 0d0
      sigma_tensor_ahc_mpi= 0d0
      Hamk_bulk=0d0
      UU= 0d0
-     
+      
+     eta_array=(/0.1d0, 0.2d0, 0.4d0, 0.8d0, 1.0d0, 2d0, 4d0, 8d0, 10d0/)
+     eta_array= eta_array*Eta_Arc
+
+
      !> energy
      do ie=1, OmegaNum
         if (OmegaNum>1) then
@@ -107,17 +119,20 @@
         !> \Omega_n^{\gamma}(k)=i\sum_{\alpha\beta}\epsilon_{\gamma\alpha\beta}(D^{\alpha\dag}D^{\beta})_{nn}
         call berry_curvarture_singlek_allbands(Dmn_Ham, Omega_BerryCurv)
  
-        !> consider the Fermi-distribution according to the broadening Earc_eta
-        Beta_fake= 1d0/Eta_Arc
-
-        do ie=1, OmegaNum
-           mu = energy(ie)
-           do m= 1, Num_wann
-              Omega_BerryCurv_t(m, :)= Omega_BerryCurv(m, :)*fermi(W(m)-mu, Beta_fake)
-           enddo
-           sigma_tensor_ahc_mpi(:, ie)= sigma_tensor_ahc_mpi(:, ie)- &
-              (sum(Omega_BerryCurv_t(:, :), dim=1))
-        enddo ! ie
+        do ieta= 1, NumberofEta
+           eta_local = eta_array(ieta)
+           !> consider the Fermi-distribution according to the broadening Earc_eta
+           Beta_fake= 1d0/eta_local
+   
+           do ie=1, OmegaNum
+              mu = energy(ie)
+              do m= 1, Num_wann
+                 Omega_BerryCurv_t(m, :)= Omega_BerryCurv(m, :)*fermi(W(m)-mu, Beta_fake)
+              enddo
+              sigma_tensor_ahc_mpi(:, ie, ieta)= sigma_tensor_ahc_mpi(:, ie, ieta)- &
+                 (sum(Omega_BerryCurv_t(:, :), dim=1))
+           enddo ! ie
+        enddo ! ieta
      enddo ! ik
 
 #if defined (MPI)
@@ -143,21 +158,28 @@
 
      outfileindex= outfileindex+ 1
      if (cpuid.eq.0) then
-        open(unit=outfileindex, file='sigma_ahc.txt')
-        write(outfileindex, '("#",a)')' Anomalous hall conductivity in unit of (Ohm*cm)^-1'
-        write(outfileindex, '("#",a13, 20a16)')'Eenergy (eV)', '\sigma_xy', '\sigma_yz', '\sigma_zx'
-        do ie=1, OmegaNum
-           write(outfileindex, '(200E16.8)')energy(ie)/eV2Hartree, sigma_tensor_ahc(3, ie), &
-                                                        sigma_tensor_ahc(1, ie), &
-                                                        sigma_tensor_ahc(2, ie)
-
+        do ieta=1, NumberofEta
+           write(etaname, '(f12.2)')eta_array(ieta)*1000d0/eV2Hartree
+           write(ahefilename, '(7a)')'sigma_ahe_eta', trim(adjustl(etaname)), 'meV.txt'
+           open(unit=outfileindex, file=ahefilename)
+           write(outfileindex, '("#",10a)')' Anomalous hall conductivity in unit of S/cm,', 'Brodening eta= ',  trim(adjustl(etaname)), ' meV'
+           write(outfileindex, "('#column', i5, 3000i16)")(i, i=1, 4)
+           write(outfileindex, '("#",a13, 20a16)')'Eenergy (eV)', '\sigma_xy', '\sigma_yz', '\sigma_zx'
+           do ie=1, OmegaNum
+              write(outfileindex, '(200E16.8)')energy(ie)/eV2Hartree, sigma_tensor_ahc(3, ie, ieta), &
+                                                                      sigma_tensor_ahc(1, ie, ieta), &
+                                                                      sigma_tensor_ahc(2, ie, ieta)
+           
+           enddo ! ie
+           close(outfileindex)
         enddo
-        close(outfileindex)
      endif
 
      !> write script for gnuplot
      outfileindex= outfileindex+ 1
      if (cpuid==0) then
+        write(etaname, '(f12.2)')Eta_Arc*1000d0/eV2Hartree
+        write(ahefilename, '(7a)')'sigma_ahe_eta', trim(adjustl(etaname)), 'meV.txt'
         open(unit=outfileindex, file='sigma_ahc.gnu')
         write(outfileindex, '(a)') 'set terminal pdf enhanced color font ",20"'
         write(outfileindex, '(a)')"set output 'sigma_ahc.pdf'"
@@ -165,10 +187,10 @@
         write(outfileindex, '(a)')'set ylabel offset 0.0,0'
         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set xrange [', OmegaMin/eV2Hartree, ':', OmegaMax/eV2Hartree, ']'
         write(outfileindex, '(a)')'set xlabel "Energy (eV)"'
-        write(outfileindex, '(a)')'set ylabel "AHC \sigma (S/cm)"'
-        write(outfileindex, '(2a)')"plot 'sigma_ahc.txt' u 1:2 w l title '\sigma_{xy}' lc rgb 'red' lw 4, \"
-        write(outfileindex, '(2a)')"     'sigma_ahc.txt' u 1:3 w l title '\sigma_{yz}' lc rgb 'blue' lw 4, \"
-        write(outfileindex, '(2a)')"     'sigma_ahc.txt' u 1:4 w l title '\sigma_{zx}' lc rgb 'orange' lw 4 "
+        write(outfileindex, '(a)')'set ylabel "AHC (S/cm)"'
+        write(outfileindex, '(5a)')"plot '",  trim(adjustl(ahefilename)),  "' u 1:2 w l title '\sigma_{xy}' lc rgb 'red' lw 4, \"
+        write(outfileindex, '(5a)')"'",  trim(adjustl(ahefilename)), "' u 1:3 w l title '\sigma_{zx}' lc rgb 'blue' lw 4, \"
+        write(outfileindex, '(5a)')"'", trim(adjustl(ahefilename)), "' u 1:4 w l title '\sigma_{xz}' lc rgb 'orange' lw 4 "
         close(outfileindex)
      endif
 
