@@ -48,7 +48,7 @@
      real(dp),allocatable :: Omega_BerryCurv(:, :)
      real(dp),allocatable :: Omega_BerryCurv_t(:, :)
 
-     character*40 :: ahefilename, etaname
+     character*40 :: ahcfilename, etaname
 
      NumberofEta = 9 
 
@@ -160,8 +160,8 @@
      if (cpuid.eq.0) then
         do ieta=1, NumberofEta
            write(etaname, '(f12.2)')eta_array(ieta)*1000d0/eV2Hartree
-           write(ahefilename, '(7a)')'sigma_ahe_eta', trim(adjustl(etaname)), 'meV.txt'
-           open(unit=outfileindex, file=ahefilename)
+           write(ahcfilename, '(7a)')'sigma_ahc_eta', trim(adjustl(etaname)), 'meV.txt'
+           open(unit=outfileindex, file=ahcfilename)
            write(outfileindex, '("#",10a)')' Anomalous hall conductivity in unit of S/cm,', 'Brodening eta= ',  trim(adjustl(etaname)), ' meV'
            write(outfileindex, "('#column', i5, 3000i16)")(i, i=1, 4)
            write(outfileindex, '("#",a13, 20a16)')'Eenergy (eV)', '\sigma_xy', '\sigma_yz', '\sigma_zx'
@@ -179,7 +179,7 @@
      outfileindex= outfileindex+ 1
      if (cpuid==0) then
         write(etaname, '(f12.2)')Eta_Arc*1000d0/eV2Hartree
-        write(ahefilename, '(7a)')'sigma_ahe_eta', trim(adjustl(etaname)), 'meV.txt'
+        write(ahcfilename, '(7a)')'sigma_ahc_eta', trim(adjustl(etaname)), 'meV.txt'
         open(unit=outfileindex, file='sigma_ahc.gnu')
         write(outfileindex, '(a)') 'set terminal pdf enhanced color font ",20"'
         write(outfileindex, '(a)')"set output 'sigma_ahc.pdf'"
@@ -188,9 +188,9 @@
         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set xrange [', OmegaMin/eV2Hartree, ':', OmegaMax/eV2Hartree, ']'
         write(outfileindex, '(a)')'set xlabel "Energy (eV)"'
         write(outfileindex, '(a)')'set ylabel "AHC (S/cm)"'
-        write(outfileindex, '(5a)')"plot '",  trim(adjustl(ahefilename)),  "' u 1:2 w l title '\sigma_{xy}' lc rgb 'red' lw 4, \"
-        write(outfileindex, '(5a)')"'",  trim(adjustl(ahefilename)), "' u 1:3 w l title '\sigma_{zx}' lc rgb 'blue' lw 4, \"
-        write(outfileindex, '(5a)')"'", trim(adjustl(ahefilename)), "' u 1:4 w l title '\sigma_{xz}' lc rgb 'orange' lw 4 "
+        write(outfileindex, '(5a)')"plot '",  trim(adjustl(ahcfilename)),  "' u 1:2 w l title '\sigma_{xy}' lc rgb 'red' lw 4, \"
+        write(outfileindex, '(5a)')"'",  trim(adjustl(ahcfilename)), "' u 1:3 w l title '\sigma_{zx}' lc rgb 'blue' lw 4, \"
+        write(outfileindex, '(5a)')"'", trim(adjustl(ahcfilename)), "' u 1:4 w l title '\sigma_{xz}' lc rgb 'orange' lw 4 "
         close(outfileindex)
      endif
 
