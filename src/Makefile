@@ -9,29 +9,30 @@ OBJ =  module.o sparse.o wt_aux.o math_lib.o symmetry.o readHmnR.o inverse.o pro
 		 berry.o wanniercenter_adaptive.o \
   		 effective_mass.o findnodes.o \
 		 sigma_OHE.o sigma.o sigma_AHC.o \
-		boltzmann.o \
-	main.o
+       	boltzmann.o \
+       main.o
 
 # compiler
-F90  = ifort -fpp -DINTELMKL -fpe3
+F90  = mpiifort -fpp -DMPI -DINTELMKL -fpe3
 
 INCLUDE = -I${MKLROOT}/include
 WFLAG = -nogen-interface
-OFLAG = -O3 -static-intel
+OFLAG = -O3 -static-intel # -g -traceback
 FFLAG = $(OFLAG) $(WFLAG)
 LFLAG = $(OFLAG)
 
-ARPACK=/Users/quan/work/workplace/ARPACK/libarpack_MAC.a
+# ARPACK LIBRARY
+ARPACK=/home/users/pihanqi/soft/ARPACK/libarpack_linux.a
 
 # blas and lapack libraries
 # static linking
-LIBS = -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a \
+#LIBS = -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a \
         ${MKLROOT}/lib/intel64/libmkl_sequential.a \
         ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl \
 		  ${ARPACK}
 
 # dynamic linking
-# LIBS = -L/${MKLROOT}/lib/intel64 -lmkl_core -lmkl_sequential -lmkl_intel_lp64 -lpthread
+LIBS = ${ARPACK} -L/${MKLROOT}/lib/intel64 -lmkl_core -lmkl_sequential -lmkl_intel_lp64 -lpthread
  
 main : $(OBJ)
 	$(F90) $(LFLAG) $(OBJ) -o wt.x $(LIBS)

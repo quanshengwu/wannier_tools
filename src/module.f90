@@ -438,6 +438,8 @@
      logical :: LanczosSeqDOS_calc  ! DOS
      logical :: Translate_to_WS_calc  ! whether translate the k points into the Wigner-Seitz cell
      logical :: FermiLevel_calc  ! calculate Fermi level for a given temperature Beta=1/T
+     logical :: ANEvsEf_calc ! calculate energy-dependent anomalous nernst effect
+     logical :: ANEvsT_calc ! calculate temperature-dependent anomalous nernst effect
      
      logical :: LanczosBand_calc=.false.
      logical :: LanczosDos_calc= .false.
@@ -477,7 +479,7 @@
                           LanczosSeqDOS_calc, Translate_to_WS_calc, LandauLevel_k_dos_calc, &
                           LandauLevel_B_dos_calc,LanczosBand_calc,LanczosDos_calc, &
                           LandauLevel_B_calc, LandauLevel_kplane_calc,landau_chern_calc, &
-                          FermiLevel_calc , export_newhr,export_maghr,w3d_nested_calc
+                          FermiLevel_calc,ANEvsEf_calc, ANEvsT_calc , export_newhr,export_maghr,w3d_nested_calc
 
      integer :: Nslab  ! Number of slabs for 2d Slab system
      integer :: Nslab1 ! Number of slabs for 1D wire system
@@ -551,6 +553,10 @@
      real(dp) :: BTauMax, Relaxation_Time_Tau
      integer :: NBTau, BTauNum  
      integer :: Nslice_BTau_Max
+     
+     !> the integral of ANE ranges from OmegaMin-ANE_int_interval to OmegaMin+ANE_int_interval 
+     real(dp) :: ANE_int_step
+     real(dp) :: ANE_int_interval
 
      !> cut of radial for summation over R vectors
      real(dp) :: Rcut
@@ -578,6 +584,7 @@
      namelist /PARAMETERS/ Eta_Arc, OmegaNum, OmegaNum_unfold, OmegaMin, OmegaMax, &
         E_arc, Nk1, Nk2, Nk3, NP, Gap_threshold, Tmin, Tmax, NumT, &
         NBTau, BTauNum, BTauMax, Rcut, Magp, Magq, Magp_min, Magp_max, Nslice_BTau_Max, &
+        ANE_int_step, ANE_int_interval, &
         wcc_neighbour_tol, wcc_calc_tol, Beta,NumLCZVecs, &
         Relaxation_Time_Tau, &
         NumRandomConfs, NumSelectedEigenVals, projection_weight_mode, topsurface_atom_index
