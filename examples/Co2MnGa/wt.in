@@ -5,7 +5,7 @@ Package = 'VASP'             ! obtained from VASP, it could be 'VASP', 'QE', 'Wi
 
 !> bulk band structure calculation flag
 &CONTROL
-ANEvsEf_calc              = T
+ANE_calc                  = T
 /
 
 &SYSTEM
@@ -19,12 +19,12 @@ Eta_arc = 0.01
 OmegaNum = 901
 OmegaMin = -1
 OmegaMax = 1
-Nk1 = 261         ! number k points  odd number would be better
-Nk2 = 261         ! number k points  odd number would be better
-Nk3 = 261         ! number k points  odd number would be better
-TMin = 300     
-TMax = 300    
-NumT = 1  
+Nk1 = 261        ! number k points  odd number would be better
+Nk2 = 261        ! number k points  odd number would be better
+Nk3 = 261        ! number k points  odd number would be better
+TMin = 20     ! energy interval
+TMax = 320    ! energy interval
+NumT = 33  ! omega number       
 /
 
 LATTICE
