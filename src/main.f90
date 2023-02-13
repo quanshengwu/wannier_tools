@@ -682,26 +682,13 @@
      endif
 
       !> calculate energy-dependent anomalouls nernst effect
-      if (ANEvsEf_calc)then
+      if (ANE_calc)then
          if(cpuid.eq.0)write(stdout, *)' '
          if(cpuid.eq.0)write(stdout, *)'>> Start to calculate energy-dependent anomalouls nernst'
          call now(time_start)
-         !call new_ANE_varyEf
-         call ANE_varyEf
+         call alpha_ane
          call now(time_end)
          call print_time_cost(time_start, time_end, 'ANEvsEf_calc')
-         if(cpuid.eq.0)write(stdout, *)'End of ANE calculation'
-      endif
-  
-      !> calculate temperature-dependent anomalouls nernst effect
-      if (ANEvsT_calc)then
-         if(cpuid.eq.0)write(stdout, *)' '
-         if(cpuid.eq.0)write(stdout, *)'>> Start to calculate temperature-dependent anomalouls nernst'
-         call now(time_start)
-         !call new_ANE_varyT
-         call ANE_varyT
-         call now(time_end)
-         call print_time_cost(time_start, time_end, 'ANEvsT_calc')
          if(cpuid.eq.0)write(stdout, *)'End of ANE calculation'
       endif
 

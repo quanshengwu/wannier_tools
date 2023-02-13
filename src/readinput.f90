@@ -151,8 +151,7 @@ subroutine readinput
    LandauLevel_B_dos_calc = .FALSE.
    Translate_to_WS_calc    = .FALSE.
    FermiLevel_calc    = .FALSE.
-   ANEvsEf_calc              = .FALSE.
-   ANEvsT_calc              = .FALSE.
+   ANE_calc              = .FALSE.
    w3d_nested_calc =.false.
    ChargeDensity_selected_bands_calc= .FALSE.
    ChargeDensity_selected_energies_calc= .FALSE.
@@ -208,8 +207,7 @@ subroutine readinput
       write(*, *)"LandauLevel_B_dos_calc"
       write(*, *)"Translate_to_WS_calc"
       write(*, *)"FermiLevel_calc"
-      write(*, *)"ANEvsEf_calc"
-      write(*, *)"ANEvsT_calc"
+      write(*, *)"ANE_calc"
       write(*, *)"ChargeDensity_selected_energies_calc"
       write(*, *)"ChargeDensity_selected_bands_calc"
       write(*, *)"The default Vaule is F"
@@ -285,8 +283,7 @@ subroutine readinput
       write(stdout, *) "LandauLevel_k_dos_calc            : ", LandauLevel_k_dos_calc
       write(stdout, *) "LandauLevel_B_dos_calc            : ", LandauLevel_B_dos_calc
       write(stdout, *) "FermiLevel_calc                   : ", FermiLevel_calc
-      write(stdout, *) "ANEvsEf_calc                      : ", ANEvsEf_calc
-      write(stdout, *) "ANEvsT_calc                       : ", ANEvsT_calc
+      write(stdout, *) "ANE_calc                      : ", ANE_calc
       write(stdout, *) "Symmetry_Import_calc              : ", Symmetry_Import_calc
       write(stdout, *) "ChargeDensity_selected_bands_calc : ", ChargeDensity_selected_bands_calc
       write(stdout, *) "ChargeDensity_selected_energies_calc : ", ChargeDensity_selected_energies_calc
@@ -553,8 +550,6 @@ subroutine readinput
    BTauNum = 1
    Nslice_BTau_Max = 5000
    BTauMax = 0d0
-   ANE_int_step = 0.001d0
-   ANE_int_interval = 1.0d0
    Rcut = 999999d0
    Magp= 1
    Magq= 0
@@ -617,8 +612,6 @@ subroutine readinput
       write(stdout, '(1x, a, f16.5)')'Beta  : ', Beta
       write(stdout, '(1x, a, i6   )')'Nslice_BTau_Max  : ', Nslice_BTau_Max
       write(stdout, '(1x, a, f16.5)')'BTauMax(Tesla.ps)', BTauMax
-      write(stdout, '(1x, a, f16.5)')'ANE_int_step(eV)', ANE_int_step
-      write(stdout, '(1x, a, f16.5)')'ANE_int_interval(eV)', ANE_int_interval
       write(stdout, '(1x, a, f16.5)')'Relaxation_Time_Tau (ps)', Relaxation_Time_Tau
       write(stdout, '(1x, a, f16.5)')'Rcut', Rcut
       write(stdout, '(1x, a, i16  )')'Magp', Magp
@@ -639,8 +632,6 @@ subroutine readinput
    OmegaMin= OmegaMin*eV2Hartree
    OmegaMax= OmegaMax*eV2Hartree
    Gap_threshold= Gap_threshold*eV2Hartree
-   ANE_int_step = ANE_int_step*eV2Hartree
-   ANE_int_interval = ANE_int_interval*eV2Hartree
    Rcut= Rcut*Ang2Bohr
 
    !> change the unit of relaxtion time from ps to atomic unit

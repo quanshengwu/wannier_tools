@@ -3,35 +3,39 @@
 !> Hanqi Pi (hqpi1999@gmail.com)
 !> Dec 14 2022 @ iopcas
 !>-------------------------------------------------------------------------------<!
-
-subroutine ANE_varyT
+subroutine alpha_ane
     ! PRL 97, 026603 (2006) eq(8)
     use para 
     implicit none 
     
     ! energy refers to the variable to be integrated
     ! mu refers to the chemical potential
-    real(dp) :: energy,  omega, T
+    real(dp) :: energy,  omega, T, mu
+
+    real(dp), parameter :: ANE_int_interval = 1.0d0*eV2Hartree
+    real(dp), parameter :: ANE_int_step     = 0.001d0*eV2Hartree
     
     real(dp), allocatable :: T_list(:)
-    real(dp), allocatable :: energy_list(:)
-    real(dp), allocatable :: nernst(:,:) 
+    real(dp), allocatable :: mu_list(:)
+    real(dp), allocatable :: energy_list(:) 
+    real(dp), allocatable :: nernst(:,:,:) !(coordinate,Temp, mu)
     real(dp), allocatable :: ahc(:,:) 
-    integer :: ie, iT
+    integer :: i, ie, iT, imu
 
-    ! integral region is (-ANE_int_interval, ANE_int_interval)
-    ! num_step = 2*ANE_int_interval/ANE_int_step
-    ! Note: make sure integrated region includes Efermi
+    ! integral region is (OmegaMin-ANE_int_interval,OmegaMax+ANE_int_interval)
+    ! num_step = (OmegaMax-OmegaMin+2*ANE_int_interval)/ANE_int_step
+    ! Note: make sure integral region includes Efermi
     integer :: num_step 
 
     ! derivative of Fermi-Dirac function on energy
     real(dp), external :: partial_fermi
 
-    num_step = (2*ANE_int_interval)/ANE_int_step
+    num_step = int((OmegaMax-OmegaMin+2*ANE_int_interval)/ANE_int_step)
 
     allocate( T_list(NumT) )
+    allocate( mu_list(OmegaNum) )
     allocate( energy_list(num_step+1) )
-    allocate( nernst(3, NumT)) 
+    allocate( nernst(3, NumT, OmegaNum)) 
     allocate( ahc(3, num_step+1)) 
     T_list = 0.0d0
     energy_list = 0.0d0
@@ -40,8 +44,17 @@ subroutine ANE_varyT
 
     !> energy to be integrated
     do ie = 1,  num_step+1
-        energy_list(ie) = -ANE_int_interval+ANE_int_step*(ie-1)
+        energy_list(ie) = (OmegaMin-ANE_int_interval)+ANE_int_step*(ie-1)
     enddo
+
+    !> chemical potential
+    do imu=1, OmegaNum
+        if (OmegaNum>1) then
+           mu_list(imu)= OmegaMin+ (OmegaMax-OmegaMin)* (imu-1d0)/dble(OmegaNum-1)
+        else
+           mu_list= OmegaMin
+        endif
+    enddo ! imu
 
     !> temperature
     do iT=1, NumT
@@ -55,94 +68,16 @@ subroutine ANE_varyT
     !> get the anomalous hall conductivity
     call ahc_zerotmp(num_step, energy_list, ahc)
 
-    do iT = 1, NumT
-        T = T_list(iT)
-        do ie = 1, num_step+1
-            energy = energy_list(ie)
-            nernst(:, iT) = nernst(:, iT) + partial_fermi(energy, T)*ahc(:,ie)&
-                            *(energy/eV2Hartree)/T*(ANE_int_step/eV2Hartree)*100
-        enddo
-    enddo
-
-    outfileindex = outfileindex+1
-    if(cpuid .eq. 0) then
-        open(unit=outfileindex, file='ane.txt')
-        write(outfileindex, '("#",a)')'Anomalous Nernst coefficient (A(m-1 K-1))'
-        write(outfileindex,'("#",a13, 3a16)')'Temperature', '\alpha_xy', '\alpha_yz', '\alpha_zx'
+    do imu = 1, OmegaNum
         do iT = 1, NumT
-            write(outfileindex,'(F9.3,3E16.8)') T_list(iT), nernst(3, iT),&
-                                                            nernst(1, iT),&
-                                                            nernst(2, iT)
-        
-        enddo
-        close(outfileindex)
-    endif
-    deallocate(T_list, energy_list, nernst, ahc)
-    return
-
-
-end subroutine ANe_varyT
-
-subroutine ANE_varyEf
-    ! PRL 97, 026603 (2006) eq(8)
-    use para 
-    implicit none 
-    
-    ! energy refers to the variable to be integrated
-    ! mu refers to the chemical potential
-    real(dp) :: energy,  omega, T, Ef
-    
-    ! real(dp), allocatable :: T_list(:)
-    real(dp), allocatable :: Ef_list(:)
-    real(dp), allocatable :: energy_list(:)
-    real(dp), allocatable :: nernst(:,:) 
-    real(dp), allocatable :: ahc(:,:) 
-    integer :: ie, iT, ief
-
-    ! integral region is (OmegaMin-ANE_int_interval,OmegaMax+ANE_int_interval)
-    ! num_step = 2*ANE_int_interval/ANE_int_step
-    ! Note: make sure integral region includes Efermi
-    integer :: num_step 
-
-    ! derivative of Fermi-Dirac function on energy
-    real(dp), external :: partial_fermi
-
-    num_step = (OmegaMax-OmegaMin+2*ANE_int_interval)/ANE_int_step
-
-    ! allocate( T_list(NumT) )
-    allocate( Ef_list(OmegaNum) )
-    allocate( energy_list(num_step+1) )
-    allocate( nernst(3, OmegaNum)) 
-    allocate( ahc(3, num_step+1)) 
-    ! T_list = 0.0d0
-    energy_list = 0.0d0
-    nernst = 0.0d0
-    ahc = 0.0d0
-
-    !> energy to be integrated
-    do ie = 1,  num_step+1
-        energy_list(ie) = (OmegaMin-ANE_int_interval)+ANE_int_step*(ie-1)
-    enddo
-
-     !> energy
-    do ie=1, OmegaNum
-        if (OmegaNum>1) then
-           Ef_list(ie)= OmegaMin+ (OmegaMax-OmegaMin)* (ie-1d0)/dble(OmegaNum-1)
-        else
-           Ef_list= OmegaMin
-        endif
-    enddo ! ie
-
-    !> get the anomalous hall conductivity
-    call ahc_zerotmp(num_step, energy_list, ahc)
-
-    do ief = 1, OmegaNum
-        Ef = Ef_list(ief)
-        do ie = 1, num_step+1
-            energy = energy_list(ie)
-            omega = energy - Ef
-            nernst(:, ief) = nernst(:, ief)+ partial_fermi(omega, Tmin)*ahc(:,ie)&
-                             *(omega/eV2Hartree)/Tmin*(ANE_int_step/eV2Hartree)*100
+            do ie = 1, num_step+1
+                mu = mu_list(imu)
+                T = T_list(iT)
+                energy = energy_list(ie)
+                omega = energy - mu
+                nernst(:, iT, imu) = nernst(:, iT, imu)+ partial_fermi(omega, T)*ahc(:,ie)*&
+                                    (omega/eV2Hartree)/T*(ANE_int_step/eV2Hartree)*100
+            enddo
         enddo
     enddo
 
@@ -150,20 +85,52 @@ subroutine ANE_varyEf
     if(cpuid .eq. 0) then
         open(unit=outfileindex, file='ane.txt')
         write(outfileindex, '("#",a)')'Anomalous Nernst coefficient  (A(m-1 K-1))'
-        write(outfileindex,'("#",a13, 3a16)')'Energy', '\alpha_xy', '\alpha_yz', '\alpha_zx'
-        do ief = 1, OmegaNum
-            write(outfileindex,'(F9.3,3E16.8)') Ef_list(ief)/eV2Hartree, nernst(3, ief),&
-                                                            nernst(1, ief),&
-                                                            nernst(2, ief)
-        
+        write(outfileindex, "('#column', i7, i13,3i16)")(i, i=1, 5)
+        write(outfileindex,'("#",2a13, 3a16)')'Mu(eV)', 'T(K)', '\alpha_xy', '\alpha_yz', '\alpha_zx'
+        do imu = 1, OmegaNum
+            do iT = 1, NumT
+                write(outfileindex,'(F14.6,F13.3,3E16.6)') mu_list(imu)/eV2Hartree,T_list(iT), nernst(3, iT, imu),&
+                                                                                            nernst(1, iT, imu),&
+                                                                                            nernst(2, iT, imu)
+            enddo
         enddo
         close(outfileindex)
     endif
-    deallocate(Ef_list, energy_list, nernst, ahc)
+
+    !> write script for gnuplot
+    outfileindex = outfileindex+1
+    if(cpuid .eq. 0) then
+        open(unit=outfileindex, file='ane.gnu')
+        write(outfileindex, '(a)') 'set terminal pdfcairo enhanced color font ",30" size 13, 6'
+        write(outfileindex, '(a)') "set output 'ane.pdf'"
+        write(outfileindex, '(a)') 'set key outside'
+        write(outfileindex, '(a)') "set palette defined (0 'red', 1 'green')"
+        write(outfileindex, '(a)') 'unset colorbox'
+        write(outfileindex, '(a)') '#plot the temperature-dependent alpha_yx for the first six chemical potentials'
+        write(outfileindex, '(a)') 'set xlabel "T (K)"'
+        write(outfileindex, '(a)') 'set ylabel "{/Symbol a}_{yx} (A/(mK))"'
+        write(outfileindex, '(a)') 'set ylabel offset 0.0,0'
+        write(outfileindex, '(a,I4,a,I4,a,I4,a,f6.1,a,f6.1,a,f6.1,a)')& 
+                                    "plot for [i=0:5] 'ane.txt' every ::i*",NumT,"::i*",NumT,"+",NumT-1,&
+                                    " u 2:(-$3) w l lt palette frac i/5. title sprintf('{/Symbol m}=%.3f eV',",&
+                                    OmegaMin/eV2Hartree,"+",(OmegaMax-OmegaMIn)/eV2Hartree,"/",float(OmegaNum-1),"*i)"
+        write(outfileindex, '(a)') ''
+        write(outfileindex, '(a)') '#plot the chemical potential dependent alpha_yx'
+        write(outfileindex, '(a)') '#set xlabel "T (K)"'
+        write(outfileindex, '(a)') '#set ylabel "{/Symbol a}_{yx} (A/(mK))"'
+        write(outfileindex, '(a)') '#set ylabel offset 0.0,0'
+        write(outfileindex, '("#",a,I4,a,I4,a,f6.1,a,f6.1,a,f6.1,a,f6.1,a)')& 
+                                    "plot for [i=0:",NumT-1,"] 'ane.txt' every ",NumT,&
+                                    "::i u 1:(-$3) w l lt palette frac i/",float(NumT-1)," title sprintf('T=%.3f K',",&
+                                    Tmin,"+",Tmax-Tmin,"/",float(NumT-1),"*i)"
+        close(outfileindex)
+    endif
+
+    deallocate(mu_list, energy_list, T_list, nernst, ahc)
     return
 
 
-end subroutine ANE_varyEf
+end subroutine alpha_ane
 
 subroutine ahc_zerotmp(num_step, energy_list, ahc)
     use para
@@ -230,10 +197,10 @@ subroutine ahc_zerotmp(num_step, energy_list, ahc)
     call now(time_start)
 
     do ik = 1+cpuid, knum, num_cpu 
-        if (cpuid.eq.0.and. mod(ik/num_cpu, 100).eq.0) then
+        if (cpuid.eq.0.and. mod(ik/num_cpu, 1000).eq.0) then
             call now(time_end) 
             write(stdout, '(a, i18, "/", i18, a, f10.2, "s")') 'ik/knv3', &
-            ik, knum, '  time left', (knum-ik)*(time_end-time_start)/num_cpu/100d0
+            ik, knum, '  time left', (knum-ik)*(time_end-time_start)/num_cpu/1000d0
             time_start= time_end
         endif
 
