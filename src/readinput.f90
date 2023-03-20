@@ -534,6 +534,7 @@ subroutine readinput
    !> set up parameters for calculation
    E_arc = 0.0d0
    Eta_Arc= 0.001d0
+   EF_broadening= 0.05d0
    OmegaNum = 100
    OmegaNum_unfold = 0
    OmegaMin = -1d0
@@ -596,6 +597,7 @@ subroutine readinput
       write(stdout, *) ">>>calculation parameters : "
       write(stdout, '(1x, a, f16.5)')'E_arc : ', E_arc
       write(stdout, '(1x, a, f16.5)')'Eta_arc : ', Eta_arc
+      write(stdout, '(1x, a, f16.5)')'EF_broadening : ', EF_broadening
       write(stdout, '(1x, a, f16.5)')'Gap_threshold', Gap_threshold
       write(stdout, '(1x, a, f16.5)')'OmegaMin : ', OmegaMin
       write(stdout, '(1x, a, f16.5)')'OmegaMax : ', OmegaMax
