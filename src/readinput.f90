@@ -925,7 +925,12 @@ subroutine readinput
          read(1001, *)char_temp, Origin_cell%proj_name(1:Origin_cell%nprojs(i), i)
          if(cpuid==0)write(stdout, '(40a8)') &
             char_temp, Origin_cell%proj_name(1:Origin_cell%nprojs(i), i)
+         !> change the projector name to upper case
+         do j=1, Origin_cell%nprojs(i)
+            Origin_cell%proj_name(j, i)= upper(Origin_cell%proj_name(j, i))
+         enddo
       enddo
+
    else
       stop "ERROR: please set projectors for Wannier functions information"
    endif

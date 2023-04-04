@@ -999,7 +999,7 @@
      if (index( Package, 'VASP')/=0.or. index( Package, 'Wien2k')/=0 &
         .or. index( Package, 'Abinit')/=0.or. index( Package, 'openmx')/=0) then
         !> inversion symmetry
-        !> s-> s; p-> -p; d-> -d
+        !> s-> s; p-> -p; d-> d; f->-f
         n= 0
         do ia=1, Origin_cell%Num_atoms
            do i=1, Origin_cell%nprojs(ia)
@@ -1032,13 +1032,35 @@
               case ('dz2', 'Dz2', 'DZ2')
                  inversion(n, n)= 1
                  inversion(n+ nwan, n+ nwan)= 1
+              case ('FZ3', 'FZ2')
+                 inversion(n, n)= -1
+                 inversion(n+ nwan, n+ nwan)= -1
+              case ('FXZ2')
+                 inversion(n, n)= -1
+                 inversion(n+ nwan, n+ nwan)= -1
+              case ('FYZ2')
+                 inversion(n, n)= -1
+                 inversion(n+ nwan, n+ nwan)= -1
+              case ('FXYZ')
+                 inversion(n, n)= -1
+                 inversion(n+ nwan, n+ nwan)= -1
+              case ('FZ(X2-Y2)', 'FZX2')
+                 inversion(n, n)= -1
+                 inversion(n+ nwan, n+ nwan)= -1
+              case ('FX(X2-3Y2)', 'FX3', "FX3Y2")
+                 inversion(n, n)= -1
+                 inversion(n+ nwan, n+ nwan)= -1
+              case ('FY(3X2-Y2)', 'FY3X2', 'FY3')
+                 inversion(n, n)= -1
+                 inversion(n+ nwan, n+ nwan)= -1
               case default
-                 write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 orbitals"
+                 write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2, "
+                 write(*, *) "fz3, fxz2, fyz2, fxyz, fzx2, fx3y2, fx3 orbitals"
                  stop
               end select
            enddo ! i
         enddo ! ia
-       
+ 
         !> mirror_x symmetry
         !> s-> s; px->-px, py->py, pz->  pz
         !> dxy-> -dxy, dyz->  dyz, dxz-> -dxz, dx2-> dx2 dz2->dz2 
@@ -1078,8 +1100,31 @@
               case ('dz2', 'Dz2', 'DZ2')
                  mirror_x(n, n+ nwan)= 1d0
                  mirror_x(n+ nwan, n)= 1d0
+               case ('FZ3', 'FZ2')
+                 mirror_x(n, n+ nwan)= 1d0
+                 mirror_x(n+ nwan, n)= 1d0
+              case ('FXZ2')
+                 mirror_x(n, n+ nwan)=-1d0
+                 mirror_x(n+ nwan, n)=-1d0
+              case ('FYZ2')
+                 mirror_x(n, n+ nwan)= 1d0
+                 mirror_x(n+ nwan, n)= 1d0
+              case ('FXYZ')
+                 mirror_x(n, n+ nwan)=-1d0
+                 mirror_x(n+ nwan, n)=-1d0
+              case ('FZ(X2-Y2)', 'FZX2')
+                 mirror_x(n, n+ nwan)= 1d0
+                 mirror_x(n+ nwan, n)= 1d0
+              case ('FX(X2-3Y2)', 'FX3', "FX3Y2")
+                 mirror_x(n, n+ nwan)=-1d0
+                 mirror_x(n+ nwan, n)=-1d0
+              case ('FY(3X2-Y2)', 'FY3X2', 'FY3')
+                 mirror_x(n, n+ nwan)= 1d0
+                 mirror_x(n+ nwan, n)= 1d0
+ 
               case default
-                 write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 orbitals"
+                 write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2, "
+                 write(*, *) "fz3, fxz2, fyz2, fxyz, fzx2, fx3y2, fx3 orbitals"
                  stop
               end select
            enddo ! i
@@ -1124,8 +1169,31 @@
               case ('dz2', 'Dz2', 'DZ2')
                  C2yT(n, n)= 1 
                  C2yT(n+ nwan, n+ nwan)= 1 
+              case ('FZ3', 'FZ2')
+                 C2yT(n, n)=-1 
+                 C2yT(n+ nwan, n+ nwan)=-1 
+              case ('FXZ2')
+                 C2yT(n, n)=-1 
+                 C2yT(n+ nwan, n+ nwan)=-1 
+              case ('FYZ2')
+                 C2yT(n, n)= 1 
+                 C2yT(n+ nwan, n+ nwan)= 1 
+              case ('FXYZ')
+                 C2yT(n, n)= 1 
+                 C2yT(n+ nwan, n+ nwan)= 1 
+              case ('FZ(X2-Y2)', 'FZX2')
+                 C2yT(n, n)=-1 
+                 C2yT(n+ nwan, n+ nwan)=-1 
+              case ('FX(X2-3Y2)', 'FX3', "FX3Y2")
+                 C2yT(n, n)=-1 
+                 C2yT(n+ nwan, n+ nwan)=-1 
+              case ('FY(3X2-Y2)', 'FY3X2', 'FY3')
+                 C2yT(n, n)= 1 
+                 C2yT(n+ nwan, n+ nwan)= 1 
+ 
               case default
-                 write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 orbitals"
+                 write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2, "
+                 write(*, *) "fz3, fxz2, fyz2, fxyz, fzx2, fx3y2, fx3 orbitals"
                  stop
               end select
            enddo ! i
@@ -1172,8 +1240,31 @@
               case ('dz2', 'Dz2', 'DZ2')
                  mirror_y(n, n+ nwan)=-zi
                  mirror_y(n+ nwan, n)= zi
+              case ('FZ3', 'FZ2')
+                 mirror_y(n, n+ nwan)=-zi
+                 mirror_y(n+ nwan, n)= zi
+              case ('FXZ2')
+                 mirror_y(n, n+ nwan)=-zi
+                 mirror_y(n+ nwan, n)= zi
+              case ('FYZ2')
+                 mirror_y(n, n+ nwan)= zi
+                 mirror_y(n+ nwan, n)=-zi
+              case ('FXYZ')
+                 mirror_y(n, n+ nwan)= zi
+                 mirror_y(n+ nwan, n)=-zi
+              case ('FZ(X2-Y2)', 'FZX2')
+                 mirror_y(n, n+ nwan)=-zi
+                 mirror_y(n+ nwan, n)= zi
+              case ('FX(X2-3Y2)', 'FX3', "FX3Y2")
+                 mirror_y(n, n+ nwan)=-zi
+                 mirror_y(n+ nwan, n)= zi
+              case ('FY(3X2-Y2)', 'FY3X2', 'FY3')
+                 mirror_y(n, n+ nwan)= zi
+                 mirror_y(n+ nwan, n)=-zi
+ 
               case default
-                 write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 orbitals"
+                 write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2, "
+                 write(*, *) "fz3, fxz2, fyz2, fxyz, fzx2, fx3y2, fx3 orbitals"
                  stop
               end select
            enddo ! i
@@ -1184,9 +1275,10 @@
         enddo
       
       
-        !> mirror_z symmetry  i*sigma_z*R_z
+        !> mirror_z symmetry  i*sigma_z*R_z, but here, we omit the i
         !> s-> s; px->px, py->py, pz-> -pz
         !> dxy-> dxy, dyz-> -dyz, dxz-> -dxz, dx2-> dx2 dz2->dz2 
+        !> fz3->  fz3, fxz2->  fxz2, fyz2-> fyz2, fxyz-> -fxyz, fzx2-> -fzx2, fx3y2->  fx3y2, fy3x2->  fy3x2
         !> up-> up  dn-> -dn  Drop off phase i
         n= 0
         do ia=1, Origin_cell%Num_atoms
@@ -1209,7 +1301,6 @@
                  mirror_z(n, n)= 1
                  mirror_z(n+ nwan, n+ nwan)=-1
               case ('dyz', 'Dyz', 'DYZ')
-      
                  mirror_z(n, n)=-1
                  mirror_z(n+ nwan, n+ nwan)= 1
               case ('dxz', 'Dxz', 'DXZ', 'dzx', 'Dzx', 'DZX')
@@ -1221,8 +1312,30 @@
               case ('dz2', 'Dz2', 'DZ2')
                  mirror_z(n, n)= 1
                  mirror_z(n+ nwan, n+ nwan)=-1
+              case ('FZ3', 'FZ2')
+                 mirror_z(n, n)=  1
+                 mirror_z(n+ nwan, n+ nwan)= -1
+              case ('FXZ2')
+                 mirror_z(n, n)=  1
+                 mirror_z(n+ nwan, n+ nwan)= -1
+              case ('FYZ2')
+                 mirror_z(n, n)=  1
+                 mirror_z(n+ nwan, n+ nwan)= -1
+              case ('FXYZ')
+                 mirror_z(n, n)= -1
+                 mirror_z(n+ nwan, n+ nwan)=  1
+              case ('FZ(X2-Y2)', 'FZX2')
+                 mirror_z(n, n)= -1
+                 mirror_z(n+ nwan, n+ nwan)=  1
+              case ('FX(X2-3Y2)', 'FX3', "FX3Y2")
+                 mirror_z(n, n)=  1
+                 mirror_z(n+ nwan, n+ nwan)= -1
+              case ('FY(3X2-Y2)', 'FY3X2', 'FY3')
+                 mirror_z(n, n)=  1
+                 mirror_z(n+ nwan, n+ nwan)= -1
               case default
-                 write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 orbitals"
+                 write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2, "
+                 write(*, *) "fz3, fxz2, fyz2, fxyz, fzx2, fx3y2, fx3 orbitals"
                  stop
               end select
            enddo ! i
@@ -1239,34 +1352,57 @@
               n= n+ 1
               select case (Origin_cell%proj_name(i, ia))
               case ('s', 'S')
-                 inversion(2*n-1, 2*n-1)= 1
-                 inversion(2*n, 2*n)= 1
+                 inversion(2*n-1, 2*n-1)= 1d0
+                 inversion(2*n, 2*n)= 1d0
               case ('px', 'Px', 'PX')
-                 inversion(2*n-1, 2*n-1)=-1
-                 inversion(2*n, 2*n)=-1
+                 inversion(2*n-1, 2*n-1)=-1d0
+                 inversion(2*n, 2*n)=-1d0
               case ('py', 'Py', 'PY')
-                 inversion(2*n-1, 2*n-1)=-1
-                 inversion(2*n, 2*n)=-1
+                 inversion(2*n-1, 2*n-1)=-1d0
+                 inversion(2*n, 2*n)=-1d0
               case ('pz', 'Pz', 'PZ')
-                 inversion(2*n-1, 2*n-1)=-1
-                 inversion(2*n, 2*n)=-1
+                 inversion(2*n-1, 2*n-1)=-1d0
+                 inversion(2*n, 2*n)=-1d0
               case ('dxy', 'Dxy', 'DXY')
-                 inversion(2*n-1, 2*n-1)= 1
-                 inversion(2*n, 2*n)= 1
+                 inversion(2*n-1, 2*n-1)= 1d0
+                 inversion(2*n, 2*n)= 1d0
               case ('dyz', 'Dyz', 'DYZ')
-                 inversion(2*n-1, 2*n-1)= 1
-                 inversion(2*n, 2*n)= 1
+                 inversion(2*n-1, 2*n-1)= 1d0
+                 inversion(2*n, 2*n)= 1d0
               case ('dxz', 'Dxz', 'DXZ', 'dzx', 'Dzx', 'DZX')
-                 inversion(2*n-1, 2*n-1)= 1
-                 inversion(2*n, 2*n)= 1
+                 inversion(2*n-1, 2*n-1)= 1d0
+                 inversion(2*n, 2*n)= 1d0
               case ('dx2-y2', 'Dx2-y2', 'DX2-Y2', 'dx2', 'DX2')
-                 inversion(2*n-1, 2*n-1)= 1
-                 inversion(2*n, 2*n)= 1
+                 inversion(2*n-1, 2*n-1)= 1d0
+                 inversion(2*n, 2*n)= 1d0
               case ('dz2', 'Dz2', 'DZ2')
-                 inversion(2*n-1, 2*n-1)= 1
-                 inversion(2*n, 2*n)= 1
+                 inversion(2*n-1, 2*n-1)= 1d0
+                 inversion(2*n, 2*n)= 1d0
+              case ('FZ3', 'FZ2')
+                 inversion(2*n-1, 2*n-1)= -1d0
+                 inversion(2*n, 2*n)= -1d0
+              case ('FXZ2')
+                 inversion(2*n-1, 2*n-1)= -1d0
+                 inversion(2*n, 2*n)= -1d0
+              case ('FYZ2')
+                 inversion(2*n-1, 2*n-1)= -1d0
+                 inversion(2*n, 2*n)= -1d0
+              case ('FXYZ')
+                 inversion(2*n-1, 2*n-1)= -1d0
+                 inversion(2*n, 2*n)= -1d0
+              case ('FZ(X2-Y2)', 'FZX2')
+                 inversion(2*n-1, 2*n-1)= -1d0
+                 inversion(2*n, 2*n)= -1d0
+              case ('FX(X2-3Y2)', 'FX3', "FX3Y2")
+                 inversion(2*n-1, 2*n-1)= -1d0
+                 inversion(2*n, 2*n)= -1d0
+              case ('FY(3X2-Y2)', 'FY3X2', 'FY3')
+                 inversion(2*n-1, 2*n-1)= -1d0
+                 inversion(2*n, 2*n)= -1d0
+ 
               case default
-                 write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 orbitals"
+                 write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2, "
+                 write(*, *) "fz3, fxz2, fyz2, fxyz, fzx2, fx3y2, fx3 orbitals"
                  stop
               end select
            enddo ! i
@@ -1311,8 +1447,31 @@
               case ('dz2', 'Dz2', 'DZ2')
                  mirror_x(2*n-1, 2*n)= 1d0
                  mirror_x(2*n, 2*n-1)= 1d0
+              case ('FZ3', 'FZ2')
+                 mirror_x(2*n-1, 2*n)= 1d0
+                 mirror_x(2*n, 2*n-1)= 1d0
+              case ('FXZ2')
+                 mirror_x(2*n-1, 2*n)=-1d0
+                 mirror_x(2*n, 2*n-1)=-1d0
+              case ('FYZ2')
+                 mirror_x(2*n-1, 2*n)= 1d0
+                 mirror_x(2*n, 2*n-1)= 1d0
+              case ('FXYZ')
+                 mirror_x(2*n-1, 2*n)=-1d0
+                 mirror_x(2*n, 2*n-1)=-1d0
+              case ('FZ(X2-Y2)', 'FZX2')
+                 mirror_x(2*n-1, 2*n)= 1d0
+                 mirror_x(2*n, 2*n-1)= 1d0
+              case ('FX(X2-3Y2)', 'FX3', "FX3Y2")
+                 mirror_x(2*n-1, 2*n)=-1d0
+                 mirror_x(2*n, 2*n-1)=-1d0
+              case ('FY(3X2-Y2)', 'FY3X2', 'FY3')
+                 mirror_x(2*n-1, 2*n)= 1d0
+                 mirror_x(2*n, 2*n-1)= 1d0
+ 
               case default
-                 write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 orbitals"
+                 write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2, "
+                 write(*, *) "fz3, fxz2, fyz2, fxyz, fzx2, fx3y2, fx3 orbitals"
                  stop
               end select
            enddo ! i
@@ -1357,8 +1516,31 @@
               case ('dz2', 'Dz2', 'DZ2')
                  mirror_y(2*n-1, 2*n)=-zi
                  mirror_y(2*n, 2*n-1)= zi
+              case ('FZ3', 'FZ2')
+                 mirror_y(2*n-1, 2*n)=-zi
+                 mirror_y(2*n, 2*n-1)= zi
+              case ('FXZ2')
+                 mirror_y(2*n-1, 2*n)=-zi
+                 mirror_y(2*n, 2*n-1)= zi
+              case ('FYZ2')
+                 mirror_y(2*n-1, 2*n)= zi
+                 mirror_y(2*n, 2*n-1)=-zi
+              case ('FXYZ')
+                 mirror_y(2*n-1, 2*n)= zi
+                 mirror_y(2*n, 2*n-1)=-zi
+              case ('FZ(X2-Y2)', 'FZX2')
+                 mirror_y(2*n-1, 2*n)=-zi
+                 mirror_y(2*n, 2*n-1)= zi
+              case ('FX(X2-3Y2)', 'FX3', "FX3Y2")
+                 mirror_y(2*n-1, 2*n)=-zi
+                 mirror_y(2*n, 2*n-1)= zi
+              case ('FY(3X2-Y2)', 'FY3X2', 'FY3')
+                 mirror_y(2*n-1, 2*n)= zi
+                 mirror_y(2*n, 2*n-1)=-zi
+ 
               case default
-                 write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 orbitals"
+                 write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2, "
+                 write(*, *) "fz3, fxz2, fyz2, fxyz, fzx2, fx3y2, fx3 orbitals"
                  stop
               end select
            enddo ! i
@@ -1405,8 +1587,31 @@
               case ('dz2', 'Dz2', 'DZ2')
                  mirror_z(2*n-1, 2*n-1)= 1d0
                  mirror_z(2*n, 2*n)= -1d0
+              case ('FZ3', 'FZ2')
+                 mirror_z(2*n-1, 2*n-1)=  1d0
+                 mirror_z(2*n, 2*n)= -1d0
+              case ('FXZ2')
+                 mirror_z(2*n-1, 2*n-1)=  1d0
+                 mirror_z(2*n, 2*n)= -1d0
+              case ('FYZ2')
+                 mirror_z(2*n-1, 2*n-1)=  1d0
+                 mirror_z(2*n, 2*n)= -1d0
+              case ('FXYZ')
+                 mirror_z(2*n-1, 2*n-1)= -1d0
+                 mirror_z(2*n, 2*n)=  1d0
+              case ('FZ(X2-Y2)', 'FZX2')
+                 mirror_z(2*n-1, 2*n-1)= -1d0
+                 mirror_z(2*n, 2*n)=  1d0
+              case ('FX(X2-3Y2)', 'FX3', "FX3Y2")
+                 mirror_z(2*n-1, 2*n-1)=  1d0
+                 mirror_z(2*n, 2*n)= -1d0
+              case ('FY(3X2-Y2)', 'FY3X2', 'FY3')
+                 mirror_z(2*n-1, 2*n-1)=  1d0
+                 mirror_z(2*n, 2*n)= -1d0
+ 
               case default
-                 write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2 orbitals"
+                 write(*, *) "ERROR: only support s px py pz dxy dyz dxz dx2-y2 dz2, "
+                 write(*, *) "fz3, fxz2, fyz2, fxyz, fzx2, fx3y2, fx3 orbitals"
                  stop
               end select
            enddo ! i
@@ -1422,6 +1627,7 @@
 
      !> for glide symmetry, (1:3, 1:3) shows the mirror operation, (1:3, 4) 
      !> gives the shift
+     !> not finished yet
      allocate(glide_y_op(3,4))
 
      mirror_x_op= 0d0
