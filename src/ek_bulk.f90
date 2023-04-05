@@ -2424,13 +2424,13 @@ subroutine ek_bulk_mirror_z
 
       ! calculation bulk hamiltonian
       Hamk_bulk= 0d0
-      call ham_bulk_latticegauge    (k, Hamk_bulk)
+      call ham_bulk_atomicgauge    (k, Hamk_bulk)
       Hamk_bulk= Hamk_bulk/eV2Hartree
 
       k = k3points(:, ik)
       !k(2)= -k(2)
       Hamk= 0d0
-      call ham_bulk_latticegauge    (k, Hamk)
+      call ham_bulk_atomicgauge    (k, Hamk)
       Hamk= Hamk/eV2Hartree
 
       !> symmetrization
@@ -2449,12 +2449,14 @@ subroutine ek_bulk_mirror_z
 
       !> get mirror_plus and mirror_minus
       do i=1, Num_wann
-         if (abs(real(mat2(i, i))-1d0)< 1e-3) then
+        !print *, real(mat2(i, i))
+         if (abs(real(mat2(i, i))-1d0)< 1e-1) then
             mirror_plus(i, ik)= .true.
          else
             mirror_minus(i, ik)= .true.
          endif
       enddo
+     !pause
 
       !if (cpuid.eq.0)write(*, *)ik,&
       !   (mirror_plus(i, ik), i=1, Num_wann)

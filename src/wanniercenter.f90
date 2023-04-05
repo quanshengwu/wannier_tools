@@ -187,6 +187,7 @@ subroutine  wannier_center3D_plane_mirror
                call ham_bulk_LOTO(k, Hamk)
             else
                call ham_bulk_latticegauge    (k, Hamk)
+              !call ham_bulk_atomicgauge    (k, Hamk)
             endif
          endif
 

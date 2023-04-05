@@ -1278,7 +1278,7 @@
         !> mirror_z symmetry  i*sigma_z*R_z, but here, we omit the i
         !> s-> s; px->px, py->py, pz-> -pz
         !> dxy-> dxy, dyz-> -dyz, dxz-> -dxz, dx2-> dx2 dz2->dz2 
-        !> fz3->  fz3, fxz2->  fxz2, fyz2-> fyz2, fxyz-> -fxyz, fzx2-> -fzx2, fx3y2->  fx3y2, fy3x2->  fy3x2
+        !> fz3-> -fz3, fxz2->  fxz2, fyz2-> fyz2, fxyz-> -fxyz, fzx2-> -fzx2, fx3y2->  fx3y2, fy3x2->  fy3x2
         !> up-> up  dn-> -dn  Drop off phase i
         n= 0
         do ia=1, Origin_cell%Num_atoms
@@ -1313,8 +1313,8 @@
                  mirror_z(n, n)= 1
                  mirror_z(n+ nwan, n+ nwan)=-1
               case ('FZ3', 'FZ2')
-                 mirror_z(n, n)=  1
-                 mirror_z(n+ nwan, n+ nwan)= -1
+                 mirror_z(n, n)= -1
+                 mirror_z(n+ nwan, n+ nwan)=  1
               case ('FXZ2')
                  mirror_z(n, n)=  1
                  mirror_z(n+ nwan, n+ nwan)= -1
@@ -1340,6 +1340,9 @@
               end select
            enddo ! i
         enddo ! ia
+        do i=1, Num_wann
+          !write(*, '(1000i2)')int(real(mirror_z(:, i)))
+        enddo
  
      !> for QE, the orbital order is up dn  up dn  up dn up dn 
      elseif (index( Package, 'QE')/=0.or.index( Package, 'quantumespresso')/=0 &
@@ -1588,8 +1591,8 @@
                  mirror_z(2*n-1, 2*n-1)= 1d0
                  mirror_z(2*n, 2*n)= -1d0
               case ('FZ3', 'FZ2')
-                 mirror_z(2*n-1, 2*n-1)=  1d0
-                 mirror_z(2*n, 2*n)= -1d0
+                 mirror_z(2*n-1, 2*n-1)= -1d0
+                 mirror_z(2*n, 2*n)=  1d0
               case ('FXZ2')
                  mirror_z(2*n-1, 2*n-1)=  1d0
                  mirror_z(2*n, 2*n)= -1d0
