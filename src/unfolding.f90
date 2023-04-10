@@ -691,7 +691,7 @@ subroutine get_projection_weight_bulk_unfold(ndim, k_SBZ_direct, k_PBZ_direct, p
    !> PBZ : primitive cell Brillouin zone, usually, this is the Folded_cell.
    !> Implemented by QSWU 2019
    use para, only : dp, projection_weight_mode, &
-      cpuid, stdout, Nrpts, irvec, &
+      cpuid, stdout, Nrpts, irvec, global_shift_SC_to_PC_cart, &
       Folded_cell, pi2zi, eps3, cell_type, int_array1D, Landaulevel_unfold_line_calc
    implicit none
 
@@ -705,6 +705,7 @@ subroutine get_projection_weight_bulk_unfold(ndim, k_SBZ_direct, k_PBZ_direct, p
    type(cell_type) :: origincell
 
    real(dp), intent(out) :: weight(NumberofSelectedOrbitals_groups)
+   real(dp), allocatable :: weight_matix_element(:)
 
    integer, intent(in) :: NumberofSelectedOrbitals_groups
    integer, intent(in) :: NumberofSelectedOrbitals(NumberofSelectedOrbitals_groups)
@@ -717,11 +718,14 @@ subroutine get_projection_weight_bulk_unfold(ndim, k_SBZ_direct, k_PBZ_direct, p
    real(dp) :: tau_i_tilde(3), tau_j_tilde(3), dij_tilde_cart(3), dij_tilde_direct(3)
    real(dp) :: k_cart(3), k_SBZ_direct_in_PBZ(3), k_t(3), k_t2(3), k_PBZ_direct_in_SBZ(3)
    real(dp) :: kdotr        
-   complex(dp) :: overlp
+   complex(dp) :: overlp, overlp_matrix_element
    character(10) :: atom_name_PC, atom_name_SC
 
    !> delta function
    real(dp), external :: delta, norm
+
+   allocate(weight_matix_element(NumberofSelectedOrbitals_groups))
+   weight_matix_element= 0d0
 
 
    !> k_PBZ_direct and k_SBZ_direct should be different by an reciprocal lattice vector of the Origin_cell (SBZ)
@@ -754,6 +758,7 @@ subroutine get_projection_weight_bulk_unfold(ndim, k_SBZ_direct, k_PBZ_direct, p
 
 
    do ig=1, NumberofSelectedOrbitals_groups
+      overlp_matrix_element=0d0
       do io_PC=1, Folded_cell%NumberofSpinOrbitals
          icount = 0
          overlp=0d0
@@ -769,8 +774,8 @@ subroutine get_projection_weight_bulk_unfold(ndim, k_SBZ_direct, k_PBZ_direct, p
             !> The atom name and the orbital should be the same between SC and PC
             if (atom_name_SC/=atom_name_PC .or. projector_SC/=projector_PC)cycle
 
-            !> the atom position in the SuperCell.
-            posi_cart=origincell%wannier_centers_cart(:, io_SC)
+            !> the atom position in the SuperCell. global_shift_SC_to_PC_cart is defined in readinput.f90
+            posi_cart=origincell%wannier_centers_cart(:, io_SC)+ global_shift_SC_to_PC_cart
             call cart_direct_real_unfold(posi_cart, posi_direct_unfold)
             
             tau_i_tilde= posi_direct_unfold- floor(posi_direct_unfold)
@@ -785,15 +790,17 @@ subroutine get_projection_weight_bulk_unfold(ndim, k_SBZ_direct, k_PBZ_direct, p
                icount=icount+ 1
             endif
 
-            !> brodening is 0.1 Angstrom
-            overlp= overlp+ delta(0.1d0, norm(dij_tilde_cart))*exp(-pi2zi*(kdotr))*psi(io_SC)/delta(0.1d0, 0d0)
+            !> brodening is 0.2 Bohr
+            overlp= overlp+ delta(0.2d0, norm(dij_tilde_cart))*exp(-pi2zi*(kdotr))*psi(io_SC)/delta(0.2d0, 0d0)
+            overlp_matrix_element= overlp_matrix_element+ delta(0.2d0, norm(dij_tilde_cart))*exp(-pi2zi*(kdotr))*psi(io_SC)/delta(0.2d0, 0d0)
 
          enddo ! io
-         weight(ig)= weight(ig)+ abs(overlp)**2
-        !pause
+         weight(ig)= weight(ig)+ abs(overlp)**2/NumberofSelectedOrbitals(ig)
       enddo ! io_PC
+      weight_matix_element(ig)= abs(overlp)**2/NumberofSelectedOrbitals(ig)
    enddo ! ig
    weight= weight/origincell%CellVolume*Folded_cell%CellVolume
+   weight_matix_element= weight_matix_element/origincell%CellVolume*Folded_cell%CellVolume
 
    return
 end subroutine get_projection_weight_bulk_unfold
