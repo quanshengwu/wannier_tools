@@ -4760,7 +4760,7 @@ subroutine build_map_supercell_primitivecell
       !> find the atom in primitive cell that the atom in supercell is mapped onto.
       !> shift pos_direct_pc to the home unit cell [-0.5, 0.5)
       call in_home_cell_regularization(pos_direct_pc)
-      pos_direct_sc_all(:, ia)= pos_direct_pc
+      pos_direct_sc_all(:, i)= pos_direct_pc
       call direct_cart_real_unfold(pos_direct_pc, pos_cart_pc)
       pos_cart_sc_all(:, ia)= pos_cart_pc
    enddo
@@ -4775,7 +4775,7 @@ subroutine build_map_supercell_primitivecell
       pos_direct_pc_all(:, ia)= pos_direct_pc
    enddo
 
-   tol = 0.10d0  ! tolrence is tol*a
+   tol = 0.10d0  ! tolrence is tol*(lattice constant)
    !> remove the identity positions
    call eliminate_duplicates_periodic_with_tol(3, NumberofSelectedAtoms(1), pos_direct_sc_all, Nleft, tol)
 
@@ -4788,9 +4788,10 @@ subroutine build_map_supercell_primitivecell
          ' or there are some duplicated positions in ATOMIC_POSITION', &
          ' or the Folded cell(PC) does not match with the super cell(SC)', &
          ' or We support only one group of selected atoms', &
+         ' Nleft, Folded_cell%Num_atoms', &
          Nleft, Folded_cell%Num_atoms
 
-      print *, 'The reduced atoms position'
+      print *, 'The selected atoms position'
       do i=1, NumberofSelectedAtoms(1)
          ia= Selected_Atoms(1)%iarray(i)
          write(*, '(i7, 30f14.6)')ia, pos_cart_sc_all(:, ia), pos_direct_sc_all(:, ia)
