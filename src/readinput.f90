@@ -4762,7 +4762,7 @@ subroutine build_map_supercell_primitivecell
       call in_home_cell_regularization(pos_direct_pc)
       pos_direct_sc_all(:, i)= pos_direct_pc
       call direct_cart_real_unfold(pos_direct_pc, pos_cart_pc)
-      pos_cart_sc_all(:, ia)= pos_cart_pc
+      pos_cart_sc_all(:, i)= pos_cart_pc
    enddo
 
    !> move all atoms in the PC to the home unit cell [-0.5, 0.5)
@@ -4793,8 +4793,8 @@ subroutine build_map_supercell_primitivecell
 
       print *, 'The selected atoms position'
       do i=1, NumberofSelectedAtoms(1)
-         ia= Selected_Atoms(1)%iarray(i)
-         write(*, '(i7, 30f14.6)')ia, pos_cart_sc_all(:, ia), pos_direct_sc_all(:, ia)
+        !ia= Selected_Atoms(1)%iarray(i)
+         write(*, '(i7, 30f14.6)')ia, pos_cart_sc_all(:, i ), pos_direct_sc_all(:, i )
       enddo
       print *, 'The reduced atoms position'
       do ia=1, Nleft
