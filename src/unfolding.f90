@@ -797,7 +797,7 @@ subroutine get_projection_weight_bulk_unfold(ndim, k_SBZ_direct, k_PBZ_direct, p
          enddo ! io
          weight(ig)= weight(ig)+ abs(overlp)**2/NumberofSelectedOrbitals(ig)
       enddo ! io_PC
-      weight_matix_element(ig)= abs(overlp)**2/NumberofSelectedOrbitals(ig)
+      weight_matix_element(ig)= abs(overlp_matrix_element)**2/NumberofSelectedOrbitals(ig)
    enddo ! ig
    weight= weight/origincell%CellVolume*Folded_cell%CellVolume
    weight_matix_element= weight_matix_element/origincell%CellVolume*Folded_cell%CellVolume
