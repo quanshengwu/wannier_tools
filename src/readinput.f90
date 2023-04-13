@@ -1093,6 +1093,8 @@ subroutine readinput
       endif
    endif
 
+   !> write out the origin cell
+   call writeout_poscar(Origin_cell, 'POSCAR-origin')
   
 !===============================================================================================================!
 !> LATTICE_UNFOLD card
