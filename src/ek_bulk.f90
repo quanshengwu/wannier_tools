@@ -2430,13 +2430,13 @@ subroutine ek_bulk_mirror_z
       k = k3points(:, ik)
       !k(2)= -k(2)
       Hamk= 0d0
-      call ham_bulk_atomicgauge    (k, Hamk)
+      call ham_bulk_latticegauge    (k, Hamk)
       Hamk= Hamk/eV2Hartree
 
       !> symmetrization
-      call mat_mul(Num_wann, mirror_z, hamk, mat1)
-      call mat_mul(Num_wann, mat1, mirror_z, mat2)
-      hamk= (Hamk_bulk+ mat2)/2.d0
+     !call mat_mul(Num_wann, mirror_z, hamk, mat1)
+     !call mat_mul(Num_wann, mat1, mirror_z, mat2)
+     !hamk= (Hamk_bulk+ mat2)/2.d0
 
       !> diagonal hamk
       call eigensystem_c('V', 'U', Num_wann, hamk, W)
@@ -2449,7 +2449,7 @@ subroutine ek_bulk_mirror_z
 
       !> get mirror_plus and mirror_minus
       do i=1, Num_wann
-        !print *, real(mat2(i, i))
+         print *, real(mat2(i, i))
          if (abs(real(mat2(i, i))-1d0)< 1e-1) then
             mirror_plus(i, ik)= .true.
          else
