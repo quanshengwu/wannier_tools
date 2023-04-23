@@ -219,8 +219,8 @@
             call sparse_ekbulk
 #endif
       else
-        !call ek_bulk_line
-         call ek_bulk_mirror_z
+         call ek_bulk_line
+        !call ek_bulk_mirror_z
       end if
       call now(time_end)
       call print_time_cost(time_start, time_end, 'BulkBand')
