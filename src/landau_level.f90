@@ -237,11 +237,11 @@ subroutine landau_level_k
          do j=1, mdimq
             do i=1, nk3_band
                if (landau_chern_calc) then
-                  write(outfileindex,'(20f16.8)')k3len_mag(i), eigv_mpi(j, i), &
+                  write(outfileindex,'(20f16.8)')k3len_mag(i)*Angstrom2atomic, eigv_mpi(j, i), &
                      (dos_l_selected_mpi(j, i, ig), dos_r_selected_mpi(j, i, ig), &
                      ig=1, NumberofSelectedOrbitals_groups)
                else
-                  write(outfileindex,'(20f16.8)')k3len_mag(i), eigv_mpi(j, i), &
+                  write(outfileindex,'(20f16.8)')k3len_mag(i)*Angstrom2atomic, eigv_mpi(j, i), &
                      (dos_selected_mpi(j, i, ig), ig=1, NumberofSelectedOrbitals_groups)
                endif
             enddo
@@ -252,7 +252,7 @@ subroutine landau_level_k
          write(outfileindex, '("#", a14, a15, a)')'k ', ' Eig of LL', ' Weight on the selected orbitals'
          do j=1, mdimq
             do i=1, nk3_band
-               write(outfileindex,'(20f16.8)')k3len_mag(i), eigv_mpi(j, i)
+               write(outfileindex,'(20f16.8)')k3len_mag(i)*Angstrom2atomic, eigv_mpi(j, i)
             enddo
             write(outfileindex , *)' '
          enddo
@@ -280,7 +280,7 @@ subroutine landau_level_k
       write(outfileindex, '(a)')'#set ytics font ",36"'
       write(outfileindex, '(a)')'#set xlabel font ",36"'
       write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
-      write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len_mag), ']'
+      write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len_mag*Angstrom2atomic), ']'
       write(outfileindex, '(a, i6, a, i6, a)')'set title "Landau level with p/q=', magp, "/", Nq,  '"'
       write(outfileindex, '(a)')'#set xtics offset 0, -1'
       write(outfileindex, '(a)')'#set ylabel offset -1, 0 '
@@ -555,8 +555,8 @@ subroutine landau_level_kplane
       write(outfileindex, "(6a19, ' E', i17, 1000i19 )")'# kx', 'ky', 'kz', 'k1', 'k2', 'k3', &
          Selected_band_index(:)
       do ik=1, nkx*nky
-         write(outfileindex, '(10000f19.9)')kxy_shape(:, ik), &
-            kxy_plane(:, ik), eigv_mpi(:, ik)
+         write(outfileindex, '(10000f19.9)')kxy_shape(:, ik)*Angstrom2atomic, &
+            kxy_plane(:, ik)*Angstrom2atomic, eigv_mpi(:, ik)
          if (mod(ik, nk2)==0) write(outfileindex, *)' '
       enddo
       close(outfileindex)
@@ -568,8 +568,8 @@ subroutine landau_level_kplane
       write(outfileindex, "(6a19, ' E', i17, 1000i19 )")'% kx', 'ky', 'kz', 'k1', 'k2', 'k3', &
          Selected_band_index(:)
       do ik=1, nkx*nky
-         write(outfileindex, '(10000f19.9)')kxy_shape(:, ik), &
-            kxy_plane(:, ik), eigv_mpi(:, ik)
+         write(outfileindex, '(10000f19.9)')kxy_shape(:, ik)*Angstrom2atomic, &
+            kxy_plane(:, ik)*Angstrom2atomic, eigv_mpi(:, ik)
       enddo
       close(outfileindex)
    endif

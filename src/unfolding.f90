@@ -248,7 +248,7 @@ subroutine unfolding_kpath
       write(outfileindex, '("# ", a12, 3a16)')'k', ' E(eV)', 'A(k,E)'
       do ik=1, nk3_band
          do ie=1, omeganum_unfold
-            write(outfileindex, '(300f16.8)')k3len_unfold(ik), omega(ie)/eV2Hartree, &
+            write(outfileindex, '(300f16.8)')k3len_unfold(ik)*Angstrom2atomic, omega(ie)/eV2Hartree, &
                ((spectrum_unfold_mpi(ie, ieta, ig, ik), ieta=1, NumberofEta), ig=1, NumberofSelectedOrbitals_groups_local)
          enddo
          write(outfileindex, *) ' '
@@ -281,7 +281,7 @@ subroutine unfolding_kpath
       write(outfileindex, '(a)')'#set ylabel offset 1.5,0'
       write(outfileindex, '(a,f12.6)')'emin=', omegamin/eV2Hartree
       write(outfileindex, '(a,f12.6)')'emax=', omegamax/eV2Hartree
-      write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len_unfold), ']'
+      write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len_unfold*Angstrom2atomic), ']'
       if (index(Particle,'phonon')/=0) then
          write(outfileindex, '(a, f10.5, a)')'set yrange [0: emax ]'
          write(outfileindex, '(a)')'set ylabel "Frequency (THz)"'
