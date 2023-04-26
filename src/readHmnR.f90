@@ -560,8 +560,10 @@ subroutine readSparseHmnR
             !if (Inner_symmetrical_Electric_Field) then
             !   static_potential= abs(pos(ia)*Origin_cell%cell_parameters(add_electric_field))*Electric_field_in_eVpA
             !endif
-            static_potential= abs(pos(ia)*Origin_cell%cell_parameters(add_electric_field))*Symmetrical_Electric_field_in_eVpA+ &
-               (pos(ia)*Origin_cell%cell_parameters(add_electric_field))*Electric_field_in_eVpA
+            static_potential= abs(pos(ia)*Origin_cell%cell_parameters(add_electric_field))&
+            *Symmetrical_Electric_field_in_eVpA*eV2Hartree/Angstrom2atomic+ &
+            (pos(ia)*Origin_cell%cell_parameters(add_electric_field))*&
+            Electric_field_in_eVpA*eV2Hartree/Angstrom2atomic
             do i=1, Origin_cell%nprojs(ia)
                io=io+1
                !> spin up
@@ -586,8 +588,11 @@ subroutine readSparseHmnR
             !if (Inner_symmetrical_Electric_Field) then
             !   static_potential= abs(pos(ia)*Origin_cell%cell_parameters(add_electric_field))*Electric_field_in_eVpA
             !endif
-            static_potential= abs(pos(ia)*Origin_cell%cell_parameters(add_electric_field))*Symmetrical_Electric_field_in_eVpA+ &
-               (pos(ia)*Origin_cell%cell_parameters(add_electric_field))*Electric_field_in_eVpA
+            static_potential= abs(pos(ia)*Origin_cell%cell_parameters(add_electric_field))&
+            *Symmetrical_Electric_field_in_eVpA*eV2Hartree/Angstrom2atomic+ &
+            (pos(ia)*Origin_cell%cell_parameters(add_electric_field))*&
+            Electric_field_in_eVpA*eV2Hartree/Angstrom2atomic
+
             do i=1, Origin_cell%nprojs(ia)
                io=io+1
                j=j+1
