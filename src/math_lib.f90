@@ -44,6 +44,34 @@ function norm(R1)
    return
 end function norm
 
+!> shift the atom's position to the home unit cell
+!> shift pos_direct_pc to the home unit cell (-0.5, 0.5]
+subroutine in_home_cell_regularization(pos)
+   use para, only : dp, eps3, pi
+
+   implicit none
+
+   real(dp), intent(inout) :: pos(3)
+
+   integer :: i
+   real(dp) :: irrational_shift(3)
+   irrational_shift= (/ pi/1000d0, pi/1000d0, 0d0 /)
+   pos= pos+ irrational_shift
+
+   pos= pos-floor(pos)
+
+   do i=1, 3
+      if (abs(pos(i)-1)<0.03d0) pos(i)= 1d0
+      if (abs(pos(i)-0.5)<0.03d0) pos(i)= 0.5d0
+      if (pos(i)>0.5000000d0) pos(i)= pos(i)-1d0
+   enddo
+   pos= pos- irrational_shift
+
+   return
+end subroutine in_home_cell_regularization
+
+
+
 !> the shortest difference betwerrn two vectors with respect to the lattice vectors
 subroutine periodic_diff_1D(R2, R1, diff)
    !> diff= mod(R2-R1, 1)
@@ -63,6 +91,30 @@ subroutine periodic_diff_1D(R2, R1, diff)
 
    return
 end subroutine periodic_diff_1D
+
+!> shift the atom's position to the home unit cell
+!> shift pos_direct_pc to the home unit cell [-0.5, 0.5)
+subroutine in_home_cell(R0)
+   use para, only : dp
+
+   implicit none
+
+   real(dp), intent(inout) :: R0(3)
+
+   integer :: i
+
+   R0= R0-int8(R0)
+
+   do i=1, 3
+      if (R0(i)>=0.5000000d0) R0(i)= R0(i)-1d0
+   enddo
+
+   R0= R0+ 0.5d0
+   R0= mod(R0, 1d0)
+
+   return
+end subroutine in_home_cell
+
 
 
 !> the shortest difference betwerrn two vectors with respect to the lattice vectors

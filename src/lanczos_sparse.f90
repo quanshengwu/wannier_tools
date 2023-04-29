@@ -672,7 +672,7 @@ subroutine LandauLevel_k_dos_Lanczos
    use prec
    use sparse
    use wmpi
-   use para, only : Magq, Num_Wann, Bx, By, zi, pi, eta_arc, &
+   use para, only : Magq, Num_Wann, Bx, By, zi, pi, eta_arc, Angstrom2atomic, &
       OmegaNum, OmegaMin, OmegaMax, nk3_band, Magp, stdout, k3points, eV2Hartree, &
       outfileindex, K3len_mag,splen,Is_Sparse_Hr,ijmax,NumLCZVecs, MagneticSuperProjectedArea, &
       Nk3lines, k3line_mag_stop, k3line_name, NumRandomConfs
@@ -841,7 +841,7 @@ subroutine LandauLevel_k_dos_Lanczos
       write(outfileindex, '("#", a14, 2a15, a)')'k', 'E(eV)', 'LDOS'
       do ik=1, nk3_band
          do ie=1, omeganum
-            write(outfileindex, '(30f16.8)')K3len_mag(ik), omega(ie)/eV2Hartree, dos_k_omega_mpi(ik, ie)
+            write(outfileindex, '(30f16.8)')K3len_mag(ik)*Angstrom2atomic, omega(ie)/eV2Hartree, dos_k_omega_mpi(ik, ie)
          enddo
          write(outfileindex, *) ' '
       enddo
@@ -868,7 +868,7 @@ subroutine LandauLevel_k_dos_Lanczos
       write(outfileindex, '(a)')'#set xlabel font ",24"'
       write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
       write(outfileindex, '(a, i6,a)')'set title "Landau level with Nq=', Nq, '"'
-      write(outfileindex, '(a, f18.5, a)')'set xrange [0: ', maxval(K3len_mag), ']'
+      write(outfileindex, '(a, f18.5, a)')'set xrange [0: ', maxval(K3len_mag*Angstrom2atomic), ']'
       write(outfileindex, '(a, f18.5, a, f18.5, a)')'set yrange [', OmegaMin/eV2Hartree, ':', OmegaMax/eV2Hartree, ']'
       write(outfileindex, 202, advance="no") (k3line_name(i), k3line_mag_stop(i), i=1, Nk3lines)
       write(outfileindex, 203)k3line_name(nk3lines+1), k3line_mag_stop(Nk3lines+1)
@@ -902,7 +902,7 @@ subroutine bulkbandk_dos_lanczos
    use prec
    use sparse
    use wmpi
-   use para, only : Magq, Num_Wann, Bx, By, zi, pi, eta_arc, &
+   use para, only : Magq, Num_Wann, Bx, By, zi, pi, eta_arc, Angstrom2atomic, &
       OmegaNum, OmegaMin, OmegaMax, nk3_band, Magp, stdout, k3points, &
       outfileindex, K3len,splen,Is_Sparse_Hr,ijmax,NumLCZVecs, eV2Hartree
    implicit none
@@ -1028,7 +1028,7 @@ subroutine bulkbandk_dos_lanczos
       open (unit=outfileindex, file='ekbulklcz.dat')
       do ik=1, nk3_band
          do ie=1, omeganum
-            write(outfileindex, '(30f16.8)')K3len(ik), omega(ie)/eV2Hartree, dos_k_omega_mpi(ik, ie)
+            write(outfileindex, '(30f16.8)')K3len(ik)*Angstrom2atomic, omega(ie)/eV2Hartree, dos_k_omega_mpi(ik, ie)
          enddo
          write(outfileindex, *) ' '
       enddo
@@ -1056,7 +1056,7 @@ subroutine bulkbandk_dos_lanczos
       write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
       write(outfileindex, '(a, i6,a)')'set title "Hofstadter butterfly with Nq=', Nq, '" font ",40"'
       write(outfileindex,*)     'set yrange [',OmegaMin/eV2Hartree,':',OmegaMax/eV2Hartree,']'
-      write(outfileindex,*)     'set xrange [ 0.0000 :', maxval(K3len) ,']'
+      write(outfileindex,*)     'set xrange [ 0.0000 :', maxval(K3len*Angstrom2atomic) ,']'
       write(outfileindex,*)     "splot 'ekbulklcz.dat' u 1:2:(log($3)) w pm3d"
 
    endif

@@ -732,6 +732,10 @@
      !> Usually, Fold_cell is smaller than Origin_cell. 
      type(cell_type) :: Folded_cell
 
+     !> a global shift between the origin cell to Folded_cell
+     !>  pos_cart_sc= Origin_cell%Atom_position_cart(:, ia)+shift_pos_cart
+     real(dp) :: global_shift_SC_to_PC_cart(3)
+
      !> magnetic super cell after adding magnetic field, the size of it is Nslab.
      type(cell_type) :: Magnetic_cell
 

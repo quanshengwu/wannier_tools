@@ -659,10 +659,19 @@ subroutine ek_bulk_plane
 
       k = kxy(:, ik)
 
-      ! calculation bulk hamiltonian
+      ! generate bulk Hamiltonian
       Hamk_bulk= 0d0
-      call ham_bulk_atomicgauge(k, Hamk_bulk)
-      Hamk_bulk= Hamk_bulk/eV2Hartree
+      if (index(KPorTB, 'KP')/=0)then
+         call ham_bulk_kp(k, Hamk_bulk)
+      else
+         !> deal with phonon system
+         if (index(Particle,'phonon')/=0.and.LOTO_correction) then
+            call ham_bulk_LOTO(k, Hamk_bulk)
+         else
+            call ham_bulk_latticegauge(k, Hamk_bulk)
+           !call ham_bulk_atomicgauge(k, Hamk_bulk)
+         endif
+      endif
 
       !> diagonalization by call zheev in lapack
       W= 0d0
@@ -678,6 +687,21 @@ subroutine ek_bulk_plane
 #else
    eigv_mpi= eigv
 #endif
+
+   if (index(Particle,'phonon')/=0) then
+      eigv_mpi = eigv_mpi - MINVAL(eigv_mpi)
+   endif
+
+   !> deal with phonon system
+   if (index(Particle,'phonon')/=0) then
+      do ik=1, knv3
+         do j=1, Num_wann
+            eigv_mpi(j, ik)= sqrt(abs(eigv_mpi(j, ik)))*sign(1d0, eigv_mpi(j, ik))
+            !eigv_mpi(j, ik)=     (abs(eigv_mpi(j, ik)))*sign(1d0, eigv_mpi(j, ik))
+         enddo
+      enddo
+   endif
+   eigv_mpi= eigv_mpi/eV2Hartree
 
 
    !> write out the data in gnuplot format
@@ -2400,7 +2424,7 @@ subroutine ek_bulk_mirror_z
 
       ! calculation bulk hamiltonian
       Hamk_bulk= 0d0
-      call ham_bulk_latticegauge    (k, Hamk_bulk)
+      call ham_bulk_atomicgauge    (k, Hamk_bulk)
       Hamk_bulk= Hamk_bulk/eV2Hartree
 
       k = k3points(:, ik)
@@ -2410,9 +2434,9 @@ subroutine ek_bulk_mirror_z
       Hamk= Hamk/eV2Hartree
 
       !> symmetrization
-      call mat_mul(Num_wann, mirror_z, hamk, mat1)
-      call mat_mul(Num_wann, mat1, mirror_z, mat2)
-      hamk= (Hamk_bulk+ mat2)/2.d0
+     !call mat_mul(Num_wann, mirror_z, hamk, mat1)
+     !call mat_mul(Num_wann, mat1, mirror_z, mat2)
+     !hamk= (Hamk_bulk+ mat2)/2.d0
 
       !> diagonal hamk
       call eigensystem_c('V', 'U', Num_wann, hamk, W)
@@ -2425,12 +2449,14 @@ subroutine ek_bulk_mirror_z
 
       !> get mirror_plus and mirror_minus
       do i=1, Num_wann
-         if (abs(real(mat2(i, i))-1d0)< 1e-3) then
+         print *, real(mat2(i, i))
+         if (abs(real(mat2(i, i))-1d0)< 1e-1) then
             mirror_plus(i, ik)= .true.
          else
             mirror_minus(i, ik)= .true.
          endif
       enddo
+     !pause
 
       !if (cpuid.eq.0)write(*, *)ik,&
       !   (mirror_plus(i, ik), i=1, Num_wann)

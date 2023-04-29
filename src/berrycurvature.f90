@@ -1052,7 +1052,7 @@
     
      integer :: ik, i, j, m, n, ierr, nkmesh2
 
-     real(dp) :: k(3), o1(3), vmin, vmax
+     real(dp) :: k(3), o1(3), vmin, vmax, kxy_plane(3)
 
      !> k points slice
      real(dp), allocatable :: kslice(:, :), kslice_xyz(:, :)
@@ -1176,17 +1176,19 @@
            "values at NumOccupied'th band", &
            ' Sum below Fermi level','values at Fermi level'
         write(outfileindex, '(a10,2000a12)')'# kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
+                                            "kx' (1/A)", "ky' (1/A)", "kz' (1/A)", &
             'Omega_x', 'Omega_y', 'Omega_z', &
             'Omega_x', 'Omega_y', 'Omega_z', &
             'Omega_x', 'Omega_y', 'Omega_z', &
             'Omega_x', 'Omega_y', 'Omega_z'
-        write(outfileindex, '("#col ", i5, 200i12)')(i, i=1,15)
+        write(outfileindex, '("#col ", i5, 200i12)')(i, i=1,18)
 
         ik= 0
         do i= 1, nk1
            do j= 1, nk2
               ik= ik+ 1
-              write(outfileindex, '(3f12.6,2000E12.4)')kslice_xyz(:, ik)*Angstrom2atomic, &
+              call rotate_k3_to_kplane(kslice_xyz(:, ik), kxy_plane)
+              write(outfileindex, '(6f12.6,2000E12.4)')kslice_xyz(:, ik)*Angstrom2atomic, kxy_plane*Angstrom2atomic, &
                  Omega_allk_Occ_mpi(1, :, ik)/Angstrom2atomic**2, &
                  Omega_allk_Occ_mpi(2, :, ik)/Angstrom2atomic**2, &
                  Omega_allk_EF_mpi(1, :, ik)/Angstrom2atomic**2, &
@@ -1214,6 +1216,7 @@
            "values at NumOccupied'th band", &
            ' Sum below Fermi level','values at Fermi level'
         write(outfileindex, '(a10,2000a12)')'# kx (1/A)', 'ky (1/A)', 'kz (1/A)', &
+                                            "kx' (1/A)", "ky' (1/A)", "kz' (1/A)", &
               'm_x', 'm_y', 'm_z', 'm_x', 'm_y', 'm_z', &
               'm_x', 'm_y', 'm_z', 'm_x', 'm_y', 'm_z'
 
@@ -1221,7 +1224,7 @@
         do i= 1, nk1
            do j= 1, nk2
               ik= ik+ 1
-              write(outfileindex, '(3f12.6,2000E12.4)')kslice_xyz(:, ik)*Angstrom2atomic, &
+              write(outfileindex, '(6f12.6,2000E12.4)')kslice_xyz(:, ik)*Angstrom2atomic, kxy_plane*Angstrom2atomic, &
                  m_OrbMag_allk_Occ_mpi(1, :, ik),  m_OrbMag_allk_Occ_mpi(2, :, ik), &
                  m_OrbMag_allk_EF_mpi(1, :, ik), m_OrbMag_allk_EF_mpi(2, :, ik)
            enddo
@@ -1249,7 +1252,7 @@
         write(outfileindex, '(a)')'if (!exists("MP_GAP"))    MP_GAP = 0.08'
         write(outfileindex, '(3a)')'set label 1 "Sum over all bands below Occupied', &
           "'th band", ' " at screen 0.5 ,0.98 center'
-        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \ '
+        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \'
         write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
         write(outfileindex, '(a)')" "
         write(outfileindex, '(a)')"set palette rgbformulae 33,13,10"
@@ -1271,35 +1274,35 @@
         write(outfileindex, '(a)')"set ytics 0.5 nomirror scale 0.5"
         write(outfileindex, '(a)')"set pm3d interpolate 2,2"
         write(outfileindex, '(a)')"set title 'Berry Curvature {/Symbol W}_x ({\305}^2)'"
-        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:4 w pm3d"
+        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 4:5:7 w pm3d"
         write(outfileindex, '(a)')"unset ylabel"
         write(outfileindex, '(a)')"unset ytics"
         write(outfileindex, '(a)')"set title 'Berry Curvature {/Symbol W}_y ({\305}^2)'"
-        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:5 w pm3d"
+        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 4:5:8 w pm3d"
         write(outfileindex, '(a)')"set title 'Berry Curvature {/Symbol W}_z ({\305}^2)'"
         write(outfileindex, '(a)')"set colorbox"
-        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:6 w pm3d"
+        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 4:5:9 w pm3d"
 
         write(outfileindex, '(a)')"unset multiplot"
         write(outfileindex, '(a)')"unset label 1"
         write(outfileindex, '(3a)')'set label 2 "Sum over all bands below Fermi level', &
           ' E\\\_arc" at screen 0.5 ,0.98 center'
         write(outfileindex, '(a)')"set output 'Berrycurvature_EF.png'"
-        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \ '
+        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \'
         write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
         vmin=minval(Omega_allk_EF_mpi(1, :, :))
         vmax=maxval(Omega_allk_EF_mpi(1, :, :))
         open(unit=outfileindex, file='Berrycurvature.gnu')
         write(outfileindex, '(a, E10.3, a, E10.3, a)')"set cbrange [ ", vmin, ':', vmax, " ] "
         write(outfileindex, '(a)')"set title 'Berry Curvature {/Symbol W}_x ({\305}^2)'"
-        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:10 w pm3d"
+        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 4:5:10 w pm3d"
         write(outfileindex, '(a)')"unset ylabel"
         write(outfileindex, '(a)')"unset ytics"
         write(outfileindex, '(a)')"set title 'Berry Curvature {/Symbol W}_y ({\305}^2)'"
-        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:11 w pm3d"
+        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 4:5:11 w pm3d"
         write(outfileindex, '(a)')"set title 'Berry Curvature {/Symbol W}_z ({\305}^2)'"
         write(outfileindex, '(a)')"set colorbox"
-        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 1:2:12 w pm3d"
+        write(outfileindex, '(a)')"splot 'Berrycurvature.dat' u 4:5:12 w pm3d"
 
 
         close(outfileindex)
@@ -1319,7 +1322,7 @@
         write(outfileindex, '(a)')'if (!exists("MP_BOTTOM")) MP_BOTTOM = .12'
         write(outfileindex, '(a)')'if (!exists("MP_TOP"))    MP_TOP = .88'
         write(outfileindex, '(a)')'if (!exists("MP_GAP"))    MP_GAP = 0.08'
-        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \ '
+        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \'
         write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
         write(outfileindex, '(a)')" "
         write(outfileindex, '(a)')"set palette rgbformulae 33,13,10"
@@ -1341,14 +1344,14 @@
         write(outfileindex, '(a)')"set ytics 0.5 nomirror scale 0.5"
         write(outfileindex, '(a)')"set pm3d interpolate 2,2"
         write(outfileindex, '(a)')"set title 'Orbital magnetization m_x ({/Symbol m}_B)'"
-        write(outfileindex, '(a)')"splot 'Orbitalmagnetization.dat' u 1:2:4 w pm3d"
+        write(outfileindex, '(a)')"splot 'Orbitalmagnetization.dat' u 4:5:7 w pm3d"
         write(outfileindex, '(a)')"unset ylabel"
         write(outfileindex, '(a)')"unset ytics"
         write(outfileindex, '(a)')"set title 'Orbital magnetization m_y ({/Symbol m}_B)'"
-        write(outfileindex, '(a)')"splot 'Orbitalmagnetization.dat' u 1:2:5 w pm3d"
+        write(outfileindex, '(a)')"splot 'Orbitalmagnetization.dat' u 4:5:8 w pm3d"
         write(outfileindex, '(a)')"set title 'Orbital magnetization m_{z} ({/Symbol m}_B)'"
         write(outfileindex, '(a)')"set colorbox"
-        write(outfileindex, '(a)')"splot 'Orbitalmagnetization.dat' u 1:2:6 w pm3d"
+        write(outfileindex, '(a)')"splot 'Orbitalmagnetization.dat' u 4:5:9 w pm3d"
         close(outfileindex)
      endif
 
@@ -1398,7 +1401,7 @@
         write(outfileindex, '(a)')"set ytics 0.5 nomirror scale 0.5"
         write(outfileindex, '(a)')"set pm3d interpolate 2,2"
         write(outfileindex, '(a)')"set title '({/Symbol W}_x, {/Symbol W}_y)'"
-        write(outfileindex, '(a)')"plot 'Berrycurvature-normalized.dat' u 1:2:($4/10):($5/10) w vec"
+        write(outfileindex, '(a)')"plot 'Berrycurvature-normalized.dat' u 4:5:($7/10):($8/10) w vec"
         close(outfileindex)
      endif
 
@@ -1652,7 +1655,7 @@
         write(outfileindex, '(a)')'if (!exists("MP_BOTTOM")) MP_BOTTOM = .12'
         write(outfileindex, '(a)')'if (!exists("MP_TOP"))    MP_TOP = .88'
         write(outfileindex, '(a)')'if (!exists("MP_GAP"))    MP_GAP = 0.08'
-        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \ '
+        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \'
         write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
         write(outfileindex, '(a)')" "
         write(outfileindex, '(a)')"set palette rgbformulae 33,13,10"
@@ -1865,7 +1868,7 @@
         write(outfileindex, '(a)')'if (!exists("MP_BOTTOM")) MP_BOTTOM = .12'
         write(outfileindex, '(a)')'if (!exists("MP_TOP"))    MP_TOP = .88'
         write(outfileindex, '(a)')'if (!exists("MP_GAP"))    MP_GAP = 0.08'
-        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \ '
+        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \'
         write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
         write(outfileindex, '(a)')" "
         write(outfileindex, '(a)')"set palette rgbformulae 33,13,10"
@@ -2068,7 +2071,7 @@
         write(outfileindex, '(a)')'if (!exists("MP_BOTTOM")) MP_BOTTOM = .12'
         write(outfileindex, '(a)')'if (!exists("MP_TOP"))    MP_TOP = .88'
         write(outfileindex, '(a)')'if (!exists("MP_GAP"))    MP_GAP = 0.08'
-        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \ '
+        write(outfileindex, '(a)')'set multiplot layout 1,3 rowsfirst \'
         write(outfileindex, '(a)')"              margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
         write(outfileindex, '(a)')" "
         write(outfileindex, '(a)')"set palette rgbformulae 33,13,10"

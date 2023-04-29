@@ -1151,11 +1151,11 @@ subroutine sparse_landau_level_k
          do j=1, neval
             do i=1,nk3_band
                if (landau_chern_calc) then
-                  write(outfileindex,'(20f16.8)')k3len_mag(i), eigv_mpi(j, i), &
+                  write(outfileindex,'(20f16.8)')k3len_mag(i)*Angstrom2atomic, eigv_mpi(j, i), &
                      (dos_l_selected_mpi(j, i, ig), dos_r_selected_mpi(j, i, ig), &
                      ig=1, NumberofSelectedOrbitals_groups)
                else
-                  write(outfileindex,'(20f16.8)')k3len_mag(i), eigv_mpi(j, i), &
+                  write(outfileindex,'(20f16.8)')k3len_mag(i)*Angstrom2atomic, eigv_mpi(j, i), &
                      (dos_selected_mpi(j, i, ig), ig=1, NumberofSelectedOrbitals_groups)
                endif
             enddo
@@ -1166,7 +1166,7 @@ subroutine sparse_landau_level_k
          write(outfileindex, '("#", a14, a15)')'k ', ' Eig of LL'
          do j=1, neval
             do i=1,nk3_band
-               write(outfileindex,'(20f16.8)')K3len_mag(i), eigv_mpi(j, i)
+               write(outfileindex,'(20f16.8)')K3len_mag(i)*Angstrom2atomic, eigv_mpi(j, i)
             enddo
             write(outfileindex , *)''
          enddo
@@ -1194,7 +1194,7 @@ subroutine sparse_landau_level_k
       write(outfileindex, '(a)')'#set ytics font ",36"'
       write(outfileindex, '(a)')'#set xlabel font ",36"'
       write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
-      write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len_mag), ']'
+      write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len_mag*Angstrom2atomic), ']'
       write(outfileindex, '(a, i6, a, i6, a)')'set title "Landau level with p/q=', magp, "/", Nq,  '"'
       write(outfileindex, '(a)')'#set xtics offset 0, -1'
       write(outfileindex, '(a)')'#set ylabel offset -1, 0 '
@@ -1693,11 +1693,11 @@ subroutine sparse_export_maghr
          do j=1, neval
             do i=1,nk3_band
                if (landau_chern_calc) then
-                  write(outfileindex,'(20f16.8)')k3len_mag(i), eigv_mpi(j, i), &
+                  write(outfileindex,'(20f16.8)')k3len_mag(i)*Angstrom2atomic, eigv_mpi(j, i), &
                      (dos_l_selected_mpi(j, i, ig), dos_r_selected_mpi(j, i, ig), &
                      ig=1, NumberofSelectedOrbitals_groups)
                else
-                  write(outfileindex,'(20f16.8)')k3len_mag(i), eigv_mpi(j, i), &
+                  write(outfileindex,'(20f16.8)')k3len_mag(i)*Angstrom2atomic, eigv_mpi(j, i), &
                      (dos_selected_mpi(j, i, ig), ig=1, NumberofSelectedOrbitals_groups)
                endif
             enddo
@@ -1708,7 +1708,7 @@ subroutine sparse_export_maghr
          write(outfileindex, '("#", a14, a15)')'k ', ' Eig of LL'
          do j=1, neval
             do i=1,nk3_band
-               write(outfileindex,'(20f16.8)')K3len_mag(i), eigv_mpi(j, i)
+               write(outfileindex,'(20f16.8)')K3len_mag(i)*Angstrom2atomic, eigv_mpi(j, i)
             enddo
             write(outfileindex , *)''
          enddo
@@ -1736,7 +1736,7 @@ subroutine sparse_export_maghr
       write(outfileindex, '(a)')'#set ytics font ",36"'
       write(outfileindex, '(a)')'#set xlabel font ",36"'
       write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
-      write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len_mag), ']'
+      write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len_mag*Angstrom2atomic), ']'
       write(outfileindex, '(a, i6, a, i6, a)')'set title "Landau level with p/q=', magp, "/", Nq,  '"'
       write(outfileindex, '(a)')'#set xtics offset 0, -1'
       write(outfileindex, '(a)')'#set ylabel offset -1, 0 '
