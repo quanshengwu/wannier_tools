@@ -236,7 +236,7 @@
            !vcrossB(2)= -v_t(3)*Bdirection(1)+ v_t(1)*Bdirection(3)
            !vcrossB(3)= -v_t(1)*Bdirection(2)+ v_t(2)*Bdirection(1)
            !if (abs(Enk(ik, iband))<0.05d0.and.dsqrt(sum((abs(vcrossB)**2)))>eps3) then
-            if (abs(Enk(ik, iband))/eV2Hartree<0.05d0) then
+            if (abs(Enk(ik, iband))/eV2Hartree<EF_broadening) then
                it = it+ 1
             endif
          enddo ! ik
@@ -273,7 +273,7 @@
            !vcrossB(2)= -v_t(3)*Bdirection(1)+ v_t(1)*Bdirection(3)
            !vcrossB(3)= -v_t(1)*Bdirection(2)+ v_t(2)*Bdirection(1)
            !if (abs(Enk(ik, iband))<0.05d0.and.dsqrt(sum((abs(vcrossB)**2)))>eps3) then
-            if (abs(Enk(ik, iband))/eV2Hartree<0.05d0) then
+            if (abs(Enk(ik, iband))/eV2Hartree<EF_broadening) then
                it = it+ 1
                KCube3D_left(iband)%weight_k_local(it) = KCube3D_symm%weight_k(ik)
                KCube3D_left(iband)%ik_array(it) = KCube3D_symm%ik_array_symm(ik)
@@ -1149,7 +1149,8 @@
       !> calculate velocity for a given k point
       do iband=1, Nband_Fermi_Level
          !> skip the values far away from the fermi surface
-         if (abs(W(bands_fermi_level(iband)))/eV2Hartree>0.05d0)then
+         !if (abs(W(bands_fermi_level(iband)))/eV2Hartree>0.05d0)then
+         if (abs(W(bands_fermi_level(iband)))/eV2Hartree>EF_broadening)then
             cycle
          endif
 
@@ -1274,7 +1275,7 @@
 
       E_iband= W(1)
       !> Only the energy levels close to the Fermi level contribute to the conductivity
-      if (abs(W(1))/eV2Hartree>0.05d0) then
+      if (abs(W(1))/eV2Hartree>EF_broadening) then
          velocity_k= 0d0
          return
       endif
@@ -1347,7 +1348,7 @@
       call zheevx_pack('V', 'U', Num_wann, iband, iband, Hamk_bulk, W, UU)
 
       !> Only the energy levels close to the Fermi level contribute to the conductivity
-      if (abs(W(1))/eV2Hartree>0.05d0) then
+      if (abs(W(1))/eV2Hartree>broadening) then
          velocity_k= 0d0
          return
       endif
@@ -1993,7 +1994,7 @@
               !vcrossB(2)= -v_t(3)*Bdirection(1)+ v_t(1)*Bdirection(3)
               !vcrossB(3)= -v_t(1)*Bdirection(2)+ v_t(2)*Bdirection(1)
               !if (abs(Enk(ik, ib))/eV2Hartree<0.05d0.and.dsqrt(sum((abs(vcrossB)**2)))>eps3) then
-               if (abs(Enk(ik, ib))/eV2Hartree<0.05d0) then
+               if (abs(Enk(ik, ib))/eV2Hartree<EF_broadening) then
                   it = it+ 1
                endif
             enddo ! ik
@@ -2027,7 +2028,7 @@
               !vcrossB(2)= -v_t(3)*Bdirection(1)+ v_t(1)*Bdirection(3)
               !vcrossB(3)= -v_t(1)*Bdirection(2)+ v_t(2)*Bdirection(1)
               !if (abs(Enk(ik, ib))/eV2Hartree<0.05d0.and.dsqrt(sum((abs(vcrossB)**2)))>eps3) then
-               if (abs(Enk(ik, ib))/eV2Hartree<0.05d0) then
+               if (abs(Enk(ik, ib))/eV2Hartree<broadening) then
                   it = it+ 1
                   KCube2D_left(ib)%ik_array(it) = ik
                   KCube2D_left(ib)%Ek_local(it) = Enk(ik, ib)
