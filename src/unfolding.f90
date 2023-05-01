@@ -800,7 +800,9 @@ subroutine get_projection_weight_bulk_unfold(ndim, k_SBZ_direct, k_PBZ_direct, p
    enddo ! ig
    weight= weight/origincell%CellVolume*Folded_cell%CellVolume
    weight_matix_element= weight_matix_element/origincell%CellVolume*Folded_cell%CellVolume
-   weight = weight_matix_element
+
+   !> uncomment the next line when considering the matrix element effect in Graphene system
+   !weight = weight_matix_element
 
    return
 end subroutine get_projection_weight_bulk_unfold
