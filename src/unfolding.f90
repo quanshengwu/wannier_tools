@@ -552,7 +552,7 @@ subroutine unfolding_kplane
       do ik=1, knv3
          ik1= ik12(1, ik)
          ik2= ik12(2, ik)
-         write(outfileindex, '(3000E12.5)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, &
+         write(outfileindex, '(3000E12.3)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, &
               ((spectrum_unfold_mpi(ieta, ig, ik1, ik2), ieta=1, NumberofEta), ig=1, NumberofSelectedOrbitals_groups)
          if (mod(ik, nky)==0) write(outfileindex, *)' '
       enddo
