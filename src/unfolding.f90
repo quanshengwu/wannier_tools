@@ -289,14 +289,14 @@ subroutine unfolding_kpath
          write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
          write(outfileindex, '(a)')'set yrange [ emin : emax ]'
       endif
-      write(outfileindex, 202, advance="no") (k3line_name(i), k3line_unfold_stop(i), i=1, nk3lines)
-      write(outfileindex, 203)k3line_name(nk3lines+1), k3line_unfold_stop(nk3lines+1)
+      write(outfileindex, 202, advance="no") (k3line_name(i), k3line_unfold_stop(i)*Angstrom2atomic, i=1, nk3lines)
+      write(outfileindex, 203)k3line_name(nk3lines+1), k3line_unfold_stop(nk3lines+1)*Angstrom2atomic
 
       do i=1, nk3lines-1
          if (index(Particle,'phonon')/=0) then
-            write(outfileindex, 204)k3line_unfold_stop(i+1), '0.0', k3line_unfold_stop(i+1), 'emax'
+            write(outfileindex, 204)k3line_unfold_stop(i+1)*Angstrom2atomic, '0.0', k3line_unfold_stop(i+1)*Angstrom2atomic, 'emax'
          else
-            write(outfileindex, 204)k3line_unfold_stop(i+1), 'emin', k3line_unfold_stop(i+1), 'emax'
+            write(outfileindex, 204)k3line_unfold_stop(i+1)*Angstrom2atomic, 'emin', k3line_unfold_stop(i+1)*Angstrom2atomic, 'emax'
          endif
       enddo
 
@@ -546,8 +546,8 @@ subroutine unfolding_kplane
       write(outfileindex, "('#', a8, 5a16, 3X, '| A(k,E)', a6, 100(8X,'group ', i2))")&
          'kx', 'ky', 'kz', 'kp1', 'kp2', 'kp3', 'total',&
          (i, i=1, NumberofSelectedOrbitals_groups)
-      write(outfileindex, "('#column', i5, 3000i12)")(i, i=1, 7+NumberofSelectedOrbitals_groups*NumberofEta)
-      write(outfileindex, '("#", a, 6X, 300f16.2)')'Brodening \eta (meV): ', Eta_array(:)*1000d0/eV2Hartree
+      write(outfileindex, "('#column', i5, 3000i16)")(i, i=1, 6+NumberofSelectedOrbitals_groups*NumberofEta)
+      write(outfileindex, '("#", a, 70X, 300f16.2)')'Brodening \eta (meV): ', Eta_array(:)*1000d0/eV2Hartree
       do ik=1, knv3
          ik1= ik12(1, ik)
          ik2= ik12(2, ik)
