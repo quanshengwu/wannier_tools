@@ -527,8 +527,7 @@ subroutine unfolding_kplane
          do ig=1, NumberofSelectedOrbitals_groups
             do ieta= 1, NumberofEta
                spectrum_unfold(ieta, ig, ik1, ik2)= spectrum_unfold(ieta, ig, ik1, ik2) + &
-                 abs(sum(psi))**2*delta(eta_array(ieta), W(n)-E_arc)
-                 !weight(ig)*delta(eta_array(ieta), W(n)-E_arc)
+                  weight(ig)*delta(eta_array(ieta), W(n)-E_arc)
             enddo ! ieta
          enddo ! ig
       enddo ! sum over n
@@ -544,7 +543,7 @@ subroutine unfolding_kplane
    outfileindex= outfileindex+ 1
    if (cpuid.eq.0)then
       open (unit=outfileindex, file='spectrum_unfold_kplane.dat')
-      write(outfileindex, "('#', a8, 5a12, 3X, '| A(k,E)', a6, 100(8X,'group ', i2))")&
+      write(outfileindex, "('#', a8, 5a16, 3X, '| A(k,E)', a6, 100(8X,'group ', i2))")&
          'kx', 'ky', 'kz', 'kp1', 'kp2', 'kp3', 'total',&
          (i, i=1, NumberofSelectedOrbitals_groups)
       write(outfileindex, "('#column', i5, 3000i12)")(i, i=1, 7+NumberofSelectedOrbitals_groups*NumberofEta)
@@ -552,7 +551,7 @@ subroutine unfolding_kplane
       do ik=1, knv3
          ik1= ik12(1, ik)
          ik2= ik12(2, ik)
-         write(outfileindex, '(3000E12.3)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, &
+         write(outfileindex, '(3000E16.5)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, &
               ((spectrum_unfold_mpi(ieta, ig, ik1, ik2), ieta=1, NumberofEta), ig=1, NumberofSelectedOrbitals_groups)
          if (mod(ik, nky)==0) write(outfileindex, *)' '
       enddo
@@ -801,6 +800,7 @@ subroutine get_projection_weight_bulk_unfold(ndim, k_SBZ_direct, k_PBZ_direct, p
    enddo ! ig
    weight= weight/origincell%CellVolume*Folded_cell%CellVolume
    weight_matix_element= weight_matix_element/origincell%CellVolume*Folded_cell%CellVolume
+   weight = weight_matix_element
 
    return
 end subroutine get_projection_weight_bulk_unfold
