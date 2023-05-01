@@ -8,22 +8,20 @@ OBJ =  module.o sparse.o wt_aux.o math_lib.o symmetry.o readHmnR.o inverse.o pro
   		 landau_level_sparse.o landau_level.o lanczos_sparse.o \
 		 berry.o wanniercenter_adaptive.o \
   		 effective_mass.o findnodes.o \
-		 sigma_OHE.o sigma.o sigma_AHC.o \
-       	boltzmann.o \
-       main.o
+		 sigma_OHE.o sigma.o Boltz_transport_anomalous.o \
+	main.o
 
 # compiler
 F90  = mpiifort -fpp -DMPI -DINTELMKL -fpe3
 
 INCLUDE = -I${MKLROOT}/include
 WFLAG = -nogen-interface
-OFLAG = -O3 -static-intel # -g -traceback
+OFLAG = -O3 -static-intel
 FFLAG = $(OFLAG) $(WFLAG)
 LFLAG = $(OFLAG)
 
 # ARPACK LIBRARY
 ARPACK=/home/users/pihanqi/soft/ARPACK/libarpack_linux.a
-
 # blas and lapack libraries
 # static linking
 #LIBS = -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a \

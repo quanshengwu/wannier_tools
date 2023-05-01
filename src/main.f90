@@ -682,14 +682,14 @@
         if(cpuid.eq.0)write(stdout, *)'End of AHC calculation'
      endif
 
-      !> calculate energy-dependent anomalouls nernst effect
+      !> calculate anomalouls nernst coefficient
       if (ANE_calc)then
          if(cpuid.eq.0)write(stdout, *)' '
-         if(cpuid.eq.0)write(stdout, *)'>> Start to calculate energy-dependent anomalouls nernst'
+         if(cpuid.eq.0)write(stdout, *)'>> Start to calculate anomalouls nernst coefficient'
          call now(time_start)
-         call alpha_ane
+         call alpha_ANE
          call now(time_end)
-         call print_time_cost(time_start, time_end, 'ANEvsEf_calc')
+         call print_time_cost(time_start, time_end, 'ANE_calc')
          if(cpuid.eq.0)write(stdout, *)'End of ANE calculation'
       endif
 
