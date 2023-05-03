@@ -17,7 +17,7 @@
       use para
       implicit none
 
-      integer :: i, ib
+      integer :: i, ib, ie
 
       !> Bands crossing Fermi level
       integer :: Nband_Fermi_Level
@@ -55,7 +55,7 @@
       real(dp), allocatable :: Plasma_Frequencies(:, :)
 
       !> file name
-      character(40) :: bandname
+      character(40) :: bandname, muname
       character(40) :: sigmafilename
     
 
@@ -208,7 +208,7 @@
          write(outfileindex, '(a)') 'unset colorbox'
          write(outfileindex, '(a)') 'set ylabel offset 0.0,0'
          write(outfileindex, '(a,I4,3a,f6.1,a,f6.1,a,f6.1,a,f6.1,a)')& 
-               "plot for [i=0:",NumT,"] '",trim(adjustl(sigmafilename))," every :::i::i+1 u 2:(-$3) w l lt palette frac i/",&
+               "plot for [i=0:",NumT-1,"] '",trim(adjustl(sigmafilename)),"' every :::i::i+1 u 2:(-$3) w l lt palette frac i/",&
                float(NumT)," title sprintf('T=%.0f K',",&
                Tmin,"+",(TMax-TMIn),"/",float(NumT-1),"*i)"
          close(outfileindex)
