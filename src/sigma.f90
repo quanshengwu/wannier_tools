@@ -201,14 +201,14 @@
          write(outfileindex, '(a)') "set output 'sigma.pdf'"
          write(outfileindex, '(a)')'set border lw 2'
          write(outfileindex, '(a)')'set autoscale fix'
-         write(outfileindex, '(a)')"set ylabel {/Symbol s}/{/Symbol t} (1/{/Symbol W}/m/s)"
-         write(outfileindex, '(a)')"set xlabel B{/Symbol t} (T.ps)"
+         write(outfileindex, '(a)')"set ylabel '{/Symbol s}/{/Symbol t} (1/{/Symbol W}/m/s)'"
+         write(outfileindex, '(a)')"set xlabel 'B{/Symbol t} (T.ps)'"
          write(outfileindex, '(a)') 'set key outside'
          write(outfileindex, '(a)') "set palette defined (0 'red', 1 'green')"
          write(outfileindex, '(a)') 'unset colorbox'
          write(outfileindex, '(a)') 'set ylabel offset 0.0,0'
          write(outfileindex, '(a,I4,3a,f6.1,a,f6.1,a,f6.1,a,f6.1,a)')& 
-               "plot for [i=0:",NumT-1,"] '",trim(adjustl(sigmafilename)),"' every :::i::i+1 u 2:(-$3) w l lt palette frac i/",&
+               "plot for [i=0:",NumT-1,"] '",trim(adjustl(sigmafilename)),"' every :::i::i+1 u 2:3 w l lt palette frac i/",&
                float(NumT)," title sprintf('T=%.0f K',",&
                Tmin,"+",(TMax-TMIn),"/",float(NumT-1),"*i)"
          close(outfileindex)
