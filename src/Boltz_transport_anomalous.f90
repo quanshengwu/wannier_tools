@@ -141,18 +141,16 @@
    
    real(dp), allocatable :: T_list(:)
    real(dp), allocatable :: mu_list(:) ! chemical potential alpha_ane
-   real(dp), allocatable :: energy_list(:) ! chemical potential for sigma_ahc
+   real(dp), allocatable :: energy_list(:) ! chemical potential for sigma_ahc (num_step+1)
    real(dp), allocatable :: nernst(:,:,:,:) ! (coordinate,Temp, mu, NumberofEta)
    real(dp), allocatable :: ahc(:,:,:) ! (coordinate, energy, NumberofEta) 
+   real(dp), allocatable :: minus_dfde(:,:,:) ! derivative of Fermi-Dirac (num_step+1, mu, T)
    integer :: i, ie, iT, imu,ieta, NumberofEta
 
    ! integral region is (OmegaMin-ANE_int_interval,OmegaMax+ANE_int_interval)
    ! num_step = (OmegaMax-OmegaMin+2*ANE_int_interval)/ANE_int_step
    ! Note: make sure integral region includes Efermi
    integer :: num_step 
-
-   ! derivative of Fermi-Dirac function on energy
-   real(dp), external :: partial_fermi
 
    real(dp), allocatable :: eta_array(:)
 
@@ -167,10 +165,12 @@
    allocate( energy_list(num_step+1) )
    allocate( nernst(3, NumT, OmegaNum, NumberofEta)) 
    allocate( ahc(3, num_step+1, NumberofEta)) 
+   allocate( minus_dfde(num_step+1, OmegaNum, NumT) )
    T_list = 0.0d0
    energy_list = 0.0d0
    nernst = 0.0d0
    ahc = 0.0d0
+   minus_dfde = 0.0d0
 
    eta_array=(/0.1d0, 0.2d0, 0.4d0, 0.8d0, 1.0d0, 2d0, 4d0, 8d0, 10d0/)
    eta_array= eta_array*Eta_Arc
@@ -201,20 +201,34 @@
    !> get the anomalous hall conductivity
    call sigma_ahc_vary_ChemicalPotential(num_step+1, energy_list, NumberofEta, eta_array, ahc)
 
-   do ieta =1, NumberofEta
-      do imu = 1, OmegaNum
+   !> get the derivative of Fermi-Dirac
+   do imu = 1, OmegaNum
+      mu = mu_list(imu)
+      do ie = 1, num_step+1
+         energy = energy_list(ie)
          do iT = 1, NumT
+            T = T_list(iT)
+            call minusdfde_calc_single(energy/eV2Hartree, T*8.617333262E-5, &
+                                       mu/eV2Hartree, minus_dfde(ie, imu, iT))
+         enddo ! iT
+      enddo ! ie
+   enddo ! imu
+
+   !> get the anomalous Nernst coefficient
+   do ieta = 1, NumberofEta
+      do imu = 1, OmegaNum
+         mu = mu_list(imu)
+         do iT = 1, NumT
+            T = T_list(iT)
             do ie = 1, num_step+1
-                  mu = mu_list(imu)
-                  T = T_list(iT)
-                  energy = energy_list(ie)
-                  omega = energy - mu
-                  nernst(:, iT, imu,ieta) = nernst(:, iT, imu,ieta)+ partial_fermi(omega, T)*ahc(:,ie,ieta)*&
+               energy = energy_list(ie)
+               omega = energy - mu
+               nernst(:, iT, imu,ieta) = nernst(:, iT, imu,ieta)- minus_dfde(ie,imu,iT)*ahc(:,ie,ieta)*&
                                     (omega/eV2Hartree)/T*(ANE_int_step/eV2Hartree)*100
-            enddo
-         enddo
-      enddo
-   enddo
+            enddo ! ie
+         enddo ! iT
+      enddo ! ie
+   enddo ! ieta
 
    if(cpuid .eq. 0) then
       do ieta =1, NumberofEta
@@ -430,30 +444,6 @@ subroutine sigma_ahc_vary_ChemicalPotential(NumOfmu, mulist, NumberofEta, eta_ar
       deallocate( W, Hamk_bulk, UU)
       deallocate( sigma_tensor_ahc_mpi)
   end subroutine sigma_ahc_vary_ChemicalPotential
-
-  function partial_fermi(omega, T) result(value)
-      !this function sets the derivative of Fermi-Dirac function of energy
-      !note that: omega = energy - chmical_potential
-
-      use para
-      implicit none
-
-      real(dp), intent(in) :: omega, T 
-      real(dp) :: value
-
-      real(dp), parameter :: k_b = 8.617333262E-5!Boltzmann constant
-      real(dp) :: beta_tmp
-
-      beta_tmp = 1/(k_b*T)  
-
-      if (abs(beta_tmp*omega/eV2Hartree) .gt. 37D0)  then
-         value = 0.0d0
-      else  
-         value = -beta_tmp/((1.0d0+exp(omega/eV2Hartree*beta_tmp))*(1.0d0+exp(-omega/eV2Hartree*beta_tmp)))
-      endif 
-
-      return 
-   end function partial_fermi
 
   subroutine sigma_SHC
    !------------------------------------------------------------------!
