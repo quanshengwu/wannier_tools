@@ -9,7 +9,7 @@
         W             W                             TT                  
                                                                         
                         Welcome to WannierTools.                       
-                             Version 2.6.0     
+                             Version 2.6.1     
                    Tools for novel topological materials.               
                           Enjoy it and good luck.                       
                            Author : QuanSheng Wu                        
@@ -23,7 +23,8 @@
  >>>Read some paramters from wt.in
  You are using : TB     model
  Tight-binding Hamiltonian FROM: Hr File
- Is_Sparse_Hr=  F
+ Is_Sparse_Hr=  T
+ Tight-binding Hamiltonian FROM: Sparse Hr File
  Tight-binding Hamiltonian filename: TG_hr.dat                
  System of particle: electron                 
  Tight-binding Hamiltonian obtained from : VASP                     
@@ -65,6 +66,7 @@
  FindNodes_calc                    :  F
  EffectiveMass_calc                :  F
  AHC_calc                          :  F
+ SHC_calc                          :  F
  Boltz_OHE_calc                    :  F
  Boltz_Berry_correction            :  F
  LOTO_correction                   :  F
@@ -80,6 +82,7 @@
  LandauLevel_k_dos_calc            :  F
  LandauLevel_B_dos_calc            :  F
  FermiLevel_calc                   :  F
+ Symmetry_Import_calc              :  F
  ChargeDensity_selected_bands_calc :  F
  ChargeDensity_selected_energies_calc :  F
    
@@ -94,7 +97,7 @@
  surf_onsite (eV):         0.000000
  Add_Zeeman_Field:  F
  Zeeman_energy_in_eV (eV):         0.000000
- Electric_field_in_eVpA (eV/Angstrom):         0.000000
+ Electric_field_in_eVpA (eV/Angstrom):         0.001000
  Symmetrical_Electric_field_in_eVpA (eV/Angstrom):         0.000000
  Inner_symmetrical_Electric_Field:  F
  ijmax :    10
@@ -130,8 +133,8 @@
  Gap_threshold         0.01000
  OmegaMin :         -1.00000
  OmegaMax :          1.00000
- OmegaNum :     40
- OmegaNum_unfold :    200
+ OmegaNum :    100
+ OmegaNum_unfold :    400
  Nk1 :     21
  Nk2 :     10
  Nk3 :      1
@@ -151,7 +154,7 @@
  wcc_calc_tol         0.08000
  wcc_neighbour_tol         0.30000
  NumLCZVecs   400
- NumSelectedEigenVals     0
+ NumSelectedEigenVals    10
  NumRandomConfs:     1
  Projection weight mode:NORMAL              
  The size of magnetic supercell is Magq= :      10
@@ -159,38 +162,118 @@
  We found LATTICE card
 >> lattice information (Angstrom)
            a           b           c       alpha        beta       gamma
-    2.456048    2.456048   23.360000   47.625949   47.625949   63.501265
+    6.508548    6.508548   26.720000   47.625949   47.625949   63.501267
  Three Lattice vectors of the unfolded cell: 
-    0.000000   -2.456048    0.000000
-    2.127000    1.228024    0.000000
-    0.000000    0.000000   23.360000
+    2.130422   -6.150000    0.000000
+    4.260845    4.920000    0.000000
+    0.000000    0.000000   26.720000
 >> Reciprocal lattice information (1/Angstrom)
            a           b           c       alpha        beta       gamma
-    2.954013    2.954013    0.268972  170.075351  170.075351  113.383568
+    1.114718    1.114718    0.235149  170.075351  170.075351  113.383560
  Three reciprocal lattice vectors of the primitive cell: 
-    1.477006   -2.558250    0.000000
-    2.954013    0.000000    0.000000
-    0.000000    0.000000    0.268972
+    0.842648   -0.729754    0.000000
+    1.053310    0.364877    0.000000
+    0.000000    0.000000    0.235149
   
  We found ATOM_POSITIONS card
-Origin_cell%Num_atoms    4
+Origin_cell%Num_atoms   42
   
  Warning: You didn't specify the atom magnetic moment in the ATOMIC_POSITION car
  d Or the format is wrong. So we set all the Atom-magnetic-moments to zero.
  
 >> Atom position and magnetic moment of Original lattice
-                                         Catesian                  Fractional(Direct)         Magnetic moment
+                                    Catesian(Ang)                  Fractional(Direct)         Magnetic moment
 ------------------------------------------------------------------------------------------------------------------
  index  Atom Name            x           y           z           a           b           c      Mx      My      Mz
 ------------------------------------------------------------------------------------------------------------------
-     1  C             0.000000    0.000000   18.897253    0.000000    0.000000    0.428082   0.000   0.000   0.000
-     2  C             2.679633    0.000002   18.897253    0.333333    0.666667    0.428082   0.000   0.000   0.000
-     3  C             0.000000    0.000000   25.246749    0.000000    0.000000    0.571918   0.000   0.000   0.000
-     4  C             1.339814   -2.320631   25.246749    0.666667    0.333333    0.571918   0.000   0.000   0.000
+     1  C             2.130420    1.229999    9.999987    0.142857    0.428571    0.374251   0.000   0.000   0.000
+     2  C             3.550705    1.230004    9.999987    0.333333    0.666667    0.374251   0.000   0.000   0.000
+     3  C             4.260847   -0.000001    9.999987    0.571429    0.714286    0.374251   0.000   0.000   0.000
+     4  C             5.681127   -0.000001    9.999987    0.761905    0.952381    0.374251   0.000   0.000   0.000
+     5  C             0.000000    0.000000    9.999987    0.000000    0.000000    0.374251   0.000   0.000   0.000
+     6  C             1.420280    0.000000    9.999987    0.190476    0.238095    0.374251   0.000   0.000   0.000
+     7  C             2.130420   -1.229999    9.999987    0.428571    0.285714    0.374251   0.000   0.000   0.000
+     8  C             3.550707   -1.230000    9.999987    0.619048    0.523810    0.374251   0.000   0.000   0.000
+     9  C             4.260847   -2.459999    9.999987    0.857143    0.571429    0.374251   0.000   0.000   0.000
+    10  C             3.550705    3.690001    9.999987    0.047619    0.809524    0.374251   0.000   0.000   0.000
+    11  C             4.260845    2.460002    9.999987    0.285714    0.857143    0.374251   0.000   0.000   0.000
+    12  C             1.420280   -2.459998    9.999987    0.476190    0.095238    0.374251   0.000   0.000   0.000
+    13  C             2.130422   -3.690002    9.999987    0.714286    0.142857    0.374251   0.000   0.000   0.000
+    14  C             3.550702   -3.690002    9.999987    0.904762    0.380952    0.374251   0.000   0.000   0.000
+    15  C             1.521729   -1.932855   13.360000    0.428571    0.142857    0.500000   0.000   0.000   0.000
+    16  C             2.840562   -2.460004   13.360000    0.666667    0.333333    0.500000   0.000   0.000   0.000
+    17  C             3.043459   -3.865717   13.360000    0.857143    0.285714    0.500000   0.000   0.000   0.000
+    18  C             2.231869    1.757141   13.360000    0.095238    0.476190    0.500000   0.000   0.000   0.000
+    19  C             2.434766    0.351428   13.360000    0.285714    0.428571    0.500000   0.000   0.000   0.000
+    20  C             3.753604   -0.175715   13.360000    0.523810    0.619048    0.500000   0.000   0.000   0.000
+    21  C             3.956501   -1.581428   13.360000    0.714286    0.571429    0.500000   0.000   0.000   0.000
+    22  C             5.275333   -2.108571   13.360000    0.952381    0.761905    0.500000   0.000   0.000   0.000
+    23  C             3.347808    2.635717   13.360000    0.142857    0.714286    0.500000   0.000   0.000   0.000
+    24  C             4.666639    2.108574   13.360000    0.380952    0.904762    0.500000   0.000   0.000   0.000
+    25  C             4.869538    0.702855   13.360000    0.571429    0.857143    0.500000   0.000   0.000   0.000
+    26  C             1.927525   -4.744287   13.360000    0.809524    0.047619    0.500000   0.000   0.000   0.000
+    27  C             0.000000    0.000000   13.360000    0.000000    0.000000    0.500000   0.000   0.000   0.000
+    28  C             1.318832   -0.527142   13.360000    0.238095    0.190476    0.500000   0.000   0.000   0.000
+    29  C             4.463742    3.514287   16.720013    0.190476    0.952381    0.625749   0.000   0.000   0.000
+    30  C             1.521729   -1.932855   16.720013    0.428571    0.142857    0.625749   0.000   0.000   0.000
+    31  C             1.724628   -3.338574   16.720013    0.619048    0.095238    0.625749   0.000   0.000   0.000
+    32  C             3.043459   -3.865717   16.720013    0.857143    0.285714    0.625749   0.000   0.000   0.000
+    33  C             1.115934    0.878571   16.720013    0.047619    0.238095    0.625749   0.000   0.000   0.000
+    34  C             2.434766    0.351428   16.720013    0.285714    0.428571    0.625749   0.000   0.000   0.000
+    35  C             2.637663   -1.054285   16.720013    0.476190    0.380952    0.625749   0.000   0.000   0.000
+    36  C             3.956501   -1.581428   16.720013    0.714286    0.571429    0.625749   0.000   0.000   0.000
+    37  C             4.159398   -2.987141   16.720013    0.904762    0.523810    0.625749   0.000   0.000   0.000
+    38  C             3.347808    2.635717   16.720013    0.142857    0.714286    0.625749   0.000   0.000   0.000
+    39  C             3.550705    1.230004   16.720013    0.333333    0.666667    0.625749   0.000   0.000   0.000
+    40  C             4.869538    0.702855   16.720013    0.571429    0.857143    0.625749   0.000   0.000   0.000
+    41  C             5.072435   -0.702858   16.720013    0.761905    0.809524    0.625749   0.000   0.000   0.000
+    42  C             0.000000    0.000000   16.720013    0.000000    0.000000    0.625749   0.000   0.000   0.000
   
  We found PROJECTORS card
  >>Number of projectors per atoms:
-     1     1     1     1
+     1     1     1     1     1     1     1     1     1     1
+     1     1     1     1     1     1     1     1     1     1
+     1     1     1     1     1     1     1     1     1     1
+     1     1     1     1     1     1     1     1     1     1
+     1     1
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
+C       pz      
 C       pz      
 C       pz      
 C       pz      
@@ -198,25 +281,63 @@ C       pz
   
  >> Wannier centers by default, in unit of unit lattice vectors
  iwann        R1        R2        R3         x         y         z
-     1  0.000000  0.000000  0.428082  0.000000  0.000000 18.897253
-     2  0.333333  0.666667  0.428082  2.679633  0.000002 18.897253
-     3  0.000000  0.000000  0.571918  0.000000  0.000000 25.246749
-     4  0.666667  0.333333  0.571918  1.339814 -2.320631 25.246749
+     1  0.142857  0.428571  0.374251  2.130420  1.229999  9.999987
+     2  0.333333  0.666667  0.374251  3.550705  1.230004  9.999987
+     3  0.571429  0.714286  0.374251  4.260847 -0.000001  9.999987
+     4  0.761905  0.952381  0.374251  5.681127 -0.000001  9.999987
+     5  0.000000  0.000000  0.374251  0.000000  0.000000  9.999987
+     6  0.190476  0.238095  0.374251  1.420280  0.000000  9.999987
+     7  0.428571  0.285714  0.374251  2.130420 -1.229999  9.999987
+     8  0.619048  0.523810  0.374251  3.550707 -1.230000  9.999987
+     9  0.857143  0.571429  0.374251  4.260847 -2.459999  9.999987
+    10  0.047619  0.809524  0.374251  3.550705  3.690001  9.999987
+    11  0.285714  0.857143  0.374251  4.260845  2.460002  9.999987
+    12  0.476190  0.095238  0.374251  1.420280 -2.459998  9.999987
+    13  0.714286  0.142857  0.374251  2.130422 -3.690002  9.999987
+    14  0.904762  0.380952  0.374251  3.550702 -3.690002  9.999987
+    15  0.428571  0.142857  0.500000  1.521729 -1.932855 13.360000
+    16  0.666667  0.333333  0.500000  2.840562 -2.460004 13.360000
+    17  0.857143  0.285714  0.500000  3.043459 -3.865717 13.360000
+    18  0.095238  0.476190  0.500000  2.231869  1.757141 13.360000
+    19  0.285714  0.428571  0.500000  2.434766  0.351428 13.360000
+    20  0.523810  0.619048  0.500000  3.753604 -0.175715 13.360000
+    21  0.714286  0.571429  0.500000  3.956501 -1.581428 13.360000
+    22  0.952381  0.761905  0.500000  5.275333 -2.108571 13.360000
+    23  0.142857  0.714286  0.500000  3.347808  2.635717 13.360000
+    24  0.380952  0.904762  0.500000  4.666639  2.108574 13.360000
+    25  0.571429  0.857143  0.500000  4.869538  0.702855 13.360000
+    26  0.809524  0.047619  0.500000  1.927525 -4.744287 13.360000
+    27  0.000000  0.000000  0.500000  0.000000  0.000000 13.360000
+    28  0.238095  0.190476  0.500000  1.318832 -0.527142 13.360000
+    29  0.190476  0.952381  0.625749  4.463742  3.514287 16.720013
+    30  0.428571  0.142857  0.625749  1.521729 -1.932855 16.720013
+    31  0.619048  0.095238  0.625749  1.724628 -3.338574 16.720013
+    32  0.857143  0.285714  0.625749  3.043459 -3.865717 16.720013
+    33  0.047619  0.238095  0.625749  1.115934  0.878571 16.720013
+    34  0.285714  0.428571  0.625749  2.434766  0.351428 16.720013
+    35  0.476190  0.380952  0.625749  2.637663 -1.054285 16.720013
+    36  0.714286  0.571429  0.625749  3.956501 -1.581428 16.720013
+    37  0.904762  0.523810  0.625749  4.159398 -2.987141 16.720013
+    38  0.142857  0.714286  0.625749  3.347808  2.635717 16.720013
+    39  0.333333  0.666667  0.625749  3.550705  1.230004 16.720013
+    40  0.571429  0.857143  0.625749  4.869538  0.702855 16.720013
+    41  0.761905  0.809524  0.625749  5.072435 -0.702858 16.720013
+    42  0.000000  0.000000  0.625749  0.000000  0.000000 16.720013
  We didn't found LATTICE_UNFOLD card, so it is the same as the unit cell.
 >> Folded lattice information (Angstrom)
            a           b           c       alpha        beta       gamma
-    2.456048    2.456048   23.360000   47.625949   47.625949   63.501265
+    6.508548    6.508548   26.720000   47.625949   47.625949   63.501267
  Three Lattice vectors of unfolded cell: 
-    0.000000   -2.456048    0.000000
-    2.127000    1.228024    0.000000
-    0.000000    0.000000   23.360000
+    2.130422   -6.150000    0.000000
+    4.260845    4.920000    0.000000
+    0.000000    0.000000   26.720000
 >> Folded Reciprocal lattice information (1/Angstrom)
            a           b           c       alpha        beta       gamma
-    2.954013    2.954013    0.268972  170.075351  170.075351  113.383568
+    1.114718    1.114718    0.235149  170.075351  170.075351  113.383560
  Three reciprocal lattice vectors of unfolded cell: 
-    1.477006   -2.558250    0.000000
-    2.954013    0.000000    0.000000
-    0.000000    0.000000    0.268972
+    0.842648   -0.729754    0.000000
+    1.053310    0.364877    0.000000
+    0.000000    0.000000    0.235149
  
 >> The relation between the original lattice and the unfolded lattice
 >> The cell volume ratio is:     1.000000
@@ -233,10 +354,48 @@ C       pz
 ------------------------------------------------------------------------------------------------------------------
  index  Atom Name            x           y           z           a           b           c      Mx      My      Mz
 ------------------------------------------------------------------------------------------------------------------
-     1  C             0.000000    0.000000    9.999996    0.000000    0.000000    0.428082   0.000   0.000   0.000
-     2  C             1.418001    0.000001    9.999996    0.333333    0.666667    0.428082   0.000   0.000   0.000
-     3  C             0.000000    0.000000   13.360004    0.000000    0.000000    0.571918   0.000   0.000   0.000
-     4  C             0.708999   -1.228025   13.360004    0.666667    0.333333    0.571918   0.000   0.000   0.000
+     1  C             2.130420    1.229999    9.999987    0.142857    0.428571    0.374251   0.000   0.000   0.000
+     2  C             3.550705    1.230004    9.999987    0.333333    0.666667    0.374251   0.000   0.000   0.000
+     3  C             4.260847   -0.000001    9.999987    0.571429    0.714286    0.374251   0.000   0.000   0.000
+     4  C             5.681127   -0.000001    9.999987    0.761905    0.952381    0.374251   0.000   0.000   0.000
+     5  C             0.000000    0.000000    9.999987    0.000000    0.000000    0.374251   0.000   0.000   0.000
+     6  C             1.420280    0.000000    9.999987    0.190476    0.238095    0.374251   0.000   0.000   0.000
+     7  C             2.130420   -1.229999    9.999987    0.428571    0.285714    0.374251   0.000   0.000   0.000
+     8  C             3.550707   -1.230000    9.999987    0.619048    0.523810    0.374251   0.000   0.000   0.000
+     9  C             4.260847   -2.459999    9.999987    0.857143    0.571429    0.374251   0.000   0.000   0.000
+    10  C             3.550705    3.690001    9.999987    0.047619    0.809524    0.374251   0.000   0.000   0.000
+    11  C             4.260845    2.460002    9.999987    0.285714    0.857143    0.374251   0.000   0.000   0.000
+    12  C             1.420280   -2.459998    9.999987    0.476190    0.095238    0.374251   0.000   0.000   0.000
+    13  C             2.130422   -3.690002    9.999987    0.714286    0.142857    0.374251   0.000   0.000   0.000
+    14  C             3.550702   -3.690002    9.999987    0.904762    0.380952    0.374251   0.000   0.000   0.000
+    15  C             1.521729   -1.932855   13.360000    0.428571    0.142857    0.500000   0.000   0.000   0.000
+    16  C             2.840562   -2.460004   13.360000    0.666667    0.333333    0.500000   0.000   0.000   0.000
+    17  C             3.043459   -3.865717   13.360000    0.857143    0.285714    0.500000   0.000   0.000   0.000
+    18  C             2.231869    1.757141   13.360000    0.095238    0.476190    0.500000   0.000   0.000   0.000
+    19  C             2.434766    0.351428   13.360000    0.285714    0.428571    0.500000   0.000   0.000   0.000
+    20  C             3.753604   -0.175715   13.360000    0.523810    0.619048    0.500000   0.000   0.000   0.000
+    21  C             3.956501   -1.581428   13.360000    0.714286    0.571429    0.500000   0.000   0.000   0.000
+    22  C             5.275333   -2.108571   13.360000    0.952381    0.761905    0.500000   0.000   0.000   0.000
+    23  C             3.347808    2.635717   13.360000    0.142857    0.714286    0.500000   0.000   0.000   0.000
+    24  C             4.666639    2.108574   13.360000    0.380952    0.904762    0.500000   0.000   0.000   0.000
+    25  C             4.869538    0.702855   13.360000    0.571429    0.857143    0.500000   0.000   0.000   0.000
+    26  C             1.927525   -4.744287   13.360000    0.809524    0.047619    0.500000   0.000   0.000   0.000
+    27  C             0.000000    0.000000   13.360000    0.000000    0.000000    0.500000   0.000   0.000   0.000
+    28  C             1.318832   -0.527142   13.360000    0.238095    0.190476    0.500000   0.000   0.000   0.000
+    29  C             4.463742    3.514287   16.720013    0.190476    0.952381    0.625749   0.000   0.000   0.000
+    30  C             1.521729   -1.932855   16.720013    0.428571    0.142857    0.625749   0.000   0.000   0.000
+    31  C             1.724628   -3.338574   16.720013    0.619048    0.095238    0.625749   0.000   0.000   0.000
+    32  C             3.043459   -3.865717   16.720013    0.857143    0.285714    0.625749   0.000   0.000   0.000
+    33  C             1.115934    0.878571   16.720013    0.047619    0.238095    0.625749   0.000   0.000   0.000
+    34  C             2.434766    0.351428   16.720013    0.285714    0.428571    0.625749   0.000   0.000   0.000
+    35  C             2.637663   -1.054285   16.720013    0.476190    0.380952    0.625749   0.000   0.000   0.000
+    36  C             3.956501   -1.581428   16.720013    0.714286    0.571429    0.625749   0.000   0.000   0.000
+    37  C             4.159398   -2.987141   16.720013    0.904762    0.523810    0.625749   0.000   0.000   0.000
+    38  C             3.347808    2.635717   16.720013    0.142857    0.714286    0.625749   0.000   0.000   0.000
+    39  C             3.550705    1.230004   16.720013    0.333333    0.666667    0.625749   0.000   0.000   0.000
+    40  C             4.869538    0.702855   16.720013    0.571429    0.857143    0.625749   0.000   0.000   0.000
+    41  C             5.072435   -0.702858   16.720013    0.761905    0.809524    0.625749   0.000   0.000   0.000
+    42  C             0.000000    0.000000   16.720013    0.000000    0.000000    0.625749   0.000   0.000   0.000
   
  We found SURFACE card
  
@@ -246,45 +405,83 @@ C       pz
  The 3rd vector out of surface :    0.000000    0.000000    1.000000
   
  The rotated new unit cell in cartesian coordinates : 
-    0.000000   -4.641258    0.000000
-    4.019447    2.320629    0.000000
-    0.000000    0.000000   44.144002
-New cell's Volume is          122.03297Ang^3
+    4.025914  -11.621816    0.000000
+    8.051830    9.297453    0.000000
+    0.000000    0.000000   50.493482
+New cell's Volume is          980.24653Ang^3
   
  Fractional coordinates of atoms in units of new lattice vectors : 
-C       0.000000    0.000000    0.428082
-C       0.333333    0.666667    0.428082
-C       0.000000    0.000000    0.571918
-C       0.666667    0.333333    0.571918
+C       0.142857    0.428571    0.374251
+C       0.333333    0.666667    0.374251
+C       0.571429    0.714286    0.374251
+C       0.761905    0.952381    0.374251
+C       0.000000    0.000000    0.374251
+C       0.190476    0.238095    0.374251
+C       0.428571    0.285714    0.374251
+C       0.619048    0.523810    0.374251
+C       0.857143    0.571429    0.374251
+C       0.047619    0.809524    0.374251
+C       0.285714    0.857143    0.374251
+C       0.476190    0.095238    0.374251
+C       0.714286    0.142857    0.374251
+C       0.904762    0.380952    0.374251
+C       0.428571    0.142857    0.500000
+C       0.666667    0.333333    0.500000
+C       0.857143    0.285714    0.500000
+C       0.095238    0.476190    0.500000
+C       0.285714    0.428571    0.500000
+C       0.523810    0.619048    0.500000
+C       0.714286    0.571429    0.500000
+C       0.952381    0.761905    0.500000
+C       0.142857    0.714286    0.500000
+C       0.380952    0.904762    0.500000
+C       0.571429    0.857143    0.500000
+C       0.809524    0.047619    0.500000
+C       0.000000    0.000000    0.500000
+C       0.238095    0.190476    0.500000
+C       0.190476    0.952381    0.625749
+C       0.428571    0.142857    0.625749
+C       0.619048    0.095238    0.625749
+C       0.857143    0.285714    0.625749
+C       0.047619    0.238095    0.625749
+C       0.285714    0.428571    0.625749
+C       0.476190    0.380952    0.625749
+C       0.714286    0.571429    0.625749
+C       0.904762    0.523810    0.625749
+C       0.142857    0.714286    0.625749
+C       0.333333    0.666667    0.625749
+C       0.571429    0.857143    0.625749
+C       0.761905    0.809524    0.625749
+C       0.000000    0.000000    0.625749
   
  
- >> Top surface atom is      3 C         
+ >> Top surface atom is     29 C         
  
- 2D Primitive Cell_Volume:    5.22401409600000     
+ 2D Primitive Cell_Volume:    36.6858729900000     
  Ra2, Rb2
-    2.4560    0.0000
-   -1.2280    2.1270
+    6.5085    0.0000
+   -3.2543    5.6366
  Ka2, Kb2
-    0.7164    0.4136
-    0.0000    0.8272
+    0.2703    0.1561
+    0.0000    0.3122
 >> lattice information of the magnetic supercell (Angstrom)
-    0.000000   -2.456048    0.000000
-    2.127000    1.228024    0.000000
-    0.000000    0.000000  233.600000
+    2.130422   -6.150000    0.000000
+    4.260845    4.920000    0.000000
+    0.000000    0.000000  267.200000
 >> Reciprocal lattice information of the magnetic supercell (1/Angstrom)
-    1.477006   -2.558250    0.000000
-    2.954013    0.000000    0.000000
-    0.000000    0.000000    0.026897
+    0.842648   -0.729754    0.000000
+    1.053310    0.364877    0.000000
+    0.000000    0.000000    0.023515
   
-3D Primitive Origin_cell%CellVolume:     122.03296928 in Angstrom^3
-3D Magnetic supercell Volume:    1220.32969283 in Angstrom^3
-Projected area of magnetic supercell normal to the first vector specifed in SURFACE card:    1774.34498116 in Angstrom^2
+3D Primitive Origin_cell%CellVolume:     980.24652629 in Angstrom^3
+3D Magnetic supercell Volume:    9802.46526293 in Angstrom^3
+Projected area of magnetic supercell normal to the first vector specifed in SURFACE card:    5378.34837610 in Angstrom^2
   
  We found KPATH_BULK card
 Number of K lines :     3
- M      0.0000   0.5000   0.0000  K       0.3333   0.3333   0.0000
- K      0.3333   0.3333   0.0000  G       0.0000   0.0000   0.0000
- G      0.0000   0.0000   0.0000  M       0.0000   0.5000   0.0000
+ G      0.0000   0.0000   0.0000  K       0.3333   0.3333   0.0000
+ K      0.3333   0.3333   0.0000  M       0.0000   0.5000   0.0000
+ M      0.0000   0.5000   0.0000  G       0.0000   0.0000   0.0000
  >> Kpoints plane for 2D system--> arcs  
 K2D_start: -0.5000 -0.5000
 The first vector:   1.0000  0.0000
@@ -298,8 +495,8 @@ k3D_start :  0.0000  0.0000  0.0000
 The 1st vector:   1.0000  0.0000  0.0000
 The 2nd vector:   0.0000  1.0000  0.0000
 The 3rd vector:   0.0000  0.0000  1.0000
-kCubeVolume:   2.0326
-ReciprocalOrigin_cell%CellVolume:   2.0326
+kCubeVolume:   0.2530
+ReciprocalOrigin_cell%CellVolume:   0.2530
   
   
  >> Using default parameters for Kpoint_3D
@@ -323,18 +520,34 @@ ReciprocalOrigin_cell%CellVolume:   2.0326
   
  >> We use the default values for Single_KPOINT_3D_DIRECT=[0,0,0]
  >> Output all atoms weight for surface state spectrum
- > NtopAtoms            4
+ > NtopAtoms           42
 > TopAtoms 
-     1     2     3     4
-> NbottomAtoms          4
+     1     2     3     4     5     6     7     8     9    10
+    11    12    13    14    15    16    17    18    19    20
+    21    22    23    24    25    26    27    28    29    30
+    31    32    33    34    35    36    37    38    39    40
+    41    42
+> NbottomAtoms         42
 > BottomAtoms 
-     1     2     3     4
- > NtopOrbitals            4
+     1     2     3     4     5     6     7     8     9    10
+    11    12    13    14    15    16    17    18    19    20
+    21    22    23    24    25    26    27    28    29    30
+    31    32    33    34    35    36    37    38    39    40
+    41    42
+ > NtopOrbitals           42
 > TopOrbitals 
-     1     2     3     4
-> NBottomOrbitals    4
+     1     2     3     4     5     6     7     8     9    10
+    11    12    13    14    15    16    17    18    19    20
+    21    22    23    24    25    26    27    28    29    30
+    31    32    33    34    35    36    37    38    39    40
+    41    42
+> NBottomOrbitals   42
 > BottomOrbitals 
-     1     2     3     4
+     1     2     3     4     5     6     7     8     9    10
+    11    12    13    14    15    16    17    18    19    20
+    21    22    23    24    25    26    27    28    29    30
+    31    32    33    34    35    36    37    38    39    40
+    41    42
   
  >> We do not calculate chirality for nodal lines
   
@@ -342,15 +555,22 @@ ReciprocalOrigin_cell%CellVolume:   2.0326
   
 >> There are    1 groups of SelectedAtoms
 Group :   1
->> Number of atoms selected         4
+>> Number of atoms selected        42
 >> Selected atoms are
-    1  C             2  C             3  C             4  C         
+    1  C             2  C             3  C             4  C             5  C             6  C             7  C             8  C             9  C            10  C         
+   11  C            12  C            13  C            14  C            15  C            16  C            17  C            18  C            19  C            20  C         
+   21  C            22  C            23  C            24  C            25  C            26  C            27  C            28  C            29  C            30  C         
+   31  C            32  C            33  C            34  C            35  C            36  C            37  C            38  C            39  C            40  C         
+   41  C            42  C         
   
 >> There are   1 groups of SelectedOrbitals
  >> SelectedOrbitals
->> Number of orbitals selected (including spin degenarcy)         4
+>> Number of orbitals selected (including spin degenarcy)        42
 >> Orbitals are
-       1       2       3       4
+       1       2       3       4       5       6       7       8       9      10      11      12
+      13      14      15      16      17      18      19      20      21      22      23      24
+      25      26      27      28      29      30      31      32      33      34      35      36
+      37      38      39      40      41      42
   
  >> SELECTED_OCCUPIED_BANDS
 >> Number of Occupied bands selected          4
@@ -359,27 +579,3994 @@ Group :   1
   
   
  >> SELECTEDBANDS
->> Number of bands selected          4
+>> Number of bands selected         42
 >> Band indices are
-     1     2     3     4
+     1     2     3     4     5     6     7     8     9    10    11    12
+    13    14    15    16    17    18    19    20    21    22    23    24
+    25    26    27    28    29    30    31    32    33    34    35    36
+    37    38    39    40    41    42
   
  <<<Read wt.in file successfully
  
   File TG_hr.dat exist, We are using HmnR from wannier90
- >> Num_wann           4
- >> NRPTS         289
+ >> Num_wann          42
+ >> NRPTS           9
   >> Begin to read Hmn_R.data
-  
- 
-  Note: This is not a 2D system or E=0, so we can't add electric field.
- 
+ >> NRPTS is      9
   << Read Hmn_R.data successfully
   
+ >> We finished the symmetry reducing of the kpoints in the kcube
+  Number of kpoints mesh is        210
+  Number of symmetry reduced kpoints is          0
+  
+  
  >> Start of calculating bulk band
- Time cost for BulkBand is about            0.014 s
+BulkBand_calc in sparse mode:         1        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+>>> Iteration with znaupd      57
+>>> Iteration with znaupd      58
+>>> Iteration with znaupd      59
+>>> Iteration with znaupd      60
+>>> Iteration with znaupd      61
+>>> Iteration with znaupd      62
+>>> Iteration with znaupd      63
+>>> Iteration with znaupd      64
+>>> Iteration with znaupd      65
+>>> Iteration with znaupd      66
+>>> Iteration with znaupd      67
+>>> Iteration with znaupd      68
+>>> Iteration with znaupd      69
+>>> Iteration with znaupd      70
+>>> Iteration with znaupd      71
+>>> Iteration with znaupd      72
+>>> Iteration with znaupd      73
+>>> Iteration with znaupd      74
+>>> Iteration with znaupd      75
+>>> Iteration with znaupd      76
+>>> Iteration with znaupd      77
+>>> Iteration with znaupd      78
+>>> Iteration with znaupd      79
+>>> Iteration with znaupd      80
+>>> Iteration with znaupd      81
+>>> Iteration with znaupd      82
+>>> Iteration with znaupd      83
+>>> Iteration with znaupd      84
+>>> Iteration with znaupd      85
+>>> Iteration with znaupd      86
+>>> Iteration with znaupd      87
+>>> Iteration with znaupd      88
+>>> Iteration with znaupd      89
+>>> Iteration with znaupd      90
+>>> Iteration with znaupd      91
+>>> Iteration with znaupd      92
+>>> Iteration with znaupd      93
+>>> Iteration with znaupd      94
+>>> Iteration with znaupd      95
+>>> Iteration with znaupd      96
+>>> Iteration with znaupd      97
+>>> Iteration with znaupd      98
+>>> Iteration with znaupd      99
+>>> Iteration with znaupd     100
+>>> Iteration with znaupd     101
+>>> Iteration with znaupd     102
+>>> Iteration with znaupd     103
+>>> Iteration with znaupd     104
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.53 s
+BulkBand_calc in sparse mode:         2        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+>>> Iteration with znaupd      57
+>>> Iteration with znaupd      58
+>>> Iteration with znaupd      59
+>>> Iteration with znaupd      60
+>>> Iteration with znaupd      61
+>>> Iteration with znaupd      62
+>>> Iteration with znaupd      63
+>>> Iteration with znaupd      64
+>>> Iteration with znaupd      65
+>>> Iteration with znaupd      66
+>>> Iteration with znaupd      67
+>>> Iteration with znaupd      68
+>>> Iteration with znaupd      69
+>>> Iteration with znaupd      70
+>>> Iteration with znaupd      71
+>>> Iteration with znaupd      72
+>>> Iteration with znaupd      73
+>>> Iteration with znaupd      74
+>>> Iteration with znaupd      75
+>>> Iteration with znaupd      76
+>>> Iteration with znaupd      77
+>>> Iteration with znaupd      78
+>>> Iteration with znaupd      79
+>>> Iteration with znaupd      80
+>>> Iteration with znaupd      81
+>>> Iteration with znaupd      82
+>>> Iteration with znaupd      83
+>>> Iteration with znaupd      84
+>>> Iteration with znaupd      85
+>>> Iteration with znaupd      86
+>>> Iteration with znaupd      87
+>>> Iteration with znaupd      88
+>>> Iteration with znaupd      89
+>>> Iteration with znaupd      90
+>>> Iteration with znaupd      91
+>>> Iteration with znaupd      92
+>>> Iteration with znaupd      93
+>>> Iteration with znaupd      94
+>>> Iteration with znaupd      95
+>>> Iteration with znaupd      96
+>>> Iteration with znaupd      97
+>>> Iteration with znaupd      98
+>>> Iteration with znaupd      99
+>>> Iteration with znaupd     100
+>>> Iteration with znaupd     101
+>>> Iteration with znaupd     102
+>>> Iteration with znaupd     103
+>>> Iteration with znaupd     104
+>>> Iteration with znaupd     105
+>>> Iteration with znaupd     106
+>>> Iteration with znaupd     107
+>>> Iteration with znaupd     108
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.58 s
+BulkBand_calc in sparse mode:         3        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+>>> Iteration with znaupd      57
+>>> Iteration with znaupd      58
+>>> Iteration with znaupd      59
+>>> Iteration with znaupd      60
+>>> Iteration with znaupd      61
+>>> Iteration with znaupd      62
+>>> Iteration with znaupd      63
+>>> Iteration with znaupd      64
+>>> Iteration with znaupd      65
+>>> Iteration with znaupd      66
+>>> Iteration with znaupd      67
+>>> Iteration with znaupd      68
+>>> Iteration with znaupd      69
+>>> Iteration with znaupd      70
+>>> Iteration with znaupd      71
+>>> Iteration with znaupd      72
+>>> Iteration with znaupd      73
+>>> Iteration with znaupd      74
+>>> Iteration with znaupd      75
+>>> Iteration with znaupd      76
+>>> Iteration with znaupd      77
+>>> Iteration with znaupd      78
+>>> Iteration with znaupd      79
+>>> Iteration with znaupd      80
+>>> Iteration with znaupd      81
+>>> Iteration with znaupd      82
+>>> Iteration with znaupd      83
+>>> Iteration with znaupd      84
+>>> Iteration with znaupd      85
+>>> Iteration with znaupd      86
+>>> Iteration with znaupd      87
+>>> Iteration with znaupd      88
+>>> Iteration with znaupd      89
+>>> Iteration with znaupd      90
+>>> Iteration with znaupd      91
+>>> Iteration with znaupd      92
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.49 s
+BulkBand_calc in sparse mode:         4        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+>>> Iteration with znaupd      57
+>>> Iteration with znaupd      58
+>>> Iteration with znaupd      59
+>>> Iteration with znaupd      60
+>>> Iteration with znaupd      61
+>>> Iteration with znaupd      62
+>>> Iteration with znaupd      63
+>>> Iteration with znaupd      64
+>>> Iteration with znaupd      65
+>>> Iteration with znaupd      66
+>>> Iteration with znaupd      67
+>>> Iteration with znaupd      68
+>>> Iteration with znaupd      69
+>>> Iteration with znaupd      70
+>>> Iteration with znaupd      71
+>>> Iteration with znaupd      72
+>>> Iteration with znaupd      73
+>>> Iteration with znaupd      74
+>>> Iteration with znaupd      75
+>>> Iteration with znaupd      76
+>>> Iteration with znaupd      77
+>>> Iteration with znaupd      78
+>>> Iteration with znaupd      79
+>>> Iteration with znaupd      80
+>>> Iteration with znaupd      81
+>>> Iteration with znaupd      82
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.44 s
+BulkBand_calc in sparse mode:         5        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+>>> Iteration with znaupd      57
+>>> Iteration with znaupd      58
+>>> Iteration with znaupd      59
+>>> Iteration with znaupd      60
+>>> Iteration with znaupd      61
+>>> Iteration with znaupd      62
+>>> Iteration with znaupd      63
+>>> Iteration with znaupd      64
+>>> Iteration with znaupd      65
+>>> Iteration with znaupd      66
+>>> Iteration with znaupd      67
+>>> Iteration with znaupd      68
+>>> Iteration with znaupd      69
+>>> Iteration with znaupd      70
+>>> Iteration with znaupd      71
+>>> Iteration with znaupd      72
+>>> Iteration with znaupd      73
+>>> Iteration with znaupd      74
+>>> Iteration with znaupd      75
+>>> Iteration with znaupd      76
+>>> Iteration with znaupd      77
+>>> Iteration with znaupd      78
+>>> Iteration with znaupd      79
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.42 s
+BulkBand_calc in sparse mode:         6        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+>>> Iteration with znaupd      57
+>>> Iteration with znaupd      58
+>>> Iteration with znaupd      59
+>>> Iteration with znaupd      60
+>>> Iteration with znaupd      61
+>>> Iteration with znaupd      62
+>>> Iteration with znaupd      63
+>>> Iteration with znaupd      64
+>>> Iteration with znaupd      65
+>>> Iteration with znaupd      66
+>>> Iteration with znaupd      67
+>>> Iteration with znaupd      68
+>>> Iteration with znaupd      69
+>>> Iteration with znaupd      70
+>>> Iteration with znaupd      71
+>>> Iteration with znaupd      72
+>>> Iteration with znaupd      73
+>>> Iteration with znaupd      74
+>>> Iteration with znaupd      75
+>>> Iteration with znaupd      76
+>>> Iteration with znaupd      77
+>>> Iteration with znaupd      78
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.42 s
+BulkBand_calc in sparse mode:         7        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.30 s
+BulkBand_calc in sparse mode:         8        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.24 s
+BulkBand_calc in sparse mode:         9        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.24 s
+BulkBand_calc in sparse mode:        10        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.23 s
+BulkBand_calc in sparse mode:        11        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.22 s
+BulkBand_calc in sparse mode:        12        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.22 s
+BulkBand_calc in sparse mode:        13        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.21 s
+BulkBand_calc in sparse mode:        14        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.18 s
+BulkBand_calc in sparse mode:        15        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.21 s
+BulkBand_calc in sparse mode:        16        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.29 s
+BulkBand_calc in sparse mode:        17        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.22 s
+BulkBand_calc in sparse mode:        18        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.22 s
+BulkBand_calc in sparse mode:        19        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.27 s
+BulkBand_calc in sparse mode:        20        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+>>> Iteration with znaupd      57
+>>> Iteration with znaupd      58
+>>> Iteration with znaupd      59
+>>> Iteration with znaupd      60
+>>> Iteration with znaupd      61
+>>> Iteration with znaupd      62
+>>> Iteration with znaupd      63
+>>> Iteration with znaupd      64
+>>> Iteration with znaupd      65
+>>> Iteration with znaupd      66
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.35 s
+BulkBand_calc in sparse mode:        21        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.27 s
+BulkBand_calc in sparse mode:        22        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+>>> Iteration with znaupd      57
+>>> Iteration with znaupd      58
+>>> Iteration with znaupd      59
+>>> Iteration with znaupd      60
+>>> Iteration with znaupd      61
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.32 s
+BulkBand_calc in sparse mode:        23        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+>>> Iteration with znaupd      57
+>>> Iteration with znaupd      58
+>>> Iteration with znaupd      59
+>>> Iteration with znaupd      60
+>>> Iteration with znaupd      61
+>>> Iteration with znaupd      62
+>>> Iteration with znaupd      63
+>>> Iteration with znaupd      64
+>>> Iteration with znaupd      65
+>>> Iteration with znaupd      66
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.35 s
+BulkBand_calc in sparse mode:        24        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.27 s
+BulkBand_calc in sparse mode:        25        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.30 s
+BulkBand_calc in sparse mode:        26        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.30 s
+BulkBand_calc in sparse mode:        27        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.30 s
+BulkBand_calc in sparse mode:        28        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.30 s
+BulkBand_calc in sparse mode:        29        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.30 s
+BulkBand_calc in sparse mode:        30        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.27 s
+BulkBand_calc in sparse mode:        31        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.24 s
+BulkBand_calc in sparse mode:        32        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.24 s
+BulkBand_calc in sparse mode:        33        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.22 s
+BulkBand_calc in sparse mode:        34        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.23 s
+BulkBand_calc in sparse mode:        35        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.21 s
+BulkBand_calc in sparse mode:        36        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.24 s
+BulkBand_calc in sparse mode:        37        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.25 s
+BulkBand_calc in sparse mode:        38        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.22 s
+BulkBand_calc in sparse mode:        39        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.22 s
+BulkBand_calc in sparse mode:        40        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.22 s
+BulkBand_calc in sparse mode:        41        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.23 s
+BulkBand_calc in sparse mode:        42        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.23 s
+BulkBand_calc in sparse mode:        43        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.23 s
+BulkBand_calc in sparse mode:        44        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.20 s
+BulkBand_calc in sparse mode:        45        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.23 s
+BulkBand_calc in sparse mode:        46        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.23 s
+BulkBand_calc in sparse mode:        47        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.23 s
+BulkBand_calc in sparse mode:        48        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.23 s
+BulkBand_calc in sparse mode:        49        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.26 s
+BulkBand_calc in sparse mode:        50        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.26 s
+BulkBand_calc in sparse mode:        51        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.26 s
+BulkBand_calc in sparse mode:        52        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.29 s
+BulkBand_calc in sparse mode:        53        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+>>> Iteration with znaupd      57
+>>> Iteration with znaupd      58
+>>> Iteration with znaupd      59
+>>> Iteration with znaupd      60
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.34 s
+BulkBand_calc in sparse mode:        54        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.29 s
+BulkBand_calc in sparse mode:        55        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+>>> Iteration with znaupd      57
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.30 s
+BulkBand_calc in sparse mode:        56        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+>>> Iteration with znaupd      57
+>>> Iteration with znaupd      58
+>>> Iteration with znaupd      59
+>>> Iteration with znaupd      60
+>>> Iteration with znaupd      61
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.32 s
+BulkBand_calc in sparse mode:        57        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+>>> Iteration with znaupd      57
+>>> Iteration with znaupd      58
+>>> Iteration with znaupd      59
+>>> Iteration with znaupd      60
+>>> Iteration with znaupd      61
+>>> Iteration with znaupd      62
+>>> Iteration with znaupd      63
+>>> Iteration with znaupd      64
+>>> Iteration with znaupd      65
+>>> Iteration with znaupd      66
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.35 s
+BulkBand_calc in sparse mode:        58        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+>>> Iteration with znaupd      57
+>>> Iteration with znaupd      58
+>>> Iteration with znaupd      59
+>>> Iteration with znaupd      60
+>>> Iteration with znaupd      61
+>>> Iteration with znaupd      62
+>>> Iteration with znaupd      63
+>>> Iteration with znaupd      64
+>>> Iteration with znaupd      65
+>>> Iteration with znaupd      66
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.36 s
+BulkBand_calc in sparse mode:        59        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+>>> Iteration with znaupd      57
+>>> Iteration with znaupd      58
+>>> Iteration with znaupd      59
+>>> Iteration with znaupd      60
+>>> Iteration with znaupd      61
+>>> Iteration with znaupd      62
+>>> Iteration with znaupd      63
+>>> Iteration with znaupd      64
+>>> Iteration with znaupd      65
+>>> Iteration with znaupd      66
+>>> Iteration with znaupd      67
+>>> Iteration with znaupd      68
+>>> Iteration with znaupd      69
+>>> Iteration with znaupd      70
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.38 s
+BulkBand_calc in sparse mode:        60        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+>>> Iteration with znaupd      57
+>>> Iteration with znaupd      58
+>>> Iteration with znaupd      59
+>>> Iteration with znaupd      60
+>>> Iteration with znaupd      61
+>>> Iteration with znaupd      62
+>>> Iteration with znaupd      63
+>>> Iteration with znaupd      64
+>>> Iteration with znaupd      65
+>>> Iteration with znaupd      66
+>>> Iteration with znaupd      67
+>>> Iteration with znaupd      68
+>>> Iteration with znaupd      69
+>>> Iteration with znaupd      70
+>>> Iteration with znaupd      71
+>>> Iteration with znaupd      72
+>>> Iteration with znaupd      73
+>>> Iteration with znaupd      74
+>>> Iteration with znaupd      75
+>>> Iteration with znaupd      76
+>>> Iteration with znaupd      77
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.41 s
+BulkBand_calc in sparse mode:        61        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+>>> Iteration with znaupd      57
+>>> Iteration with znaupd      58
+>>> Iteration with znaupd      59
+>>> Iteration with znaupd      60
+>>> Iteration with znaupd      61
+>>> Iteration with znaupd      62
+>>> Iteration with znaupd      63
+>>> Iteration with znaupd      64
+>>> Iteration with znaupd      65
+>>> Iteration with znaupd      66
+>>> Iteration with znaupd      67
+>>> Iteration with znaupd      68
+>>> Iteration with znaupd      69
+>>> Iteration with znaupd      70
+>>> Iteration with znaupd      71
+>>> Iteration with znaupd      72
+>>> Iteration with znaupd      73
+>>> Iteration with znaupd      74
+>>> Iteration with znaupd      75
+>>> Iteration with znaupd      76
+>>> Iteration with znaupd      77
+>>> Iteration with znaupd      78
+>>> Iteration with znaupd      79
+>>> Iteration with znaupd      80
+>>> Iteration with znaupd      81
+>>> Iteration with znaupd      82
+>>> Iteration with znaupd      83
+>>> Iteration with znaupd      84
+>>> Iteration with znaupd      85
+>>> Iteration with znaupd      86
+>>> Iteration with znaupd      87
+>>> Iteration with znaupd      88
+>>> Iteration with znaupd      89
+>>> Iteration with znaupd      90
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.48 s
+BulkBand_calc in sparse mode:        62        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+>>> Iteration with znaupd      57
+>>> Iteration with znaupd      58
+>>> Iteration with znaupd      59
+>>> Iteration with znaupd      60
+>>> Iteration with znaupd      61
+>>> Iteration with znaupd      62
+>>> Iteration with znaupd      63
+>>> Iteration with znaupd      64
+>>> Iteration with znaupd      65
+>>> Iteration with znaupd      66
+>>> Iteration with znaupd      67
+>>> Iteration with znaupd      68
+>>> Iteration with znaupd      69
+>>> Iteration with znaupd      70
+>>> Iteration with znaupd      71
+>>> Iteration with znaupd      72
+>>> Iteration with znaupd      73
+>>> Iteration with znaupd      74
+>>> Iteration with znaupd      75
+>>> Iteration with znaupd      76
+>>> Iteration with znaupd      77
+>>> Iteration with znaupd      78
+>>> Iteration with znaupd      79
+>>> Iteration with znaupd      80
+>>> Iteration with znaupd      81
+>>> Iteration with znaupd      82
+>>> Iteration with znaupd      83
+>>> Iteration with znaupd      84
+>>> Iteration with znaupd      85
+>>> Iteration with znaupd      86
+>>> Iteration with znaupd      87
+>>> Iteration with znaupd      88
+>>> Iteration with znaupd      89
+>>> Iteration with znaupd      90
+>>> Iteration with znaupd      91
+>>> Iteration with znaupd      92
+>>> Iteration with znaupd      93
+>>> Iteration with znaupd      94
+>>> Iteration with znaupd      95
+>>> Iteration with znaupd      96
+>>> Iteration with znaupd      97
+>>> Iteration with znaupd      98
+>>> Iteration with znaupd      99
+>>> Iteration with znaupd     100
+>>> Iteration with znaupd     101
+>>> Iteration with znaupd     102
+>>> Iteration with znaupd     103
+>>> Iteration with znaupd     104
+>>> Iteration with znaupd     105
+>>> Iteration with znaupd     106
+>>> Iteration with znaupd     107
+>>> Iteration with znaupd     108
+>>> Iteration with znaupd     109
+>>> Iteration with znaupd     110
+>>> Iteration with znaupd     111
+>>> Iteration with znaupd     112
+>>> Iteration with znaupd     113
+>>> Iteration with znaupd     114
+>>> Iteration with znaupd     115
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.61 s
+BulkBand_calc in sparse mode:        63        63
+ > memory cost in zmat_arpack_zndrv2 is :              0.0MB
+ > We are calculating         10 eigenvalues
+ > with         20 Arnoldi Lanczos vectors.
+ > Dimension of the matrix is:               42
+>>> Iteration with znaupd       1
+>>> Iteration with znaupd       2
+>>> Iteration with znaupd       3
+>>> Iteration with znaupd       4
+>>> Iteration with znaupd       5
+>>> Iteration with znaupd       6
+>>> Iteration with znaupd       7
+>>> Iteration with znaupd       8
+>>> Iteration with znaupd       9
+>>> Iteration with znaupd      10
+>>> Iteration with znaupd      11
+>>> Iteration with znaupd      12
+>>> Iteration with znaupd      13
+>>> Iteration with znaupd      14
+>>> Iteration with znaupd      15
+>>> Iteration with znaupd      16
+>>> Iteration with znaupd      17
+>>> Iteration with znaupd      18
+>>> Iteration with znaupd      19
+>>> Iteration with znaupd      20
+>>> Iteration with znaupd      21
+>>> Iteration with znaupd      22
+>>> Iteration with znaupd      23
+>>> Iteration with znaupd      24
+>>> Iteration with znaupd      25
+>>> Iteration with znaupd      26
+>>> Iteration with znaupd      27
+>>> Iteration with znaupd      28
+>>> Iteration with znaupd      29
+>>> Iteration with znaupd      30
+>>> Iteration with znaupd      31
+>>> Iteration with znaupd      32
+>>> Iteration with znaupd      33
+>>> Iteration with znaupd      34
+>>> Iteration with znaupd      35
+>>> Iteration with znaupd      36
+>>> Iteration with znaupd      37
+>>> Iteration with znaupd      38
+>>> Iteration with znaupd      39
+>>> Iteration with znaupd      40
+>>> Iteration with znaupd      41
+>>> Iteration with znaupd      42
+>>> Iteration with znaupd      43
+>>> Iteration with znaupd      44
+>>> Iteration with znaupd      45
+>>> Iteration with znaupd      46
+>>> Iteration with znaupd      47
+>>> Iteration with znaupd      48
+>>> Iteration with znaupd      49
+>>> Iteration with znaupd      50
+>>> Iteration with znaupd      51
+>>> Iteration with znaupd      52
+>>> Iteration with znaupd      53
+>>> Iteration with znaupd      54
+>>> Iteration with znaupd      55
+>>> Iteration with znaupd      56
+>>> Iteration with znaupd      57
+>>> Iteration with znaupd      58
+>>> Iteration with znaupd      59
+>>> Iteration with znaupd      60
+>>> Iteration with znaupd      61
+>>> Iteration with znaupd      62
+>>> Iteration with znaupd      63
+>>> Iteration with znaupd      64
+>>> Iteration with znaupd      65
+>>> Iteration with znaupd      66
+>>> Iteration with znaupd      67
+>>> Iteration with znaupd      68
+>>> Iteration with znaupd      69
+>>> Iteration with znaupd      70
+>>> Iteration with znaupd      71
+>>> Iteration with znaupd      72
+>>> Iteration with znaupd      73
+>>> Iteration with znaupd      74
+>>> Iteration with znaupd      75
+>>> Iteration with znaupd      76
+>>> Iteration with znaupd      77
+>>> Iteration with znaupd      78
+>>> Iteration with znaupd      79
+>>> Iteration with znaupd      80
+>>> Iteration with znaupd      81
+>>> Iteration with znaupd      82
+>>> Iteration with znaupd      83
+>>> Iteration with znaupd      84
+>>> Iteration with znaupd      85
+>>> Iteration with znaupd      86
+>>> Iteration with znaupd      87
+>>> Iteration with znaupd      88
+>>> Iteration with znaupd      89
+>>> Iteration with znaupd      90
+>>> Iteration with znaupd      91
+>>> Iteration with znaupd      92
+>>> Iteration with znaupd      93
+>>> Iteration with znaupd      94
+>>> Iteration with znaupd      95
+>>> Iteration with znaupd      96
+>>> Iteration with znaupd      97
+>>> Iteration with znaupd      98
+>>> Iteration with znaupd      99
+>>> Iteration with znaupd     100
+>>> Iteration with znaupd     101
+>>> Iteration with znaupd     102
+>>> Iteration with znaupd     103
+  >> Time cost for constructing H:                 0.00 s
+  >> Time cost for diagonalize H:                 0.61 s
+ Time cost for BulkBand is about           18.913 s
  << End of calculating bulk band
   
- Time cost for whole program is about            0.043 s
+ Time cost for whole program is about           19.297 s
   
   
   =======================================================================
