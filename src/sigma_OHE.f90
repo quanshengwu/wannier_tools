@@ -28,7 +28,8 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
 !>                                                          !
 !> We calculate the conductivity and resistivity under      !
 !> the band-resolved constantly relaxation time. We give    !
-!> the simga/tau and rho*tau instead of sigma and rho.      !
+!> the simga/tau of Btau and rho*tau of Btau instead of     !
+!> sigma and rho.                                           !
 !>                                                          !
 !> This version impose symmetry constrain to get the        !
 !> transport coefficients under magnetic field.             !
@@ -668,6 +669,9 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
             write(sigmafilename, '(3a)')'sigma_bands_mu_',trim(adjustl(muname)),'eV.dat'
             open(unit=outfileindex, file=sigmafilename)
             write(outfileindex, '(a)')'# Conductivity tensor/tau (in unit of (\Omega*m*s)^-1) for every contributing band' 
+            write(outfileindex, '(a,3I6)')'# NBAND  NumT  NumBtau  =  ',Nband_Fermi_Level, NumT, NBTau 
+            write(outfileindex, '(a,100I5)')'# SELECTEDBANDS  =  ', bands_fermi_level(:)
+            write(outfileindex, '(a,1000f8.3)')'# Tlist  =  ', KBT_array(:)/8.6173324E-5/eV2Hartree
             do iband= 1, Nband_Fermi_Level
                write(outfileindex, '(2a, i5)')'# ',' iband = ', bands_fermi_level(iband)
                write(outfileindex,'(a)') ''
@@ -693,6 +697,9 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
             write(sigmafilename, '(3a)')'rho_bands_mu_', trim(adjustl(muname)),'eV.dat'
             open(unit=outfileindex, file=sigmafilename)
             write(outfileindex, '(a)')'# Resistivity \tau*\rho (in unit of \Omega*m*s) for every contributing band '
+            write(outfileindex, '(a,3I6)')'# NBAND  NumT  NumBtau  =  ',Nband_Fermi_Level, NumT, NBTau 
+            write(outfileindex, '(a,100I5)')'# SELECTEDBANDS  =  ', bands_fermi_level(:)
+            write(outfileindex, '(a,1000f8.3)')'# Tlist  =  ', KBT_array(:)/8.6173324E-5/eV2Hartree
             do iband= 1, Nband_Fermi_Level
                write(outfileindex, '(2a, i5)')'# ',' iband = ', bands_fermi_level(iband)
                write(outfileindex,'(a)') ''
@@ -727,6 +734,8 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
             open(unit=outfileindex, file=sigmafilename)
             write(outfileindex, '(a)')'# \sigma/\tau with unit (Ohm*m*s)^-1 is the summation of all bands \sum_n\sigma_n/\tau_n ' 
             write(outfileindex, '(a)')'# relaxation time \tau_n=\tau is the same for all bands. '
+            write(outfileindex, '(a,2I6)')'# NumT  NumBtau  =  ', NumT, NBTau 
+            write(outfileindex, '(a,1000f8.3)')'# Tlist  =  ', KBT_array(:)/8.6173324E-5/eV2Hartree
             do ikt = 1, NumT
                KBT= KBT_array(ikt)/8.6173324E-5/eV2Hartree
                write(outfileindex, '(2a, f16.4, a)')'# ',' T = ', KBT, ' K '
@@ -753,6 +762,8 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
             open(unit=outfileindex, file=sigmafilename)
             write(outfileindex, '(a)')'# \tau*\rho with unit (Ohm*m*s) is the inverse of Conductivity tensor \sum_n\sigma_n/\tau ' 
             write(outfileindex, '(a)')'# relaxation time \tau_n=\tau is the same for all bands. '
+            write(outfileindex, '(a,2I6)')'# NumT  NumBtau  =  ', NumT, NBTau 
+            write(outfileindex, '(a,1000f8.3)')'# Tlist  =  ', KBT_array(:)/8.6173324E-5/eV2Hartree
             do ikt =1, NumT
                KBT= KBT_array(ikt)/8.6173324E-5/eV2Hartree
                write(outfileindex, '(2a, f16.4, a)')'# ', ' T = ', KBT, ' K '

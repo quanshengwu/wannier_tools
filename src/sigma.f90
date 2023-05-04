@@ -207,10 +207,16 @@
          write(outfileindex, '(a)') "set palette defined (0 'red', 1 'green')"
          write(outfileindex, '(a)') 'unset colorbox'
          write(outfileindex, '(a)') 'set ylabel offset 0.0,0'
-         write(outfileindex, '(a,I4,3a,f6.1,a,f6.1,a,f6.1,a,f6.1,a)')& 
-               "plot for [i=0:",NumT-1,"] '",trim(adjustl(sigmafilename)),"' every :::i::i+1 u 2:3 w l lt palette frac i/",&
-               float(NumT)," title sprintf('T=%.0f K',",&
-               Tmin,"+",(TMax-TMIn),"/",float(NumT-1),"*i)"
+         write(outfileindex, '(a, f6.2)') 'Tmin = ',Tmin
+         write(outfileindex, '(a, f6.2)') 'Tmax = ',Tmax
+         write(outfileindex, '(a, I4)') 'NumT = ',NumT
+         write(outfileindex, '(a, f6.2)') 'OmegaMin = ',OmegaMin/eV2Hartree
+         write(outfileindex, '(a, f6.2)') 'OmegaMax = ',OmegaMax/eV2Hartree
+         write(outfileindex, '(a, I4)') 'OmegaNum = ',OmegaNum
+         write(outfileindex, '(a)') ''
+         write(outfileindex, '(4a)')& 
+               "plot for [i=0:NumT-1] '",trim(adjustl(sigmafilename)),"' every :::i::i+1 u 2:3 w l lt palette frac i/(NumT*1.0)", &
+               "title sprintf('T=%.0f K', Tmin + (Tmax-Tmin)/(NumT*1.0-1.0)*i)"
          close(outfileindex)
       endif
 

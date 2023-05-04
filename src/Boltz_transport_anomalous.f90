@@ -134,7 +134,7 @@
    
    ! energy refers to the variable to be integrated
    ! mu refers to the chemical potential
-   real(dp) :: energy,  omega, T, mu
+   real(dp) :: energy,  omega, T, mu, time_start, time_end
 
    real(dp), parameter :: ANE_int_interval = 1.0d0*eV2Hartree
    real(dp), parameter :: ANE_int_step     = 0.001d0*eV2Hartree
@@ -144,7 +144,7 @@
    real(dp), allocatable :: energy_list(:) ! chemical potential for sigma_ahc (num_step+1)
    real(dp), allocatable :: nernst(:,:,:,:) ! (coordinate,Temp, mu, NumberofEta)
    real(dp), allocatable :: ahc(:,:,:) ! (coordinate, energy, NumberofEta) 
-   real(dp), allocatable :: minus_dfde(:,:,:) ! derivative of Fermi-Dirac (num_step+1, mu, T)
+   real(dp), allocatable :: minus_dfde(:,:,:) ! derivative of Fermi-Dirac (num_step+1, Temp, mu)
    integer :: i, ie, iT, imu,ieta, NumberofEta
 
    ! integral region is (OmegaMin-ANE_int_interval,OmegaMax+ANE_int_interval)
@@ -165,7 +165,7 @@
    allocate( energy_list(num_step+1) )
    allocate( nernst(3, NumT, OmegaNum, NumberofEta)) 
    allocate( ahc(3, num_step+1, NumberofEta)) 
-   allocate( minus_dfde(num_step+1, OmegaNum, NumT) )
+   allocate( minus_dfde(num_step+1, NumT, OmegaNum) )
    T_list = 0.0d0
    energy_list = 0.0d0
    nernst = 0.0d0
@@ -199,22 +199,37 @@
    enddo ! iT
 
    !> get the anomalous hall conductivity
+   call now(time_start)
    call sigma_ahc_vary_ChemicalPotential(num_step+1, energy_list, NumberofEta, eta_array, ahc)
+   call now(time_end)
+   call print_time_cost(time_start, time_end, 'calculation of AHC')
 
    !> get the derivative of Fermi-Dirac
+   call now(time_start)
    do imu = 1, OmegaNum
       mu = mu_list(imu)
-      do ie = 1, num_step+1
-         energy = energy_list(ie)
-         do iT = 1, NumT
-            T = T_list(iT)
+      do iT = 1, NumT
+         T = T_list(iT)
+         do ie = 1, num_step+1
+            energy = energy_list(ie)
             call minusdfde_calc_single(energy/eV2Hartree, T*8.617333262E-5, &
-                                       mu/eV2Hartree, minus_dfde(ie, imu, iT))
-         enddo ! iT
-      enddo ! ie
-   enddo ! imu
+                                       mu/eV2Hartree, minus_dfde(ie, iT, imu))
+         enddo ! imu
+      enddo ! iT
+   enddo ! ie
+   call now(time_end)
+   call print_time_cost(time_start, time_end, 'calculation of derivative of Fermi-Dirac')
+
+   ! --------------------------------------------------------------------
+   !  nernst = -int dE 1/e* df/dmu * ahc * (E - mu) / T
+   !
+   !  We use Hartree as the unit of energy and convert them to eV with eV2Hartree
+   !  Therefore the unit of nernst is 1/e * eV * 1/eV * S/cm * eV * 1/K = A/cm/K
+   !  To convert it to A/m/K, we need to multiply it by 100
+   ! --------------------------------------------------------------------
 
    !> get the anomalous Nernst coefficient
+   call now(time_start)
    do ieta = 1, NumberofEta
       do imu = 1, OmegaNum
          mu = mu_list(imu)
@@ -223,12 +238,14 @@
             do ie = 1, num_step+1
                energy = energy_list(ie)
                omega = energy - mu
-               nernst(:, iT, imu,ieta) = nernst(:, iT, imu,ieta)- minus_dfde(ie,imu,iT)*ahc(:,ie,ieta)*&
+               nernst(:, iT, imu,ieta) = nernst(:, iT, imu,ieta)- minus_dfde(ie,iT,imu)*ahc(:,ie,ieta)*&
                                     (omega/eV2Hartree)/T*(ANE_int_step/eV2Hartree)*100
             enddo ! ie
          enddo ! iT
       enddo ! ie
    enddo ! ieta
+   call now(time_end)
+   call print_time_cost(time_start, time_end, 'integration of AHC')
 
    if(cpuid .eq. 0) then
       do ieta =1, NumberofEta
@@ -261,23 +278,30 @@
          write(outfileindex, '(a)') 'set key outside'
          write(outfileindex, '(a)') "set palette defined (0 'red', 1 'green')"
          write(outfileindex, '(a)') 'unset colorbox'
+         write(outfileindex, '(a, f6.2)') 'Tmin = ',Tmin
+         write(outfileindex, '(a, f6.2)') 'Tmax = ',Tmax
+         write(outfileindex, '(a, I4)') 'NumT = ',NumT
+         write(outfileindex, '(a, f6.2)') 'OmegaMin = ',OmegaMin/eV2Hartree
+         write(outfileindex, '(a, f6.2)') 'OmegaMax = ',OmegaMax/eV2Hartree
+         write(outfileindex, '(a, I4)') 'OmegaNum = ',OmegaNum
+         write(outfileindex, '(a)') ''
          write(outfileindex, '(a)') '#plot the temperature-dependent alpha_yx for the first six chemical potentials'
          write(outfileindex, '(a)') 'set xlabel "T (K)"'
          write(outfileindex, '(a)') 'set ylabel "{/Symbol a}_{yx} (A/(mK))"'
          write(outfileindex, '(a)') 'set ylabel offset 0.0,0'
-         write(outfileindex, '(3a,I4,a,I4,a,I4,a,f6.1,a,f6.1,a,f6.1,a)')& 
-                                    "plot for [i=0:5] '",trim(adjustl(anefilename)),"' every ::i*",NumT,"::i*",NumT,"+",NumT-1,&
-                                    " u 2:(-$3) w l lt palette frac i/5. title sprintf('{/Symbol m}=%.3f eV',",&
-                                    OmegaMin/eV2Hartree,"+",(OmegaMax-OmegaMIn)/eV2Hartree,"/",float(OmegaNum-1),"*i)"
+         write(outfileindex, '(5a)')& 
+                                    "plot for [i=0:5] '",trim(adjustl(anefilename)),"' every ::i*NumT::i*NumT+(NumT-1)", &
+                                    "u 2:(-$3) w l lt palette frac i/5. title sprintf('{/Symbol m}=%.3f eV', ",&
+                                    "OmegaMin+(OmegaMax-OmegaMin)/(OmegaNum*1.0-1.0)*i )"
          write(outfileindex, '(a)') ''
          write(outfileindex, '(a)') '#plot the chemical potential dependent alpha_yx'
          write(outfileindex, '(a)') '#set xlabel "E-E_f (eV)"'
          write(outfileindex, '(a)') '#set ylabel "{/Symbol a}_{yx} (A/(mK))"'
          write(outfileindex, '(a)') '#set ylabel offset 0.0,0'
-         write(outfileindex, '("#",a,I4,3a,I4,a,f6.1,a,f6.1,a,f6.1,a,f6.1,a)')& 
-                                    "plot for [i=0:",NumT-1,"] '",trim(adjustl(anefilename)),"' every ",NumT,&
-                                    "::i u 1:(-$3) w l lt palette frac i/",float(NumT-1)," title sprintf('T=%.3f K',",&
-                                    Tmin,"+",Tmax-Tmin,"/",float(NumT-1),"*i)"
+         write(outfileindex, '(5a)')& 
+                                    "#plot for [i=0:NumT-1] '",trim(adjustl(anefilename)),"' every NumT::i", &
+                                    " u 1:(-$3) w l lt palette frac i/(NumT*1.0-1.0) title sprintf('T=%.3f K',",&
+                                    "Tmin+(Tmax-Tmin)/(NumT*1.0-1.0)*i)"
          close(outfileindex)
    endif
 
@@ -327,9 +351,6 @@ subroutine sigma_ahc_vary_ChemicalPotential(NumOfmu, mulist, NumberofEta, eta_ar
      real(dp), allocatable :: energy(:)
      real(dp), allocatable :: sigma_tensor_ahc_mpi(:, :, :)
      
-     !> Fermi-Dirac distribution
-     real(dp), external :: fermi
-
      !> D_mn^H=V_mn/(En-Em) for m!=n
      !> D_nn^H=0 
      complex(dp), allocatable :: Dmn_Ham(:, :, :)
@@ -441,8 +462,8 @@ subroutine sigma_ahc_vary_ChemicalPotential(NumOfmu, mulist, NumberofEta, eta_ar
       !> in unit of (Ohm*cm)^-1
       sigma_tensor_ahc= sigma_tensor_ahc/100d0
       
-      deallocate( W, Hamk_bulk, UU)
-      deallocate( sigma_tensor_ahc_mpi)
+      ! deallocate( W, Hamk_bulk, UU)
+      ! deallocate( sigma_tensor_ahc_mpi)
   end subroutine sigma_ahc_vary_ChemicalPotential
 
   subroutine sigma_SHC
