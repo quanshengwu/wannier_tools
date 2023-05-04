@@ -1,5 +1,5 @@
 Usage: python3   
-Command: `python deal_sigma_OHE.py`  
+Command: `python post_sigma_OHE.py`  
 
 This python script contains two function, readsigma_writerho() and plot_cbar(component). 
 1.function readsigma_writerho() 
