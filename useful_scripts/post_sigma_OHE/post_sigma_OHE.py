@@ -1,4 +1,22 @@
-# Hanqi Pi, hqpi1999@gmail.com
+# Author: Hanqi Pi,
+# Email : hqpi1999@gmail.com or hqpi@iphy.ac.cn
+# Date  : 2023/05/04
+# version : 0.1
+# ( in testing )
+
+'''
+1.function readsigma_writerho() 
+  This function read sigma/tau tensor data from every single band, adds them together and calculate the total resistivity. 
+  You can modify the script if you need electrons in different bands to have different relaxation time.
+  This function reads paramenters from `wt.in` and sigma tensor from `sigma_bands_mu_***eV.dat`.
+  The resistivity is stored in `rhotau_total_mu_***eV.dat` and `rho_all.npy`
+
+2.function plot_cbar(component)
+  This function is designed to plot rhotau(Btau).
+  You should provide a list called `component` that includes the tensor component that you want to plot, such as ['xx']
+
+
+'''
 
 from cProfile import label
 import os
