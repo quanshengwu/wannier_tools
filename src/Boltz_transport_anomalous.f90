@@ -351,6 +351,9 @@ subroutine sigma_ahc_vary_ChemicalPotential(NumOfmu, mulist, NumberofEta, eta_ar
      real(dp), allocatable :: energy(:)
      real(dp), allocatable :: sigma_tensor_ahc_mpi(:, :, :)
      
+     !> Fermi-Dirac distribution
+     real(dp), external :: fermi
+
      !> D_mn^H=V_mn/(En-Em) for m!=n
      !> D_nn^H=0 
      complex(dp), allocatable :: Dmn_Ham(:, :, :)
