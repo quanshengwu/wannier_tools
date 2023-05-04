@@ -17,7 +17,7 @@
       use para
       implicit none
 
-      integer :: i, ib
+      integer :: i, ib, ie
 
       !> Bands crossing Fermi level
       integer :: Nband_Fermi_Level
@@ -55,7 +55,7 @@
       real(dp), allocatable :: Plasma_Frequencies(:, :)
 
       !> file name
-      character(40) :: bandname
+      character(40) :: bandname, muname
       character(40) :: sigmafilename
     
 
@@ -194,22 +194,29 @@
       !> write script for gnuplot
       if (cpuid==0) then
          open(unit=outfileindex, file='sigma.gnu')
+         write(muname, '(f12.2)')mu_array(ie)/eV2Hartree
+         write(sigmafilename, '(3a)')'sigma_total_mu_',trim(adjustl(muname)),'eV.dat'
          write(outfileindex, '(a)')"set encoding iso_8859_1"
-         write(outfileindex, '(a)')'set terminal  postscript enhanced color font ",24" '
-         write(outfileindex, '(a)')"set output 'sigma.eps'"
+         write(outfileindex, '(a)') 'set terminal pdfcairo enhanced color font ",30" size 13, 6'
+         write(outfileindex, '(a)') "set output 'sigma.pdf'"
          write(outfileindex, '(a)')'set border lw 2'
          write(outfileindex, '(a)')'set autoscale fix'
-         write(outfileindex, '(a)')'unset key'
-         write(outfileindex, '(a)')"set ylabel {/Symbol s}/{/Symbol t} (1/{/Symbol W}/m/s)"
-         write(outfileindex, '(a)')"set xlabel B{/Symbol t} (T.ps)"
-         do ib=1, Nband_Fermi_Level-1
-            write(bandname, '(i10)')bands_fermi_level(ib)
-            write(sigmafilename, '(3a)')'sigma_band_',trim(adjustl(bandname)), '.dat'
-            write(outfileindex, '(3a)')"plot '",trim(adjustl(sigmafilename)), "' u 1:3 w lp lw 3 lc rgb 'black', \"
-         enddo
-         write(bandname, '(i10)')bands_fermi_level(Nband_Fermi_Level)
-         write(sigmafilename, '(3a)')'sigma_band_',trim(adjustl(bandname)), '.dat'
-         write(outfileindex, '(3a)')"     '",trim(adjustl(sigmafilename)), "' u 1:3 w lp lw 3 lc rgb 'black'"
+         write(outfileindex, '(a)')"set ylabel '{/Symbol s}/{/Symbol t} (1/{/Symbol W}/m/s)'"
+         write(outfileindex, '(a)')"set xlabel 'B{/Symbol t} (T.ps)'"
+         write(outfileindex, '(a)') 'set key outside'
+         write(outfileindex, '(a)') "set palette defined (0 'red', 1 'green')"
+         write(outfileindex, '(a)') 'unset colorbox'
+         write(outfileindex, '(a)') 'set ylabel offset 0.0,0'
+         write(outfileindex, '(a, f6.2)') 'Tmin = ',Tmin
+         write(outfileindex, '(a, f6.2)') 'Tmax = ',Tmax
+         write(outfileindex, '(a, I4)') 'NumT = ',NumT
+         write(outfileindex, '(a, f6.2)') 'OmegaMin = ',OmegaMin/eV2Hartree
+         write(outfileindex, '(a, f6.2)') 'OmegaMax = ',OmegaMax/eV2Hartree
+         write(outfileindex, '(a, I4)') 'OmegaNum = ',OmegaNum
+         write(outfileindex, '(a)') ''
+         write(outfileindex, '(4a)')& 
+               "plot for [i=0:NumT-1] '",trim(adjustl(sigmafilename)),"' every :::i::i+1 u 2:3 w l lt palette frac i/(NumT*1.0)", &
+               "title sprintf('T=%.0f K', Tmin + (Tmax-Tmin)/(NumT*1.0-1.0)*i)"
          close(outfileindex)
       endif
 

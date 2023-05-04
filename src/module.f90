@@ -438,6 +438,7 @@
      logical :: LanczosSeqDOS_calc  ! DOS
      logical :: Translate_to_WS_calc  ! whether translate the k points into the Wigner-Seitz cell
      logical :: FermiLevel_calc  ! calculate Fermi level for a given temperature Beta=1/T
+     logical :: ANE_calc ! calculate  anomalous nernst coefficient
      
      logical :: LanczosBand_calc=.false.
      logical :: LanczosDos_calc= .false.
@@ -477,7 +478,7 @@
                           LanczosSeqDOS_calc, Translate_to_WS_calc, LandauLevel_k_dos_calc, &
                           LandauLevel_B_dos_calc,LanczosBand_calc,LanczosDos_calc, &
                           LandauLevel_B_calc, LandauLevel_kplane_calc,landau_chern_calc, &
-                          FermiLevel_calc , export_newhr,export_maghr,w3d_nested_calc
+                          FermiLevel_calc,ANE_calc, export_newhr,export_maghr,w3d_nested_calc
 
      integer :: Nslab  ! Number of slabs for 2d Slab system
      integer :: Nslab1 ! Number of slabs for 1D wire system
@@ -519,6 +520,8 @@
     
      real(Dp) :: eta     ! used to calculate dos epsilon+i eta
      real(Dp) :: Eta_Arc ! used to calculate dos epsilon+i eta
+     
+     real(Dp) :: EF_broadening ! used to define the energy range around fermi energy in calculating sigma_OHE
 
    
      integer :: OmegaNum   ! The number of energy slices between OmegaMin and OmegaMax
@@ -575,7 +578,7 @@
      real(dp) :: shift_to_topsurface_cart(3)
 
      !> namelist parameters
-     namelist /PARAMETERS/ Eta_Arc, OmegaNum, OmegaNum_unfold, OmegaMin, OmegaMax, &
+     namelist /PARAMETERS/ Eta_Arc,EF_broadening, OmegaNum, OmegaNum_unfold, OmegaMin, OmegaMax, &
         E_arc, Nk1, Nk2, Nk3, NP, Gap_threshold, Tmin, Tmax, NumT, &
         NBTau, BTauNum, BTauMax, Rcut, Magp, Magq, Magp_min, Magp_max, Nslice_BTau_Max, &
         wcc_neighbour_tol, wcc_calc_tol, Beta,NumLCZVecs, &

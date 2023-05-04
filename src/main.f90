@@ -682,6 +682,16 @@
         if(cpuid.eq.0)write(stdout, *)'End of AHC calculation'
      endif
 
+      !> calculate anomalouls nernst coefficient
+      if (ANE_calc)then
+         if(cpuid.eq.0)write(stdout, *)' '
+         if(cpuid.eq.0)write(stdout, *)'>> Start to calculate anomalouls nernst coefficient'
+         call now(time_start)
+         call alpha_ANE
+         call now(time_end)
+         call print_time_cost(time_start, time_end, 'ANE_calc')
+         if(cpuid.eq.0)write(stdout, *)'End of ANE calculation'
+      endif
 
      !> surface state
      if (SlabSS_calc) then
