@@ -1,0 +1,97 @@
+&TB_FILE
+Hrfile = wannier90_hr.dat
+/
+
+
+&CONTROL
+!> bulk band structure calculation flag
+BulkBand_calc         = F
+BulkFS_calc           = F
+BulkGap_cube_calc     = F
+BulkGap_plane_calc    = F
+AHC_calc              = T
+SlabBand_calc         = F
+WireBand_calc         = F
+SlabSS_calc           = F
+SlabArc_calc          = F
+SlabSpintexture_calc  = F
+wanniercenter_calc    = F
+BerryPhase_calc       = F
+BerryCurvature_calc   = F
+ANE_calc = T
+/
+
+&SYSTEM
+NSLAB = 10 
+NumOccupied = 8        ! NumOccupied
+SOC = 1                 ! soc
+E_FERMI = 9.1839 !9.184636        ! e-fermi
+Bx= 0, By= 0, Bz= 0     ! Bx By Bz
+surf_onsite= 0.0        ! surf_onsite
+/
+
+&PARAMETERS
+Eta_Arc = 0.01     ! infinite small value, like brodening 
+E_arc = 0.00         ! energy for calculate Fermi Arc
+OmegaNum = 800      ! omega number       
+OmegaMin = -1.0     ! energy interval
+OmegaMax =  1.0     ! energy interval
+Nk1 = 101            ! number k points 
+Nk2 = 101            ! number k points 
+Nk3 = 101             ! number k points 
+NP = 4              ! number of principle layers
+Gap_threshold = 0.002 ! threshold for GapCube output
+Tmin = 10  ! temperature interval
+Tmax = 310 ! temperature interval
+NumT = 31  ! temperature number
+/
+
+LATTICE
+Angstrom
+   1.4350000     1.4350000    -1.4350000
+  -1.4350000     1.4350000     1.4350000
+   1.4350000    -1.4350000     1.4350000
+
+ATOM_POSITIONS
+1                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+ Fe      0.0000000     0.0000000     0.000
+
+PROJECTORS
+ 8          ! number of projectors
+Fe pz px py dz2 dxz dyz dx2-y2 dxy
+
+SURFACE            ! See doc for details
+ 1  0  0
+ 0  1  0
+ 0  0  1
+
+KPATH_BULK            ! k point path
+5              ! number of k line only for bulk band
+W      0.50000    0.24576    0.75424    T      0.50000    0.50000    0.50000    
+T      0.50000    0.50000    0.50000    U      0.75424    0.37288    0.37288    
+U      0.75424    0.37288    0.37288    L      0.50000    0.00000    0.00000    
+L      0.50000    0.00000    0.00000    G      0.00000    0.00000    0.00000    
+G       0.0  0.0  0.0  P -0.08592965     -0.08592965      0.32060302
+
+KPATH_SLAB
+2        ! numker of k line for 2D case
+K -0.5 0.0 G 0.0 0.0  ! k path for 2D case
+G 0.0 0.0  K 0.5 0.0
+
+KPLANE_SLAB
+-0.5 -0.5      ! Original point for 2D k plane
+ 1.0  0.0      ! The first vector to define 2D k plane 
+ 0.0  1.0      ! The second vector to define 2D k plane  for arc plots
+
+KPLANE_BULK
+-0.50 -0.50  0.00   ! Original point for 3D k plane 
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  1.00  0.00   ! The second vector to define 3d k space plane
+
+
+KCUBE_BULK
+-0.0     -0.0      0.   ! Original point for 3D k plane 
+ 1.0  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  1.0  0.00   ! The second vector to define 3d k space plane
+ 0.00  0.00   1.0   ! The third vector to define 3d k cube
