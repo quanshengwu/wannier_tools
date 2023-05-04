@@ -9,7 +9,7 @@ BulkBand_calc         = F
 BulkFS_calc           = F
 BulkGap_cube_calc     = F
 BulkGap_plane_calc    = F
-AHC_calc              = T
+AHC_calc              = F
 SlabBand_calc         = F
 WireBand_calc         = F
 SlabSS_calc           = F
@@ -18,7 +18,7 @@ SlabSpintexture_calc  = F
 wanniercenter_calc    = F
 BerryPhase_calc       = F
 BerryCurvature_calc   = F
-ANE_calc = T
+ANE_calc              = T  
 /
 
 &SYSTEM

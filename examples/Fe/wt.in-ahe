@@ -18,7 +18,6 @@ SlabSpintexture_calc  = F
 wanniercenter_calc    = F
 BerryPhase_calc       = F
 BerryCurvature_calc   = F
-AHC_calc = T
 /
 
 &SYSTEM
