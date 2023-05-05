@@ -8,6 +8,7 @@
 !> [2] Physcial Review Letter 95, 156601 (2005)  (SHC1)             !
 !> [3] Physcial Review B 98, 214402 (2018)       (SHC2)             !
 !> [4] Physical Review Letter 97, 026603 (2006)  (ANC1)             !
+!> restructed by Hanqi Pi on May 2023
 !-------------------------------------------------------------------!
 
    subroutine sigma_AHC
