@@ -48,6 +48,17 @@
 
      complex(Dp),allocatable :: work(:)
 
+     !> if N==1, you don't have to do the diagonalization
+     if (N==1) then 
+        W=A(1, 1)
+        A(1, 1)= 1d0
+        return
+     endif
+
+#if defined (DCU)
+     call hipsolver_zheev(N, A, W)
+#else
+
      lwork=16*N
      allocate(rwork(lwork))
      allocate( work(lwork))
@@ -57,12 +68,6 @@
      info=0
      W=0.0d0
 
-     !> if N==1, you don't have to do the diagonalization
-     if (N==1) then 
-        W=A(1, 1)
-        A(1, 1)= 1d0
-        return
-     endif
 
      call zheev( JOBZ, UPLO, N, A, N,  &
               W, work, lwork, rwork, info )
@@ -73,6 +78,8 @@
      endif
 
      deallocate(rwork, work)
+#endif
+
      return
   end subroutine eigensystem_c
 

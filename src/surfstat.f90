@@ -13,7 +13,10 @@
      ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 
      use wmpi
-     use para
+     use para 
+#if defined (DCU)
+     use dcu_matmul
+#endif
      implicit none
 
      integer :: ierr, doslfile, dosrfile, dosbulkfile
@@ -61,6 +64,10 @@
     !   k2len(i)= t1
     !   print *, i, t1
     !ENDDO
+
+#if defined (DCU)
+     call dcu_mm_allocate(Ndim)
+#endif
 
      allocate( omega(omeganum), dos_l(knv2, omeganum), dos_r(knv2, omeganum))
      allocate( dos_l_only(knv2, omeganum), dos_r_only(knv2, omeganum))
@@ -284,15 +291,15 @@
          write(spindosrfile, '("#", a12, 6a17)') ' k(1/Ang)', ' E(eV)', 'sx', 'sy', 'sz'
          do ikp = 1, knv2
             do j = 1, omeganum
-                write(doslfile,    2002) k2len(ikp)*Angstrom2atomic, omega(j)/eV2Hartree, dos_l(ikp, j), dos_l_only(ikp, j)
-                write(dosrfile,    2002) k2len(ikp)*Angstrom2atomic, omega(j)/eV2Hartree, dos_r(ikp, j), dos_r_only(ikp, j)
-                write(dosbulkfile, 2003) k2len(ikp)*Angstrom2atomic, omega(j)/eV2Hartree, dos_bulk(ikp, j)
+                write(doslfile,    2002) k2len(ikp), omega(j)/eV2Hartree, dos_l(ikp, j), dos_l_only(ikp, j)
+                write(dosrfile,    2002) k2len(ikp), omega(j)/eV2Hartree, dos_r(ikp, j), dos_r_only(ikp, j)
+                write(dosbulkfile, 2003) k2len(ikp), omega(j)/eV2Hartree, dos_bulk(ikp, j)
                 s0(1)=sx_l(ikp, j); s0(2)=sy_l(ikp, j); s0(3)=sz_l(ikp, j); 
                 call rotate(s0, s1)
-                write(spindoslfile,2001) k2len(ikp)*Angstrom2atomic, omega(j)/eV2Hartree, s1
+                write(spindoslfile,2001) k2len(ikp), omega(j)/eV2Hartree, s1
                 s0(1)=sx_r(ikp, j); s0(2)=sy_r(ikp, j); s0(3)=sz_r(ikp, j); 
                 call rotate(s0, s1)
-                write(spindosrfile,2001) k2len(ikp)*Angstrom2atomic, omega(j)/eV2Hartree, s1
+                write(spindosrfile,2001) k2len(ikp), omega(j)/eV2Hartree, s1
              ENDDO
              write(doslfile    , *)
              write(dosrfile    , *)
@@ -350,13 +357,13 @@
         write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
         write(outfileindex, '(a)')'#set xtics offset 0, -1'
         write(outfileindex, '(a)')'#set ylabel offset -6, 0 '
-        write(outfileindex, '(a, f18.5, a)')'set xrange [0: ', maxval(k2len)*Angstrom2atomic, ']'
+        write(outfileindex, '(a, f18.5, a)')'set xrange [0: ', maxval(k2len), ']'
         write(outfileindex, '(a, f18.5, a, f18.5, a)')'set yrange [', emin, ':', emax, ']'
-        write(outfileindex, 202, advance="no") (k2line_name(i), k2line_stop(i)*Angstrom2atomic, i=1, nk2lines)
-        write(outfileindex, 203)k2line_name(nk2lines+1), k2line_stop(nk2lines+1)*Angstrom2atomic
+        write(outfileindex, 202, advance="no") (k2line_name(i), k2line_stop(i), i=1, nk2lines)
+        write(outfileindex, 203)k2line_name(nk2lines+1), k2line_stop(nk2lines+1)
 
         do i=1, nk2lines-1
-           write(outfileindex, 204)k2line_stop(i+1)*Angstrom2atomic, emin, k2line_stop(i+1)*Angstrom2atomic, emax
+           write(outfileindex, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
         enddo
         write(outfileindex, '(a)')'set pm3d interpolate 2,2'
         write(outfileindex, '(2a)')"splot 'dos.dat_l' u 1:2:3 w pm3d"
@@ -409,13 +416,13 @@
         write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
         write(outfileindex, '(a)')'#set xtics offset 0, -1'
         write(outfileindex, '(a)')'#set ylabel offset -6, 0 '
-        write(outfileindex, '(a, f18.5, a)')'set xrange [0: ', maxval(k2len)*Angstrom2atomic, ']'
+        write(outfileindex, '(a, f18.5, a)')'set xrange [0: ', maxval(k2len), ']'
         write(outfileindex, '(a, f18.5, a, f18.5, a)')'set yrange [', emin, ':', emax, ']'
-        write(outfileindex, 202, advance="no") (k2line_name(i), k2line_stop(i)*Angstrom2atomic, i=1, nk2lines)
-        write(outfileindex, 203)k2line_name(nk2lines+1), k2line_stop(nk2lines+1)*Angstrom2atomic
+        write(outfileindex, 202, advance="no") (k2line_name(i), k2line_stop(i), i=1, nk2lines)
+        write(outfileindex, 203)k2line_name(nk2lines+1), k2line_stop(nk2lines+1)
 
         do i=1, nk2lines-1
-           write(outfileindex, 204)k2line_stop(i+1)*Angstrom2atomic, emin, k2line_stop(i+1)*Angstrom2atomic, emax
+           write(outfileindex, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
         enddo
         write(outfileindex, '(a)')'set pm3d interpolate 2,2'
         write(outfileindex, '(2a)')"splot 'dos.dat_l' u 1:2:(exp($4)) w pm3d"
@@ -457,13 +464,13 @@
         write(outfileindex, '(a)')'unset cbtics'
         write(outfileindex, '(a)')'#set xtics offset 0, -1'
         write(outfileindex, '(a)')'#set ylabel offset -6, 0 '
-        write(outfileindex, '(a, f18.5, a)')'set xrange [0: ', maxval(k2len)*Angstrom2atomic, ']'
+        write(outfileindex, '(a, f18.5, a)')'set xrange [0: ', maxval(k2len), ']'
         write(outfileindex, '(a, f18.5, a, f18.5, a)')'set yrange [', emin, ':', emax, ']'
-        write(outfileindex, 202, advance="no") (k2line_name(i), k2line_stop(i)*Angstrom2atomic, i=1, nk2lines)
-        write(outfileindex, 203)k2line_name(nk2lines+1), k2line_stop(nk2lines+1)*Angstrom2atomic
+        write(outfileindex, 202, advance="no") (k2line_name(i), k2line_stop(i), i=1, nk2lines)
+        write(outfileindex, 203)k2line_name(nk2lines+1), k2line_stop(nk2lines+1)
 
         do i=1, nk2lines-1
-           write(outfileindex, 204)k2line_stop(i+1)*Angstrom2atomic, emin, k2line_stop(i+1)*Angstrom2atomic, emax
+           write(outfileindex, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
         enddo
         write(outfileindex, '(a)')'set pm3d interpolate 2,2'
         write(outfileindex, '(2a)')"splot 'dos.dat_r' u 1:2:(exp($4)) w pm3d"
@@ -505,13 +512,13 @@
         write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
         write(outfileindex, '(a)')'#set xtics offset 0, -1'
         write(outfileindex, '(a)')'#set ylabel offset -6, 0 '
-        write(outfileindex, '(a, f18.5, a)')'set xrange [0: ', maxval(k2len)*Angstrom2atomic, ']'
+        write(outfileindex, '(a, f18.5, a)')'set xrange [0: ', maxval(k2len), ']'
         write(outfileindex, '(a, f18.5, a, f18.5, a)')'set yrange [', emin, ':', emax, ']'
-        write(outfileindex, 202, advance="no") (k2line_name(i), k2line_stop(i)*Angstrom2atomic, i=1, nk2lines)
-        write(outfileindex, 203)k2line_name(nk2lines+1), k2line_stop(nk2lines+1)*Angstrom2atomic
+        write(outfileindex, 202, advance="no") (k2line_name(i), k2line_stop(i), i=1, nk2lines)
+        write(outfileindex, 203)k2line_name(nk2lines+1), k2line_stop(nk2lines+1)
 
         do i=1, nk2lines-1
-           write(outfileindex, 204)k2line_stop(i+1)*Angstrom2atomic, emin, k2line_stop(i+1)*Angstrom2atomic, emax
+           write(outfileindex, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
         enddo
         write(outfileindex, '(a)')'set pm3d interpolate 2,2'
         write(outfileindex, '(2a)')"splot 'dos.dat_r' u 1:2:3 w pm3d"
@@ -563,13 +570,13 @@
         write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
         write(outfileindex, '(a)')'#set xtics offset 0, -1'
         write(outfileindex, '(a)')'#set ylabel offset -6, 0 '
-        write(outfileindex, '(a, f18.5, a)')'set xrange [0: ', maxval(k2len)*Angstrom2atomic, ']'
+        write(outfileindex, '(a, f18.5, a)')'set xrange [0: ', maxval(k2len), ']'
         write(outfileindex, '(a, f18.5, a, f18.5, a)')'set yrange [', emin, ':', emax, ']'
-        write(outfileindex, 202, advance="no") (k2line_name(i), k2line_stop(i)*Angstrom2atomic, i=1, nk2lines)
-        write(outfileindex, 203)k2line_name(nk2lines+1), k2line_stop(nk2lines+1)*Angstrom2atomic
+        write(outfileindex, 202, advance="no") (k2line_name(i), k2line_stop(i), i=1, nk2lines)
+        write(outfileindex, 203)k2line_name(nk2lines+1), k2line_stop(nk2lines+1)
 
         do i=1, nk2lines-1
-           write(outfileindex, 204)k2line_stop(i+1)*Angstrom2atomic, emin, k2line_stop(i+1)*Angstrom2atomic, emax
+           write(outfileindex, 204)k2line_stop(i+1), emin, k2line_stop(i+1), emax
         enddo
         write(outfileindex, '(a)')'set pm3d interpolate 2,2'
         write(outfileindex, '(2a)')"splot 'dos.dat_bulk' u 1:2:(exp($3)) w pm3d"
@@ -601,6 +608,9 @@
      deallocate(H01)
      deallocate(ones)
 
+#if defined (DCU)
+     call dcu_mm_deallocate
+#endif
   return
   end subroutine surfstat
 
@@ -865,15 +875,15 @@ SUBROUTINE surfstat_jdos
         OPEN(unit=spindosrfile, file='spindos.dat_r')
         DO ikp = 1, knv2
             DO j = 1, omeganum
-                WRITE(doslfile,    2002) k2len(ikp)*Angstrom2atomic, omega(j)/eV2Hartree, dos_l(ikp, j), dos_l_only(ikp, j)
-                WRITE(dosrfile,    2002) k2len(ikp)*Angstrom2atomic, omega(j)/eV2Hartree, dos_r(ikp, j), dos_r_only(ikp, j)
-                WRITE(dosbulkfile, 2003) k2len(ikp)*Angstrom2atomic, omega(j)/eV2Hartree, dos_bulk(ikp, j)
+                WRITE(doslfile,    2002) k2len(ikp), omega(j)/eV2Hartree, dos_l(ikp, j), dos_l_only(ikp, j)
+                WRITE(dosrfile,    2002) k2len(ikp), omega(j)/eV2Hartree, dos_r(ikp, j), dos_r_only(ikp, j)
+                WRITE(dosbulkfile, 2003) k2len(ikp), omega(j)/eV2Hartree, dos_bulk(ikp, j)
                 s0(1)=sx_l(ikp, j); s0(2)=sy_l(ikp, j); s0(3)=sz_l(ikp, j); 
                 call rotate(s0, s1)
-                WRITE(spindoslfile,2001) k2len(ikp)*Angstrom2atomic, omega(j)/eV2Hartree, s1
+                WRITE(spindoslfile,2001) k2len(ikp), omega(j)/eV2Hartree, s1
                 s0(1)=sx_r(ikp, j); s0(2)=sy_r(ikp, j); s0(3)=sz_r(ikp, j); 
                 call rotate(s0, s1)
-                WRITE(spindosrfile,2001) k2len(ikp)*Angstrom2atomic, omega(j)/eV2Hartree, s1
+                WRITE(spindosrfile,2001) k2len(ikp), omega(j)/eV2Hartree, s1
             ENDDO
             WRITE(doslfile    , *)
             WRITE(dosrfile    , *)

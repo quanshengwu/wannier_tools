@@ -196,9 +196,8 @@ module sparse
    public :: WTParCSRMatrixCreate
    public :: csr_sort_indices
    public :: csr_sum_duplicates
-#if defined (INTELMKL)
    public :: arpack_sparse_coo_eigs
-#endif
+   public :: csrmv_z
 
 contains
 
@@ -2162,7 +2161,6 @@ contains
          return
       end subroutine csr_sum_duplicates
 
-# if defined (INTELMKL)
       subroutine arpack_sparse_coo_eigs(ndims,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,deval,sigma,zeigv, ritzvec)
          use para, only : dp
          implicit none
@@ -2206,15 +2204,64 @@ contains
          zeigv= 0d0
          !> get eigenvalues of a sparse matrix by calling arpack subroutine
          !> here acoo, icoo, jcoo are stored in COO format
-         !call zmat_arpack_zndrv1(ndims, nnzmax, nnz,  acoo, jcoo, icoo, sigma, neval, nvecs, deval, zeigv)
+         call zmat_arpack_zndrv1(ndims, nnzmax, nnz,  acoo, jcoo, icoo, sigma, neval, nvecs, deval, zeigv)
 
          !> acoo, jcoo, icoo would be converted in to A-sigma*I, then converted into CSR format
-         call zmat_arpack_zndrv2(ndims, nnzmax, nnz, acoo, jcoo, icoo, sigma, neval, nvecs, deval, zeigv, ritzvec)
+         !call zmat_arpack_zndrv2(ndims, nnzmax, nnz, acoo, jcoo, icoo, sigma, neval, nvecs, deval, zeigv, ritzvec)
 
 
          return
       end subroutine arpack_sparse_coo_eigs
+      !> A naive implementation
+      !> csrmv_z multiplies a CSR matrix A times a vector x; y=A*x
+      !> inputs:
+      !> ndim, integer, the row dimension of the matrix
+      !> nnz, integer, number of non-zero entries, the dimension of A_csr,
+      !ja_csr
+      !> complex A_csr(nnz), integer ia_csr(ndim+1), ja_csr(nnz), the matrix in
+      !CSR Compresed Sparse Row format
+      !> complex x(ndim)
+      !> outputs:
+      !> complex y(ndim)
+      subroutine csrmv_z(ndim, nnz, A_csr, ia_csr, ja_csr, x, y)
 
+         use para, only : dp
+         implicit none
+
+         integer, intent(in) :: ndim
+         integer, intent(in) :: nnz
+         complex(dp), intent(in) :: A_csr(nnz)
+         integer, intent(in) :: ia_csr(ndim+1)
+         integer, intent(in) :: ja_csr(nnz)
+         complex(dp), intent(in) :: x(ndim)
+         complex(dp), intent(out) :: y(ndim)
+
+         integer :: i, k
+         complex(dp) :: t_z
+
+!        real(dp) :: time1, time2
+
+!        call now(time1)
+#if defined (DCU)
+         call hipsparse_zcsrmv(ndim, nnz, x, ia_csr, ja_csr, A_csr, y)
+#elif defined (INTELMKL)
+         call mkl_zcsrgemv('N', ndim, a_csr, ia_csr, ja_csr, x, y)
+#else
+         do i=1, ndim
+            t_z= 0d0
+            do k=ia_csr(i), ia_csr(i+1)-1
+               t_z= t_z+ A_csr(k) * x(ja_csr(k))
+               
+            enddo
+            y(i) = t_z
+         enddo
+#endif
+
+!        call now(time2)
+!        time_total_debug= time_total_debug+ time2- time1
+         return
+
+      end subroutine csrmv_z
 
       subroutine zmat_arpack_zndrv1(ndims, nnzmax, nnz, acsr, jcsr, icsr, sigma, neval, nvecs, deval, zeigv)
          use para, only : dp, stdout, cpuid
@@ -2297,6 +2344,37 @@ contains
 !
          real(dp), external :: dznrm2, dlapy2
 !
+    interface hipsparse_zcsrmv
+      subroutine hipsparse_zcsrmv(ndim, nnz, x, iA, jA, matA, y)
+    use hipfort
+    use hipfort_hipblas
+    use hipfort_hipsparse
+    use iso_c_binding
+
+    implicit none
+
+    integer, parameter :: dp=kind(1d0)
+
+    !> leading dimension of matrix matA
+    integer, intent(in) :: ndim
+
+    !> number of non-zeros entries of matrix matA
+    integer, intent(in) :: nnz
+
+    !> row index, column index, and values of matA
+    !> ia and ja are one based.
+    integer, target :: ia(ndim+1)
+    integer, target :: ja(nnz)
+    complex(dp), target :: matA(nnz)
+
+    !> a dense vector
+    complex(dp), target :: x(ndim)
+    complex(dp), target :: y(ndim)
+      end subroutine
+
+      end interface hipsparse_zcsrmv
+
+
 !     %-----------------------%
 !     | Executable Statements |
 !     %-----------------------%
@@ -2422,7 +2500,8 @@ contains
 !           | product to workd(ipntr(2)).               |
 !           %-------------------------------------------%
 !
-            call mkl_zcsrgemv('N', ndims, acsr, icsr, jcsr, workd(ipntr(1)), workd(ipntr(2)))
+            call csrmv_z(ndims, nnz, &
+                 acsr, icsr, jcsr, workd(ipntr(1):ipntr(1)+ndims-1), workd(ipntr(2):ipntr(2)+ndims-1))
 !
 !           %-----------------------------------------%
 !           | L O O P   B A C K to call ZNAUPD again. |
@@ -2514,7 +2593,7 @@ contains
                   !$ call av(nx, zeigv(1,j), ax)
 
                   !$ call zmat_sparse_csrmv0(ndims, nnzmax, acsr, jcsr, icsr, zeigv(1,j), ax)
-                  call mkl_zcsrgemv('N', ndims, acsr, icsr, jcsr, zeigV(1,j), ax)
+                  call csrmv_z(ndims, nnz, acsr, icsr, jcsr, zeigV(:, j), ax)
                   call zaxpy(n, -d(j), zeigv(1,j), 1, ax, 1)
                   rd(j,1) = dble(d(j))
                   rd(j,2) = dimag(d(j))
@@ -2594,513 +2673,6 @@ contains
 
          return
       end subroutine zmat_arpack_zndrv1
-
-
-      subroutine zmat_arpack_zndrv2(ndims, nnzmax, nnz, acsr, jcsr, icsr, sigma,neval, nvecs, deval, zeigv, ritzvec)
-         use para, only : dp, stdout, cpuid, LandauLevel_wavefunction_calc, SlabBand_calc
-         implicit none
-
-         ! external arguments
-         ! dimension of matrix A
-         integer, intent(in) :: ndims
-
-         ! maximum number of non-zero elements of matrix A
-         integer, intent(in) :: nnzmax
-
-         ! number of non-zero elements of matrix A
-         integer, intent(inout) :: nnz
-
-         !> input: coo format storage of matrix A
-         !> output: csr format storage of matrix A-sigma*I
-         complex(dp), intent(inout) :: acsr(nnzmax)
-         integer, intent(inout) :: jcsr(nnzmax)
-         integer, intent(inout) :: icsr(nnzmax)
-
-         !> calculate eigenvalue close to sigma
-         complex(dp), intent(in) :: sigma
-
-         ! number of selected eigenvals
-         integer, intent(in) :: neval
-
-         ! number of Arnoldi vectors
-         integer, intent(in) :: nvecs
-
-         !> calculate eigenvector or not
-         logical, intent(in) :: ritzvec
-
-         ! eigenvalues for selected "which"
-         real(dp), intent(out) :: deval(neval)
-
-         ! eigenvector for selected "which"
-         ! dimes= (ndims, neval)
-         complex(dp), intent(out) :: zeigv(ndims, nvecs)
-
-         ! loop index over neval
-         integer :: ival, jval
-
-         ! axuiliary integer variables
-         integer :: itmp, iter, i
-
-         ! auxiliary real(dp) variables
-         real(dp) :: dtmp
-         real(dp) :: memory
-
-         !
-         !     %------------------------%
-         !     | Local Arrays for ARPACK|
-         !     %------------------------%
-         !
-         integer :: iparam(11), ipntr(14)
-         complex(dp), allocatable :: ax(:)
-         complex(dp), allocatable :: d(:)
-         complex(dp), allocatable :: workd(:)
-         complex(dp), allocatable :: workev(:)
-         complex(dp), allocatable :: resid(:)
-         complex(dp), allocatable :: workl(:)
-         complex(dp), allocatable :: v(:,:)
-         logical   , allocatable :: select(:)
-
-         integer, allocatable :: iwk(:)
-
-         real(dp), allocatable :: rwork(:)
-         real(dp), allocatable :: rd(:, :)
-
-         !
-         !     %---------------%
-         !     | Local Scalars |
-         !     %---------------%
-         !
-         character         bmat*1, which*2
-         integer           ido, n, nev, ncv, lworkl, info, j, ierr, &
-            nconv, maxitr, ishfts, mode, ldv
-         integer    :: istat
-         integer    :: lwrkl, lwrkv, lwrkd
-         real(dp)    :: tol
-
-         !
-         !     %-----------------------------%
-         !     | BLAS & LAPACK routines used |
-         !     %-----------------------------%
-         !
-         real(dp), external :: dznrm2, dlapy2
-         !
-         !     %-----------------------%
-         !     | Executable statements |
-         !     %-----------------------%
-         !
-         !     %--------------------------------------------------%
-         !     | The number N is the dimension of the matrix.  A  |
-         !     | standard eigenvalue problem is solved (BMAT =    |
-         !     | 'I').  NEV is the number of eigenvalues (closest |
-         !     | to the shift SIGMA) to be approximated.  Since   |
-         !     | the shift-invert mode is used, WHICH is set to   |
-         !     | 'LM'.  The user can modify NEV, NCV, SIGMA to    |
-         !     | solve problems of different sizes, and to get    |
-         !     | different parts of the spectrum.  However, The   |
-         !     | following conditions must be satisfied:          |
-         !     |                 N <= MAXN,                       |
-         !     |               NEV <= MAXNEV,                     |
-         !     |           NEV + 2 <= NCV <= MAXNCV               |
-         !     %--------------------------------------------------%
-         !
-         n = ndims
-         ldv = ndims
-         nev = neval
-         ncv = nvecs
-         if(ncv>n-1) ncv=n
-         lwrkd = 3 * ndims; lwrkv = 3 * nvecs
-         lwrkl = 3 * nvecs * nvecs  + 5 * nvecs
-         ! allocate memory for arpack
-         allocate(select(nvecs), stat=istat)
-         allocate(ax(ndims), stat=istat)
-         allocate( d(nvecs), stat=istat)
-         !allocate( v(ndims, nvecs), stat=istat)
-         allocate(workd( lwrkd), stat=istat)
-         allocate(workl( lwrkl), stat=istat)
-         allocate(resid( ndims), stat=istat)
-         allocate(workev(lwrkv), stat=istat)
-         allocate(rwork(nvecs), stat=istat)
-         allocate(rd(nvecs, 3), stat=istat)
-         allocate(iwk(ndims+1))
-
-         memory= ndims/1024d0/1024d0*16d0*3+(lwrkl+lwrkd+lwrkv)/1024d0/1024d0*16d0
-         if (cpuid.eq.0) then
-            write(stdout, '(a, f16.1, a)')' > memory cost in zmat_arpack_zndrv2 is : ', memory, 'MB'
-            write(stdout, '(a, I10, a)')' > We are calculating ', neval, ' eigenvalues'
-            write(stdout, '(a, I10, a)')' > with ', ncv, ' Arnoldi Lanczos vectors.'
-            write(stdout, '(a, I16)')' > Dimension of the matrix is: ', ndims
-         endif
-
-
-         
-         iwk= 0
-         bmat  = 'I'
-         which = 'LM'
-
-         !
-         !     %----------------------------------------------------%
-         !     | Construct C = A - SIGMA*I, factor C in complex     |
-         !     | arithmetic (using LAPACK subroutine zgttrf). The   |
-         !     | matrix A is chosen to be the tridiagonal matrix    |
-         !     | derived from standard central difference of the    |
-         !     | 1-d convection diffusion operator - u" + rho*u' on |
-         !     | the interval [0, 1] with zero Dirichlet boundary   |
-         !     | condition.                                         |
-         !     %----------------------------------------------------%
-         !
-
-         !> added in the diagonal part
-         do i=1, ndims
-            j=i+nnz
-            icsr(j)= i
-            jcsr(j)= i
-            acsr(j)= -sigma
-         enddo
-         nnz= nnz+ ndims
-
-
-         !> transform coo format to csr format
-         call ConvertCooToCsr(ndims, nnz, acsr, icsr, jcsr, iwk)
-         call csr_sort_indices(ndims, nnz, icsr, jcsr, acsr)
-
-         !> sum up the same entries in the sparse matrix
-         call csr_sum_duplicates(ndims, nnz, icsr, jcsr, acsr)
-         call csr_sort_indices(ndims, nnz, icsr, jcsr, acsr)
-
-         !
-         !     %-----------------------------------------------------%
-         !     | The work array WORKL is used in ZNAUPD as           |
-         !     | workspace.  Its dimension LWORKL is set as          |
-         !     | illustrated below.  The parameter TOL determines    |
-         !     | the stopping criterion. If TOL<=0, machine          |
-         !     | precision is used.  The variable IDO is used for    |
-         !     | reverse communication, and is initially set to 0.   |
-         !     | Setting INFO=0 indicates that a random vector is    |
-         !     | generated in ZNAUPD to start the Arnoldi iteration. |
-         !     %-----------------------------------------------------%
-         !
-         lworkl = 3 * ncv * ncv + 5 * ncv
-         tol    = 1.0D-7
-         ido    = 0
-         info   = 0
-         !
-         !     %---------------------------------------------------%
-         !     | This program uses exact shifts with respect to    |
-         !     | the current Hessenberg matrix (IPARAM(1) = 1).    |
-         !     | IPARAM(3) specifies the maximum number of Arnoldi |
-         !     | iterations allowed. Mode 3 of ZNAUPD is used      |
-         !     | (IPARAM(7) = 3).  All these options can be        |
-         !     | changed by the user. For details see the          |
-         !     | documentation in ZNAUPD.                          |
-         !     %---------------------------------------------------%
-         !
-         ishfts = 1
-         maxitr = 50000
-         mode   = 3
-
-         iparam(1) = ishfts
-         iparam(3) = maxitr
-         iparam(7) = mode
-
-
-         !
-         !     %-------------------------------------------%
-         !     | M A I N   L O O P (Reverse communication) |
-         !     %-------------------------------------------%
-         !
-         iter = 0
-20       continue
-         !
-         !        %---------------------------------------------%
-         !        | Repeatedly call the routine ZNAUPD and take |
-         !        | actions indicated by parameter IDO until    |
-         !        | either convergence is indicated or maxitr   |
-         !        | has been exceeded.                          |
-         !        %---------------------------------------------%
-         !
-         !    write(*,*) 'ncv,nev',ncv,nev,n
-
-         
-         call znaupd ( ido, bmat, n, which, nev, tol, resid, ncv, &
-            zeigv, ldv, iparam, ipntr, workd, workl, lworkl, rwork,info )
-
-         iter = iter + 1
-         if (mod(iter,1) .eq. 0 .and. cpuid==0 ) then
-            write(stdout, '(A, I8)') '>>> Iteration with znaupd', iter
-         endif ! back if (mod(iter,1) .eq. 0) block
-
-         if (ido .eq. -1 .or. ido .eq. 1 ) then
-            !
-            !           %-------------------------------------------%
-            !           | Perform  y <--- OP*x = inv[A-SIGMA*I]*x   |
-            !           | The user should supply his/her own linear |
-            !           | system solver here that takes             |
-            !           | workd(ipntr(1)) as the input, and returns |
-            !           | the result to workd(ipntr(2)).            |
-            !           %-------------------------------------------%
-            !
-            !           call zcopy( n, workd(ipntr(1)),1, workd(ipntr(2)), 1)
-            !
-            !           call zgttrs('N', n, 1, dl, dd, du, du2, ipiv, workd(ipntr(2)), n, ierr)
-!        call sparse_zgesv_csr(ndims,nnz,acsr,jcsr,icsr,workd(ipntr(1)), workd(ipntr(2)))
-            call zmat_mkldss_zgesv(ndims, nnz, acsr, jcsr, icsr, workd(ipntr(1)), workd(ipntr(2)))
-            !
-            !           %-----------------------------------------%
-            !           | L O O P   B A C K to call ZNAUPD again. |
-            !           %-----------------------------------------%
-            !
-            go to 20
-
-         end if
-         !
-         !     %-----------------------------------------%
-         !     | Either we have convergence, or there is |
-         !     | an error.                               |
-         !     %-----------------------------------------%
-         !
-         if ( info .lt. 0 ) then
-            !
-            !        %--------------------------%
-            !        | Error message, check the |
-            !        | documentation in ZNAUPD  |
-            !        %--------------------------%
-            !
-            if (cpuid==0) write(stdout, *) ' '
-            if (cpuid==0) write(stdout, *) ' Error with _naupd, info = ',info
-            if (cpuid==0) write(stdout, *) ' Check the documentation in _naupd.'
-            if (cpuid==0) write(stdout, *) ' '
-
-         else
-            !
-            !        %-------------------------------------------%
-            !        | No fatal errors occurred.                 |
-            !        | Post-Process using ZNEUPD.                |
-            !        |                                           |
-            !        | Computed eigenvalues may be extracted.    |
-            !        |                                           |
-            !        | Eigenvectors may also be computed now if  |
-            !        | desired.  (indicated by ritzvec = .true.)    |
-            !        %-------------------------------------------%
-            !
-
-            call zneupd (ritzvec, 'A', select, d, zeigv, ldv, sigma, &
-               workev, bmat, n, which, nev, tol, resid, ncv,&
-               zeigv, ldv, iparam, ipntr, workd, workl, lworkl, &
-               rwork, ierr)
-            !
-            !        %----------------------------------------------%
-            !        | Eigenvalues are returned in the one          |
-            !        | dimensional array D.  The corresponding      |
-            !        | eigenvectors are returned in the first NCONV |
-            !        | (=IPARAM(5)) columns of the two dimensional  |
-            !        | array zeigV if requested.  Otherwise, an         |
-            !        | orthogonal basis for the invariant subspace  |
-            !        | corresponding to the eigenvalues in D is     |
-            !        | returned in zeigV.                               |
-            !        %----------------------------------------------%
-            !
-            if ( ierr .ne. 0) then
-               !
-               !           %------------------------------------%
-               !           | Error condition:                   |
-               !           | Check the documentation of ZNEUPD. |
-               !           %------------------------------------%
-               !
-               if (cpuid==0) write(stdout, *) ' '
-               if (cpuid==0) write(stdout, *) ' Error with _neupd, info = ', ierr
-               if (cpuid==0) write(stdout, *) ' Check the documentation of _neupd. '
-               if (cpuid==0) write(stdout, *) ' '
-            else
-
-               nconv = iparam(5)
-               do 60 j=1, nconv
-                  !
-                  !              %---------------------------%
-                  !              | Compute the residual norm |
-                  !              |                           |
-                  !              |   ||  A*x - lambda*x ||   |
-                  !              |                           |
-                  !              | for the NCONV accurately  |
-                  !              | computed eigenvalues and  |
-                  !              | eigenvectors.  (iparam(5) |
-                  !              | indicates how many are    |
-                  !              | accurate to the requested |
-                  !              | tolerance)                |
-                  !              %---------------------------%
-                  !
-                  !$ call av(n, zeigv(1,j), ax)
-                  call mkl_zcsrgemv('N', ndims, acsr, icsr, jcsr, zeigv(1,j), ax)
-                  call zaxpy(n, -d(j), zeigv(1,j), 1, ax, 1)
-                  rd(j,1) = dble(d(j))
-                  rd(j,2) = dimag(d(j))
-                  rd(j,3) = dznrm2(n, ax, 1)
-                  rd(j,3) = rd(j,3) / dlapy2(rd(j,1),rd(j,2))
-60             continue
-               !
-               !           %-----------------------------%
-               !           | Display computed residuals. |
-               !           %-----------------------------%
-               !
-               !                call dmout(6, nconv, 3, rd, ncv, -6, &
-               !                    'Ritz values (Real, Imag) and relative residuals')
-
-            end if
-            !
-            !        %-------------------------------------------%
-            !        | if (cpuid==0) write(stdout, *)ditional convergence information. |
-            !        %-------------------------------------------%
-            !
-            if ( info .eq. 1) then
-               if (cpuid==0) write(stdout, *) ' '
-               if (cpuid==0) write(stdout, *) ' Maximum number of iterations reached.'
-               if (cpuid==0) write(stdout, *) ' '
-            else if ( info .eq. 3) then
-               if (cpuid==0) write(stdout, *) ' '
-               if (cpuid==0) write(stdout, *) ' No shifts could be applied during implicit &
-               & Arnoldi update, try increasing NCV.'
-               if (cpuid==0) write(stdout, *) ' '
-            end if
-            !
-            !        print *, ' '
-            !        print *, '_NDRV2 '
-            !        print *, '====== '
-            !        print *, ' '
-            !        print *, ' Size of the matrix is ', n
-            !        print *, ' The number of Ritz values requested is ', nev
-            !        print *, ' The number of Arnoldi vectors generated', &
-            !            ' (NCV) is ', ncv
-            !        print *, ' What portion of the spectrum: ', which
-            !        print *, ' The number of converged Ritz values is ', &
-            !            nconv
-            !        print *, ' The number of Implicit Arnoldi update',   &
-            !            ' iterations taken is ', iparam(3)
-            !        print *, ' The number of OP*x is ', iparam(9)
-            !        print *, ' The convergence criterion is ', tol
-            !        print *, ' '
-
-         end if
-         !
-         !     %---------------------------%
-         !     | Done with program zndrv2. |
-         !     %---------------------------%
-         !
-
-         do ival=1,neval
-            deval(ival) = real(d(ival))
-           !zeigv(1:ndims, ival) = zeigV(1:ndims, ival)
-         enddo ! over ival={1,neval} loop
-
-         !---------------------------------------------------------------------!
-         ! use selection sort to minimize swaps of eigenvectors, ref: dsteqr.f !
-         !---------------------------------------------------------------------!
-         do ival=1,neval-1
-            itmp = ival; dtmp = deval(itmp)
-
-            do jval=ival+1,neval
-               if ((deval(jval)+1.0D-12) .lt. dtmp) then
-                  itmp = jval; dtmp = deval(itmp)
-               endif
-            enddo ! over jval={ival+1,neval} loop
-
-            if (itmp .ne. ival) then
-               deval(itmp) = deval(ival); deval(ival) = dtmp
-               call zswap(ndims, zeigv(1, ival), 1, zeigv(1,itmp), 1)
-            endif
-         enddo ! over ival={1,neval-1} loop
-!    write(*,*) 'well done zndrv2'
-
-         deallocate(select)
-         deallocate(ax)
-         deallocate( d)
-        !deallocate( v)
-         deallocate(workd)
-         deallocate(workl)
-         deallocate(resid)
-         deallocate(workev)
-         deallocate(rwork)
-         deallocate(rd)
-         deallocate(iwk)
-
-         return
-      end subroutine zmat_arpack_zndrv2
-
-      subroutine zmat_mkldss_zgesv(ndims, nnzmax, acsr, jcsr, icsr, xvec, yvec)
-         use mkl_dss
-         use para, only : dp, stdout
-
-         implicit none
-
-         ! external arguments
-         ! dimension of matrix A
-         integer, intent(in) :: ndims
-
-         ! non-zero elements of matrix A
-         integer, intent(in) :: nnzmax
-
-         ! compressed sparse row storage of matrix A
-         complex(dp), intent(in) :: acsr(nnzmax)
-         integer, intent(in) :: jcsr(nnzmax)
-         integer, intent(in) :: icsr(ndims+1)
-
-         ! xvec vector with dimension "ndims"
-         complex(dp), intent(in) :: xvec(ndims)
-
-         ! yvec vector with dimension "ndims"
-         complex(dp), intent(out) :: yvec(ndims)
-
-         ! local variables
-         type(mkl_dss_handle) :: handle
-         integer :: nrhs
-         integer :: ierr
-         integer :: perm(1)
-
-         !>>> step 0: setup the problem to be solved
-         nrhs = 1
-         perm(1) = 0
-
-         !>>> step 1: initialize the solver.
-         ierr = dss_create( handle, mkl_dss_defaults )
-         if (ierr .ne. mkl_dss_success) then
-            write(*,*) "mkl_dss_create returned error code", ierr; stop
-         endif 
-
-         !>>> step 2: define the non-zero structure of the matrix.
-         !ierr = dss_define_structure( handle, mkl_dss_symmetric_structure_complex, icsr, ndims, ndims, jcsr, nnzmax )
-         ierr = dss_define_structure( handle, MKL_DSS_NON_SYMMETRIC_COMPLEX, icsr, ndims, ndims, jcsr, nnzmax )
-         if (ierr .ne. mkl_dss_success) then
-            write(*,*) "mkl_dss_define_structure returned error code", ierr; stop
-         endif ! back if (ierr .ne. mkl_dss_success} block
-
-         !>>> step 3: reorder the matrix.
-         ierr = dss_reorder( handle, mkl_dss_defaults, perm )
-         if (ierr .ne. mkl_dss_success) then
-            write(*,*) "mkl_dss_reorder returned error code", ierr; stop
-         endif ! back if (ierr .ne. mkl_dss_success} block
-
-         !>>> step 4: factor the matrix.
-         ierr = dss_factor_complex( handle, mkl_dss_defaults, acsr )
-         if (ierr .ne. mkl_dss_success) then
-            write(*,*) "mkl_dss_factor_complex returned error code", ierr; stop
-         endif ! back if (ierr .ne. mkl_dss_success} block
-
-         ! allocate the solution vector and solve the problem.
-         ierr = dss_solve_complex( handle, mkl_dss_defaults, xvec, nrhs, yvec )
-
-         if (ierr .ne. mkl_dss_success) then
-            write(*,*) "mkl_dss_solve_complex returned error code", ierr; stop
-         endif ! back if (ierr .ne. mkl_dss_success} block
-
-         ! deallocate solver storage and various local arrays.
-         ierr = dss_delete( handle, mkl_dss_defaults )
-
-         if (ierr .ne. mkl_dss_success) then
-            write(*,*) "mkl_dss_solver returned error code", ierr; stop
-         endif ! back if (ierr .ne. mkl_dss_success} block
-
-         return
-      end subroutine zmat_mkldss_zgesv
-#endif
-
 
    end module sparse
 

@@ -3,7 +3,10 @@
   subroutine mat_mul(nmatdim,A,B,C)
      
      use para, only : Dp
-      implicit none
+#if defined (DCU)
+     use dcu_matmul
+#endif
+     implicit none
 
 
      integer,intent(in) :: nmatdim    
@@ -20,8 +23,12 @@
 
      C(:,:)=(0.0d0,0.0d0)
 
+#if defined (DCU)
+     call mat_mul_dcu_in(nmatdim, A, B, C)
+#else
      call ZGEMM('N','N',nmatdim,nmatdim,nmatdim,ALPHA, &
                &  A,nmatdim,B,nmatdim,BETA,C,nmatdim)
+#endif
 
      return
   end subroutine mat_mul

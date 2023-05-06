@@ -20,7 +20,22 @@
 
      complex(dp),parameter :: zone=(1.0d0,0.0d0)
 
+#if defined (DCU)
+     interface hipsolver_zgesv
+        subroutine hipsolver_zgesv(ndim, Amat)
 
+           use hipfort
+           use hipfort_hipsolver
+           implicit none
+   
+           integer, parameter :: dp=kind(1d0)
+           integer, intent(in) :: ndim
+           complex(dp), intent(inout), target :: Amat(ndim, ndim)
+ 
+        end subroutine hipsolver_zgesv
+     end interface hipsolver_zgesv
+ 
+#endif
 
 !    Amat  :
 !    Overwritten by the factors L and U from the factorization of A = P*L*U;
@@ -37,6 +52,9 @@
      complex(dp),allocatable :: Bmat(:,:)
 
 
+#if defined (DCU)
+     call hipsolver_zgesv(ndim, Amat)
+#else
      allocate(ipiv(ndim))
      allocate(Bmat(ndim,ndim))
 
@@ -53,6 +71,7 @@
      if(info.ne.0)print *,'something wrong with zgesv'
 
      Amat=Bmat
+#endif
      
      return
   end subroutine inv 
