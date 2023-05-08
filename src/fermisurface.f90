@@ -151,9 +151,9 @@
         write(outfileindex,'(i10)') nband_store
         write(outfileindex,'(3i10)') nk1, nk2, nk3
         write(outfileindex,'(a)') '0.0 0.0 0.0'
-        write(outfileindex,'(3f16.8)') (Origin_cell%Kua(i), i=1,3)
-        write(outfileindex,'(3f16.8)') (Origin_cell%Kub(i), i=1,3)
-        write(outfileindex,'(3f16.8)') (Origin_cell%Kuc(i), i=1,3)
+        write(outfileindex,'(3f16.8)') (Origin_cell%Kua(i)*Angstrom2atomic, i=1,3)
+        write(outfileindex,'(3f16.8)') (Origin_cell%Kub(i)*Angstrom2atomic, i=1,3)
+        write(outfileindex,'(3f16.8)') (Origin_cell%Kuc(i)*Angstrom2atomic, i=1,3)
         do i=1,nband_store
            write(outfileindex,'(a, i10)') 'BAND: ',i
            do ik=1, knv3
@@ -1113,7 +1113,8 @@ subroutine fermisurface_stack
             'k1 (2pi/a)', 'k2 (2pi/b)', 'k3 (2pi/c)'
          do ik=1, knv3
             if (abs(gap_mpi(1, ik))< Gap_threshold) then
-               write(outfileindex, '(80f16.8)') kxy_shape(:, ik), (gap_mpi(:, ik)), kxy(:, ik)
+               write(outfileindex, '(80f16.8)') kxy_shape(:, ik)*Angstrom2atomic, &
+                  (gap_mpi(:, ik)/eV2Hartree), kxy(:, ik)*Angstrom2atomic
             endif
          enddo
          close(outfileindex)
@@ -1149,9 +1150,9 @@ subroutine fermisurface_stack
          write(outfileindex, '(a)')'set ytics offset -2.5,   0 , 0'
          write(outfileindex, '(a)')'set size ratio -1'
          write(outfileindex, '(a)')'set view 60, 140, 1, 1'
-         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set xrange [', kxmin_shape, ':', kxmax_shape, ']'
-         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', kymin_shape, ':', kymax_shape, ']'
-         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set zrange [', kzmin_shape, ':', kzmax_shape, ']'
+         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set xrange [', kxmin_shape*Angstrom2atomic, ':', kxmax_shape*Angstrom2atomic, ']'
+         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', kymin_shape*Angstrom2atomic, ':', kymax_shape*Angstrom2atomic, ']'
+         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set zrange [', kzmin_shape*Angstrom2atomic, ':', kzmax_shape*Angstrom2atomic, ']'
          write(outfileindex, '(2a)')"splot 'GapCube.dat' u 1:2:3 w p pt 7 ps 2"
          close(outfileindex)
      
@@ -1285,7 +1286,8 @@ subroutine fermisurface_stack
          write(outfileindex, '(100a16)')'# kx', 'ky', 'kz', "kx'", "ky'", "kz'", 'gap', 'Ev4', 'Ev3', &
             'Ev2', 'Ev1', 'Ec1', 'Ec2', 'Ec3', 'Ec4', 'k1', 'k2', 'k3'
          do ik=1, knv3
-            write(outfileindex, '(300f16.8)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, (gap_mpi(:, ik)), kxy(:, ik)
+            write(outfileindex, '(300f16.8)')kxy_shape(:, ik)*Angstrom2atomic, &
+               kxy_plane(:, ik)*Angstrom2atomic, (gap_mpi(:, ik)/eV2Hartree), kxy(:, ik)*Angstrom2atomic
             if (mod(ik, nky)==0) write(outfileindex, *)' '
          enddo
          close(outfileindex)
@@ -1299,7 +1301,8 @@ subroutine fermisurface_stack
             'Ec2', 'k1', 'k2', 'k3'
          do ik=1, knv3
             if (abs(gap_mpi(1, ik))< Gap_threshold) then
-               write(outfileindex, '(800f16.8)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, (gap_mpi(:, ik)), kxy(:, ik)
+               write(outfileindex, '(800f16.8)')kxy_shape(:, ik)*Angstrom2atomic, &
+               kxy_plane(:, ik)*Angstrom2atomic, (gap_mpi(:, ik)/eV2Hartree), kxy(:, ik)*Angstrom2atomic
             endif
          enddo
          close(outfileindex)
@@ -1311,7 +1314,8 @@ subroutine fermisurface_stack
          write(outfileindex, '(100a16)')'% kx', 'ky', 'kz', 'gap', 'Ev2', 'Ev1', 'Ec1', &
             'Ec2', 'k1', 'k2', 'k3'
          do ik=1, knv3
-            write(outfileindex, '(300f16.8)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, (gap_mpi(:, ik)), kxy(:, ik)
+            write(outfileindex, '(300f16.8)')kxy_shape(:, ik)*Angstrom2atomic, &
+               kxy_plane(:, ik)*Angstrom2atomic, (gap_mpi(:, ik)/eV2Hartree), kxy(:, ik)*Angstrom2atomic
          enddo
          close(outfileindex)
       endif
