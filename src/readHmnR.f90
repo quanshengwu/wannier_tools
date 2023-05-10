@@ -144,7 +144,8 @@ subroutine readNormalHmnR()
 
    !> change from "up dn up dn" to "up up dn dn"
    if (index( Package, 'QE')/=0.or.index( Package, 'quantumespresso')/=0 &
-         .or.index( Package, 'quantum-espresso')/=0.or.index( Package, 'VASP6')/=0.or.index( Package, 'pwscf')/=0) then
+         .or.index( Package, 'quantum-espresso')/=0.or.index(Package, 'VASP6')/=0.or.index( Package, 'pwscf')/=0) then
+         print *, 'here'
       call reorder_wannierbasis
 
       if (cpuid==0.and.export_newhr) then
