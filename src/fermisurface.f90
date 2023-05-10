@@ -90,7 +90,8 @@
 
         ! calculation bulk hamiltonian
         Hamk_bulk= 0d0
-        call ham_bulk_atomicgauge    (k, Hamk_bulk)
+       !call ham_bulk_atomicgauge    (k, Hamk_bulk)
+        call ham_bulk_latticegauge    (k, Hamk_bulk)
         call eigensystem_c( 'N', 'U', Num_wann, Hamk_bulk, W)
         eigval_mpi(:, ik)= W(nband_min:nband_max)
         call now(time_end)
@@ -522,8 +523,8 @@
         Nwann= Num_wann/2
         !> spin operator matrix
         !> this part is package dependent. 
-        if (index( Package, 'VASP')/=0.or. index( Package, 'Wien2k')/=0 &
-           .or. index( Package, 'Abinit')/=0.or. index( Package, 'openmx')/=0) then
+       !if (index( Package, 'VASP')/=0.or. index( Package, 'Wien2k')/=0 &
+       !   .or. index( Package, 'Abinit')/=0.or. index( Package, 'openmx')/=0) then
            do j=1, Nwann
               spin_sigma_x(j, Nwann+j)=1.0d0
               spin_sigma_x(j+Nwann, j)=1.0d0
@@ -532,21 +533,11 @@
               spin_sigma_z(j, j)= 1d0
               spin_sigma_z(j+Nwann, j+Nwann)=-1d0
            enddo
-        elseif (index( Package, 'QE')/=0.or.index( Package, 'quantumespresso')/=0 &
-           .or.index( Package, 'quantum-espresso')/=0.or.index( Package, 'pwscf')/=0) then
-           do j=1, Nwann
-              spin_sigma_x((2*j-1), 2*j)=1.0d0
-              spin_sigma_x(2*j, (2*j-1))=1.0d0
-              spin_sigma_y((2*j-1), 2*j)=-zi
-              spin_sigma_y(2*j, (2*j-1))=zi
-              spin_sigma_z((2*j-1), (2*j-1))=1.0d0
-              spin_sigma_z(2*j, 2*j)=-1.0d0
-           enddo
-        else
-           if (cpuid.eq.0) write(stdout, *)'Error: please report your software generating tight binding and wannier90.wout to me'
-           if (cpuid.eq.0) write(stdout, *)'wuquansheng@gmail.com'
-           stop 'Error: please report your software and wannier90.wout to wuquansheng@gmail.com'
-        endif
+       !else
+       !   if (cpuid.eq.0) write(stdout, *)'Error: please report your software generating tight binding and wannier90.wout to me'
+       !   if (cpuid.eq.0) write(stdout, *)'wuquansheng@gmail.com'
+       !   stop 'Error: please report your software and wannier90.wout to wuquansheng@gmail.com'
+       !endif
      endif
 
      allocate(ones(Num_wann, Num_wann), ctemp(Num_wann, Num_wann))
