@@ -43,6 +43,7 @@
      real(dp), allocatable :: sigma_tensor_ahc(:, :, :)
 
      real(dp), allocatable :: eta_array(:)
+     real(dp), allocatable :: T_list(:)
 
      character*40 :: ahcfilename, etaname
 
@@ -66,8 +67,16 @@
         endif
      enddo ! ie
 
-     call  sigma_ahc_vary_ChemicalPotential(OmegaNum, energy, NumberofEta, eta_array, sigma_tensor_ahc)
+     !> temperature
+     do iT=1, NumT
+         if (NumT>1) then
+            T_list(iT)= Tmin+(Tmax-Tmin)*(iT-1d0)/dble(NumT-1)
+         else
+            T_list= Tmin
+         endif
+     enddo ! iT
 
+     call  sigma_ahc_vary_ChemicalPotential(OmegaNum, energy, NumberofEta, eta_array, sigma_tensor_ahc)
 
      outfileindex= outfileindex+ 1
      if (cpuid.eq.0) then

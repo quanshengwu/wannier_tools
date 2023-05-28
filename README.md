@@ -6,6 +6,8 @@ The homepage of the WannierTools code is [**https://www.wanniertools.org**](http
 
 Full documentation of WannierTools is on website [**http://www.wanniertools.com**](http://quanshengwu.github.io/wannier_tools/)
 
+QQ group number : 709225749
+
 ![](https://lh3.googleusercontent.com/-NGkPcF7iUDY/Vy-34BbICBI/AAAAAAAAASY/e2YiWSnQJD4jpHh-kDWceThf2jKKSGAxwCCo/s526/wannier_tools-logo-purple.jpg)
 
 **Authors and contributors**
@@ -32,7 +34,6 @@ git clone https://github.com/quanshengwu/wannier_tools.git
 The stable branch can be downloaded in
 
 [**https://github.com/quanshengwu/wannier\_tools/releases**](https://github.com/quanshengwu/wannier_tools/releases)
-
 
 
 **Brief introductions**
