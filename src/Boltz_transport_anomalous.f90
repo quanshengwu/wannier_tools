@@ -34,7 +34,7 @@
      implicit none
     
      integer :: iR, ik, ikx, iky, ikz
-     integer :: i, m, ie, ieta
+     integer :: i, m, ie, ieta, iT
      integer :: ierr, knv3
      integer :: NumberofEta
 
