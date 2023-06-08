@@ -2,21 +2,21 @@
 !~ include "mkl_dss.f90"
 
 
-subroutine ham_3Dlandau_sparse1(nnzmax, Ndimq, Nq, k, acoo,jcoo,icoo)
+subroutine ham_3Dlandau_sparse1(nnz, Ndimq, Nq, k, acoo,jcoo,icoo)
 !> We generate the TB hamiltonian under magnetic field with dense formated HmnR.
 !> At the begining, we generate coo-formated hamlitonian. However, in the end,
 !> the coo-formated hamlitonian will be transform into csr format
    use para
    implicit none
 
-   integer, intent(inout) :: nnzmax
+   integer, intent(inout) :: nnz
    integer, intent(in) :: Ndimq
    integer, intent(in) :: Nq
    real(dp), intent(in) :: k(3)
    !    complex(dp) :: ham_landau(Ndimq, Ndimq)
-   complex(dp), intent(inout) :: acoo(nnzmax)
-   integer, intent(inout) :: jcoo(nnzmax)
-   integer, intent(inout) :: icoo(nnzmax)
+   complex(dp), intent(inout) :: acoo(nnz)
+   integer, intent(inout) :: jcoo(nnz)
+   integer, intent(inout) :: icoo(nnz)
 
    !> inta-hopping for the supercell
    complex(dp), allocatable :: H00(:, :)
@@ -65,7 +65,7 @@ subroutine ham_3Dlandau_sparse1(nnzmax, Ndimq, Nq, k, acoo,jcoo,icoo)
    !> calculate phase induced by magnetic field
    real(dp),external :: phase1,phase2
 
-   !> for leaking purpose, only will be allocated when nnzmax is not big enough
+   !> for leaking purpose, only will be allocated when nnz is not big enough
    !complex(dp), allocatable :: acoo_extend(:)
    !integer, allocatable :: icoo_extend(:)
    !integer, allocatable :: jcoo_extend(:)
@@ -184,7 +184,7 @@ subroutine ham_3Dlandau_sparse1(nnzmax, Ndimq, Nq, k, acoo,jcoo,icoo)
          do coo2=1,Num_wann
             do coo1=1,Num_wann
                tmp=H00(coo1,coo2)
-               if(abs(tmp)>eps6) then
+               if(abs(tmp)/eV2Hartree >eps6) then
                   j_t=coo1+(i1-1)*Num_wann
                   i_t=coo2+(i2-1)*Num_wann
                   !if (i_t>=j_t) then
@@ -202,10 +202,10 @@ subroutine ham_3Dlandau_sparse1(nnzmax, Ndimq, Nq, k, acoo,jcoo,icoo)
    enddo ! i1
 
 
-   if (cpuid.eq.0) write(stdout,*) 'nnz, nnzmax after H00 : ', ncoo, nnzmax
-   if (nnzmax< ncoo) then
-      write(*, *)'Please increase nnzmax in the sparse.f90'
-      write(*,*) 'nnz, nnzmax after H00 : ', ncoo, nnzmax
+   if (cpuid.eq.0) write(stdout,*) 'nnz, nnzmax after H00 : ', ncoo, nnz
+   if (nnz< ncoo) then
+      write(*, *)'Please increase nnz in the sparse.f90'
+      write(*,*) 'nnz, nnz after H00 : ', ncoo, nnz
       stop
    endif
 
@@ -293,7 +293,7 @@ subroutine ham_3Dlandau_sparse1(nnzmax, Ndimq, Nq, k, acoo,jcoo,icoo)
          do coo2=1,Num_wann!*(i1-1),Num_wann*i1
             do coo1=1,Num_wann!*(i2-1),Num_wann*i2
                tmp=H01(coo1,coo2)
-               if(abs(tmp)>eps6) then
+               if(abs(tmp)/eV2Hartree >eps6) then
 
                   !> only store the upper triangle matrix for mkl_dss purpose
                   j_t=coo1+(i1-1)*Num_wann
@@ -321,36 +321,36 @@ subroutine ham_3Dlandau_sparse1(nnzmax, Ndimq, Nq, k, acoo,jcoo,icoo)
 
    enddo ! i1
 
-   if (cpuid.eq.0) write(stdout,*) 'nnz, nnzmax after H01:', ncoo, nnzmax
-   if (nnzmax< ncoo) then
+   if (cpuid.eq.0) write(stdout,*) 'nnz, nnzmax after H01:', ncoo, nnz
+   if (nnz< ncoo) then
       write(*, *)'Please increase nnzmax in the sparse.f90'
-      write(*,*) 'nnz, nnzmax after H01 : ', ncoo, nnzmax
+      write(*,*) 'nnz, nnz after H01 : ', ncoo, nnz
       stop
    endif
 
-   nnzmax= ncoo
+   nnz= ncoo
 
    return
 end subroutine ham_3Dlandau_sparse1
 
-subroutine ham_3Dlandau_sparseHR(nnzmax, Ndimq, Nq, k, acoo,jcoo,icoo)
+subroutine ham_3Dlandau_sparseHR(nnz, Ndimq, Nq, k, acoo,jcoo,icoo)
 !> We generate the TB hamiltonian under magnetic field with sparse formated HmnR.
 !> At the begining, we generate coo-formated hamlitonian. However, in the end,
 !> the coo-formated hamlitonian will be transform into csr format
    use para
    implicit none
 
-   !> input: nnzmax is the maximum number of non-zeros entries
-   !> output: nnzmax is the number of non-zeros entries of acoo
-   integer, intent(inout) :: nnzmax
+   !> input: nnz is the maximum number of non-zeros entries
+   !> output: nnz is the number of non-zeros entries of acoo
+   integer, intent(inout) :: nnz
    integer, intent(in) :: Ndimq
    integer, intent(in) :: Nq
    real(dp), intent(in) :: k(3)
 
    !> output hamiltonian stored as COO sparse matrix format
-   complex(dp), intent(inout) :: acoo(nnzmax)
-   integer, intent(inout) :: jcoo(nnzmax)
-   integer, intent(inout) :: icoo(nnzmax)
+   complex(dp), intent(inout) :: acoo(nnz)
+   integer, intent(inout) :: jcoo(nnz)
+   integer, intent(inout) :: icoo(nnz)
    integer,allocatable :: rxyz(:,:),nonzero_counter(:,:,:)
    
 
@@ -386,7 +386,7 @@ subroutine ham_3Dlandau_sparseHR(nnzmax, Ndimq, Nq, k, acoo,jcoo,icoo)
    integer(li), allocatable, target :: iwk (:)
 
    if(export_maghr) then
-      allocate(rxyz(nnzmax,3))
+      allocate(rxyz(nnz,3))
       allocate(nonzero_counter(-ijmax:ijmax,-ijmax:ijmax,-ijmax:ijmax))
       nonzero_counter=0
    endif
@@ -410,7 +410,6 @@ subroutine ham_3Dlandau_sparseHR(nnzmax, Ndimq, Nq, k, acoo,jcoo,icoo)
             ic=dble(irvec(3,iR))
 
             !> new lattice
-!~             write(*,*) ims
             call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
 
             inew_ic= int(new_ic)
@@ -441,15 +440,15 @@ subroutine ham_3Dlandau_sparseHR(nnzmax, Ndimq, Nq, k, acoo,jcoo,icoo)
             fac= cos(phase)+ zi*sin(phase)
 
             tmp=hacoo(ims)*ratio/ndegen(iR)* fac
-            if(abs(tmp) > 1e-6) then
+            if(abs(tmp)/eV2Hartree > 1e-6) then
                ncoo=ncoo+1
                icoo(ncoo)=hicoo(ims)+(i1-1)*Num_wann
                jcoo(ncoo)=hjcoo(ims)+(i2-1)*Num_wann
                acoo(ncoo)=acoo(ncoo)+tmp
-               if(export_maghr) then
-               rxyz(ncoo,:)=[inew_ia,inew_ib,inew_ic]
-               nonzero_counter(inew_ia,inew_ib,inew_ic)=1
-               endif
+              !if (export_maghr) then
+              !   rxyz(ncoo,:)=[inew_ia,inew_ib,inew_ic]
+              !   nonzero_counter(inew_ia,inew_ib,inew_ic)=1
+              !endif
             endif
          enddo ! iR
 
@@ -504,7 +503,7 @@ subroutine ham_3Dlandau_sparseHR(nnzmax, Ndimq, Nq, k, acoo,jcoo,icoo)
             fac= cos(phase)+ zi*sin(phase)
 
             tmp=hacoo(ims)*ratio/ndegen(iR)* fac
-            if(abs(tmp) > 1e-6) then
+            if(abs(tmp)/eV2Hartree  > 1e-6) then
                ncoo=ncoo+1
                icoo(ncoo)=hicoo(ims)+(i1-1)*Num_wann
                jcoo(ncoo)=hjcoo(ims)+(i2-1)*Num_wann
@@ -515,15 +514,15 @@ subroutine ham_3Dlandau_sparseHR(nnzmax, Ndimq, Nq, k, acoo,jcoo,icoo)
                endif
             endif
             tmp=conjg(tmp)
-            if(abs(tmp) > 1e-6) then
+            if(abs(tmp)/eV2Hartree  > 1e-6) then
                ncoo=ncoo+1
                icoo(ncoo)=hjcoo(ims)+(i2-1)*Num_wann
                jcoo(ncoo)=hicoo(ims)+(i1-1)*Num_wann
                acoo(ncoo)=acoo(ncoo)+tmp
-               if(export_maghr) then
-               rxyz(ncoo,:)=-[inew_ia,inew_ib,inew_ic]
-               nonzero_counter(-inew_ia,-inew_ib,-inew_ic)=1
-               endif
+              !if (export_maghr) then
+              !   rxyz(ncoo,:)=-[inew_ia,inew_ib,inew_ic]
+              !   nonzero_counter(-inew_ia,-inew_ib,-inew_ic)=1
+              !endif
             endif
 
          enddo ! iR
@@ -532,15 +531,16 @@ subroutine ham_3Dlandau_sparseHR(nnzmax, Ndimq, Nq, k, acoo,jcoo,icoo)
    enddo ! i1
 
 239 continue
-   if (cpuid.eq.0) write(stdout,*) 'nnz, nnzmax after H01:', ncoo, nnzmax
-   if (nnzmax< ncoo) then
-      write(*, *)'Please increase nnzmax in the sparse.f90'
-      write(*,*) 'nnz, nnzmax after H01 : ', ncoo, nnzmax
+   if (cpuid.eq.0) write(stdout,*) 'nnz, nnzmax after H01:', ncoo, nnz
+   if (nnz< ncoo) then
+      write(*, *)'>>> Error : Please increase nnz in the sparse.f90'
+      write(*, *) 'nnz, nnzmax after H01 : ', ncoo, nnz
       stop
    endif
 
-   nnzmax= ncoo
+   nnz= ncoo
 
+   !> usually, we don't export magnetic hr file 
    if(export_maghr) then
       outfileindex= outfileindex+ 1
       open(unit=outfileindex,file='hr_mag.dat')

@@ -14,7 +14,7 @@
 
      character(40) :: fsfile
 
-     real(dp) :: kz, k(3)
+     real(dp) :: k(3)
      real(dp) :: time_start, time_end
      
      ! Hamiltonian of bulk system
@@ -59,7 +59,6 @@
      kymax= 1.00d0/1d0
      kzmin= 0.00d0/1d0
      kzmax= 1.00d0/1d0
-     kz= 0.0d0
      ik =0
 
      knv3= nk1*nk2*nk3
