@@ -10,13 +10,15 @@ WannierTools
 
 Source on Github : https://github.com/quanshengwu/wannier_tools.
 
-You can find more useful information on website www.wanniertools.org.
+You can find more useful information on website https://www.wanniertools.org.
 
 Aiming to investigate topological properties, electronic structures and transport properties of 
 
 * Electron systems (Tested)
 
 * Phonon systems (Testing)
+
+Join the QQ group to get support: 709225749
 
 
 .. toctree::
