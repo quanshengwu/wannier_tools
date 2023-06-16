@@ -8,9 +8,11 @@ WannierTools
 
 **WannierTools: an open-source software package for novel topological materials**
 
-Source on Github : https://github.com/quanshengwu/wannier_tools
+Source on Github : https://github.com/quanshengwu/wannier_tools.
 
-Aiming to investigate topoligical properties of 
+You can find more useful information on website www.wanniertools.org.
+
+Aiming to investigate topological properties, electronic structures and transport properties of 
 
 * Electron systems (Tested)
 
@@ -24,6 +26,7 @@ Aiming to investigate topoligical properties of
    changes
    preliminaries
    tutorials
+   citations
 
 **Citation**
 ^^^^^^^^^^^^
@@ -66,7 +69,7 @@ WannierTools 2.x have been written by :
 
 Contributors to the code include:
 
-* Changming Yue (IOP, Beijing, China): symmetrization
+* Changming Yue (IOP, Beijing, China): Tight binding symmetrization
 * Yifei Guan (EPFL, Switzerland): Landau level
 * Yi Liu (BNU, Beijing, China): Runge-Kutta integration
 
