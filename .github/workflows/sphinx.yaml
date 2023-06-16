@@ -22,3 +22,4 @@ jobs:
           github_token: ${{ secrets.GH_PAGE_ACTION_TOKEN }}
           publish_dir: _build/
           force_orphan: true
+          cname: www.wanniertools.com
