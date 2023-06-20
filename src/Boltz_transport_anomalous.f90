@@ -8,6 +8,7 @@
 !> [2] Physcial Review Letter 95, 156601 (2005)  (SHC1)             !
 !> [3] Physcial Review B 98, 214402 (2018)       (SHC2)             !
 !> [4] Physical Review Letter 97, 026603 (2006)  (ANC1)             !
+!> restructed by Hanqi Pi on May 2023
 !-------------------------------------------------------------------!
 
    subroutine sigma_AHC
@@ -33,7 +34,7 @@
      implicit none
     
      integer :: iR, ik, ikx, iky, ikz
-     integer :: i, m, ie, ieta
+     integer :: i, m, ie, ieta, iT
      integer :: ierr, knv3
      integer :: NumberofEta
 
@@ -42,6 +43,7 @@
      real(dp), allocatable :: sigma_tensor_ahc(:, :, :)
 
      real(dp), allocatable :: eta_array(:)
+     real(dp), allocatable :: T_list(:)
 
      character*40 :: ahcfilename, etaname
 
@@ -65,8 +67,16 @@
         endif
      enddo ! ie
 
-     call  sigma_ahc_vary_ChemicalPotential(OmegaNum, energy, NumberofEta, eta_array, sigma_tensor_ahc)
+     !> temperature
+     do iT=1, NumT
+         if (NumT>1) then
+            T_list(iT)= Tmin+(Tmax-Tmin)*(iT-1d0)/dble(NumT-1)
+         else
+            T_list= Tmin
+         endif
+     enddo ! iT
 
+     call  sigma_ahc_vary_ChemicalPotential(OmegaNum, energy, NumberofEta, eta_array, sigma_tensor_ahc)
 
      outfileindex= outfileindex+ 1
      if (cpuid.eq.0) then
@@ -564,8 +574,8 @@ subroutine sigma_ahc_vary_ChemicalPotential(NumOfmu, mulist, NumberofEta, eta_ar
      nwann= Num_wann/2
      !> spin operator matrix
      !> this part is package dependent. 
-     if (index( Package, 'VASP')/=0.or. index( Package, 'Wien2k')/=0 &
-        .or. index( Package, 'Abinit')/=0.or. index( Package, 'openmx')/=0) then
+    !if (index( Package, 'VASP')/=0.or. index( Package, 'Wien2k')/=0 &
+    !   .or. index( Package, 'Abinit')/=0.or. index( Package, 'openmx')/=0) then
         do j=1, nwann
            pauli_matrices(j, nwann+j, 1)=1.0d0
            pauli_matrices(j+nwann, j, 1)=1.0d0
@@ -574,21 +584,11 @@ subroutine sigma_ahc_vary_ChemicalPotential(NumOfmu, mulist, NumberofEta, eta_ar
            pauli_matrices(j, j, 3)= 1d0
            pauli_matrices(j+nwann, j+nwann, 3)=-1d0
         enddo
-     elseif (index( Package, 'QE')/=0.or.index( Package, 'quantumespresso')/=0 &
-        .or.index( Package, 'quantum-espresso')/=0.or.index( Package, 'pwscf')/=0) then
-        do j=1, nwann
-           pauli_matrices((2*j-1), 2*j, 1)=1.0d0
-           pauli_matrices(2*j, (2*j-1), 1)=1.0d0
-           pauli_matrices((2*j-1), 2*j, 2)=-zi
-           pauli_matrices(2*j, (2*j-1), 2)=zi
-           pauli_matrices((2*j-1), (2*j-1), 3)=1.0d0
-           pauli_matrices(2*j, 2*j, 3)=-1.0d0
-        enddo
-     else
-        if (cpuid.eq.0) write(stdout, *)'Error: please report your software and wannier90.wout to me'
-        if (cpuid.eq.0) write(stdout, *)'wuquansheng@gmail.com'
-        stop 'Error: please report your software and wannier90.wout to wuquansheng@gmail.com'
-     endif
+    !else
+    !   if (cpuid.eq.0) write(stdout, *)'Error: please report your software and wannier90.wout to me'
+    !   if (cpuid.eq.0) write(stdout, *)'wuquansheng@gmail.com'
+    !   stop 'Error: please report your software and wannier90.wout to wuquansheng@gmail.com'
+    !endif
 
    
      !> energy range (chemical potential range)

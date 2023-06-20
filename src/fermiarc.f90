@@ -142,8 +142,8 @@
         Nwann= Num_wann/2
         !> spin operator matrix
         !> this part is package dependent. 
-        if (index( Package, 'VASP')/=0.or. index( Package, 'Wien2k')/=0 &
-           .or. index( Package, 'Abinit')/=0.or. index( Package, 'openmx')/=0) then
+       !if (index( Package, 'VASP')/=0.or. index( Package, 'Wien2k')/=0 &
+       !   .or. index( Package, 'Abinit')/=0.or. index( Package, 'openmx')/=0) then
            do i=1, Np
               do j=1, Nwann
                  spin_sigma_x(Num_wann*(i-1)+j, Num_wann*(i-1)+Nwann+j)=1.0d0
@@ -154,23 +154,11 @@
                  spin_sigma_z(Num_wann*(i-1)+j+Nwann, Num_wann*(i-1)+j+Nwann)=-1d0
               enddo
            enddo
-        elseif (index( Package, 'QE')/=0.or.index( Package, 'quantumespresso')/=0 &
-             .or.index( Package, 'quantum-espresso')/=0.or.index( Package, 'pwscf')/=0) then
-           do i=1, Np
-              do j=1, Nwann
-                 spin_sigma_x(Num_wann*(i-1)+(2*j-1), Num_wann*(i-1)+2*j)=1.0d0
-                 spin_sigma_x(Num_wann*(i-1)+2*j, Num_wann*(i-1)+(2*j-1))=1.0d0
-                 spin_sigma_y(Num_wann*(i-1)+(2*j-1), Num_wann*(i-1)+2*j)=-zi
-                 spin_sigma_y(Num_wann*(i-1)+2*j, Num_wann*(i-1)+(2*j-1))=zi
-                 spin_sigma_z(Num_wann*(i-1)+(2*j-1), Num_wann*(i-1)+(2*j-1))=1.0d0
-                 spin_sigma_z(Num_wann*(i-1)+2*j, Num_wann*(i-1)+2*j)=-1.0d0
-              enddo
-           enddo
-        else
-           if (cpuid.eq.0) write(stdout, *)'Error: please report your software generating tight binding and wannier90.wout to me'
-           if (cpuid.eq.0) write(stdout, *)'wuquansheng@gmail.com'
-           stop 'Error: please report your software and wannier90.wout to wuquansheng@gmail.com'
-        endif
+       !else
+       !   if (cpuid.eq.0) write(stdout, *)'Error: please report your software generating tight binding and wannier90.wout to me'
+       !   if (cpuid.eq.0) write(stdout, *)'wuquansheng@gmail.com'
+       !   stop 'Error: please report your software and wannier90.wout to wuquansheng@gmail.com'
+       !endif
      endif
 
      omega = E_arc

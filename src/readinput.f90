@@ -74,9 +74,9 @@ subroutine readinput
          write(stdout,'(1x, a)')"Tight-binding Hamiltonian FROM: fitting"
       end if
    end if
-   if(cpuid==0)write(stdout,'(1x, a, a25)')"Tight-binding Hamiltonian filename: ",Hrfile
+   if(cpuid==0)write(stdout,'(1x, a, a25)')"Tight-binding Hamiltonian filename : ",Hrfile
    if(cpuid==0)write(stdout,'(1x, a, a25)')"System of particle: ", Particle
-   if(cpuid==0)write(stdout,'(1x, a, a25)')"Tight-binding Hamiltonian obtained from : ",Package
+   if(cpuid==0)write(stdout,'(1x, a, a25)')"Tight-binding Hamiltonian obtained from package : ",Package
 
    if (index(Particle, 'electron')==0 .and. index(Particle, 'phonon')==0 &
       .and. index(Particle, 'photon')==0) then

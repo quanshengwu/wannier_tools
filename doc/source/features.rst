@@ -4,7 +4,7 @@ Capabilities of WannierTools
 -  :ref:`bulkbandcalculation`
 -  :ref:`bulkfscalculation`
 -  :ref:`bulkfsplanecalculation`
--  :ref:`bulkspintexturecalculation` **New**
+-  :ref:`bulkspintexturecalculation`
 -  :ref:`doscalculation`
 -  :ref:`findnodescalculation`
 -  :ref:`energygapcalculation`
@@ -16,7 +16,7 @@ Capabilities of WannierTools
 -  :ref:`spintexturecalculation`
 -  :ref:`berryphasecalculation`
 -  :ref:`berrycurvcalculation`
--  :ref:`berrycurvcalculationslab` **New**
+-  :ref:`berrycurvcalculationslab` 
 -  :ref:`ahccalculation`
 -  :ref:`wanniercentercalculation`
 -  :ref:`z2bulkcalculation`
@@ -24,6 +24,7 @@ Capabilities of WannierTools
 -  :ref:`mirrorchernnumbercalculation` **New**
 -  :ref:`weylchiralitycalculation`
 -  :ref:`landaulevel`
+-  :ref:`magnetoresistancecalculation` **New**
 
 .. _bulkbandcalculation:
 
@@ -1161,10 +1162,96 @@ The magnetic field is along the first vector specified in the SURFACE card.
    :scale: 60 %
 
 
+.. _magnetoresistancecalculation:
+
+Ordinary magnetoresistance calculations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+After version 2.6.0, WannierTools is able to calculate magnetoresistance
+of a non-magnetic metal or semimetal which has Fermi surfaces. The theory part was described in Phys. Rev. B 99, 035142 (2019).
+
+With control tag **Boltz_OHE_calc=T** and **Symmetry_Import_calc = T**, we can get the conductivity tensor 
+for a given magnetic direction specified by **Btheta** and **Bphi**. 
 
 
+Here we put one example of Cu. The input file wt.in is like this ::
+
+   &TB_FILE
+   Hrfile = 'wannier90_hr.dat_nsymm48'   ! Here we symmetrized the TB model
+   /
+   
+   &CONTROL
+   Boltz_OHE_calc        = T   ! calculate ordinary magnetoresistance
+   Symmetry_Import_calc  = T ! please set it to be true for magnetoresistance calculation
+   /
+   
+   &SYSTEM
+   SOC = 0                ! There is no SOC in the hr file : SOC=0; with soc : SOC=1
+   E_FERMI = 7.7083       ! e-fermi in eV
+   Btheta= 0, Bphi= 90    ! magnetic field direction, Btheta is the angle with z axial, Bphi is the angle with respect to x axial in the x-y plane
+   NumOccupied = 6        ! set it anyway even don't use it. Usually, It's the valance band maximum band index.
+   /
+   
+   &PARAMETERS
+   OmegaNum = 1        ! omega number       
+   OmegaMin =  0.0     ! energy interval
+   OmegaMax =  0.0     ! energy interval  chemical potential \mu_i=OmegaMin+ (i-1)/(OmegaNum-1)*(OmegaMax-OmegaMin)
+   Nk1 =61             ! Kmesh(1) for KCUBE_BULK
+   Nk2 =61             ! Kmesh(2) for KCUBE_BULK
+   Nk3 =61             ! Kmesh(3) for KCUBE_BULK
+   BTauNum= 100        ! Number of B*tau we calculate
+   BTauMax = 40.0      ! The maximum B*tau, starting from Btau=0.
+   Tmin = 30           ! Temperature in Kelvin
+   Tmax = 330          ! Temperature in Kelvin
+   NumT = 11           ! number temperature we calculate. T_i=Tmin+(Tmax-Tmin)/(NumT-1)*(i-1)
+   /
+   
+   LATTICE
+   Angstrom  ! Unit of length: Angstrom or Bohr
+      0.0000000   1.8075000   1.8075000
+      1.8075000   0.0000000   1.8075000
+      1.8075000   1.8075000   0.0000000
+   
+   ATOM_POSITIONS
+   1                               ! number of atoms for projectors
+   Cartisen                          ! Direct or Cartisen coordinate
+   Cu    0.000000      0.000000      0.000000     
+   
+   PROJECTORS
+   9            ! number of projectors
+   Cu s pz px py dz2 dxz dyz dx2-y2 dxy
+   
+   SELECTEDBANDS
+   1
+   6   ! the 6'th band is crossing the Fermi level.
+   
+   KCUBE_BULK   ! in unit of primitive reciprocal lattice vectors.
+    0.00  0.00  0.00   ! Original point for 3D k plane 
+    1.00  0.00  0.00   ! The first vector to define 3d k space plane
+    0.00  1.00  0.00   ! The second vector to define 3d k space plane
+    0.00  0.00  1.00   ! The third vector to define 3d k cube
+   
 
 
+The above input file indicates that 1). The magnetic field is along z direction (Btheta=0). 
+2). The chemical potential is set to Zero. by OmegaNum=1; OmegaMin=Omegamax=0.
+3). The temperature is set as an arrary from 30K to 330K with 30 as interval by Tmin=30; Tmax=330; NumT=11.
+4). The magnetic field strenth is set as B*\tau= (0, 40) with 100 points by BTauMax=40; BTauNum=100.
+5). The k-mesh is set as 61*61*61. 
+
+On output, the conductivity tensor \sigma/\tau as a function of B*Tau
+for each band n, each chemical potential mu and each temperature T are presented in file
+sigma_band_${n}_mu_${mu}eV_T_${T}K.dat
+
+If there are serveral band, you should write a script to add up all the conductivity tensor for all the bands, then 
+take an inverse of it to get the resistivity tensor. 
+
+On output, there are also resistivity tensor files for each band, each chemical potential and each temperature. 
+It's usfull to get general information for each band. 
 
 
+For more illustration of example Cu, you can visit https://www.wanniertools.org/examples/ordinary-magnetoresistance-of-cu/
 
+.. NOTE::
+   If you obtained negative magnetoresistance at large Btau, then please increase NSlice_Btau_Max such that the negative 
+   magnetoresistance vanishes. The Lorentz force will only give us positive magnetoresistance. 

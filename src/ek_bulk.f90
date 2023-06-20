@@ -55,8 +55,8 @@ subroutine ek_bulk_line
          if (index(Particle,'phonon')/=0.and.LOTO_correction) then
             call ham_bulk_LOTO(k, Hamk_bulk)
          else
-           !call ham_bulk_latticegauge(k, Hamk_bulk)
-            call ham_bulk_atomicgauge(k, Hamk_bulk)
+            call ham_bulk_latticegauge(k, Hamk_bulk)
+           !call ham_bulk_atomicgauge(k, Hamk_bulk)
          endif
       endif
 

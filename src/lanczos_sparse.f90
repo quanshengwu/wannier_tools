@@ -327,7 +327,7 @@ subroutine LandauLevel_B_dos_Lanczos
    use sparse
    use wmpi
    use mt19937_64
-   use para, only : Magq, Num_Wann, Bx, By, zi, pi, eta_arc, &
+   use para, only : Magq, Num_Wann, Bx, By, zi, pi, eta_arc, E_arc, &
       OmegaNum, OmegaMin, OmegaMax,  Magp, stdout, Magp_min, Magp_max, &
       outfileindex, Single_KPOINT_3D_DIRECT,splen,Is_Sparse_Hr, eV2Hartree, &
       MagneticSuperProjectedArea,ijmax,NumLCZVecs, NumRandomConfs, Add_Zeeman_Field
@@ -366,8 +366,8 @@ subroutine LandauLevel_B_dos_Lanczos
    real(dp) :: continued_fraction
    logical :: term
 
-   integer :: NumberofEta
-   real(dp), allocatable :: eta_array(:)
+   integer :: NumberofEta, ie_Earc
+   real(dp), allocatable :: eta_array(:), n_Earc(:)
 
    real(dp) :: Bx_in_Tesla, By_in_Tesla, Bz_in_Tesla
    integer(8) :: iseed
@@ -375,6 +375,7 @@ subroutine LandauLevel_B_dos_Lanczos
 
    NumberofEta=9
    allocate(eta_array(NumberofEta))
+   allocate(n_Earc(NumberofEta))
    eta_array=(/0.1d0, 0.2d0, 0.4d0, 0.8d0, 1.0d0, 2d0, 4d0, 8d0, 10d0/)
    eta_array= eta_array*Eta_Arc
 
@@ -386,7 +387,7 @@ subroutine LandauLevel_B_dos_Lanczos
    if(Is_Sparse_Hr) nnzmax=splen*Nq
    if (cpuid==0) then
       write(stdout, '(a,i8)')' Magnetic supercell is Nq= ', Nq
-      write(stdout, '(a,i18)')' Matrix dimension Mdim= ', Mdim
+      write(stdout, '(a,i18)')' Hamiltonian matrix dimension Mdim= ', Mdim
       write(stdout, '(a,i18)')' nnzmax for lanczos is ', nnzmax
       write(stdout, '(a)')' Maximal integer for 32-digit is 2,147,483,647'
       write(stdout, '(a, f20.1, a)')' Memory for dos matrix is ',  &
@@ -395,6 +396,8 @@ subroutine LandauLevel_B_dos_Lanczos
          nnzmax/1024d0/1024d0*(4d0+4d0+16d0), ' MB'
       write(stdout, '(a, f20.1, a)')' Memory for Lanczos vectors is ', &
          Mdim/1024d0/1024d0*(4d0+NumRandomConfs)*16d0, ' MB'
+      write(stdout, '(a, f20.1, a)')' Memory for DOS storage is ', &
+         Nmag*OmegaNum*NumberofEta*2d0/1024d0/1024d0*8d0, ' MB'
    endif
 
    NumLczVectors = NumLCZVecs
@@ -573,22 +576,44 @@ subroutine LandauLevel_B_dos_Lanczos
 
       write(outfileindex, '("#", a, 20X, 300f16.2)')'Broadening \eta (meV): ', Eta_array(:)*1000d0/eV2Hartree
       write(outfileindex+1, '("#", a, 5X, f26.2,300f32.2)')'Broadening \eta (meV): ', Eta_array(:)*1000d0/eV2Hartree
+
+      !> find n_int at EF
+      do ie=1, omeganum
+         if (omega(ie)>E_arc) then
+            ie_Earc= ie- 1
+            exit
+         endif
+      enddo
+
       do ib=1, Nmag
          n_int=0
          do ie=1, omeganum
             write(outfileindex, '(300f16.6)')flux(ib)/2d0/pi, mag_Tesla(ib), omega(ie)/eV2Hartree, dos_B_omega_mpi(ib, ie, :)
          enddo
 
+         !> get number of electrons between the lowest energy level and E_arc
+         n_Earc= 0d0
+         do ie=1, ie_Earc
+            n_Earc(:)= n_Earc(:)+ dos_B_omega_mpi(ib, ie, :)
+         enddo
+
+         !> get number of electrons between the lowest energy level and omega(ie)
          do ie=1, omeganum
             n_int(ie, :)=n_int(ie-1, :)+ dos_B_omega_mpi(ib, ie, :)
          enddo
-         do ieta=1, NumberofEta
-            n_int(:, ieta)=n_int(:, ieta)/n_int(omeganum, ieta)
+
+         !> set n(E)= n_int- n_Earc= \int_Earc^E \rho(\epsilon)d\epsilon
+         do ie=1, omeganum
+            n_int(ie, :)= n_int(ie, :)-n_Earc(:)
          enddo
 
+        !do ieta=1, NumberofEta
+        !   n_int(:, ieta)=n_int(:, ieta)/n_int(omeganum, ieta)
+        !enddo
+
          do ie=1, omeganum
-         write(outfileindex+1,'(300f16.6)')  flux(ib)/2d0/pi, mag_Tesla(ib), &
-            (n_int(ie, ieta), dos_B_omega_mpi(ib, ie, ieta), ieta=1, NumberofEta)
+            write(outfileindex+1,'(300f16.6)')  flux(ib)/2d0/pi, mag_Tesla(ib), &
+               (n_int(ie, ieta), dos_B_omega_mpi(ib, ie, ieta), ieta=1, NumberofEta)
          enddo
 
          write(outfileindex+1, *) ' '

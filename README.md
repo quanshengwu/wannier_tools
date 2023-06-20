@@ -6,18 +6,21 @@ The homepage of the WannierTools code is [**https://www.wanniertools.org**](http
 
 Full documentation of WannierTools is on website [**http://www.wanniertools.com**](http://quanshengwu.github.io/wannier_tools/)
 
+QQ group number : 709225749
+
 ![](https://lh3.googleusercontent.com/-NGkPcF7iUDY/Vy-34BbICBI/AAAAAAAAASY/e2YiWSnQJD4jpHh-kDWceThf2jKKSGAxwCCo/s526/wannier_tools-logo-purple.jpg)
 
 **Authors and contributors**
 -------------
-WannierTools was initialized by QuanSheng Wu (EPFL CH) and Shengnan Zhang (EPFL CH) at IOP CAS Beijing in 2012. 
+WannierTools was initialized by QuanSheng Wu (IOP CAS) and Shengnan Zhang (IOP CAS) at IOP CAS Beijing in 2012. 
 Now, it's an open-source software, there are serveral contributors including
 
-* Changming Yue (UniFR CH): symmetrization of Wannier tight-binding Hamiltonian and obtain phonon tight-binding Hamiltonian.
-* Yifei Guan (EPFL CH): Landau level calculation.
-* Tiantian Zhang (Tokyo Institute of Technology): LOTO correction in phonon systems.
-* Yi Liu (BNU Beijing): Ruge-Kutta integration.
-* Jianzhou Zhao (SWUST): QPI in kpath mode
+* Changming Yue (UniFR CH) : symmetrization of Wannier tight-binding Hamiltonian and obtain phonon tight-binding Hamiltonian.
+* Yifei Guan (EPFL CH) : Landau level calculation.
+* Tiantian Zhang (Tokyo Institute of Technology ): LOTO correction in phonon systems.
+* Yi Liu (BNU Beijing) : Ruge-Kutta integration.
+* Jianzhou Zhao (SWUST): QPI in kpath mode.
+* Hanqi Pi (IOP CAS) : Anomalous Nerest Effects.
 
 **Pull down the package**
 -------------------------
@@ -31,7 +34,6 @@ git clone https://github.com/quanshengwu/wannier_tools.git
 The stable branch can be downloaded in
 
 [**https://github.com/quanshengwu/wannier\_tools/releases**](https://github.com/quanshengwu/wannier_tools/releases)
-
 
 
 **Brief introductions**

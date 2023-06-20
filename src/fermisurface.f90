@@ -14,7 +14,7 @@
 
      character(40) :: fsfile
 
-     real(dp) :: kz, k(3)
+     real(dp) :: k(3)
      real(dp) :: time_start, time_end
      
      ! Hamiltonian of bulk system
@@ -59,7 +59,6 @@
      kymax= 1.00d0/1d0
      kzmin= 0.00d0/1d0
      kzmax= 1.00d0/1d0
-     kz= 0.0d0
      ik =0
 
      knv3= nk1*nk2*nk3
@@ -90,7 +89,8 @@
 
         ! calculation bulk hamiltonian
         Hamk_bulk= 0d0
-        call ham_bulk_atomicgauge    (k, Hamk_bulk)
+       !call ham_bulk_atomicgauge    (k, Hamk_bulk)
+        call ham_bulk_latticegauge    (k, Hamk_bulk)
         call eigensystem_c( 'N', 'U', Num_wann, Hamk_bulk, W)
         eigval_mpi(:, ik)= W(nband_min:nband_max)
         call now(time_end)
@@ -151,9 +151,9 @@
         write(outfileindex,'(i10)') nband_store
         write(outfileindex,'(3i10)') nk1, nk2, nk3
         write(outfileindex,'(a)') '0.0 0.0 0.0'
-        write(outfileindex,'(3f16.8)') (Origin_cell%Kua(i), i=1,3)
-        write(outfileindex,'(3f16.8)') (Origin_cell%Kub(i), i=1,3)
-        write(outfileindex,'(3f16.8)') (Origin_cell%Kuc(i), i=1,3)
+        write(outfileindex,'(3f16.8)') (Origin_cell%Kua(i)*Angstrom2atomic, i=1,3)
+        write(outfileindex,'(3f16.8)') (Origin_cell%Kub(i)*Angstrom2atomic, i=1,3)
+        write(outfileindex,'(3f16.8)') (Origin_cell%Kuc(i)*Angstrom2atomic, i=1,3)
         do i=1,nband_store
            write(outfileindex,'(a, i10)') 'BAND: ',i
            do ik=1, knv3
@@ -522,8 +522,8 @@
         Nwann= Num_wann/2
         !> spin operator matrix
         !> this part is package dependent. 
-        if (index( Package, 'VASP')/=0.or. index( Package, 'Wien2k')/=0 &
-           .or. index( Package, 'Abinit')/=0.or. index( Package, 'openmx')/=0) then
+       !if (index( Package, 'VASP')/=0.or. index( Package, 'Wien2k')/=0 &
+       !   .or. index( Package, 'Abinit')/=0.or. index( Package, 'openmx')/=0) then
            do j=1, Nwann
               spin_sigma_x(j, Nwann+j)=1.0d0
               spin_sigma_x(j+Nwann, j)=1.0d0
@@ -532,21 +532,11 @@
               spin_sigma_z(j, j)= 1d0
               spin_sigma_z(j+Nwann, j+Nwann)=-1d0
            enddo
-        elseif (index( Package, 'QE')/=0.or.index( Package, 'quantumespresso')/=0 &
-           .or.index( Package, 'quantum-espresso')/=0.or.index( Package, 'pwscf')/=0) then
-           do j=1, Nwann
-              spin_sigma_x((2*j-1), 2*j)=1.0d0
-              spin_sigma_x(2*j, (2*j-1))=1.0d0
-              spin_sigma_y((2*j-1), 2*j)=-zi
-              spin_sigma_y(2*j, (2*j-1))=zi
-              spin_sigma_z((2*j-1), (2*j-1))=1.0d0
-              spin_sigma_z(2*j, 2*j)=-1.0d0
-           enddo
-        else
-           if (cpuid.eq.0) write(stdout, *)'Error: please report your software generating tight binding and wannier90.wout to me'
-           if (cpuid.eq.0) write(stdout, *)'wuquansheng@gmail.com'
-           stop 'Error: please report your software and wannier90.wout to wuquansheng@gmail.com'
-        endif
+       !else
+       !   if (cpuid.eq.0) write(stdout, *)'Error: please report your software generating tight binding and wannier90.wout to me'
+       !   if (cpuid.eq.0) write(stdout, *)'wuquansheng@gmail.com'
+       !   stop 'Error: please report your software and wannier90.wout to wuquansheng@gmail.com'
+       !endif
      endif
 
      allocate(ones(Num_wann, Num_wann), ctemp(Num_wann, Num_wann))
@@ -1113,7 +1103,8 @@ subroutine fermisurface_stack
             'k1 (2pi/a)', 'k2 (2pi/b)', 'k3 (2pi/c)'
          do ik=1, knv3
             if (abs(gap_mpi(1, ik))< Gap_threshold) then
-               write(outfileindex, '(80f16.8)') kxy_shape(:, ik), (gap_mpi(:, ik)), kxy(:, ik)
+               write(outfileindex, '(80f16.8)') kxy_shape(:, ik)*Angstrom2atomic, &
+                  (gap_mpi(:, ik)/eV2Hartree), kxy(:, ik)*Angstrom2atomic
             endif
          enddo
          close(outfileindex)
@@ -1149,9 +1140,9 @@ subroutine fermisurface_stack
          write(outfileindex, '(a)')'set ytics offset -2.5,   0 , 0'
          write(outfileindex, '(a)')'set size ratio -1'
          write(outfileindex, '(a)')'set view 60, 140, 1, 1'
-         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set xrange [', kxmin_shape, ':', kxmax_shape, ']'
-         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', kymin_shape, ':', kymax_shape, ']'
-         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set zrange [', kzmin_shape, ':', kzmax_shape, ']'
+         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set xrange [', kxmin_shape*Angstrom2atomic, ':', kxmax_shape*Angstrom2atomic, ']'
+         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', kymin_shape*Angstrom2atomic, ':', kymax_shape*Angstrom2atomic, ']'
+         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set zrange [', kzmin_shape*Angstrom2atomic, ':', kzmax_shape*Angstrom2atomic, ']'
          write(outfileindex, '(2a)')"splot 'GapCube.dat' u 1:2:3 w p pt 7 ps 2"
          close(outfileindex)
      
@@ -1285,7 +1276,8 @@ subroutine fermisurface_stack
          write(outfileindex, '(100a16)')'# kx', 'ky', 'kz', "kx'", "ky'", "kz'", 'gap', 'Ev4', 'Ev3', &
             'Ev2', 'Ev1', 'Ec1', 'Ec2', 'Ec3', 'Ec4', 'k1', 'k2', 'k3'
          do ik=1, knv3
-            write(outfileindex, '(300f16.8)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, (gap_mpi(:, ik)), kxy(:, ik)
+            write(outfileindex, '(300f16.8)')kxy_shape(:, ik)*Angstrom2atomic, &
+               kxy_plane(:, ik)*Angstrom2atomic, (gap_mpi(:, ik)/eV2Hartree), kxy(:, ik)*Angstrom2atomic
             if (mod(ik, nky)==0) write(outfileindex, *)' '
          enddo
          close(outfileindex)
@@ -1299,7 +1291,8 @@ subroutine fermisurface_stack
             'Ec2', 'k1', 'k2', 'k3'
          do ik=1, knv3
             if (abs(gap_mpi(1, ik))< Gap_threshold) then
-               write(outfileindex, '(800f16.8)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, (gap_mpi(:, ik)), kxy(:, ik)
+               write(outfileindex, '(800f16.8)')kxy_shape(:, ik)*Angstrom2atomic, &
+               kxy_plane(:, ik)*Angstrom2atomic, (gap_mpi(:, ik)/eV2Hartree), kxy(:, ik)*Angstrom2atomic
             endif
          enddo
          close(outfileindex)
@@ -1311,7 +1304,8 @@ subroutine fermisurface_stack
          write(outfileindex, '(100a16)')'% kx', 'ky', 'kz', 'gap', 'Ev2', 'Ev1', 'Ec1', &
             'Ec2', 'k1', 'k2', 'k3'
          do ik=1, knv3
-            write(outfileindex, '(300f16.8)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, (gap_mpi(:, ik)), kxy(:, ik)
+            write(outfileindex, '(300f16.8)')kxy_shape(:, ik)*Angstrom2atomic, &
+               kxy_plane(:, ik)*Angstrom2atomic, (gap_mpi(:, ik)/eV2Hartree), kxy(:, ik)*Angstrom2atomic
          enddo
          close(outfileindex)
       endif
