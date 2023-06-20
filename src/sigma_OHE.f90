@@ -98,6 +98,10 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
       real(dp), allocatable :: velocity_k(:, :)
       real(dp), allocatable :: velocity_bar_k(:)
       real(dp), allocatable :: velocity(:, :, :)
+
+      !> fileindex list for sigma_bands and rho_bands
+      integer, allocatable :: sigmafileindex(:)
+      integer, allocatable :: rhofileindex(:)
       
       !> 3-component velocity for each band and each k point 
       !> Eq.(3) in PRB 79, 245123(2009)
@@ -519,6 +523,36 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
       allocate(kout(3, NSlice_Btau))
       kout= 0d0
 
+      !> allocate array for sigmafileindex and rhofileindex
+      allocate(sigmafileindex(OmegaNum))
+      allocate(rhofileindex(OmegaNum))
+      sigmafileindex= (/(outfileindex + ie, ie = 1, OmegaNum)/)
+      rhofileindex= (/(outfileindex + ie +OmegaNum, ie = 1, OmegaNum)/)
+      outfileindex = outfileindex + 2*OmegaNum
+
+      if (cpuid.eq.0) then
+         do ie = 1, OmegaNum
+            write(muname, '(f12.2)')mu_array(ie)/eV2Hartree
+
+            !> open file for conductivity at mu and write header
+            write(sigmafilename, '(3a)')'sigma_bands_mu_',trim(adjustl(muname)),'eV.dat'
+            open(unit=sigmafileindex(ie), file=sigmafilename)
+            write(sigmafileindex(ie), '(a)')'# Conductivity tensor/tau (in unit of (\Omega*m*s)^-1) for every contributing band' 
+            write(sigmafileindex(ie), '(a,100I5)')'# SELECTEDBANDS  =  ', bands_fermi_level(:)
+            write(sigmafileindex(ie), '(a,1000f8.3)')'# Tlist  =  ', KBT_array(:)/8.6173324E-5/eV2Hartree
+            write(sigmafileindex(ie), '(a, 1000E16.6)') '# Btaulist  =  ', BTau_array(:)*Magneticfluxdensity_atomic/Relaxation_Time_Tau
+
+            !> open file for resistivity at mu and write header
+            write(sigmafilename, '(3a)')'rho_bands_mu_', trim(adjustl(muname)),'eV.dat'
+            open(unit=rhofileindex(ie), file=sigmafilename)
+            write(rhofileindex(ie), '(a)')'# Resistivity \tau*\rho (in unit of \Omega*m*s) for every contributing band '
+            write(rhofileindex(ie), '(a,100I5)')'# SELECTEDBANDS  =  ', bands_fermi_level(:)
+            write(rhofileindex(ie), '(a,1000f8.3)')'# Tlist  =  ', KBT_array(:)/8.6173324E-5/eV2Hartree
+            write(rhofileindex(ie), '(a, 1000E16.6)') '# Btaulist  =  ', BTau_array(:)*Magneticfluxdensity_atomic/Relaxation_Time_Tau
+         
+         enddo ! ie
+      endif ! cpuid.eq.0
+
       !> now we turn to use Runge-Kutta method to get all the kpoints from (0, BTauMax)
       !> and we calculate the conductivity/Tau over different bands and different k points
       time_start= 0d0
@@ -585,6 +619,54 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
          coeff= coeff/Time_atomic 
          sigma_ohe_tensor(:, :, :, :, iband)= sigma_ohe_tensor(:, :, :, :, iband)*coeff
          
+         if (cpuid.eq.0) then
+            do ie = 1, OmegaNum
+
+               !> open file for conductivity at mu and write data
+               write(sigmafileindex(ie), '(2a, i5)')'# ',' iband = ', bands_fermi_level(iband)
+               write(sigmafileindex(ie),'(a)') ''
+               do ikt = 1, NumT
+                  KBT= KBT_array(ikt)/8.6173324E-5/eV2Hartree
+                  write(sigmafileindex(ie), '(2a, f16.4, a)') '#', ' T = ', KBT, ' K'
+                  write(sigmafileindex(ie), '("#",19a16)')'BTau (T.ps)', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
+                  !> write out the conductivity/tau into file
+                  do i=1, NBTau
+                     write(sigmafileindex(ie), '(19E16.6)') &
+                        BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau, &
+                        sigma_ohe_tensor(:, i, ie, ikt, iband)
+                  enddo ! i, NBTau
+                  write(sigmafileindex(ie),'(a)') ''
+               enddo
+               write(sigmafileindex(ie),'(a)') ''
+
+               !> open file for resistivity at mu and write data
+               write(rhofileindex(ie), '(2a, i5)')'# ',' iband = ', bands_fermi_level(iband)
+                  write(rhofileindex(ie),'(a)') ''
+                  do ikt = 1, NumT
+                     KBT= KBT_array(ikt)/8.6173324E-5/eV2Hartree
+                     write(rhofileindex(ie), '(2a, f16.4, a)') '#', ' T = ', KBT, ' K'
+                     write(rhofileindex(ie), '("#",19a16)')'BTau (T.ps)', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'               
+                     !> write out the inverse of conductivity/tau into file
+                     do i=1, NBTau
+                        rho(1, 1:3)=sigma_ohe_tensor(1:3, i, ie, ikt, iband)
+                        rho(2, 1:3)=sigma_ohe_tensor(4:6, i, ie, ikt, iband)
+                        rho(3, 1:3)=sigma_ohe_tensor(7:9, i, ie, ikt, iband)
+                        if (abs(det3(rho))>eps6) then
+                           call inv_r(3, rho)
+                           write(rhofileindex(ie), '(19E16.6)')& 
+                              BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau*0.175874356d0, &
+                              rho(1, 1:3), rho(2, 1:3), rho(3, 1:3)
+                        else
+                           write(rhofileindex(ie), '(a)')'# error: sigma is zero since no k points contribute to the calculations of MR'
+                        endif
+                     enddo ! i, NBTau
+                     write(rhofileindex(ie),'(a)')''
+                  enddo
+               write(rhofileindex(ie),'(a)')''
+
+            enddo ! ie, OmegaNum
+         endif 
+
          !---------------------------------------------------------------------------------------------------------------
          !> This part is to calculate and store sigma_kz and was commentted out by pihanqi on Apr. 29. 2023 
          ! !calculate sigma_kz
@@ -655,6 +737,17 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
       
       enddo ! iband =1, Nband_Fermi_Level
 
+      if (cpuid.eq.0) then
+         do ie = 1, OmegaNum
+
+            !> close file for conductivity at mu
+            close(sigmafileindex(ie))
+            !> close file for resistivity at mu
+            close(rhofileindex(ie))
+            
+         enddo ! ie
+      endif ! cpuid.eq.0
+
 #if defined (MPI)
             call mpi_barrier(mpi_cmw, ierr)
 #endif
@@ -664,70 +757,6 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
          do ie=1, OmegaNum
             write(muname, '(f12.2)')mu_array(ie)/eV2Hartree
             
-            !> write out the conductivity/tau
-            outfileindex= outfileindex+ 1
-            write(sigmafilename, '(3a)')'sigma_bands_mu_',trim(adjustl(muname)),'eV.dat'
-            open(unit=outfileindex, file=sigmafilename)
-            write(outfileindex, '(a)')'# Conductivity tensor/tau (in unit of (\Omega*m*s)^-1) for every contributing band' 
-            write(outfileindex, '(a,3I6)')'# NBAND  NumT  NumBtau  =  ',Nband_Fermi_Level, NumT, NBTau 
-            write(outfileindex, '(a,100I5)')'# SELECTEDBANDS  =  ', bands_fermi_level(:)
-            write(outfileindex, '(a,1000f8.3)')'# Tlist  =  ', KBT_array(:)/8.6173324E-5/eV2Hartree
-            do iband= 1, Nband_Fermi_Level
-               write(outfileindex, '(2a, i5)')'# ',' iband = ', bands_fermi_level(iband)
-               write(outfileindex,'(a)') ''
-               do ikt = 1, NumT
-                  KBT= KBT_array(ikt)/8.6173324E-5/eV2Hartree
-                  write(outfileindex, '(2a, f16.4, a)') '#', ' T = ', KBT, ' K'
-                  write(outfileindex, '("#",20a16)')'BTau (T.ps)', 'OmegaTau (eV.ps)', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
-                  !> write out the conductivity/tau into file
-                  do i=1, NBTau
-                     write(outfileindex, '(20E16.6)') &
-                        BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau, &
-                        BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau*0.175874356d0, &
-                        sigma_ohe_tensor(:, i, ie, ikt, iband)
-                  enddo ! i, NBTau
-                  write(outfileindex,'(a)') ''
-               enddo
-               write(outfileindex,'(a)') ''
-            enddo
-            close(outfileindex)
-            
-            !> write out the resistivity*tau
-            outfileindex= outfileindex+ 1
-            write(sigmafilename, '(3a)')'rho_bands_mu_', trim(adjustl(muname)),'eV.dat'
-            open(unit=outfileindex, file=sigmafilename)
-            write(outfileindex, '(a)')'# Resistivity \tau*\rho (in unit of \Omega*m*s) for every contributing band '
-            write(outfileindex, '(a,3I6)')'# NBAND  NumT  NumBtau  =  ',Nband_Fermi_Level, NumT, NBTau 
-            write(outfileindex, '(a,100I5)')'# SELECTEDBANDS  =  ', bands_fermi_level(:)
-            write(outfileindex, '(a,1000f8.3)')'# Tlist  =  ', KBT_array(:)/8.6173324E-5/eV2Hartree
-            do iband= 1, Nband_Fermi_Level
-               write(outfileindex, '(2a, i5)')'# ',' iband = ', bands_fermi_level(iband)
-               write(outfileindex,'(a)') ''
-               do ikt = 1, NumT
-                  KBT= KBT_array(ikt)/8.6173324E-5/eV2Hartree
-                  write(outfileindex, '(2a, f16.4, a)') '#', ' T = ', KBT, ' K'
-                  write(outfileindex, '("#",20a16)')'BTau (T.ps)', 'OmegaTau (eV.ps)', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'               
-                  !> write out the inverse of conductivity/tau into file
-                  do i=1, NBTau
-                     rho(1, 1:3)=sigma_ohe_tensor(1:3, i, ie, ikt, iband)
-                     rho(2, 1:3)=sigma_ohe_tensor(4:6, i, ie, ikt, iband)
-                     rho(3, 1:3)=sigma_ohe_tensor(7:9, i, ie, ikt, iband)
-                     if (abs(det3(rho))>eps6) then
-                        call inv_r(3, rho)
-                        write(outfileindex, '(20E16.6)')& 
-                           BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau, &
-                           BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau*0.175874356d0, &
-                           rho(1, 1:3), rho(2, 1:3), rho(3, 1:3)
-                     else
-                        write(outfileindex, '(a)')'# error: sigma is zero since no k points contribute to the calculations of MR'
-                     endif
-                  enddo ! i, NBTau
-                  write(outfileindex,'(a)')''
-               enddo
-               write(outfileindex,'(a)')''
-            enddo
-            close(outfileindex)
-
             !> write out the total conductivity with the same relaxation time for all bands
             outfileindex= outfileindex+ 1
             write(sigmafilename, '(3a)')'sigma_total_mu_',trim(adjustl(muname)),'eV.dat'
@@ -739,16 +768,15 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
             do ikt = 1, NumT
                KBT= KBT_array(ikt)/8.6173324E-5/eV2Hartree
                write(outfileindex, '(2a, f16.4, a)')'# ',' T = ', KBT, ' K '
-               write(outfileindex, '("#",20a16)')'BTau (T.ps)', 'OmegaTau (eV.ps)', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
+               write(outfileindex, '("#",19a16)')'BTau (T.ps)', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
                !> write out the inverse of conductivity/tau into file
                !> the name of rho is meaningless here, just a temp variable
                do i=1, NBTau
                   rho(1, 1:3)=sum(sigma_ohe_tensor(1:3, i, ie, ikt, :), dim=2)
                   rho(2, 1:3)=sum(sigma_ohe_tensor(4:6, i, ie, ikt, :), dim=2)
                   rho(3, 1:3)=sum(sigma_ohe_tensor(7:9, i, ie, ikt, :), dim=2)
-                  write(outfileindex, '(20E16.6)')&
+                  write(outfileindex, '(19E16.6)')&
                      BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau, &
-                     BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau*0.175874356d0, &
                      rho(1, 1:3), rho(2, 1:3), rho(3, 1:3)
                enddo ! i, NBTau
                write(outfileindex, '(a, 10i8)')''
@@ -767,7 +795,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
             do ikt =1, NumT
                KBT= KBT_array(ikt)/8.6173324E-5/eV2Hartree
                write(outfileindex, '(2a, f16.4, a)')'# ', ' T = ', KBT, ' K '
-               write(outfileindex, '("#",20a16)')'BTau (T.ps)', 'OmegaTau (eV.ps)', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
+               write(outfileindex, '("#",19a16)')'BTau (T.ps)', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
                !> write out the inverse of conductivity/tau into file
                do i=1, NBTau
                   rho(1, 1:3)=sum(sigma_ohe_tensor(1:3, i, ie, ikt, :), dim=2)
@@ -775,9 +803,8 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
                   rho(3, 1:3)=sum(sigma_ohe_tensor(7:9, i, ie, ikt, :), dim=2)
                   if (abs(det3(rho))>eps6) then
                      call inv_r(3, rho)
-                     write(outfileindex, '(20E16.6)')&
+                     write(outfileindex, '(19E16.6)')&
                         BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau, &
-                        BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau*0.175874356d0, &
                         rho(1, 1:3), rho(2, 1:3), rho(3, 1:3)
                   else
                      write(outfileindex, '(a)')'# error: sigma is zero since no k points contribute to the calculations of MR'
