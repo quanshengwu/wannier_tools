@@ -1,0 +1,20 @@
+# crystal cell vector3: line3 a1; line 4 a2; line 5 a3. sometimes small 
+# numerical errors of {a1,a2,a3} will give rise to worse symmed hamiltonian
+     5.5390000342999999    0.0000000000000000    0.0000000000000000
+     0.0000000000000000    5.5390000342999999    0.0000000000000000
+     0.0000000000000000    0.0000000000000000    5.5390000342999999
+# fractional axis of each exactly as in POSCAR. line 8, number of atoms. line 9
+# to line 9+natom-1 is each atoms fractional axis. Mind you the errors in it.
+ 12
+0.75000   0.00000   0.00000  Co
+0.25000   0.00000   0.50000  Co
+0.75000   0.50000   0.50000  Co
+0.25000   0.50000   0.00000  Co
+0.13989   0.38989   0.38989  S
+0.36011   0.61011   0.61011  S
+0.86011   0.61011   0.88989  S
+0.63989   0.38989   0.11011  S
+0.36011   0.88989   0.11011  S
+0.13989   0.11011   0.88989  S
+0.63989   0.11011   0.61011  S
+0.86011   0.88989   0.38989  S

@@ -1,0 +1,37 @@
+# oribitals sequences are adopted as in wannier90/manuals: p = [pz,px,pz], t2g = [dxz,dyz,dxy] and 
+# d = [dz2,dxz,dyz,dx2_y2,dxy], f = [fz3,fxz2,fyz2,fzx2_zy2,fxyz,fx3_3xy2,f3yx2_y3]
+# more often than not atoms in wannier is just a sub set of crystal cell atoms. you should point out the
+# POSCAR              wannier90.win/projections
+##################################################################
+# atom1               (not projected)
+# atom2               wann_atom3=poscar_atom2  (orbs: s p)
+# atom3               wann_atom1=poscar_atom3  (orbs: d f) 
+# atom4               (not_projected)
+# atom5               wann_atom4=poscar_atom5  (orbs: s) 
+# atom6               wann_atom2=poscar_atom6  (orbs: s d f)
+# so we have the mapping between the atoms sequence in wannier_hr.dat(or wout/spread) and the atoms in 
+# poscar as wann1=poscar3, wann2=poscar6, wann3=poscar2, wann4=poscar5
+# so we have to write 
+#---------------------------
+# 4
+# 1 3 d f
+# 2 6 s d f
+# 3 2 s p
+# 4 5 s
+#---------------------------
+##################################################################
+# line 24 number of atoms projected in wannier and followed with the mapping and orbs
+12  
+T
+1 1 d   
+2 2 d   
+3 3 d 
+4 4 d 
+5 5 p
+6 6 p
+7 7 p
+8 8 p
+9 9 p
+10 10 p
+11 11 p
+12 12 p
