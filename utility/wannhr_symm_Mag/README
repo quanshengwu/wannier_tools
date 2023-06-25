@@ -12,3 +12,5 @@ without (with) time reverse operation.
 The preparation of input is similar to that in the "wannhr_symm". The additional
 input is "magmom.in". Please read it for the setting.
 
+example_mag provides an example and job.sh for run the code. Please modify job.sh
+and your PYTHONPATH accordingly.
