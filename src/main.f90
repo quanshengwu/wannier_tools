@@ -383,6 +383,18 @@
      endif
 
 
+     !> get fermi level
+     if (FermiLevel_calc) then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of getting Fermi level'
+        call now(time_start)
+        call get_fermilevel
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'FermiLevel_calc')
+        if(cpuid.eq.0)write(stdout, *)'<< End of getting Fermi level'
+     endif
+
+
      !> calculate 3D Fermi surface
      if (BulkFS_calc) then
         if(cpuid.eq.0)write(stdout, *)' '
