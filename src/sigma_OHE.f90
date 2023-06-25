@@ -628,6 +628,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
                do ikt = 1, NumT
                   KBT= KBT_array(ikt)/8.6173324E-5/eV2Hartree
                   write(sigmafileindex(ie), '(2a, f16.4, a)') '#', ' T = ', KBT, ' K'
+                  write(sigmafileindex(ie), '("# Column", i5, 100i16)')(i, i=1, 10)
                   write(sigmafileindex(ie), '("#",19a16)')'BTau (T.ps)', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
                   !> write out the conductivity/tau into file
                   do i=1, NBTau
@@ -645,6 +646,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
                   do ikt = 1, NumT
                      KBT= KBT_array(ikt)/8.6173324E-5/eV2Hartree
                      write(rhofileindex(ie), '(2a, f16.4, a)') '#', ' T = ', KBT, ' K'
+                     write(rhofileindex(ie), '("# Column", i5, 100i16)')(i, i=1, 10)
                      write(rhofileindex(ie), '("#",19a16)')'BTau (T.ps)', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'               
                      !> write out the inverse of conductivity/tau into file
                      do i=1, NBTau
@@ -768,6 +770,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
             do ikt = 1, NumT
                KBT= KBT_array(ikt)/8.6173324E-5/eV2Hartree
                write(outfileindex, '(2a, f16.4, a)')'# ',' T = ', KBT, ' K '
+               write(outfileindex, '("# Column", i5, 100i16)')(i, i=1, 10)
                write(outfileindex, '("#",19a16)')'BTau (T.ps)', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
                !> write out the inverse of conductivity/tau into file
                !> the name of rho is meaningless here, just a temp variable
@@ -795,6 +798,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
             do ikt =1, NumT
                KBT= KBT_array(ikt)/8.6173324E-5/eV2Hartree
                write(outfileindex, '(2a, f16.4, a)')'# ', ' T = ', KBT, ' K '
+               write(outfileindex, '("# Column", i5, 100i16)')(i, i=1, 10)
                write(outfileindex, '("#",19a16)')'BTau (T.ps)', 'xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy','zz'
                !> write out the inverse of conductivity/tau into file
                do i=1, NBTau

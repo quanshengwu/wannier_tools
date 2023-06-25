@@ -197,11 +197,11 @@
          write(muname, '(f12.2)')mu_array(ie)/eV2Hartree
          write(sigmafilename, '(3a)')'sigma_total_mu_',trim(adjustl(muname)),'eV.dat'
          write(outfileindex, '(a)')"set encoding iso_8859_1"
-         write(outfileindex, '(a)') 'set terminal pdfcairo enhanced color font ",30" size 13, 6'
+         write(outfileindex, '(a)') 'set terminal pdfcairo enhanced color font ",30" size 10, 6'
          write(outfileindex, '(a)') "set output 'sigma.pdf'"
          write(outfileindex, '(a)')'set border lw 2'
          write(outfileindex, '(a)')'set autoscale fix'
-         write(outfileindex, '(a)')"set ylabel '{/Symbol s}/{/Symbol t} (1/{/Symbol W}/m/s)'"
+         write(outfileindex, '(a)')"set ylabel '{/Symbol s}_{xx}/{/Symbol t} (({/Symbol W}*m*s)^{-1})'"
          write(outfileindex, '(a)')"set xlabel 'B{/Symbol t} (T.ps)'"
          write(outfileindex, '(a)') 'set key outside'
          write(outfileindex, '(a)') "set palette defined (0 'red', 1 'green')"
@@ -213,9 +213,29 @@
          write(outfileindex, '(a, f6.2)') 'OmegaMin = ',OmegaMin/eV2Hartree
          write(outfileindex, '(a, f6.2)') 'OmegaMax = ',OmegaMax/eV2Hartree
          write(outfileindex, '(a, I4)') 'OmegaNum = ',OmegaNum
+         write(outfileindex, '(a, I4)') 'lw = ', 4
          write(outfileindex, '(a)') ''
+         write(outfileindex, '(a)') '#plot conductivity/tau'
          write(outfileindex, '(4a)')& 
-               "plot for [i=0:NumT-1] '",trim(adjustl(sigmafilename)),"' every :::i::i+1 u 2:3 w l lt palette frac i/(NumT*1.0)", &
+               "plot for [i=0:NumT-1] '",trim(adjustl(sigmafilename)),"' every :::i::i+1 u 1:2 w l lw lw lt palette frac i/(NumT*1.0)", &
+               "title sprintf('T=%.0f K', Tmin + (Tmax-Tmin)/(NumT*1.0-1.0)*i)"
+         write(outfileindex, '(a)') ' '
+         write(outfileindex, '(a)')"set ylabel '{/Symbol s}_{xy}/{/Symbol t} (({/Symbol W}*m*s)^{-1})'"
+         write(outfileindex, '(4a)')& 
+               "plot for [i=0:NumT-1] '",trim(adjustl(sigmafilename)),"' every :::i::i+1 u 1:3 w l lw lw lt palette frac i/(NumT*1.0)", &
+               "title sprintf('T=%.0f K', Tmin + (Tmax-Tmin)/(NumT*1.0-1.0)*i)"
+         write(outfileindex, '(a)') ' '
+         write(outfileindex, '(a)') '#plot resistivity*tau'
+         write(outfileindex, '(a)') ' '
+         write(sigmafilename, '(3a)')'rho_total_mu_', trim(adjustl(muname)),'eV.dat'
+         write(outfileindex, '(a)')"set ylabel '{/Symbol r}_{xx}*{/Symbol t} ({/Symbol W}*m*s)'"
+         write(outfileindex, '(4a)')& 
+               "plot for [i=0:NumT-1] '",trim(adjustl(sigmafilename)),"' every :::i::i+1 u 1:2 w l lw lw lt palette frac i/(NumT*1.0)", &
+               "title sprintf('T=%.0f K', Tmin + (Tmax-Tmin)/(NumT*1.0-1.0)*i)"
+         write(outfileindex, '(a)') ' '
+         write(outfileindex, '(a)')"set ylabel '{/Symbol r}_{yx}*{/Symbol t} ({/Symbol W}*m*s)'"
+         write(outfileindex, '(4a)')& 
+               "plot for [i=0:NumT-1] '",trim(adjustl(sigmafilename)),"' every :::i::i+1 u 1:5 w l lw lw lt palette frac i/(NumT*1.0)", &
                "title sprintf('T=%.0f K', Tmin + (Tmax-Tmin)/(NumT*1.0-1.0)*i)"
          close(outfileindex)
       endif
