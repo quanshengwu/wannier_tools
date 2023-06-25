@@ -17,6 +17,7 @@ NumOccupied = 6        ! set it anyway even don't use it.
 Nk1 = 51            ! Kmesh(1) for KCUBE_BULK
 BTauNum= 100        ! Number of B*tau we calculate
 BTauMax = 40.0      ! The maximum B*tau, starting from Btau=0.
+Nslice_BTau_Max = 20000 ! increase this number if negative magnetoresistance occurs, default =5000
 /
 
 LATTICE

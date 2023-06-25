@@ -1,4 +1,5 @@
 Usage: python3   
+Copy this file to your work folder where contains wt.in and sigma files
 Command: `python post_sigma_OHE.py`  
 
 This python script contains three function, readwtin(), Function readsigma_writerho(band_list, tau_list) and plot_cbar(component). 
