@@ -1,0 +1,32 @@
+# This input provides the information of magnetic moment. 
+# Fixed format, please keep the comment from line 1 to line 19 
+# Leave this format for future simplication.
+# The magnetic moment can be found in "OUTCAR" with key
+# magnetization (x)
+# magnetization (y)
+# magnetization (z)
+# Take the "total" value for the ion $with$ wannier projection
+# You'd better keep only the big value and set small value 0.                                       
+#
+# 
+#
+#
+#
+#
+#
+#
+# line 20 is number of atoms with wannier projection (Natom_Wann). 
+# Line 21 to 21+Natom_Wann: atom index, M_{i,x}, M_{i,y} M_{i,z}
+12
+1 0 0  0.788
+2 0 0  0.788
+3 0 0  0.788
+4 0 0  0.788
+5  0 0  0.000
+6  0 0  0.000
+7  0 0  0.000
+8  0 0  0.000
+9  0 0  0.000
+10 0 0  0.000
+11 0 0  0.000
+12 0 0  0.000
