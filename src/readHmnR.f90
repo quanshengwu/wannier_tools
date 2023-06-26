@@ -624,7 +624,7 @@ subroutine readSparseHmnR
    !> transform it into dense format only when number of wannier orbitals is less than 100
 
    outfileindex= outfileindex+ 1
-   if (cpuid.eq.0.and. nwann<100) then
+   if (cpuid.eq.0.and. nwann<500) then
       open (unit=outfileindex, file='hr.dat-dense')
       write(outfileindex, *) ' ! HmnR file from sparse hr file'
       write(outfileindex, '(I10, a)') nwann, '  ! Num_wann: number of wannier orbitals'

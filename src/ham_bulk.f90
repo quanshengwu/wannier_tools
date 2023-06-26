@@ -68,7 +68,7 @@ subroutine ham_bulk_atomicgauge(k,Hamk_bulk)
             if (dis> Rcut) cycle
 
             kdotr=k(1)*pos_direct(1) + k(2)*pos_direct(2) + k(3)*pos_direct(3)
-            factor= exp(pi2zi*kdotr)/ndegen(iR)
+            factor= (cos(twopi*kdotr)+zi*sin(twopi*kdotr))
 
             Hamk_bulk(i1, i2)= Hamk_bulk(i1, i2) &
                + HmnR(i1, i2, iR)*factor/ndegen(iR)
@@ -95,7 +95,7 @@ end subroutine ham_bulk_atomicgauge
 subroutine d2Hdk2_atomicgauge(k, DHDk2_wann)
    !> second derivatve of H(k)
    use para, only : Nrpts, irvec, crvec, Origin_cell, HmnR, ndegen, &
-       Num_wann, dp, Rcut, pi2zi, zi
+       Num_wann, dp, Rcut, pi2zi, zi, twopi, pi
    implicit none
 
    !> momentum in 3D BZ
@@ -128,7 +128,7 @@ subroutine d2Hdk2_atomicgauge(k, DHDk2_wann)
             if (dis> Rcut) cycle
 
             kdotr=k(1)*pos_direct(1) + k(2)*pos_direct(2) + k(3)*pos_direct(3)
-            ratio= exp(pi2zi*kdotr)/ndegen(iR)
+            ratio= (cos(twopi*kdotr)+zi*sin(twopi*kdotr))/ndegen(iR)
 
             do j=1, 3
                do i=1, 3
@@ -148,7 +148,7 @@ subroutine dHdk_atomicgauge(k, velocity_Wannier)
    !> First derivate of H(k); dH(k)/dk
    use para, only : Nrpts, irvec, Origin_cell, HmnR, ndegen, &
        Num_wann, dp, Rcut, pi2zi,  &
-      zi, soc, zzero
+       zi, soc, zzero, twopi
    implicit none
 
    !> momentum in 3D BZ
@@ -180,7 +180,7 @@ subroutine dHdk_atomicgauge(k, velocity_Wannier)
             if (dis> Rcut) cycle
 
             kdotr=k(1)*pos_direct(1) + k(2)*pos_direct(2) + k(3)*pos_direct(3)
-            ratio= exp(pi2zi*kdotr)/ndegen(iR)
+            ratio= (cos(twopi*kdotr)+zi*sin(twopi*kdotr))/ndegen(iR)
 
             do i=1, 3
                velocity_Wannier(i1, i2, i)=velocity_Wannier(i1, i2, i)+ &
@@ -233,7 +233,7 @@ subroutine ham_bulk_latticegauge(k,Hamk_bulk)
    !
    !        May/29/2011 by Quansheng Wu
 
-   use para, only : dp, pi2zi, HmnR, ndegen, nrpts, irvec, Num_wann, stdout
+   use para, only : dp, pi2zi, HmnR, ndegen, nrpts, irvec, Num_wann, stdout, twopi, zi
    implicit none
 
    ! loop index
@@ -251,7 +251,7 @@ subroutine ham_bulk_latticegauge(k,Hamk_bulk)
    Hamk_bulk=0d0
    do iR=1, Nrpts
       kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
-      factor= exp(pi2zi*kdotr)
+      factor= (cos(twopi*kdotr)+zi*sin(twopi*kdotr))
 
       Hamk_bulk(:, :)= Hamk_bulk(:, :)+ HmnR(:, :, iR)*factor/ndegen(iR)
    enddo ! iR
@@ -278,7 +278,7 @@ end subroutine ham_bulk_latticegauge
 
 subroutine dHdk_latticegauge_wann(k, velocity_Wannier)
    use para, only : Nrpts, irvec, crvec, Origin_cell, &
-      HmnR, ndegen, Num_wann, zi, pi2zi, dp
+      HmnR, ndegen, Num_wann, zi, pi2zi, dp, twopi
    implicit none
 
    !> momentum in 3D BZ
@@ -295,7 +295,7 @@ subroutine dHdk_latticegauge_wann(k, velocity_Wannier)
    do i=1, 3
       do iR= 1, Nrpts
          kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
-         ratio= Exp(pi2zi*kdotr)
+         ratio= (cos(twopi*kdotr)+zi*sin(twopi*kdotr))
          velocity_Wannier(:, :, i)= velocity_Wannier(:, :, i)+ &
             zi*crvec(i, iR)*HmnR(:,:,iR)*ratio/ndegen(iR)
       enddo ! iR
@@ -306,7 +306,7 @@ end subroutine dHdk_latticegauge_wann
 
 subroutine dHdk_latticegauge_Ham(k, eigval, eigvec, Vmn_Ham)
    use para, only : Nrpts, irvec, crvec, Origin_cell, &
-      HmnR, ndegen, Num_wann, zi, pi2zi, dp, zzero
+      HmnR, ndegen, Num_wann, zi, pi2zi, dp, zzero, twopi
    implicit none
 
    !> momentum in 3D BZ
@@ -420,6 +420,7 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
 
    ! coordinates of R vector
    real(Dp) :: R(3), R1(3), R2(3)
+   complex(dp) :: ratio
 
    ! Hamiltonian of bulk system
    complex(Dp),intent(out) ::Hamk_bulk(Num_wann, Num_wann)
@@ -490,8 +491,9 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
          enddo ! pp
       enddo  ! ii
 
+      ratio= (cos(twopi*kdotr)+zi*sin(twopi*kdotr))
       Hamk_bulk(:, :)= Hamk_bulk(:, :) &
-         + nac_correction(:, :, iR)*Exp(2d0*pi*zi*kdotr)/ndegen(iR)
+         + nac_correction(:, :, iR)*ratio/ndegen(iR)
    enddo ! iR
 
    ! check hermitcity
@@ -651,7 +653,7 @@ subroutine ham_bulk_coo_densehr(k,nnzmax, nnz, acoo,icoo,jcoo)
       R(2)=dble(ib)
       R(3)=dble(ic)
       kdotr=k(1)*R (1) + k(2)*R (2) + k(3)*R (3)
-      factor= exp(pi2zi*kdotr)
+      factor= (cos(twopi*kdotr)+zi*sin(twopi*kdotr))
 
       Hamk_bulk(:, :)=&
          Hamk_bulk(:, :) &
@@ -697,9 +699,10 @@ subroutine ham_bulk_coo_sparsehr_latticegauge(k,acoo,icoo,jcoo)
    implicit none
 
    real(dp) :: k(3), posij(3)
+   real(dp) :: kdotr
    integer,intent(inout):: icoo(splen),jcoo(splen)!,splen
    complex(dp),intent(inout) :: acoo(splen)
-   complex(dp) :: kdotr, ratio
+   complex(dp) ::  ratio
    integer :: i,j,ir
 
    do i=1,splen
@@ -708,7 +711,7 @@ subroutine ham_bulk_coo_sparsehr_latticegauge(k,acoo,icoo,jcoo)
       jcoo(i)=hjcoo(i)
       posij=irvec(:, ir)
       kdotr=posij(1)*k(1)+posij(2)*k(2)+posij(3)*k(3)
-      ratio= exp(pi2zi*kdotr)
+      ratio= (cos(twopi*kdotr)+zi*sin(twopi*kdotr))
       acoo(i)=ratio*hacoo(i)
    end do
 
@@ -724,9 +727,10 @@ subroutine ham_bulk_coo_sparsehr(k,acoo,icoo,jcoo)
    implicit none
 
    real(dp) :: k(3), posij(3)
+   real(dp) :: kdotr
    integer,intent(inout):: icoo(splen),jcoo(splen)!,splen
    complex(dp),intent(inout) :: acoo(splen)
-   complex(dp) :: kdotr, ratio
+   complex(dp) ::  ratio
    integer :: i,j,ir
 
    do i=1,splen
@@ -735,7 +739,7 @@ subroutine ham_bulk_coo_sparsehr(k,acoo,icoo,jcoo)
       jcoo(i)=hjcoo(i)
       posij=irvec(:, ir)+ Origin_cell%wannier_centers_direct(:, jcoo(i))- Origin_cell%wannier_centers_direct(:, icoo(i))
       kdotr=posij(1)*k(1)+posij(2)*k(2)+posij(3)*k(3)
-      ratio= exp(pi2zi*kdotr)
+      ratio= (cos(twopi*kdotr)+zi*sin(twopi*kdotr))
       acoo(i)=ratio*hacoo(i)
    end do
 

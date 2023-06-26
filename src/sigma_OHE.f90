@@ -1133,7 +1133,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
       vz= 0d0
       do iR= 1, Nrpts
          kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
-         factor= exp(pi2zi*kdotr)/ndegen(iR)
+         factor= (cos(twopi*kdotr)+zi*sin(twopi*kdotr))/ndegen(iR)
          vx= vx+ zi*crvec(1, iR)*HmnR(:,:,iR)*factor
          vy= vy+ zi*crvec(2, iR)*HmnR(:,:,iR)*factor
          vz= vz+ zi*crvec(3, iR)*HmnR(:,:,iR)*factor
@@ -1356,10 +1356,10 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
       vz= 0d0
       do iR= 1, Nrpts
          kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
-         factor= zi*exp(pi2zi*kdotr)/ndegen(iR)
-         vx= vx+ crvec(1, iR)*HmnR(:,:,iR)*factor
-         vy= vy+ crvec(2, iR)*HmnR(:,:,iR)*factor
-         vz= vz+ crvec(3, iR)*HmnR(:,:,iR)*factor
+         factor= (cos(twopi*kdotr)+zi*sin(twopi*kdotr))/ndegen(iR)
+         vx= vx+ zi*crvec(1, iR)*HmnR(:,:,iR)*factor
+         vy= vy+ zi*crvec(2, iR)*HmnR(:,:,iR)*factor
+         vz= vz+ zi*crvec(3, iR)*HmnR(:,:,iR)*factor
       enddo ! iR
 
       !> velocity is in cartesian coordinate
@@ -1430,10 +1430,10 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
       vz= 0d0
       do iR= 1, Nrpts
          kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
-         factor= zi*exp(pi2zi*kdotr)/ndegen(iR)
-         vx= vx+ crvec(1, iR)*HmnR(:,:,iR)*factor
-         vy= vy+ crvec(2, iR)*HmnR(:,:,iR)*factor
-         vz= vz+ crvec(3, iR)*HmnR(:,:,iR)*factor
+         factor= (cos(twopi*kdotr)+zi*sin(twopi*kdotr))/ndegen(iR)
+         vx= vx+ zi*crvec(1, iR)*HmnR(:,:,iR)*factor
+         vy= vy+ zi*crvec(2, iR)*HmnR(:,:,iR)*factor
+         vz= vz+ zi*crvec(3, iR)*HmnR(:,:,iR)*factor
       enddo ! iR
 
       !> velocity is in cartesian coordinate

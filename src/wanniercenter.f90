@@ -2380,16 +2380,8 @@ subroutine  wannier_center3D_kpath(kpoints, nkp1, nkp2, largest_gap, wcc, Z2)
    WannierCenterKy= 0d0
    WannierCenterKy_mpi= 0d0
    hamk=0d0
-!~    eigenvalue=0d0
    Eigenvector=0d0
-!~    Mmnkb_full=0d0
-!~    Mmnkb=0d0
-!~    Mmnkb_com=0d0
    Lambda =0d0
-!~    Lambda0=0d0
-!~    U= 0d0
-!~    Sigma= 0d0
-!~    VT= 0d0
    gauge_shift=0d0
 
    !> set k plane
@@ -2403,12 +2395,9 @@ subroutine  wannier_center3D_kpath(kpoints, nkp1, nkp2, largest_gap, wcc, Z2)
    !> reciprocal lattice vector
 
 
-
-
-   do i=1,Num_wann
-      gauge_shift(i,i)=exp(-pi2zi*&
-         sum((kpoints(:, Nkp1, 1)-kpoints(:, 1, 1))&
-         *Origin_cell%wannier_centers_direct(:, i)))
+   do i=1, Num_wann
+      br= sum((kpoints(:, Nkp1, 1)-kpoints(:, 1, 1))* Origin_cell%wannier_centers_direct(:, i))
+      gauge_shift(i,i)=cos(twopi*br)- zi*sin(twopi*br)
    enddo
 
    Umatrix_t= transpose(Umatrix)

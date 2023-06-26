@@ -33,16 +33,16 @@ SURFACE            ! See doc for details
 
 !> bulk band structure calculation flag
 &CONTROL
-SlabBandWaveFunc_calc = F
-BulkBand_calc         = F
-BulkBand_points_calc  = F
-SlabBand_calc         = F
-WireBand_calc         = F
-SlabSS_calc           = F
-SlabArc_calc          = F
+SlabBandWaveFunc_calc = T
+BulkBand_calc         = T
+BulkBand_points_calc  = T
+SlabBand_calc         = T
+WireBand_calc         = T
+SlabSS_calc           = T
+SlabArc_calc          = T
 Z2_3D_calc            = T
-SlabSpintexture_calc  = F
-Wanniercenter_calc    = F
+SlabSpintexture_calc  = T
+Wanniercenter_calc    = T
 /
 
 &SYSTEM
@@ -64,7 +64,6 @@ Nk1 = 41            ! number k points  odd number would be better
 Nk2 = 41            ! number k points  odd number would be better
 Nk3 = 41            ! number k points  odd number would be better
 NP = 2              ! number of principle layers
-Gap_threshold = 1.0 ! threshold for GapCube output
 /
 
 KPATH_BULK            ! k point path

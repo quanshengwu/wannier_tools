@@ -691,7 +691,7 @@ subroutine get_projection_weight_bulk_unfold(ndim, k_SBZ_direct, k_PBZ_direct, p
    !> Implemented by QSWU 2019
    use para, only : dp, projection_weight_mode, &
       cpuid, stdout, Nrpts, irvec, global_shift_SC_to_PC_cart, &
-      Folded_cell, pi2zi, eps3, cell_type, int_array1D, Landaulevel_unfold_line_calc
+      Folded_cell, eps3, cell_type, int_array1D, Landaulevel_unfold_line_calc, twopi, zi
    implicit none
 
    integer, intent(in) :: ndim
@@ -790,8 +790,8 @@ subroutine get_projection_weight_bulk_unfold(ndim, k_SBZ_direct, k_PBZ_direct, p
             endif
 
             !> brodening is 0.2 Bohr
-            overlp= overlp+ delta(0.2d0, norm(dij_tilde_cart))*exp(-pi2zi*(kdotr))*psi(io_SC)/delta(0.2d0, 0d0)
-            overlp_matrix_element= overlp_matrix_element+ delta(0.2d0, norm(dij_tilde_cart))*exp(-pi2zi*(kdotr))*psi(io_SC)/delta(0.2d0, 0d0)
+            overlp= overlp+ delta(0.2d0, norm(dij_tilde_cart))*(cos(twopi*kdotr)-zi*sin(twopi*kdotr))*psi(io_SC)/delta(0.2d0, 0d0)
+            overlp_matrix_element= overlp_matrix_element+ delta(0.2d0, norm(dij_tilde_cart))*(cos(twopi*kdotr)-zi*sin(twopi*kdotr))*psi(io_SC)/delta(0.2d0, 0d0)
 
          enddo ! io
          weight(ig)= weight(ig)+ abs(overlp)**2/NumberofSelectedOrbitals(ig)

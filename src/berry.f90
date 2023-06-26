@@ -98,7 +98,7 @@
                br= b(1)*Origin_cell%wannier_centers_direct(1, j)+ &
                    b(2)*Origin_cell%wannier_centers_direct(2, j)+ &
                    b(3)*Origin_cell%wannier_centers_direct(3, j)
-               ratio= exp(-pi2zi*br)
+               ratio= cos(2d0*pi*br)- zi*sin(2d0*pi*br)
 
                overlap= overlap+ uk_dag(i, j)* uk(j, i)* ratio
             enddo
@@ -235,7 +235,7 @@
                   br= b(1)*Origin_cell%wannier_centers_direct(1, j)+ &
                       b(2)*Origin_cell%wannier_centers_direct(2, j)+ &
                       b(3)*Origin_cell%wannier_centers_direct(3, j)
-                  ratio= exp(-pi2zi*br)
+                  ratio= cos(2d0*pi*br)- zi*sin(2d0*pi*br)
                else
                   ratio=1d0
                endif
