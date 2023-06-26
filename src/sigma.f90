@@ -17,7 +17,7 @@
       use para
       implicit none
 
-      integer :: i, ib, ie
+      integer :: i, j, ib, ie, it, iter
 
       !> Bands crossing Fermi level
       integer :: Nband_Fermi_Level
@@ -180,14 +180,64 @@
 
     
       if (cpuid.eq.0) then
-         write(stdout, *)' The calculation of sigma_OHE is finished. Now, we print out some results:'
-         write(stdout, *)' The plasma frequencies at the zero field case for different bands  in units of eV'
-         write(stdout, '(a6, 3a10)')' # nband', 'omega_x', 'omega_y', 'omega_z'  
+         write(stdout, '(a)')' '
+         write(stdout, '(a)')'>> The calculation of sigma_OHE is finished. Now, we print out some results:'
+         write(stdout, '(a)')'> The plasma frequencies at the zero field case for different bands  in units of eV'
+         write(stdout, '(a10 , 3a10)')' # nband', 'omega_x', 'omega_y', 'omega_z'  
          do i=1, Nband_Fermi_Level
             write(stdout, '(i6, 3E16.5)') i, Plasma_Frequencies(:, i)
          enddo
       endif
-      
+    
+      ! sigma_ohe_tensor(9, NBTau, OmegaNum, NumT, Nband_Fermi_Level)
+      if (cpuid.eq.0) then
+         ! write out conductivity tensor for each band
+         write(stdout, '(a)')' '
+         write(stdout, '(a)')'> Conductivity/tau tensor in unit of (\Omega*m*s)^-1, where tau is the relaxation time'
+         do ie=1, OmegaNum
+            write(stdout, '(a, f8.2, a)')' \sigma/tau tensor at chemical potential : ', mu_array(ie)*1000d0/eV2Hartree, ' meV'
+            do ib= 1, Nband_Fermi_Level
+               write(stdout, '(a, i6)')' Band index: ', bands_fermi_level(ib)
+               write(stdout, '(100(10X,"T=" f10.2, "K", 18X))') (KBT_array(it)/8.6173324E-5/eV2Hartree, it=1, NumT)
+               iter=0
+               do i=1, 3
+                  !> for each temperature
+                  do it= 1, NumT
+                     do j=1, 3
+                        iter= (i-1)*3+ j
+                        write(stdout, '(10E13.5)', advance='no' ) sigma_ohe_tensor(iter, 1, ie, it, ib)
+                     enddo
+                        write(stdout, '(2X)', advance='no' )
+                  enddo
+                  write(stdout, '(10E12.5)', advance='yes')
+               enddo
+            enddo
+            write(stdout, *) ' '
+         enddo
+
+         ! write out conductivity tensor assume tau_n=1ps
+         write(stdout, '(a)')' '
+         write(stdout, '(a)')'> Total conductivity tensor in unit of (\Omega*m)^-1, assuming relaxation time \tau_n for each band is 1ps'
+         do ie=1, OmegaNum
+            write(stdout, '(a, f8.2, a)')' \sigma/tau tensor at chemical potential : ', mu_array(ie)*1000d0/eV2Hartree, ' meV'
+            write(stdout, '(100(10X,"T=" f10.2, "K", 18X))') (KBT_array(it)/8.6173324E-5/eV2Hartree, it=1, NumT)
+            iter=0
+            do i=1, 3
+               !> for each temperature
+               do it= 1, NumT
+                  do j=1, 3
+                     iter= (i-1)*3+ j
+                     !> 1E-12 is 1ps
+                     write(stdout, '(10E13.5)', advance='no' ) sum(sigma_ohe_tensor(iter, 1, ie, it, :))*1E-12
+                  enddo ! j
+                     write(stdout, '(2X)', advance='no' )
+               enddo ! it
+               write(stdout, '(10E12.5)', advance='yes')
+            enddo ! i
+            write(stdout, *) ' '
+         enddo ! ie
+      endif
+       
 
     
       outfileindex= outfileindex+ 1
