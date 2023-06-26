@@ -9,9 +9,9 @@ Author: Changming Yue, Institute of Physics, CAS.
 Email: yuechangming8@gmail.com
 
 
-2.  **wannhr\_symm**
+2.  **wannhr\_symm** and **wannhr\_symm\_Mag**
 
-A Python tool to symmetrize the tight binding model wannier90\_hr.dat.
+Python tools to symmetrize the tight binding model wannier90\_hr.dat without and with magnetization.
 
 Author: Changming Yue, Institute of Physics, CAS.
 Email: yuechangming8@gmail.com

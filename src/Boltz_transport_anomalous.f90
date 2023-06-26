@@ -709,14 +709,14 @@ subroutine sigma_ahc_vary_ChemicalPotential(NumOfmu, mulist, NumberofEta, eta_ar
            write(outfileindex, '("#",10a)')' Spin hall conductivity in unit of (hbar/e)S/cm,', 'Brodening eta= ',  trim(adjustl(etaname)), ' meV'
            write(outfileindex, "('#column', i5, 3000i16)")(i, i=1, 28)
            write(outfileindex, '("#",a13, 27a16)')'Eenergy (eV)', &
-             'xx^x', 'xy^x', 'xz^x', 'yx^x', 'yy^x', 'yz^x', 'zx^x', 'yy^x', 'zz^x', &
-             'xx^y', 'xy^y', 'xz^y', 'yx^y', 'yy^y', 'yz^y', 'zx^y', 'yy^y', 'zz^y', &
-             'xx^z', 'xy^z', 'xz^z', 'yx^z', 'yy^z', 'yz^z', 'zx^z', 'yy^z', 'zz^z'
+             'xx^x', 'xy^x', 'xz^x', 'yx^x', 'yy^x', 'yz^x', 'zx^x', 'zy^x', 'zz^x', &
+             'xx^y', 'xy^y', 'xz^y', 'yx^y', 'yy^y', 'yz^y', 'zx^y', 'zy^y', 'zz^y', &
+             'xx^z', 'xy^z', 'xz^z', 'yx^z', 'yy^z', 'yz^z', 'zx^z', 'zy^z', 'zz^z'
            do ie=1, OmegaNum
               write(outfileindex, '(E16.8)', advance='no')energy(ie)/eV2Hartree
               do igamma=1, 3
               do ialpha=1, 3
-              do ibeta=1, 3
+              do ibeta =1, 3
                  if (ialpha*ibeta*igamma/=27)then
                     write(outfileindex, '(200E16.8)', advance='no') sigma_tensor_shc(ie, igamma, ialpha, ibeta, ieta)
                  else
