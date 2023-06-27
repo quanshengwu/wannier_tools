@@ -12,17 +12,17 @@ OBJ =  module.o sparse.o wt_aux.o math_lib.o symmetry.o readHmnR.o inverse.o pro
 	main.o
 
 # compiler
-F90  = mpiifort -fpp -DMPI -DINTELMKL -fpe3
+F90  = mpif90 -fpp -DMPI -DINTELMKL -fpe3
 
-INCLUDE = -I${MKLROOT}/include
+INCLUDE = #-I${MKLROOT}/include
 WFLAG = -nogen-interface
 OFLAG = -O3 -static-intel
 FFLAG = $(OFLAG) $(WFLAG)
 LFLAG = $(OFLAG)
 
 # ARPACK LIBRARY
-ARPACK=/Users/quan/work/workplace/ARPACK/libarpack_MAC.a
-
+ARPACK=/Users/g.q/Desktop/WannierTool/ARPACK/libarpack_MAC_intel_x86.a
+#ARPACK=/Users/g.q/Desktop/WannierTool/M1/arpack-ng/lib/lib/libarpack.la
 # blas and lapack libraries
 # static linking
 #LIBS = -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a \
@@ -31,8 +31,8 @@ ARPACK=/Users/quan/work/workplace/ARPACK/libarpack_MAC.a
 		  ${ARPACK}
 
 # dynamic linking
-LIBS = ${ARPACK} -L/${MKLROOT}/lib/intel64 -lmkl_core -lmkl_sequential -lmkl_intel_lp64 -lpthread
- 
+LIBS = ${ARPACK}  -L/${MKLROOT}/lib -lmkl_core -lmkl_sequential -lmkl_intel_lp64 -lpthread
+
 main : $(OBJ)
 	$(F90) $(LFLAG) $(OBJ) -o wt.x $(LIBS)
 	cp -f wt.x ../bin
@@ -44,4 +44,3 @@ main : $(OBJ)
 
 clean :
 	rm -f *.o *.mod *~ wt.x
-

@@ -701,6 +701,7 @@ subroutine readinput
    Origin_cell%cell_parameters(4)= angle(Origin_cell%Rub, Origin_cell%Ruc)
    Origin_cell%cell_parameters(5)= angle(Origin_cell%Rua, Origin_cell%Ruc)
    Origin_cell%cell_parameters(6)= angle(Origin_cell%Rua, Origin_cell%Rub)
+   !Origin_cell%cell_parameters(6)= cos(pi)
 
    !> transform lattice from direct space to reciprocal space
 
@@ -725,18 +726,25 @@ subroutine readinput
    Origin_cell%reciprocal_cell_parameters(4)= angle(Origin_cell%Kub, Origin_cell%Kuc)
    Origin_cell%reciprocal_cell_parameters(5)= angle(Origin_cell%Kua, Origin_cell%Kuc)
    Origin_cell%reciprocal_cell_parameters(6)= angle(Origin_cell%Kua, Origin_cell%Kub)
+   
 
-   if(cpuid==0)write(stdout, '(a)') '>> lattice information (Angstrom)'
-   if(cpuid==0)write(stdout, '(6a12)')" a", " b", " c", 'alpha', 'beta', 'gamma'
-   if(cpuid==0)write(stdout, '(6f12.6)')Origin_cell%cell_parameters/Angstrom2atomic
+   if(cpuid==0)write(stdout, '(a)') '>> lattice vector (Angstrom)'
+   if(cpuid==0)write(stdout, '(3a12)')" a", " b", " c"
+   if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%cell_parameters(1:3)/Angstrom2atomic
+   if(cpuid==0)write(stdout, '(a)') '>> lattice agnle (degree)'
+   if(cpuid==0)write(stdout, '(3a12)')  'alpha', 'beta', 'gamma'
+   if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%cell_parameters(4:6)
    if(cpuid==0)write(stdout, '(a)')" Three Lattice vectors of the unfolded cell: "
    if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Rua/Angstrom2atomic
    if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Rub/Angstrom2atomic
    if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Ruc/Angstrom2atomic
 
-   if(cpuid==0)write(stdout, '(a)') '>> Reciprocal lattice information (1/Angstrom)'
-   if(cpuid==0)write(stdout, '(6a12)')" a", " b", " c", 'alpha', 'beta', 'gamma'
-   if(cpuid==0)write(stdout, '(6f12.6)')Origin_cell%reciprocal_cell_parameters*Angstrom2atomic
+   if(cpuid==0)write(stdout, '(a)') '>> Reciprocal lattice vector (1/Angstrom)'
+   if(cpuid==0)write(stdout, '(3a12)')" a", " b", " c"
+   if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%reciprocal_cell_parameters(1:3)*Angstrom2atomic
+   if(cpuid==0)write(stdout, '(a)') '>> Reciprocal lattice vector angle (1/Angstrom)'
+   if(cpuid==0)write(stdout, '(3a12)') 'alpha', 'beta', 'gamma'
+   if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%reciprocal_cell_parameters(4:6)
    if(cpuid==0)write(stdout, '(a)')" Three reciprocal lattice vectors of the primitive cell: "
    if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Kua*Angstrom2atomic
    if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Kub*Angstrom2atomic

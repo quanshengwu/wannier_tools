@@ -1,0 +1,46 @@
+OBJ =  module.o sparse.o wt_aux.o math_lib.o symmetry.o readHmnR.o inverse.o proteus.o \
+       eigen.o ham_qlayer2qlayer.o psi.o unfolding.o rand.o \
+  		 ham_slab.o ham_bulk.o ek_slab.o ek_bulk_polar.o ek_bulk.o \
+       readinput.o fermisurface.o surfgreen.o surfstat.o \
+  		 mat_mul.o ham_ribbon.o ek_ribbon.o \
+       fermiarc.o berrycurvature.o \
+  		 wanniercenter.o dos.o  orbital_momenta.o \
+  		 landau_level_sparse.o landau_level.o lanczos_sparse.o \
+		 berry.o wanniercenter_adaptive.o \
+  		 effective_mass.o findnodes.o \
+		 sigma_OHE.o sigma.o Boltz_transport_anomalous.o \
+	main.o
+
+# compiler, here mpif90 should be comipled with gfortran
+F90  = mpif90 -cpp -DMPI -ffree-line-length-512
+
+INCLUDE =
+WFLAG = #-Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none \
+       -fbacktrace -ffree-line-length-0 -fcheck=all -finit-real=nan \
+       -ffpe-trap=zero,overflow,underflow
+#=/Users/g.q/Desktop/WannierTool/ARPACK/libarpack_MAC.a
+OFLAG = -g
+FFLAG = $(OFLAG) $(WFLAG)
+LFLAG = $(OFLAG)
+
+ARPACK=/Users/g.q/Desktop/WannierTool/ARPACK/libarpack_MAC.a
+
+# blas and lapack libraries
+LIBS = ${ARPACK} -llapack -lblas  #-larpack${ARPACK}
+
+# Intel MKL also supports with gfortran comipler
+# dynamic linking
+# LIBS = -L/${MKLROOT}/lib -lmkl_core -lmkl_sequential -lmkl_intel_lp64 -lpthread
+
+
+main : $(OBJ)
+	$(F90) $(LFLAG) $(OBJ) -o wt.x $(LIBS)
+	cp -f wt.x ../bin
+
+.SUFFIXES: .o .f90
+
+.f90.o :
+	$(F90) $(FFLAG) $(INCLUDE) -c $*.f90
+
+clean :
+	rm -f *.o *.mod *~ wt.x

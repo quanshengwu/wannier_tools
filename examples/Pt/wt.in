@@ -11,14 +11,14 @@ Angstrom
 ATOM_POSITIONS
 1                               ! number of atoms for projectors
 Cartisen                        ! Direct or Cartisen coordinate
-Pt    0.000000      0.000000      0.000000 
+Pt    0.000000      0.000000      0.000000
 
 PROJECTORS
 9            ! number of projectors
-Pt s pz px py dxy dyz dzx dx2-y2 dz2 
+Pt s pz px py dxy dyz dzx dx2-y2 dz2
 
 &CONTROL
-BulkBand_calc         = T
+BulkBand_calc         = F
 SHC_calc              = T
 /
 
@@ -30,30 +30,10 @@ E_FERMI =  11.3158      ! e-fermi in unit of eV
 
 &PARAMETERS
 Eta_Arc = 0.05     ! infinite small value, like brodening  in unit of eV, smearing
-OmegaNum = 1001    ! omega number       
+OmegaNum = 1001    ! omega number
 OmegaMin = -10     ! energy interval min in unit of eV
 OmegaMax =  10     ! energy interval max in unit of eV
-Nk1 =41          ! number k points 
+Nk1 =41          ! number k points
 Nk2 =41          ! number k points
 Nk3 =41          ! number k points
 /
-
-SURFACE            ! See doc for details not used here but set it anyway
- 1  0  0
- 0  1  0
- 0  0  1
-
-KPATH_BULK            ! k point path
-5 
-W  0.50000   0.25000   0.75000   L  0.50000   0.50000   0.50000   
-L  0.50000   0.50000   0.50000   G  0.00000   0.00000   0.00000   
-G  0.00000   0.00000   0.00000   W  0.50000   0.00000   0.50000  
-X  0.50000   0.00000   0.50000   W  0.50000   0.25000   0.75000
-W  0.50000   0.25000   0.75000   K  0.37500   0.37500   0.37500   
-
-KCUBE_BULK
- 0.00  0.00  0.00   ! Original point for 3D k plane !-0.50 -0.50 - 0.50   ! Original point for 3D k plane
- 1.00  0.00  0.00   ! The first vector to define 3d k space plane
- 0.00  1.00  0.00   ! The second vector to define 3d k space plane
- 0.00  0.00  1.00   ! The third vector to define 3d k cube
-
