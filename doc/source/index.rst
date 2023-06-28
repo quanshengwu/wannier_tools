@@ -18,7 +18,7 @@ Aiming to investigate topological properties, electronic structures and transpor
 
 * Phonon systems (Testing)
 
-Join the QQ group to get support: 709225749
+Join the QQ group to get supports: 709225749
 
 
 .. toctree::
@@ -30,7 +30,7 @@ Join the QQ group to get support: 709225749
    tutorials
    citations
 
-**Citation**
+**Citations**
 ^^^^^^^^^^^^
 
 Please cite this paper when using WannierTools for your researchs::

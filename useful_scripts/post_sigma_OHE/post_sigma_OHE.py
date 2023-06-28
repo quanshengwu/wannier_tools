@@ -6,6 +6,9 @@
 
 '''
 0. Required Packages: numpy, matplotlib, scipy, re, os
+   Required files : wt.in, sigma_bands_mu_*.dat
+   Copy this file to your work folder where contains wt.in and sigma files 
+   Usage : python post_sigma_OHE.py
 
 1. Function Descriptions
 
@@ -24,7 +27,7 @@
     Note: The values in tau_list cannot be zero. To exclude the contribution of certain bands,
     set the corresponding value in tau_list to a very small value (e.g., 0.00001).
 
-1.3 Function plot_cbar(component)
+1.3 Function plot_cbar(component, cmap)
 
     Description: Plots rhotau(Btau).
     Parameters:
@@ -119,25 +122,25 @@ def readsigma_writerho(band_list, tau_list):
         sigma_bands = np.zeros((OmegaNum, NumT, BTauNum, Nbands, 9))
         # read the conductivities at different potentials
         for imu, mu in enumerate(Omegalist):
-            mu = mu
+            mu = mu + 0.000001
             with open(f'sigma_bands_mu_{mu:.2f}eV.dat', 'r') as rdata:
                 print(f'read data at mu = {mu:.2f} eV')
                 rdata = rdata.readlines()[4:]
                 for ib, band in enumerate(band_list):
-                    bandindex = int(float(rdata[ib*(3+NumT*(3+BTauNum+1)+1)].split()[-1]))
+                    bandindex = int(float(rdata[ib*(2+NumT*(3+BTauNum+1)+1)].split()[-1]))
                     assert band == bandindex, 'band index is wrong'
-                    band_data = rdata[ib*(3+NumT*(3+BTauNum+1)+1)+2 : (ib+1)*((3+NumT*(2+BTauNum+1)+1))-1]
+                    band_data = rdata[ib*(2+NumT*(3+BTauNum+1)+1)+2 : (ib+1)*((2+NumT*(3+BTauNum+1)+1))-1]
                     print(f'read data at band {band:d}')
                     for iT, T in enumerate(Tlist):
                         # store the data at temperature Tlist[iT] in rdata_local
-                        rdata_local = band_data[iT*(3+BTauNum+1)+2 : (iT+1)*(3+BTauNum+1)-1]
+                        rdata_local = band_data[iT*(3+BTauNum+1)+3 : (iT+1)*(3+BTauNum+1)-1]
                         
                         # store the conductivity in sigma_bands
                         sigma_ori = np.zeros((9, BTauNum))
                         for ibtau, lines in enumerate(rdata_local):
                             for icomp in range(9):
                                 # rescale the conductivity by the relaxation time
-                                sigma_ori[icomp, ibtau] = float(lines.split()[icomp+2])*tau_list[ib]
+                                sigma_ori[icomp, ibtau] = float(lines.split()[icomp+1])*tau_list[ib]
                         
                         # rescale the btau by the relaxation time
                         # interpolate the 'sigma_ori' to obtain the rescaled conductivity 
@@ -193,7 +196,7 @@ def readsigma_writerho(band_list, tau_list):
     # store Tlist, Omegalist, btaulist and rho_all in rho_all.npy in the form of dictionary
     np.save('rho_all.npy', {'Tlist':Tlist, 'Omegalist':Omegalist, 'btaulist':new_btaulist, 'rho_all':rho_all}, allow_pickle=True)
 
-def plot_cbar(component=['xx']):
+def plot_cbar(component=['xx'], cmap='rainbow'):
     
     Ncomp = len(component)    
     # read Tlist, Omegalist, btaulist and rho_all stored as dictionary from rho_all.npy 
@@ -243,9 +246,9 @@ def plot_cbar(component=['xx']):
         # The subplots will have the same width
         # and there will be a horizontal space of 0.4 between the subplots
         fig, axs = plt.subplots(figsize=(12,5), nrows=1, ncols=Ncomp,gridspec_kw={'width_ratios': [1 for i in range(Ncomp)], 'wspace': 0.4})
-        print('plot data at mu = {:.3f} eV'.format(mu))
+        print('plot data at mu = {:.3f} eV'.format((mu+0.00001)))
 
-        cmap = plt.get_cmap('jet',len(Tlist))
+        cmap = plt.get_cmap(cmap,len(Tlist))
         for icomp, comp in enumerate(component):
             for iT, T in enumerate(Tlist):
                 if T:
@@ -254,33 +257,34 @@ def plot_cbar(component=['xx']):
                             # axs[icomp].plot(btaulist, rho[imu, icomp, iT, :], linewidth=2.5, color=cmap(iT), label='T=%.2f K'%(T))
                             axs[icomp].plot(btaulist, (rho[imu, icomp, iT, :]-rho[imu, icomp, iT, 0])/rho[imu, icomp, iT, 0]*100, linewidth=2.5, color=cmap(iT), label='T=%.2f K'%(T))
                         else:
-                            # axs[icomp].plot(btaulist, rho[imu, icomp, iT, :], linewidth=2.5, color=cmap(iT), label='T=%.2f K'%(T))
-                            axs[icomp].plot(btaulist, rho[imu, icomp, iT, :]-rho[imu, icomp, iT, 0], linewidth=2.5, color=cmap(iT), label='T=%.2f K'%(T))
+                            axs[icomp].plot(btaulist, rho[imu, icomp, iT, :], linewidth=2.5, color=cmap(iT), label='T=%.2f K'%(T))
+                            # axs[icomp].plot(btaulist, rho[imu, icomp, iT, :]-rho[imu, icomp, iT, 0], linewidth=2.5, color=cmap(iT), label='T=%.2f K'%(T))
                     else:
                         if comp == 'xx' or comp == 'yy' or comp =='zz':
+                            # axs.plot(btaulist, rho[imu, icomp, iT, :], linewidth=2.5, color=cmap(iT), label='T=%.2f K'%(T))
                             axs.plot(btaulist, (rho[imu, icomp, iT, :]-rho[imu, icomp, iT, 0])/rho[imu, icomp, iT, 0]*100, linewidth=2.5, color=cmap(iT), label='T=%.2f K'%(T))
                         else:
-                            axs.plot(btaulist, rho[imu, icomp, iT, :]-rho[imu, icomp, iT, 0], linewidth=2.5, color=cmap(iT), label='T=%.2f K'%(T))
+                            axs.plot(btaulist, rho[imu, icomp, iT, :], linewidth=2.5, color=cmap(iT), label='T=%.2f K'%(T))
+                            # axs.plot(btaulist, rho[imu, icomp, iT, :]-rho[imu, icomp, iT, 0], linewidth=2.5, color=cmap(iT), label='T=%.2f K'%(T))
 
             if Ncomp >1:
                  axs[icomp].set_xlabel(r'$B\tau\ (T\cdot ps)$')
                  if comp == 'xx' or comp == 'yy' or comp =='zz':
                     #  axs[icomp].set_ylabel(r'$ \rho_{%s}\tau\ (\Omega\cdot m\cdot s) $'%(comp))
-                     axs[icomp].set_ylabel(r'$ MR_{%s} $'%(comp))
+                     axs[icomp].set_ylabel(r'$ MR_{%s}\  (\%%)$'%(comp))
                  else:
-                    #  axs[icomp].set_ylabel(r'$ \rho_{%s}\tau\ (\Omega\cdot m\cdot s) $'%(comp))
-                     axs[icomp].set_ylabel(r'$ (\rho_{%s}-\rho_0)\ (\Omega\cdot m) $'%(comp))
+                     axs[icomp].set_ylabel(r'$ \rho_{%s}\tau\ \  (\Omega\cdot m\cdot s) $'%(comp))
+                     #  axs[icomp].set_ylabel(r'$ (\rho_{%s}-\rho_0)\ (\Omega\cdot m) $'%(comp))
             else:
                  axs.set_xlabel(r'$B\tau\ (T\cdot ps)$')
                  if comp == 'xx' or comp == 'yy' or comp =='zz':
                      axs.set_ylabel(r'$ MR_{%s} $'%(comp))
                  else:
-                     axs.set_ylabel(r'$ (\rho_{%s}-\rho_0)\tau\ (\Omega\cdot m\cdot s) $'%(comp))
+                     axs.set_ylabel(r'$ (\rho_{%s}-\rho_0)\tau\ \ (\Omega\cdot m\cdot s) $'%(comp))
             
             
-
         # Add title
-        fig.suptitle(r'$\mu=%.0f$ meV'%(mu*1000), ha='center', y=0.95)
+        fig.suptitle(r'$\mu=%.0f$ meV'%((mu+0.00001)*1000), ha='center', y=0.95)
    
         # Adjust the subplot margins
         plt.subplots_adjust(top=0.8)
@@ -298,14 +302,41 @@ def plot_cbar(component=['xx']):
                 
 
 if __name__ == '__main__':
-    band_list=[44, 46, 48, 50, 52, 54]
-    tau_list= [1, 1, 1, 1, 1, 1]
-    component=['xx','xz','zz']
+
+    # this setting is for Cu example, modify the settings on your own systems
+    
+    # band list set in SELECTEDBANDS in wt.in. e.g. band_list=[6,7]
+    band_list=[6]
+
+    # tau list for each band, unit is ps. e.g. tau_list= [1.000, 2.000], tau_list=[0.0001, 1.000]
+    # tau could be very small like 0.0001 to ignore the contribution from one band, but can not be zero.
+    tau_list= [1]  
+
+    # note: band_list and tau_list should have the same length
+
+    component=['xx','yx','zz']
 
     # if you want to remove the existed 'sigma.npy' and 'rho.npy', please uncomment the following two lines
-    # os.system('rm sigma.npy')
-    # os.system('rm rho.npy')
+    # os.system('rm sigma_bands.npy')
+    # os.system('rm rho_all.npy')
 
     # start to calculate the sigma and rho with provided band_list and tau_list
+    os.system('rm *.npy')
     readsigma_writerho(band_list, tau_list)
-    # plot_cbar(component=component)
+
+    # plot MR or Hall 
+
+   
+    # cmap could be 'viridis', 'plasma', 'inferno', 'magma', 'cividis', 
+    # 'Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
+    # 'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu',
+    # 'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn'
+    # flag', 'prism', 'ocean', 'gist_earth', 'terrain',
+    # 'gist_stern', 'gnuplot', 'gnuplot2', 'CMRmap',
+    # 'cubehelix', 'brg', 'gist_rainbow', 'rainbow', 'jet',
+    # 'turbo', 'nipy_spectral', 'gist_ncar'
+    # 'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu', 'RdYlBu',
+    # 'RdYlGn', 'Spectral', 'coolwarm', 'bwr', 'seismic'
+    # full list of cmap is shown in https://matplotlib.org/stable/tutorials/colors/colormaps.html
+    cmap='rainbow'
+    plot_cbar(component=component, cmap=cmap)

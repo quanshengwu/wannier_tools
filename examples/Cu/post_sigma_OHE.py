@@ -127,9 +127,9 @@ def readsigma_writerho(band_list, tau_list):
                 print(f'read data at mu = {mu:.2f} eV')
                 rdata = rdata.readlines()[4:]
                 for ib, band in enumerate(band_list):
-                    bandindex = int(float(rdata[ib*(3+NumT*(3+BTauNum+1)+1)].split()[-1]))
+                    bandindex = int(float(rdata[ib*(2+NumT*(3+BTauNum+1)+1)].split()[-1]))
                     assert band == bandindex, 'band index is wrong'
-                    band_data = rdata[ib*(3+NumT*(3+BTauNum+1)+1)+2 : (ib+1)*((3+NumT*(3+BTauNum+1)+1))-1]
+                    band_data = rdata[ib*(2+NumT*(3+BTauNum+1)+1)+2 : (ib+1)*((2+NumT*(3+BTauNum+1)+1))-1]
                     print(f'read data at band {band:d}')
                     for iT, T in enumerate(Tlist):
                         # store the data at temperature Tlist[iT] in rdata_local
@@ -310,7 +310,7 @@ if __name__ == '__main__':
 
     # tau list for each band, unit is ps. e.g. tau_list= [1.000, 2.000], tau_list=[0.0001, 1.000]
     # tau could be very small like 0.0001 to ignore the contribution from one band, but can not be zero.
-    tau_list= [1.00]  
+    tau_list= [1]  
 
     # note: band_list and tau_list should have the same length
 
