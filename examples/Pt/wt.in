@@ -1,5 +1,6 @@
 &TB_FILE
-Hrfile = 'wannier90_hr.dat'
+!Hrfile = 'wannier90_hr.dat'
+Hrfile = 'wannier90_hr.dat_nsymm48'
 /
 
 LATTICE
@@ -33,9 +34,9 @@ Eta_Arc = 0.05     ! infinite small value, like brodening  in unit of eV, smeari
 OmegaNum = 1001    ! omega number       
 OmegaMin = -10     ! energy interval min in unit of eV
 OmegaMax =  10     ! energy interval max in unit of eV
-Nk1 =41          ! number k points 
-Nk2 =41          ! number k points
-Nk3 =41          ! number k points
+Nk1 =21          ! number k points 
+Nk2 =21          ! number k points
+Nk3 =21          ! number k points
 /
 
 SURFACE            ! See doc for details not used here but set it anyway

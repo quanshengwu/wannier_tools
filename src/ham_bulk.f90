@@ -165,7 +165,7 @@ subroutine dHdk_atomicgauge(k, velocity_Wannier)
    real(dp), external :: norm
 
    velocity_Wannier= zzero
-   do iR=1,Nrpts
+   do iR=1, Nrpts
       do i2=1, Num_wann
          pos2= Origin_cell%wannier_centers_direct(:, i2)
          !> the second atom in unit cell R

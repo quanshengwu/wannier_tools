@@ -623,23 +623,27 @@ subroutine sigma_ahc_vary_ChemicalPotential(NumOfmu, mulist, NumberofEta, eta_ar
        !call ham_bulk_latticegauge(k, Hamk_bulk)
    
         !> diagonalization by call zheev in lapack
-        UU=Hamk_bulk
+        UU= Hamk_bulk
         call eigensystem_c( 'V', 'U', Num_wann, UU, W)
   
         !> get velocity operator in Wannier basis
         !> \partial_k H_nm
         call dHdk_atomicgauge(k, Vmn_wann)
 
+        do ialpha= 1, 3
+           call rotation_to_Ham_basis(UU, Vmn_wann(:, :, ialpha), Vmn_Ham(:, :, ialpha))
+        enddo
+
         !> spin axis igamma= x, y, z
         do igamma= 1, 3
            !> set Pauli matrix
            spin_sigma= pauli_matrices(:, :, igamma)
    
-           !> calculate spin current operator j_spin_gamma_alpha^l_alpha= 1/2*{Sigma_l, v_alpha} 
+           !> calculate spin current operator j_spin_gamma_alpha^l_alpha= 1/2*{Sigma_gamma, v_alpha} 
            ! in order to calculate SHC^z_xy
-           j_spin_gamma_alpha= 0d0
            do ialpha= 1, 3
               !> in Wannier basis
+              j_spin_gamma_alpha= 0d0
               call mat_mul(Num_wann, spin_sigma, Vmn_wann(:, :, ialpha), j_spin_gamma_alpha(:, :))
               call mat_mul(Num_wann, Vmn_wann(:, :, ialpha), spin_sigma, mat_t)
               j_spin_gamma_alpha(:, :)= j_spin_gamma_alpha(:, :)+ mat_t
@@ -648,16 +652,15 @@ subroutine sigma_ahc_vary_ChemicalPotential(NumOfmu, mulist, NumberofEta, eta_ar
               !> rotate to Hamiltonian basis
               mat_t= j_spin_gamma_alpha(:, :)
               call rotation_to_Ham_basis(UU, mat_t, j_spin_gamma_alpha(:, :))
-              call rotation_to_Ham_basis(UU, Vmn_wann(:, :, ialpha), Vmn_Ham(:, :, ialpha))
 
               do ieta= 1, NumberofEta
-                 eta_local = eta_array(ieta)
+                 eta_local= eta_array(ieta)
                  !> \Omega_spin^l_n^{\gamma}(k)=-2\sum_{m}*aimag(Im({js(\gamma),v(\alpha)}/2)_nm*v_beta_mn))/((w(n)-w(m))^2+eta_arc^2)
                  do ibeta= 1, 3
                     Omega_spin= 0d0
                     do n= 1, Num_wann
                        do m= 1, Num_wann
-                          if (m==n) cycle
+                          if (abs(W(n)-W(m))<eps9 ) cycle
                           deno_fac= -2d0/((W(n)-W(m))**2+ eta_local**2)
                           Omega_spin(n)= Omega_spin(n)+ &
                              aimag(j_spin_gamma_alpha(n, m)*Vmn_Ham(m, n, ibeta))*deno_fac
