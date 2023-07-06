@@ -157,6 +157,10 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
 
       real(dp), external :: det3
 
+      ! default value
+      icycle = 1
+      fail = .False.
+
       allocate(pgop_cart_inverse(3, 3, number_group_operators))
       do i= 1, number_group_operators
          Tmat= pgop_cart(:, :, i) 
@@ -829,7 +833,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
       contains
    
       subroutine cal_sigma_iband_k
-   
+  
          do ik= KCube3D_left(iband)%Nk_start, KCube3D_left(iband)%Nk_end
             if (cpuid.eq.0) &
                write(stdout, '(a, i8, a, i18, "   /", i18, a, f10.3, "s", a, f10.3, "s")') &
@@ -871,8 +875,8 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
                NSlice_Btau_inuse= NSlice_Btau
                call RKF45_pack(magnetic_field, bands_fermi_level(iband),  &
                     NSlice_Btau_inuse, k_start, Btau_start, Btau_final, kout, icycle, fail)
-
             else
+               icycle= 1
                do ibtau=1, NSlice_Btau
                   kout(:, ibtau)= k_start(:)
                enddo
@@ -1203,7 +1207,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
       !> the transform from \omega*\tau to B*\tau is
       !> \omega*\tau=e/m_e*B*\tau
       !> so \omega*\tau = 1/0.178*B*\tau with out any units
- 
+
       Btau_start= 0d0
       Btau_final= -5.6d0*Btau*2d0
       DeltaBtau= 5.6d0/NSlice_Btau*2d0
