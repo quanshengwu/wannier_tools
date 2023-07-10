@@ -1,5 +1,6 @@
 &TB_FILE
 Hrfile = 'wannier90_hr.dat'      
+!Hrfile = 'wannier90_hr.dat_nsymm12'
 Package = 'VASP'             ! obtained from VASP, it could be 'VASP', 'QE', 'Wien2k', 'OpenMx'
 /
 
@@ -20,11 +21,11 @@ Direct                          ! Direct or Cartisen coordinate
 
 PROJECTORS
  3 3 3 3 3          ! number of projectors
-Bi px py pz         ! projectors
-Bi px py pz
-Se px py pz
-Se px py pz
-Se px py pz
+Bi pz px py         ! projectors
+Bi pz px py
+Se pz px py
+Se pz px py
+Se pz px py
 
 SURFACE            ! See doc for details
  1  0  0
@@ -33,16 +34,17 @@ SURFACE            ! See doc for details
 
 !> bulk band structure calculation flag
 &CONTROL
-SlabBandWaveFunc_calc = T
-BulkBand_calc         = T
-BulkBand_points_calc  = T
-SlabBand_calc         = T
-WireBand_calc         = T
-SlabSS_calc           = T
-SlabArc_calc          = T
-Z2_3D_calc            = T
-SlabSpintexture_calc  = T
-Wanniercenter_calc    = T
+SlabBandWaveFunc_calc = F
+BulkBand_calc         = F
+BulkBand_points_calc  = F
+SlabBand_calc         = F
+WireBand_calc         = F
+SlabSS_calc           = F
+SlabArc_calc          = F
+Z2_3D_calc            = F
+SlabSpintexture_calc  = F
+Wanniercenter_calc    = F
+SHC_calc              = T
 /
 
 &SYSTEM
@@ -55,11 +57,11 @@ E_FERMI = 4.4195        ! e-fermi
 /
 
 &PARAMETERS
-Eta_Arc = 0.001     ! infinite small value, like brodening 
+Eta_Arc = 0.050     ! infinite small value, like brodening 
 E_arc = 0.0         ! energy for calculate Fermi Arc
 OmegaNum = 300      ! omega number       
-OmegaMin = -0.6     ! energy interval
-OmegaMax =  0.5     ! energy interval
+OmegaMin = -5.0     ! energy interval
+OmegaMax =  5.0     ! energy interval
 Nk1 = 41            ! number k points  odd number would be better
 Nk2 = 41            ! number k points  odd number would be better
 Nk3 = 41            ! number k points  odd number would be better
@@ -90,7 +92,7 @@ KPLANE_BULK
 
 
 KCUBE_BULK
--0.50 -0.50 -0.50   ! Original point for 3D k plane 
+ 0.00  0.00  0.00   ! Original point for 3D k plane 
  1.00  0.00  0.00   ! The first vector to define 3d k space plane
  0.00  1.00  0.00   ! The second vector to define 3d k space plane
  0.00  0.00  1.00   ! The third vector to define 3d k cube

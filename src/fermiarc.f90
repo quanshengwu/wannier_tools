@@ -618,8 +618,8 @@
         write(outfileindex, '(a)')'set ylabel offset 1, 0'
         write(outfileindex, '(a)')'set colorbox'
         write(outfileindex, '(a)')'unset cbtics'
-        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape, ':', k1max_shape, ']'
-        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape, ':', k2max_shape, ']'
+        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape*Angstrom2atomic, ':', k1max_shape*Angstrom2atomic, ']'
+        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape*Angstrom2atomic, ':', k2max_shape*Angstrom2atomic, ']'
         write(outfileindex, '(a)')'set pm3d interpolate 2,2'
         write(outfileindex, '(2a)')"splot 'arc.jsdat_l' u 1:2:(exp($3)) w pm3d"
         close(outfileindex)
@@ -653,8 +653,8 @@
         write(outfileindex, '(a)')'set ylabel offset 1, 0'
         write(outfileindex, '(a)')'set colorbox'
         write(outfileindex, '(a)')'unset cbtics'
-        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape, ':', k1max_shape, ']'
-        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape, ':', k2max_shape, ']'
+        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape*Angstrom2atomic, ':', k1max_shape*Angstrom2atomic, ']'
+        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape*Angstrom2atomic, ':', k2max_shape*Angstrom2atomic, ']'
         write(outfileindex, '(a)')'set pm3d interpolate 2,2'
         write(outfileindex, '(2a)')"splot 'arc.jsdat_r' u 1:2:(exp($3)) w pm3d"
         close(outfileindex)
@@ -690,8 +690,8 @@
         write(outfileindex, '(a)')'set ylabel offset 1, 0'
         write(outfileindex, '(a)')'set colorbox'
         write(outfileindex, '(a)')'unset cbtics'
-        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape, ':', k1max_shape, ']'
-        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape, ':', k2max_shape, ']'
+        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape*Angstrom2atomic, ':', k1max_shape*Angstrom2atomic, ']'
+        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape*Angstrom2atomic, ':', k2max_shape*Angstrom2atomic, ']'
         write(outfileindex, '(a)')'set pm3d interpolate 2,2'
         write(outfileindex, '(2a)')"splot 'arc.jdat_l' u 1:2:(exp($3)) w pm3d"
         close(outfileindex)
@@ -725,8 +725,8 @@
         write(outfileindex, '(a)')'set ylabel offset 1, 0'
         write(outfileindex, '(a)')'set colorbox'
         write(outfileindex, '(a)')'unset cbtics'
-        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape, ':', k1max_shape, ']'
-        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape, ':', k2max_shape, ']'
+        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape*Angstrom2atomic, ':', k1max_shape*Angstrom2atomic, ']'
+        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape*Angstrom2atomic, ':', k2max_shape*Angstrom2atomic, ']'
         write(outfileindex, '(a)')'set pm3d interpolate 2,2'
         write(outfileindex, '(2a)')"splot 'arc.jdat_r' u 1:2:(exp($3)) w pm3d"
         close(outfileindex)
@@ -759,8 +759,8 @@
         write(outfileindex, '(a)')'set ylabel "K_2 (1/{\305})"'
         write(outfileindex, '(a)')'set ylabel offset 1, 0'
         write(outfileindex, '(a)')'set colorbox'
-        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape, ':', k1max_shape, ']'
-        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape, ':', k2max_shape, ']'
+        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape*Angstrom2atomic, ':', k1max_shape*Angstrom2atomic, ']'
+        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape*Angstrom2atomic, ':', k2max_shape*Angstrom2atomic, ']'
         write(outfileindex, '(a)')'set pm3d interpolate 2,2'
         write(outfileindex, '(2a)')"splot 'arc.dat_l' u 1:2:3 w pm3d"
 
@@ -794,8 +794,8 @@
         write(outfileindex, '(a)')'set ylabel "K_2 (1/{\305})"'
         write(outfileindex, '(a)')'set ylabel offset 1, 0'
         write(outfileindex, '(a)')'set colorbox'
-        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape, ':', k1max_shape, ']'
-        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape, ':', k2max_shape, ']'
+        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape*Angstrom2atomic, ':', k1max_shape*Angstrom2atomic, ']'
+        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape*Angstrom2atomic, ':', k2max_shape*Angstrom2atomic, ']'
         write(outfileindex, '(a)')'set pm3d interpolate 2,2'
         write(outfileindex, '(2a)')"splot 'arc.dat_r' u 1:2:3 w pm3d"
 
@@ -829,8 +829,8 @@
         write(outfileindex, '(a)')'set ylabel "K_2 (1/{\305})"'
         write(outfileindex, '(a)')'set ylabel offset 1, 0'
         write(outfileindex, '(a)')'set colorbox'
-        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape, ':', k1max_shape, ']'
-        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape, ':', k2max_shape, ']'
+        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set xrange [', k1min_shape*Angstrom2atomic, ':', k1max_shape*Angstrom2atomic, ']'
+        write(outfileindex, '(a, f8.5, a, f8.5, a)')'set yrange [', k2min_shape*Angstrom2atomic, ':', k2max_shape*Angstrom2atomic, ']'
         write(outfileindex, '(a)')'set pm3d interpolate 2,2'
         write(outfileindex, '(2a)')"splot 'arc.dat_bulk' u 1:2:3 w pm3d"
         close(outfileindex)
