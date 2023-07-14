@@ -29,7 +29,7 @@
 
      ! kpoint loop index
      integer :: ikp, ik1, ik2, iq, Nk1_half, Nk2_half
-     integer :: imin1, imax1, imin2, imax2, iq1, iq2
+     integer :: imin1, imax1, imin2, imax2, iq1, iq2, ik1q, ik2q
 
      real(dp) :: dos_l_max, dos_r_max, time_q, time_ss, time1, time2
      real(dp) :: time_start, time_end
@@ -37,6 +37,7 @@
 
      real(dp) :: k(2)
      real(dp) :: s0(3), s1(3)
+     real(dp) :: K2D_vec_a(2), K2D_vec_b(2)
      real(dp) :: sx_bulk, sy_bulk, sz_bulk
 
      integer , allocatable :: ik12(:,:)
@@ -108,14 +109,35 @@
         sx_r_mpi=0d0; sy_r_mpi=0d0; sz_r_mpi=0d0
      endif
 
+     !> ceiling if K2D_vec are positive, floor if K2D_vec are negative
+     do i  = 1, 2
+         if (K2D_vec1(i)>0) then
+               K2D_vec_a(i)= ceiling(K2D_vec1(i))
+         else
+               K2D_vec_a(i)= floor(K2D_vec1(i))
+         endif
+
+         if (K2D_vec2(i)>0) then
+            K2D_vec_b(i)= ceiling(K2D_vec2(i))
+         else
+            K2D_vec_b(i)= floor(K2D_vec2(i))
+         endif
+      enddo 
+      if (cpuid==0) then
+         write(stdout, '(a)')'WARNING : Your setting of KPLANE_SLAB has been modified because QPI calculation requires the information of the full BZ. '
+         write(stdout, '((a, 2f8.4))')'The first modified vector in QPI: ', K2D_vec_a
+         write(stdout, '((a, 2f8.4))')'The second modified vector in QPI: ', K2D_vec_b
+      endif
+
+
      ikp=0
      do i= 1, nkx
         do j= 1, nky
            ikp=ikp+1
            ik12(1, ikp)= i
            ik12(2, ikp)= j
-           k12(:, ikp)=K2D_start+ (i-1)*K2D_vec1/dble(nkx-1) &
-                      + (j-1)*K2D_vec2/dble(nky-1)
+           k12(:, ikp)=K2D_start+ (i-1)*K2D_vec_a/dble(nkx-1) &
+                      + (j-1)*K2D_vec_b/dble(nky-1)
            k12_shape(:, ikp)= k12(1, ikp)* Ka2+ k12(2, ikp)* Kb2
         enddo
      enddo
@@ -468,37 +490,61 @@
 
      !> calculate QPI (jdos)
      do iq= 1+ cpuid, nkx*nky, num_cpu
-        iq1= ik12(1, iq)- Nk1_half
-        iq2= ik12(2, iq)- Nk2_half
+        !iq1= ik12(1, iq)- Nk1_half
+        !iq2= ik12(2, iq)- Nk2_half
+        iq1 = ik12(1, iq)
+        iq2 = ik12(2, iq)
         if (cpuid==0.and. mod(iq/num_cpu, 100)==0) &
            write(stdout, *) 'JDOS, iq ', iq, 'Nq',nkx*nky, 'time left', &
            (nkx*nky-iq)*(time_end- time_start)/num_cpu, ' s'
         call now(time_start)
-        imin1= max(-Nk1_half-iq1, -Nk1_half)+ Nk1_half+ 1
-        imax1= min(Nk1_half-iq1, Nk1_half)+ Nk1_half+ 1
-        imin2= max(-Nk2_half-iq2, -Nk2_half)+ Nk2_half+ 1
-        imax2= min(Nk2_half-iq2, Nk2_half)+ Nk2_half+ 1
-        do ik2= imin2, imax2
-           do ik1= imin1, imax1
-              jdos_l(iq)= jdos_l(iq)+ dos_l_only(ik1, ik2)* dos_l_only(ik1+iq1, ik2+iq2)
-              jdos_r(iq)= jdos_r(iq)+ dos_r_only(ik1, ik2)* dos_r_only(ik1+iq1, ik2+iq2)
-           enddo !ik1
+        !imin1= max(-Nk1_half-iq1, -Nk1_half)+ Nk1_half+ 1
+        !imax1= min(Nk1_half-iq1, Nk1_half)+ Nk1_half+ 1
+        !imin2= max(-Nk2_half-iq2, -Nk2_half)+ Nk2_half+ 1
+        !imax2= min(Nk2_half-iq2, Nk2_half)+ Nk2_half+ 1
+        !do ik2= imin2, imax2
+        !   do ik1= imin1, imax1
+        !      jdos_l(iq)= jdos_l(iq)+ dos_l_only(ik1, ik2)* dos_l_only(ik1+iq1, ik2+iq2)
+        !      jdos_r(iq)= jdos_r(iq)+ dos_r_only(ik1, ik2)* dos_r_only(ik1+iq1, ik2+iq2)
+        do ik2 = 1, nky
+            do ik1  = 1, nkx
+               ik1q = mod(ik1 + iq1 - 2, nkx-1) + 1
+               ik2q = mod(ik2 + iq2 - 2, nky-1) + 1
+ 
+               jdos_l(iq)= jdos_l(iq)+ dos_l_only(ik1, ik2)* dos_l_only(ik1q, ik2q)
+               jdos_r(iq)= jdos_r(iq)+ dos_r_only(ik1, ik2)* dos_r_only(ik1q, ik2q)
+            
+            enddo !ik1
         enddo !ik2
 
         !> Only works if spin orbital coupling is considered.
         if (SOC>0) then
-           do ik2= imin2, imax2
-              do ik1= imin1, imax1
-                 jsdos_l(iq)= jsdos_l(iq)+ dos_l_only(ik1, ik2)* dos_l_only(ik1+iq1, ik2+iq2) &
-                                         + sx_l_mpi(ik1, ik2)* sx_l_mpi(ik1+iq1, ik2+iq2) &
-                                         + sy_l_mpi(ik1, ik2)* sy_l_mpi(ik1+iq1, ik2+iq2) &
-                                         + sz_l_mpi(ik1, ik2)* sz_l_mpi(ik1+iq1, ik2+iq2)
-                 jsdos_r(iq)= jsdos_r(iq)+ dos_r_only(ik1, ik2)* dos_r_only(ik1+iq1, ik2+iq2) &
-                                         + sx_r_mpi(ik1, ik2)* sx_r_mpi(ik1+iq1, ik2+iq2) &
-                                         + sy_r_mpi(ik1, ik2)* sy_r_mpi(ik1+iq1, ik2+iq2) &
-                                         + sz_r_mpi(ik1, ik2)* sz_r_mpi(ik1+iq1, ik2+iq2)
-              enddo !ik1
-           enddo !ik2
+         !   do ik2= imin2, imax2
+         !      do ik1= imin1, imax1
+         !         jsdos_l(iq)= jsdos_l(iq)+ dos_l_only(ik1, ik2)* dos_l_only(ik1+iq1, ik2+iq2) &
+         !                                 + sx_l_mpi(ik1, ik2)* sx_l_mpi(ik1+iq1, ik2+iq2) &
+         !                                 + sy_l_mpi(ik1, ik2)* sy_l_mpi(ik1+iq1, ik2+iq2) &
+         !                                 + sz_l_mpi(ik1, ik2)* sz_l_mpi(ik1+iq1, ik2+iq2)
+         !         jsdos_r(iq)= jsdos_r(iq)+ dos_r_only(ik1, ik2)* dos_r_only(ik1+iq1, ik2+iq2) &
+         !                                 + sx_r_mpi(ik1, ik2)* sx_r_mpi(ik1+iq1, ik2+iq2) &
+         !                                 + sy_r_mpi(ik1, ik2)* sy_r_mpi(ik1+iq1, ik2+iq2) &
+         !                                 + sz_r_mpi(ik1, ik2)* sz_r_mpi(ik1+iq1, ik2+iq2)
+            do ik2 = 1, nky
+               do ik1 = 1, nkx
+                  ik1q = mod(ik1 + iq1 - 2, Nk1-1) + 1
+                  ik2q = mod(ik2 + iq2 - 2, Nk2-1) + 1
+                  
+                  jsdos_l(iq)= jsdos_l(iq)+ dos_l_only(ik1, ik2)* dos_l_only(ik1q, ik2q) &
+                                          + sx_l_mpi(ik1, ik2)* sx_l_mpi(ik1q, ik2q) &
+                                          + sy_l_mpi(ik1, ik2)* sy_l_mpi(ik1q, ik2q) &
+                                          + sz_l_mpi(ik1, ik2)* sz_l_mpi(ik1q, ik2q)
+                  jsdos_r(iq)= jsdos_r(iq)+ dos_r_only(ik1, ik2)* dos_r_only(ik1q, ik2q) &
+                                          + sx_r_mpi(ik1, ik2)* sx_r_mpi(ik1q, ik2q) &
+                                          + sy_r_mpi(ik1, ik2)* sy_r_mpi(ik1q, ik2q) &
+                                          + sz_r_mpi(ik1, ik2)* sz_r_mpi(ik1q, ik2q)
+
+               enddo !ik1
+            enddo !ik2
         endif
         call now(time_end)
      enddo !iq
