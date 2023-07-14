@@ -38,8 +38,6 @@ subroutine mat_mul_dcu_in(ndim, A, B, C)
    return
 end subroutine mat_mul_dcu_in
 
-
-
 !> A, B and C are double complex matrices, whose dimensionality is (ndim, ndim).
 subroutine mat_mul_dcu_z(ndim, A, B, C)
    use iso_c_binding
@@ -485,6 +483,137 @@ subroutine hipsolver_zgesv(ndim, Amat)
 
    return
 end subroutine hipsolver_zgesv
+
+!> subroutine to perform the inverse of a matrix Amat(ndim, ndim)
+!> input/output : Amat(ndim, ndim), Amat will be overwritten on output
+!> use magmaf on GPU device
+!> A*X= B
+subroutine magmaf_zheevd_gpu_wt(JOBZ,UPLO,Ndim,A,W)
+
+   use magma
+   implicit none
+   integer, parameter :: dp=kind(1d0)
+
+   character*1, intent(in) :: JOBZ
+   character*1, intent(in) :: UPLO
+   integer,   intent(in) :: Ndim
+   real(dp), intent(inout) :: W(Ndim)
+   complex(dp),intent(inout) :: A(Ndim,Ndim)
+
+   integer :: info, lwork, liwork, lrwork
+
+   integer, allocatable :: iwork(:)
+
+   real(dp),allocatable ::  rwork(:)
+
+   complex(dp), allocatable :: work(:)
+
+   !> variables related to GPU
+   magma_devptr_t :: d_A, handle
+
+   !> allocate GPU memory
+   info = magmaf_zmalloc( d_A, ndim*ndim )
+   
+   !> copy a matrix from host to gpu device 
+   call magmaf_queue_create( 0, handle)
+   call magmaf_zsetmatrix( ndim, ndim, A, ndim, d_A, ndim, handle)
+   call magmaf_queue_destroy( handle )
+
+   if (Ndim==1) then
+      W=A(1, 1)
+      A(1, 1)= 1d0
+      return
+   endif
+
+   liwork = 5*Ndim + 3
+   lrwork = 2*Ndim*Ndim + 5*Ndim + 1
+   lwork = Ndim*(Ndim+2)
+   info = 0
+
+   !> d_A= Amat
+   allocate (work(lwork), rwork(lrwork), iwork(liwork))
+   !> only A is on the gpu device
+   call magmaf_zheevd_gpu( jobz, uplo, ndim, d_A, ndim, W, A, ndim, work, lwork, rwork,  &
+        lrwork, iwork, liwork, info )
+
+   !> step : copy data from device back to host
+   call magmaf_queue_create( 0, handle)
+   call magmaf_zgetmatrix(ndim, ndim, d_A, ndim, A, ndim, handle)
+   call magmaf_queue_destroy( handle )
+
+   if (info/=0) print *, 'ERROR: something wrong with magmaf_zheevd_gpu on GPU'
+
+   !> free memory on GPU
+   info = magmaf_free( d_A )
+   deallocate(work, rwork, iwork)
+
+   return
+end subroutine magmaf_zheevd_gpu_wt
+
+
+
+!> subroutine to perform the inverse of a matrix Amat(ndim, ndim)
+!> input/output : Amat(ndim, ndim), Amat will be overwritten on output
+!> use magmaf on GPU device
+!> A*X= B
+subroutine magmaf_zgesv_gpu_wt(ndim, Amat)
+
+   use magma
+   implicit none
+
+   integer, parameter :: dp=kind(1d0)
+   integer, intent(in) :: ndim
+   complex(dp), intent(inout), target :: Amat(ndim, ndim)
+
+   integer :: i, info
+   integer, allocatable, target :: ipiv(:)
+   complex(dp), allocatable, target :: Bmat(:, :)
+
+   !> variables related to GPU
+   magma_devptr_t :: d_A, d_B, handle
+
+   allocate(ipiv(ndim))
+   ipiv = 0
+   info = 0
+
+   !> allocate GPU memory
+   info = magmaf_zmalloc( d_A, ndim*ndim )
+   info = magmaf_zmalloc( d_B, ndim*ndim )
+ 
+   !> copy a matrix from host to gpu device 
+   call magmaf_queue_create( 0, handle)
+   call magmaf_zsetmatrix( ndim, ndim, Amat, ndim, d_A, ndim, handle)
+   call magmaf_queue_destroy( handle )
+
+   !> define the Bmat to be a unitary matrix as an input of hipsolverZgetrs
+   allocate(Bmat(ndim, ndim))
+   Bmat= 0d0
+   do i=1, ndim
+      Bmat(i, i)= 1d0
+   enddo
+
+   !> B mat
+   call magmaf_queue_create(0, handle)
+   call magmaf_zsetmatrix( ndim, ndim, Bmat, ndim, d_B, ndim, handle)
+   call magmaf_queue_destroy( handle )
+
+   !> d_A= Amat; d_devipiv= ipiv; d_B= Bmat
+   call magmaf_zgesv_gpu( ndim, ndim, d_A, ndim, ipiv, d_B, ndim, info )
+
+   if (info/=0) print *, 'ERROR: something wrong with zgesv on GPU'
+
+   !> step 4: copy data from device back to host
+   call magmaf_queue_create( 0, handle)
+   call magmaf_zgetmatrix(ndim, ndim, d_B, ndim, Amat, ndim, handle)
+   call magmaf_queue_destroy( handle )
+
+   !> free memory on GPU
+   info = magmaf_free( d_A )
+   info = magmaf_free( d_B )
+   deallocate(Bmat, ipiv)
+
+   return
+end subroutine magmaf_zgesv_gpu_wt
 
 
 ! ! compile it with

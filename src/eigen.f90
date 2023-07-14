@@ -56,7 +56,9 @@
      endif
 
 #if defined (DCU)
-     call hipsolver_zheev(N, A, W)
+     !call hipsolver_zheev(N, A, W)
+     ! use magmaf on GPU
+     call magmaf_zheevd_gpu_wt(JOBZ,UPLO,N,A,W)
 #else
 
      lwork=16*N

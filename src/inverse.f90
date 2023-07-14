@@ -34,7 +34,19 @@
  
         end subroutine hipsolver_zgesv
      end interface hipsolver_zgesv
+
+     interface magmaf_zgesv_gpu_wt
+        subroutine magmaf_zgesv_gpu_wt(ndim, Amat)
+
+           use magma
+           implicit none
+   
+           integer, parameter :: dp=kind(1d0)
+           integer, intent(in) :: ndim
+           complex(dp), intent(inout), target :: Amat(ndim, ndim)
  
+        end subroutine magmaf_zgesv_gpu_wt
+     end interface magmaf_zgesv_gpu_wt
 #endif
 
 !    Amat  :
@@ -53,7 +65,8 @@
 
 
 #if defined (DCU)
-     call hipsolver_zgesv(ndim, Amat)
+     !call hipsolver_zgesv(ndim, Amat)
+     call magmaf_zgesv_gpu_wt(ndim, Amat)
 #else
      allocate(ipiv(ndim))
      allocate(Bmat(ndim,ndim))

@@ -13,32 +13,27 @@ OBJ =  sparse.o wt_aux.o math_lib.o symmetry.o readHmnR.o inverse.o proteus.o \
 DCU_OBJ = dcu_math.o
 
 # compiler
-F90  = hipfc -g -ffree-line-length-256 -cpp -DDCU  # -DINTELMKL -DDCU
+F90  = hipfc -g -ffree-line-length-256 -cpp -DMPI -DDCU
 
+MAGMAINCLUDEPATH=/public/home/ghfund2_a24/software/magma_2.6.0_nfs3.2_DTK22.10_11Nov2022/include
 MKLROOT=/home/quan/intel/oneapi/mkl/2022.2.0
-INCLUDE = -I${MKLROOT}/include
-WFLAG = -nogen-interface
-OFLAG = -O3 -static-intel
+INCLUDE = -I${MKLROOT}/include -I${MAGMAINCLUDEPATH} -I/opt/hpc/software/mpi/hpcx/v2.11.0/gcc-7.3.1/include
+WFLAG = 
+OFLAG = -O3 
 FFLAG = $(OFLAG) $(WFLAG)
 LFLAG = $(OFLAG)
 
-# ARPACK LIBRARY
-ARPACK=/Users/quan/work/workplace/ARPACK/libarpack_MAC.a
-
-# blas and lapack libraries
-# static linking
-#LIBS = -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a \
-        ${MKLROOT}/lib/intel64/libmkl_sequential.a \
-        ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl \
-		  ${ARPACK}
+MAGMA_F90FLAGS := -Dmagma_devptr_t="integer(kind=8)"
 
 # dynamic linking
-LIBS = -lhipblas -lhipsolver -lhipsparse -L/public/software/mathlib/lapack/gnu/3.8.0/lib64 -lblas -llapack \
+MPI_LIBS = -L/opt/hpc/software/mpi/hpcx/v2.11.0/gcc-7.3.1/lib -lmpi -lmpi_mpifh
+MAGMA_LIBS = -L/public/home/ghfund2_a24/software/magma_2.6.0_nfs3.2_DTK22.10_11Nov2022/lib -lmagma
+LIBS = ${MPI_LIBS} ${MAGMA_LIBS} -lhipblas -lhipsolver -lhipsparse -L/public/software/mathlib/lapack/gnu/3.8.0/lib64 -lblas -llapack \
        -L/public/home/ghfund2_a24/local/lib/ -larpack
  
  
 main : module.o dcu_math_module.o $(DCU_OBJ) $(OBJ)
-	$(F90) $(LFLAG) $(OBJ) -o wt.x $(LIBS)
+	$(F90) $(LFLAG) module.o dcu_math_module.o $(DCU_OBJ) $(OBJ) -o wt.x $(LIBS) 
 	cp -f wt.x ../bin
 
 .SUFFIXES: .o .f90
@@ -47,9 +42,9 @@ main : module.o dcu_math_module.o $(DCU_OBJ) $(OBJ)
 	$(F90) $(FFLAG) $(INCLUDE) -c $*.f90
 
 dcu_math.o :
-	hipfc -ffree-line-length-256 -c dcu_math.F90
+	hipfc -ffree-line-length-256 ${MAGMA_F90FLAGS} -cpp   -DDCU ${INCLUDE}  -c dcu_math.F90
 dcu_math_module.o :
-	hipfc -ffree-line-length-256 -c dcu_math_module.F90
+	hipfc -ffree-line-length-256 ${MAGMA_F90FLAGS} -cpp  -DDCU ${INCLUDE}  -c dcu_math_module.F90
 
 clean :
 	rm -f *.o *.mod *~ wt.x
