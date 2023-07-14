@@ -1513,6 +1513,196 @@ subroutine fermisurface_stack
       return
    end subroutine get_fermilevel
 
+   subroutine get_density
+      !> Calculate fermilevel for the given hamiltonian
+      use wmpi
+      use para
+      implicit none
+
+      integer :: ikx, iky, ikz, ik, iT, ie, iwan, ierr, ieta
+
+      !> number of k points
+      integer :: knv3
+      integer :: NumberofEta
+
+      !> fermi level
+      real(dp) :: k(3)
+
+      real(dp), allocatable :: occupation_fermi(:), occupation_mu(:, :)
+      real(dp), allocatable :: occupation_fermi_mpi(:), occupation_mu_mpi(:, :)
+      real(dp), allocatable :: density(:)
+      real(dp) :: time_start, time_end
+
+      !> fermi-dirac distribution function
+      real(dp), external :: fermi
+
+      !> eigen value for each kpoint
+      real(dp), allocatable :: W(:)
+      real(dp), allocatable :: eigvals(:, :), eigvals_mpi(:, :)
+
+      !> we calculate Fermi level at different temperature
+      integer :: Beta_num
+      real(dp), allocatable :: mu_array(:), KBT_array(:), eta_array(:)
+
+      complex(dp), allocatable :: ham(:, :)
+      character(40) :: etaname
+      character(40), allocatable :: etanamelist(:)
+
+      knv3= Nk1*Nk2*Nk3
+      ! call WTGenerateLocalPartition(knv3, num_cpu, cpuid, ik_first, ik_last)
+      NumberofEta = 9 
+
+      allocate(eta_array(NumberofEta))
+      allocate(W(Num_wann))
+      ! allocate(eigvals(Num_wann, ik_first:ik_last))
+      ! allocate(eigvals_mpi(Num_wann, ik_first:ik_last))
+      allocate(ham(Num_wann, Num_wann))
+      allocate(KBT_array(NumT))
+      allocate(mu_array(OmegaNum))
+      allocate(occupation_fermi(NumberofEta))
+      allocate(occupation_fermi_mpi(NumberofEta))
+      allocate(occupation_mu(OmegaNum, NumT))
+      allocate(occupation_mu_mpi(OmegaNum, NumT))
+      allocate(density(NumberofEta))
+      allocate(etanamelist(NumberofEta))
+      occupation_fermi= 0d0
+      occupation_mu= 0d0
+      occupation_fermi_mpi= 0d0
+      occupation_mu_mpi= 0d0
+      mu_array= 0d0
+      KBT_array= 0d0
+      ! eigvals= 0d0
+      ham= 0d0
+      W = 0d0
+      density = 0d0
+      
+      eta_array=(/0.1d0, 0.2d0, 0.4d0, 0.8d0, 1.0d0, 2d0, 4d0, 8d0, 10d0/)
+      eta_array= eta_array*Eta_Arc
+
+      if (NumT>1) then
+         do iT=1, NumT
+            KBT_array(iT)= Tmin+ (iT-1.0d0)/(NumT-1.0d0)*(Tmax-Tmin)
+         enddo
+      else
+         KBT_array = Tmin
+      endif
+
+      if (cpuid.eq.0) then
+         write(stdout, *) ' '
+         write(stdout, *)' KBT array in the calculation in unit of Kelvin'
+         write(stdout, '(10f8.2)') KBT_array
+         write(stdout, *) ' '
+      endif
+   
+      !> transform from Kelvin to eV
+      !> The SI unit of temperature is the kelvin (K), but using the above relation the electron temperature is often expressed in
+      !> terms of the energy unit electronvolt (eV). Each kelvin (1 K) corresponds to 8.6173324(78)×10−5 eV; this factor is the ratio
+      !> of the Boltzmann constant to the elementary charge. After version 2.6, we 
+      !> adopt the atomic unit
+      KBT_array= KBT_array*8.6173324E-5*eV2Hartree
+
+      if (OmegaNum>1) then
+         do ie=1, OmegaNum
+            mu_array(ie)= OmegaMin+ (ie-1.0d0)/(OmegaNum-1.0d0)*(OmegaMax-OmegaMin)
+         enddo
+      else
+         mu_array = OmegaMin
+      endif
+
+      time_start= 0d0
+      time_end= 0d0
+      do ik= 1+cpuid, knv3, num_cpu
+      ! do ik= ik_first, ik_last
+         if (cpuid==0.and. mod(ik/num_cpu, 500)==0) &
+           write(stdout, '(a,I16,a,I16,a,f16.3,a)') 'occupation, ik ', ik, '/',knv3, 'time left', &
+           (knv3-ik)*(time_end- time_start)/num_cpu, ' s'
+        call now(time_start)
+        
+         ikx= (ik-1)/(nk2*nk3)+1
+         iky= ((ik-1-(ikx-1)*Nk2*Nk3)/nk3)+1
+         ikz= (ik-(iky-1)*Nk3- (ikx-1)*Nk2*Nk3)
+         k= K3D_start_cube+ K3D_vec1_cube*(ikx-1)/dble(nk1-1)  &
+          + K3D_vec2_cube*(iky-1)/dble(nk2-1)  &
+          + K3D_vec3_cube*(ikz-1)/dble(nk3-1)
+ 
+ 
+         ! calculation bulk hamiltonian
+         ham= 0d0
+        !call ham_bulk_atomicgauge    (k, ham)
+         call ham_bulk_latticegauge    (k, ham)
+         call eigensystem_c( 'N', 'U', Num_wann, ham, W)
+         ! eigvals_mpi(:, ik)= W
+
+         do iT = 1, NumT
+            do iwan = 1, Num_wann
+               do ie = 1, OmegaNum
+                  occupation_mu_mpi(ie, iT)= occupation_mu_mpi(ie, iT)+ &
+                     fermi(W(iwan)-mu_array(ie), 1/KBT_array(iT))
+               enddo
+            enddo
+         enddo
+         
+         do iwan = 1, Num_wann
+            do ieta = 1, NumberofEta
+               occupation_fermi_mpi(ieta)= occupation_fermi_mpi(ieta)+ &
+                  fermi(W(iwan), 1/eta_array(ieta))
+            enddo
+         enddo
+         call now(time_end)
+      enddo
+
+ 
+#if defined (MPI)
+   ! call mpi_allreduce(eigvals_mpi, eigvals,size(eigvals),&
+                     ! mpi_dp,mpi_sum,mpi_cmw,ierr)
+   call mpi_allreduce(occupation_fermi_mpi, occupation_fermi, &
+                     size(occupation_fermi),mpi_dp,mpi_sum,mpi_cmw,ierr)
+   call mpi_allreduce(occupation_mu_mpi, occupation_mu, &
+                     size(occupation_mu),mpi_dp,mpi_sum,mpi_cmw,ierr)
+   if (ierr>0) then
+      print *, 'Something wrong in mpi_allreduce in get_occupation', ierr
+      stop
+   endif
+#else
+   ! eigvals= eigvals_mpi 
+   occupation_fermi= occupation_fermi_mpi
+   occupation_mu = occupation_mu_mpi
+#endif
+   if (cpuid==0) then
+      write(stdout, *)'>> All processors finished their job for get_density' 
+   endif
+
+   !> calculate the occupation in the unit of cm^-3
+      occupation_fermi= occupation_fermi/knv3/Origin_cell%CellVolume/kCubeVolume &
+                        *Origin_cell%ReciprocalCellVolume/(Bohr_radius*100)**3
+      occupation_mu= occupation_mu/knv3/Origin_cell%CellVolume/kCubeVolume &
+                        *Origin_cell%ReciprocalCellVolume/(Bohr_radius*100)**3
+
+      do ieta = 1, NumberofEta
+         write(etaname,'(f12.2)') eta_array(ieta)*1000d0/eV2Hartree
+         write(etanamelist(ieta),'(3a)') 'occ@eta_',trim(adjustl(etaname)),'meV'
+      enddo
+      outfileindex = outfileindex+1
+      open(unit=outfileindex, file='density.dat', status='unknown')
+      write(outfileindex,'(a)') '# density in the unit of cm^-3 at different temperatures and chemical potentials' 
+      write(outfileindex, '(a,1000f8.3)')'# Tlist  =  ', KBT_array(:)/8.6173324E-5/eV2Hartree
+      write(outfileindex, '(a,1000f8.3)')'# mulist  =  ', mu_array(:)/eV2Hartree
+      do iT = 1, NumT
+         write(outfileindex, '(a, f9.3, a)')'# T  =  ', KBT_array(iT)/8.6173324E-5/eV2Hartree, ' K'
+         write(outfileindex, '(a9,9a20)')'# mu (eV)', etanamelist
+         do ie = 1, OmegaNum
+            density = 0d0
+            do ieta = 1, NumberofEta
+               density(ieta) = occupation_mu(ie, iT)-occupation_fermi(ieta)
+            enddo
+            write(outfileindex, '(f9.3, 9E20.6)') mu_array(ie)/eV2Hartree, density
+         enddo
+         write(outfileindex, '(a)')''
+      enddo
+
+      return
+   end subroutine get_density
+   
    function fermi(omega, Beta_fake) result(value)
       ! This function sets the Fermi-Dirac distribution
 
