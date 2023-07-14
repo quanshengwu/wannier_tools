@@ -35,20 +35,20 @@ SURFACE            ! See doc for details
 !> bulk band structure calculation flag
 &CONTROL
 SlabBandWaveFunc_calc = F
-BulkBand_calc         = F
+BulkBand_calc         = T
 BulkBand_points_calc  = F
-SlabBand_calc         = F
+SlabBand_calc         = T
 WireBand_calc         = F
 SlabSS_calc           = F
 SlabArc_calc          = F
 Z2_3D_calc            = F
 SlabSpintexture_calc  = F
 Wanniercenter_calc    = F
-SHC_calc              = T
+SHC_calc              = F
 /
 
 &SYSTEM
-NSLAB = 10              ! for thin film system
+NSLAB = 20              ! for thin film system
 NSLAB1= 4               ! nanowire system 
 NSLAB2= 4               ! nanowire system 
 NumOccupied = 18        ! NumOccupied
