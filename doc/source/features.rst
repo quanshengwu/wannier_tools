@@ -250,6 +250,24 @@ or using `FermiSurfer <https://fermisurfer.osdn.jp>`_ (version larger than 2.0.0
 By the way, Bulk band and BulkFS calculations were already implemented in Wannier90 code.
 
 
+Example
+-----------
+
+There is one example in the examples/TiB2
+
+.. code:: console
+
+   $ cd examples/TiB2/
+   $ cp wt.in-3dfs wt.in
+   $ mpiexec -np 8 ../../bin/wt.x
+   $ xcrysden --bxsf FS3D.bxsf
+   $ fermisurfer FS3D.bxsf 
+
+
+.. image:: images/TiB2_3DFS.png
+   :scale: 30%
+
+
 .. _bulkfsplanecalculation:
 
 A cross-section of the Fermi surface
@@ -259,9 +277,9 @@ Bulk Fermi surface in a fixed k plane specified by **KPLANE_BULK** and at a fixe
 The Fermi surface in a k-plane is calculated by the Green's function. The spectral function can be 
 expressed by advanced Green's function.
 
-.. math:: A(k) = \frac{1}{\pi} Im\frac{1}{E-i\eta - H(k)} 
+.. math:: A(k, \omega) = \frac{1}{\pi} \text{Im}\frac{1}{\omega - H(k)-i\eta} 
 
-where the fixed energy **E = E_arc** and a Fermi broadening factor :math:`\eta=eta\_arc`
+where the fixed energy :math:`\omega` = **E_arc** and a Fermi broadening factor :math:`\eta` = **Eta_arc**
 
 Input
 --------
@@ -270,20 +288,27 @@ You should specify the number of k points for each three reciprocal vectors Nk1,
 in NAMELISTS PARAMETERS ::
 
   &CONTROL
-  BulkFS_Plane_calc = T  ! Fermi surface at a given k plane of bulk system
+  BulkFS_plane_calc     = T
+  Translate_to_WS_calc  = F   ! if True, then only write out the spectrum in the 1st BZ
   /
+  
+  &SYSTEM
+  SOC = 0             ! without
+  E_FERMI = 6.3906    ! e-fermi in the hr.dat
+  /
+  
   &PARAMETERS
-  Eta_Arc = 0.02     ! Fermi broadening, small value for sharp lines
-  E_arc = -1.00      ! iso-energy for calculate Fermi surface in a k plane
-  Nk1 = 101   ! No. of slices for the 1st reciprocal vector
-  Nk2 = 101   ! No. of slices for the 2nd reciprocal vector
+  Eta_arc = 0.02      ! infinite small value, like brodening
+  E_arc = 0.0         ! energy for calculate Fermi Arc
+  Nk1 = 201           ! number k points  odd number would be better
+  Nk2 = 201           ! number k points  odd number would be better
   /
-      
-  KPLANE_BULK  ! in fractional coordinates
-    0.00  0.00  0.00   ! Center point for 3d k plane 
-    1.00  0.00  0.00   ! The first vector to define 3d k space plane
-    0.00  1.00  0.00   ! The second vector to define 3d k space plane
- 
+  
+  KPLANE_BULK         ! unit is the reciprocal lattice vectors
+   0.00  0.00  0.00   ! center point for 3D k plane
+   2.00  0.00  0.00   ! The first vector to define 3d k space plane
+   0.00  2.00  0.00   ! The second vector to define 3d k space plane
+
 See :ref:`controlnamelist`, :ref:`parametersnamelist`
 
 Output
@@ -299,6 +324,17 @@ to get the plot.
 .. image:: images/wanniertools-fermisurface.png
    :scale: 40 %
 
+Example
+-----------
+
+There is one example in the examples/TiB2
+
+.. code:: console
+
+   $ cd examples/TiB2/
+   $ cp wt.in-fs_kplane wt.in 
+   $ mpiexec -np 8 ../../bin/wt.x
+   $ gnuplot fs_kplane.gnu
 
 .. _bulkspintexturecalculation:
 
