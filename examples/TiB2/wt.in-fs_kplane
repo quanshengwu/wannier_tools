@@ -29,9 +29,8 @@ SURFACE            ! See doc for details
 
 
 &CONTROL
-BulkBand_calc         = F
 BulkFS_plane_calc     = T
-Translate_to_WS_calc  = F   ! Only write out the part in 1st BZ
+Translate_to_WS_calc  = T   ! Only write out the part in 1st BZ
 /
 
 &SYSTEM
@@ -42,8 +41,8 @@ E_FERMI = 6.3906        ! e-fermi
 &PARAMETERS
 Eta_Arc = 0.02     ! infinite small value, like brodening 
 E_arc = 0.0        ! energy for calculate Fermi Arc
-Nk1 = 201          ! number k points  odd number would be better
-Nk2 = 201          ! number k points  odd number would be better
+Nk1 = 301          ! number k points  odd number would be better
+Nk2 = 301          ! number k points  odd number would be better
 Nk3 = 11           ! number k points  odd number would be better
 /
 

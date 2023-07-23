@@ -30,27 +30,79 @@ SURFACE            ! See doc for details
 
 &CONTROL
 BulkBand_calc         = F
-BulkFS_plane_calc     = T
-Translate_to_WS_calc  = F   ! Only write out the part in 1st BZ
+BulkFS_calc           = T
+BulkFS_plane_calc     = F
+FindNodes_calc        = F
+SlabBand_calc         = F
+SlabSS_calc           = F
+SlabArc_calc          = F
+BerryPhase_calc       = F
+Translate_to_WS_calc  = F
 /
 
 &SYSTEM
+NSLAB = 30              ! for thin film system
+NSLAB1= 4               ! nanowire system 
+NSLAB2= 4               ! nanowire system 
+NumOccupied = 5         ! NumOccupied
 SOC = 0                 ! soc
 E_FERMI = 6.3906        ! e-fermi
+Bx= 0, By= 0, Bz= 0     ! Bx By Bz
+surf_onsite= 0.0        ! surf_onsite
 /
 
 &PARAMETERS
 Eta_Arc = 0.02     ! infinite small value, like brodening 
-E_arc = 0.0        ! energy for calculate Fermi Arc
-Nk1 = 201          ! number k points  odd number would be better
-Nk2 = 201          ! number k points  odd number would be better
+E_arc = 0.0         ! energy for calculate Fermi Arc
+OmegaNum = 401      ! omega number       
+OmegaMin = -2.0     ! energy interval
+OmegaMax =  2.0     ! energy interval
+Nk1 = 201               ! number k points  odd number would be better
+Nk2 = 201            ! number k points  odd number would be better
 Nk3 = 11           ! number k points  odd number would be better
+NP = 1              ! number of principle layers
+Gap_threshold = 0.001 ! threshold for GapCube output
 /
 
+KPATH_BULK            ! k point path
+7              ! number of k line only for bulk band
+ G  0.00000  0.00000  0.00000   A  0.00000  0.00000  0.50000  
+ A  0.00000  0.00000  0.50000   H -0.33333  0.66667  0.50000  
+ H -0.33333  0.66667  0.50000   K -0.33333  0.66667  0.00000  
+ K -0.33333  0.66667  0.00000   G  0.00000  0.00000  0.00000  
+ G  0.00000  0.00000  0.00000   M  0.00000  0.50000  0.00000  
+ M  0.00000  0.50000  0.00000   L  0.00000 0.50000 0.50000    
+ L  0.00000 0.50000 0.50000     H -0.33333  0.66667  0.50000  
+
+KPATH_SLAB
+3        ! numker of k line for 2D case
+G 0.0 0.0 M 0.5 0.0
+M 0.5 0.0 K 0.33333 0.33333
+K 0.33333 0.33333 G 0.0 0.0
+
+KPLANE_SLAB
+-0.1 -0.1      ! Original point for 2D k plane
+ 0.2  0.0      ! The first vector to define 2D k plane 
+ 0.0  0.2      ! The second vector to define 2D k plane  for arc plots
+
 KPLANE_BULK
- 0.00  0.00  0.00   ! center point for 3D k plane  
+ 1.00 -1.00 -0.00   ! center point for 3D k plane  
  2.00  0.00  0.00   ! The first vector to define 3d k space plane
  0.00  2.00  0.00   ! The second vector to define 3d k space plane
+
+
+KCUBE_BULK
+ 0.00  0.00  0.00   ! Original point for 3D k plane 
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  1.00  0.00   ! The second vector to define 3d k space plane
+ 0.00  0.00  1.00   ! The third vector to define 3d k cube
+
+
+EFFECTIVE_MASS      ! optional
+2                   ! The i'th band to be calculated
+0.01                ! k step in unit of (1/Angstrom)
+0.0 0.0 0.0         ! k point where the effective mass calculated.
+
 
 WANNIER_CENTRES     ! copy from wannier90.wout
 Cartesian

@@ -301,7 +301,7 @@
      dos_mpi= dos
 #endif
 
-     dos_total= 0d0
+     dos_total= eps9
      do ik=1, knv3
         do i=1, Num_wann
            dos_total(ik)= dos_total(ik)+ dos_mpi(ik, i)
@@ -498,8 +498,8 @@
      allocate( dos_total(knv3), dos_total_mpi(knv3))
      allocate( dos_selected    (knv3, NumberofSelectedOrbitals_groups))
      allocate( dos_selected_mpi(knv3, NumberofSelectedOrbitals_groups))
-     dos_total= 0d0; dos_total_mpi= 0d0
-     dos_selected= 0d0; dos_selected_mpi= 0d0
+     dos_total= eps12; dos_total_mpi= eps12
+     dos_selected= eps12; dos_selected_mpi= eps12
 
      if (SOC>0 .and. BulkSpintexture_calc) then
         allocate( sx_selected(knv3, NumberofSelectedOrbitals_groups))
@@ -670,7 +670,7 @@
                  s0(3)= sz_selected_mpi(ik, ig)  /dos_selected_mpi(ik, ig)
                  call rotate_k3_to_kplane(s0, s1(:, ig))
               enddo
-              write(outfileindex, '(3000f16.8)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, &
+              write(outfileindex, '(3000E16.8)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, &
                  dos_total_mpi(ik), (dos_selected_mpi(ik, ig), s1(:, ig), ig=1, NumberofSelectedOrbitals_groups)
               if (mod(ik, nky)==0) write(outfileindex, *)' '
            enddo
@@ -684,7 +684,7 @@
               (i, i=1, NumberofSelectedOrbitals_groups)
            write(outfileindex, "('#column', i5, 3000i16)")(i, i=1, 7+NumberofSelectedOrbitals_groups)
            do ik=1, knv3
-              write(outfileindex, '(3000f16.8)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, &
+              write(outfileindex, '(3000E16.8)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, &
                  dos_total_mpi(ik), (dos_selected_mpi(ik, ig), ig=1, NumberofSelectedOrbitals_groups)
               if (mod(ik, nky)==0) write(outfileindex, *)' '
            enddo
@@ -727,7 +727,7 @@
            write(outfileindex, '(a)')'set colorbox'
            write(outfileindex, '(a)')'set autoscale fix'
            write(outfileindex, '(a)')'set pm3d interpolate 2,2'
-           write(outfileindex, '(2a)')"splot 'bulkspintext.dat' u 4:5:(log($8)) w pm3d, \"
+           write(outfileindex, '(2a)')"splot 'bulkspintext.dat' u 4:5:(log($8+0.1)) w pm3d, \"
            write(outfileindex, '(a)')"    'bulkspintext.dat' u 4:5:(0):($9/5.00):($10/5.00):(0)  w vec  head lw 5 lc rgb 'orange' front"
            close(outfileindex)
        
@@ -755,7 +755,7 @@
            write(outfileindex, '(a)')'set colorbox'
            write(outfileindex, '(a)')'set autoscale fix'
            write(outfileindex, '(a)')'set pm3d interpolate 2,2'
-           write(outfileindex, '(2a)')"splot 'fs_kplane.dat' u 4:5:(log($7)) w pm3d"
+           write(outfileindex, '(2a)')"splot 'fs_kplane.dat' u 4:5:(log($7+0.1)) w pm3d"
        
            close(outfileindex)
         endif
@@ -920,7 +920,7 @@ subroutine fermisurface_stack
      dos_atom_mpi= dos_atom
 #endif
 
-     dos_total= 0d0
+     dos_total= eps9
      do ik=1, knv3
         do ig=1, NumberofSelectedOrbitals_groups
            do i=1, NumberofSelectedOrbitals(ig)
@@ -978,7 +978,7 @@ subroutine fermisurface_stack
        !write(outfileindex, '(a, f10.5, a, f10.5, a)')'set xrange [', kxmin_shape, ':', kxmax_shape, ']'
        !write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', kymin_shape, ':', kymax_shape, ']'
         write(outfileindex, '(a)')'set pm3d interpolate 2,2'
-        write(outfileindex, '(2a)')"splot 'fs_stack.dat' u 4:5:(log($7)) w pm3d"
+        write(outfileindex, '(2a)')"splot 'fs_stack.dat' u 4:5:(log($7+0.1)) w pm3d"
 
         close(outfileindex)
      endif

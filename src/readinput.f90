@@ -143,7 +143,7 @@ subroutine readinput
    OrbitalTexture_calc   = .FALSE.
    OrbitalTexture_3D_calc  = .FALSE.
    Fit_kp_calc             = .FALSE.
-   DMFT_MAG_calc         = .FALSE.
+   DMFT_MAG_calc         = .FALSE.  ! not finished yet
    Symmetry_Import_calc  = .FALSE.
    LanczosSeqDOS_calc    = .FALSE.
    LandauLevel_kplane_calc = .FALSE.
@@ -348,8 +348,8 @@ subroutine readinput
    endif
 
    if (Numoccupied == 0) then
-      if (Z2_3D_calc.or.Chern_3D_calc.or.BulkFS_calc.or.BulkFS_Plane_calc &
-      .or.BulkFS_plane_stack_calc.or.BulkGap_plane_calc.or.WannierCenter_calc.or.&
+      if (Z2_3D_calc.or.Chern_3D_calc.or.BulkFS_calc &
+      .or.BulkGap_plane_calc.or.WannierCenter_calc.or.&
       BerryPhase_calc.or.BerryCurvature_EF_calc.or.BerryCurvature_calc.or.&
       BerryCurvature_plane_selectedbands_calc.or.BerryCurvature_slab_calc.or.&
       MirrorChern_calc.or.WeylChirality_calc.or.NLChirality_calc.or.&

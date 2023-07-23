@@ -22,8 +22,10 @@
 ! version     2.5.1  At EPFL, Switzerland, Mar. 6. 2020, For WannierTools tutorial 2020
 ! version     2.6.0  At EPFL, Switzerland, Feb.15. 2021, Landau level, sparse Hamiltonian, TBG
 ! version     2.6.1  At Beijing, China, April 10. 2022 clean for the Wannier90 tutorial 2022
+! version     2.7.0  At IOP CAS Beijing, China, July 22. 2023, added ANE, SHC,
+!                    added symmetrization part for magnetic hamiltonian fixed several bugs
 !
-! Corresponding to : wuquansheng@gmail.com
+! Corresponding to : wuquansheng@gmail.com, quansheng.wu@iphy.ac.cn
 !
 ! License: GPL V3
 !--------+--------+--------+--------+--------+--------+--------+------!
@@ -44,7 +46,7 @@
 
 
      !> version of WannierTools
-     version='2.6.1'
+     version='2.7.0'
 
      ierr = 0
      cpuid= 0

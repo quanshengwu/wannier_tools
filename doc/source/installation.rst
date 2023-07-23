@@ -10,7 +10,8 @@ You need to install the following (mandatory) packages:
 
 * Fortran compiler (Gfortran or ifort)
 * MPICH version higher than 2.1.5 
-* Lapack and Blas library
+* Lapack and Blas library, (Intel MKL recommended)
+* Arpack-ng
 
 Compilation
 -----------

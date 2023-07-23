@@ -1,0 +1,47 @@
+&TB_FILE
+Hrfile = 'Graphene_hr.dat'
+/
+
+!> bulk band structure calculation flag
+&CONTROL
+DOS_calc         = T
+/
+
+&SYSTEM
+SOC = 0                 ! soc
+E_FERMI =  -1.2533        ! e-fermi
+/
+
+&PARAMETERS
+Eta_Arc = 0.05     ! infinite small value, like brodening 
+OmegaNum = 2001     ! omega number       
+OmegaMin = -10      ! energy interval
+OmegaMax =  10.     ! energy interval
+Nk1 = 201          ! number k points 
+Nk2 = 201          ! number k points 
+Nk3 = 1            ! number k points 
+/
+
+LATTICE
+Angstrom
+2.1377110  -1.2342080   0.0000000        
+0.0000000   2.4684160   0.0000000        
+0.0000000   0.0000000   10.000000        
+
+ATOM_POSITIONS
+2                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+C 0.333333 0.666667 0.500000 C
+C 0.666667 0.333333 0.500000 C
+
+PROJECTORS
+1 1        ! number of projectors
+C  pz
+C  pz
+
+KCUBE_BULK  ! in fractional coordinates
+    0.00  0.00  0.00   ! Original point for 3D k plane 
+    1.00  0.00  0.00   ! The first vector to define 3d k space plane
+    0.00  1.00  0.00   ! The second vector to define 3d k space plane
+    0.00  0.00  1.00   ! The second vector to define 3d k space plane
+ 

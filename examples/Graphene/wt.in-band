@@ -6,6 +6,7 @@ Hrfile = 'Graphene_hr.dat'
 !> bulk band structure calculation flag
 &CONTROL
 BulkBand_calc         = T
+BulkFS_Plane_calc     = T
 /
 
 &SYSTEM
@@ -16,12 +17,13 @@ E_FERMI =  -1.2533        ! e-fermi
 /
 
 &PARAMETERS
-Eta_Arc = 0.001     ! infinite small value, like brodening 
-E_arc = 0.00         ! energy for calculate Fermi Arc
+Eta_Arc = 0.05     ! infinite small value, like brodening 
+E_arc = -1.00         ! energy for calculate Fermi Arc
 OmegaNum = 2001     ! omega number       
 OmegaMin = -1.      ! energy interval
 OmegaMax =  1.0     ! energy interval
 Nk1 = 101          ! number k points 
+Nk2 = 101          ! number k points 
 /
 
 LATTICE
@@ -52,3 +54,8 @@ KPATH_BULK            ! k point path
   K   0.33333333  0.33333333  0.00000   G   0.00000  0.00000  0.00000 
   G   0.00000  0.00000  0.00000   M   0.50000  0.00000  0.00000 
 
+KPLANE_BULK  ! in fractional coordinates
+    0.00  0.00  0.00   ! Original point for 3D k plane 
+    2.00  0.00  0.00   ! The first vector to define 3d k space plane
+    0.00  2.00  0.00   ! The second vector to define 3d k space plane
+ 
