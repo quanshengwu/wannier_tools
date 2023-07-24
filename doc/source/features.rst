@@ -237,7 +237,7 @@ Usually, I choose column 4th and 5th as k coordinates and choose 8 and 9 as ener
 
 
 Example
---------------
+>>>>>>>>>>>>
 
 There is one example in the examples/Graphene
 
@@ -253,6 +253,12 @@ The output is bulkek_plane.png and should like this
 .. image:: images/graphene_dirac_cone.png
    :scale: 50 %
 
+.. note:: 
+
+   Sometimes, you need to modify bulkek_plane.gnu to get correct plot. For example, in Graphene, there 
+   a only 2 bands in total. So you need to change the last two lines to 
+
+      splot 'bulkek_plane.dat' u 4:5:**7** w pm3d, 'bulkek_plane.dat' u 4:5:**8** w pm3d
 
 .. _bulkfscalculation:
 
@@ -334,7 +340,7 @@ There is one example in the examples/TiB2
 
 
 .. image:: images/TiB2_3DFS.png
-   :scale: 30%
+   :scale: 25%
 
 
 .. _bulkfsplanecalculation:
