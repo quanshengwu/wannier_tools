@@ -1,0 +1,42 @@
+&TB_FILE
+Hrfile = 'Graphene_hr.dat'
+/
+
+
+!> bulk band structure calculation flag
+&CONTROL
+BulkBand_calc         = T
+/
+
+&SYSTEM
+SOC = 0                 ! soc
+E_FERMI =  -1.2533        ! e-fermi
+/
+
+&PARAMETERS
+Nk1 = 101          ! number k points 
+/
+
+LATTICE
+Angstrom
+2.1377110  -1.2342080   0.0000000        
+0.0000000   2.4684160   0.0000000        
+0.0000000   0.0000000   10.000000        
+
+ATOM_POSITIONS
+2                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+C 0.333333 0.666667 0.500000 C
+C 0.666667 0.333333 0.500000 C
+
+PROJECTORS
+1 1        ! number of projectors
+C  pz
+C  pz
+
+KPATH_BULK            ! k point path
+3              ! number of k line only for bulk band
+  M   0.50000  0.00000  0.00000   K   0.33333333  0.33333333  0.00000 
+  K   0.33333333  0.33333333  0.00000   G   0.00000  0.00000  0.00000 
+  G   0.00000  0.00000  0.00000   M   0.50000  0.00000  0.00000 
+

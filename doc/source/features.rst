@@ -82,13 +82,18 @@ Consequently, there are 30 weights (for Bi2Se3), one for each projectors.
 Line mode
 ------------
 
-Calculate bulk energy band for a series k lines. This is the basic calculation after the
+Calculate bulk energy band for a series k lines and project the selected orbitals onto the band structures. This is the basic calculation after the
 construction of Wannier functions. You have to compare your Wannier interpolated bands 
 with the DFT bands. Those two bands should match well around the Fermi level.
 This comparison can help verify the accuracy of the Wannier functions, 
 and ensure that they provide an appropriate description of the electronic structure of the system under study.
 In order to obtain the parameter **NumOccupied**, you also need to calculate the bulk energy bands and plot it with 
 the software xmgrace.
+
+In order to get the weight onto the projections, we need to set **SELECTED_WANNIERORBITALS** card. it
+The orbital index is corresponding to the **PROJECTOS** card, nothing related to spin freedom. For example
+In Bi2Se3, there are 30 Wannier functions in the hr.dat, however, there are only 15 projectors (orbitals). 
+So indices in **SELECTED_WANNIERORBITALS** are from 1 to 15.
 
 .. _bulkekin:
 
@@ -102,6 +107,12 @@ Typical flags for bulk band calculation in the wt.in. ::
   &PARAMETERS
   Nk1 = 101   ! Number of k points for each k line
   /
+
+  ! get projected bands onto different orbitals, here we only consider orbital and omit the spin freedom
+  SELECTED_WANNIERORBITALS
+  2
+  1-6                ! Bi
+  7-15               ! Se
 
   KPATH_BULK     ! k point path
   4              ! number of k lines only for bulk band
@@ -141,31 +152,74 @@ The data structure for **bulkek.dat** ::
 
 The subrotine for this feature is ek_bulk.f90 .
 
+Examples
+>>>>>>>>>
+
+Two examples Bi2Se3 and Graphene were prepared:
+
+Strong topological insulator Bi2Se3  (in order to get the fat-band plot, you need to modify bulkek.gnu following the instruction inside)
+
+.. code:: console
+   
+   $ cd examples/Bi2Se3
+   $ cp wt.in-bands wt.in
+   $ ../../bin/wt.x
+   $ gnuplot bulkek.gnu
+
+2D Dirac semimetal Graphene
+
+.. code:: console
+   
+   $ cd examples/Graphene
+   $ cp wt.in-bands wt.in
+   $ ../../bin/wt.x
+   $ gnuplot bulkek.gnu
+
+The band plots of Bi2Se3 and Graphene should be like this
+
+.. image:: images/bulkbands.png
+   :scale: 30 %
+
+.. note::
+
+   In order to get the latex symbol :math:`\Gamma` in gnuplot, you need to replace **"G"** to **"{/Symbol G}"** in the bulkek.gnu like this
+
+   set xtics ("M  "    0.00000,"K  "    0.84848, **"{/Symbol G}"**    2.54543,"M  "    4.01504)
 
 Plane mode
 --------------
 
 Calculate band structure in a k slice(plane) specified by KPLANE_BULK card.
-The mode is very useful to visualize the Dirac/Weyl cone. You have to set the following tags in **wt.in** ::
+The mode is very useful to visualize the Dirac/Weyl cone. You have to set the following necessary tags in **wt.in** ::
 
+
+  !> bulk band structure calculation flag
   &CONTROL
   BulkBand_plane_calc = T
   /
-  &PARAMETERS
-  Nk1 = 51   ! Number of k points along the first vector in KPLANE_BULK
-  Nk2 = 51   ! Number of k points along the second vector in KPLANE_BULK
+  
+  &SYSTEM
+  NumOccupied = 1         ! only write out 4 bands around NumOccpuied
+  SOC = 0                 ! soc
+  E_FERMI =  -1.2533      ! e-fermi
   /
-
+  
+  &PARAMETERS
+  Nk1 = 201          ! number k points
+  Nk2 = 201          ! number k points
+  /
+  
   KPLANE_BULK   ! fractional coordinates
-   0.00  0.00  0.30   ! Middle point for a k slice(plane) in 3D BZ. Usually, the position of Dirac points.
-   0.50  0.00  0.00   ! The first vector to define k plane(slice) in 3D BZ
-   0.00  0.50  0.00   ! The second vector to define k plane(slice) in 3D BZ
-
+     0.333333  0.333333  0.000000   ! Middle point for a k slice(plane) in 3D BZ. Usually, the position of Dirac points.
+     0.100000  0.000000  0.000000   ! The first vector to define k plane(slice) in 3D BZ
+     0.000000  0.100000  0.000000   ! The second vector to define k plane(slice) in 3D BZ
 
 The output file is **bulkek_plane.dat**, **bulkek_plane-matlab.dat** and **bulkek_plane.gnu**. You can get 
-**bulkek_plane.png** with ::
+**bulkek_plane.png** with 
 
-   gnuplot bulkek_plane.gnu
+.. code:: console
+
+   $ gnuplot bulkek_plane.gnu
 
 The **bulkek_plane-matlab.dat** is in MATLAB data format. You can plot the Dirac cone with matlab.  
 
@@ -181,8 +235,23 @@ where the x and y direction are line in the k plane and the z direction is perpe
 Column 7-10th are energies at each k point. Here we only print out 4 energy bands around the fermilevel. It depends on **NumOccupied**.
 Usually, I choose column 4th and 5th as k coordinates and choose 8 and 9 as energy bands to show the Dirac cone shown below.
 
-.. image:: images/bulk_plane.jpeg
-   :scale: 30 %
+
+Example
+--------------
+
+There is one example in the examples/Graphene
+
+.. code:: console
+
+   $ cd examples/Graphene
+   $ cp wt.in-bands-plane wt.in
+   $ ../../bin/wt.x
+   $ gnuplot bulkek_plane.gnu
+
+The output is bulkek_plane.png and should like this
+
+.. image:: images/graphene_dirac_cone.png
+   :scale: 50 %
 
 
 .. _bulkfscalculation:
@@ -192,9 +261,9 @@ Usually, I choose column 4th and 5th as k coordinates and choose 8 and 9 as ener
 Fermi surface calculation of the bulk system.
 
 When calculating systems with SOC=0, meaning no spin-orbit coupling, 
-WannierTools computes 12 bands from the *NumOccupied-5* to NumOccupied+6 energy levels. 
+WannierTools computes 12 bands from the **NumOccupied-5** to **NumOccupied+6** energy levels. 
 However, when calculating systems with SOC=1, meaning spin-orbit coupling is present, 
-WannierTools computes 16 bands from the *NumOccupied-7* to NumOccupied+8 energy levels.
+WannierTools computes 16 bands from the **NumOccupied-7** to **NumOccupied+8** energy levels.
 
 .. NOTE::
    1. In order to reduce the storage of the Fermi surface, we only write out few energy bands around NumOccupied'th bands.

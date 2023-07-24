@@ -222,6 +222,7 @@
 #endif
       else
          call ek_bulk_line
+        !call ek_bulk_spin
         !call ek_bulk_mirror_z
       end if
       call now(time_end)
@@ -464,7 +465,6 @@
        !call psik_bulk
        !call ek_bulk_polar
        !call ek_bulk_fortomas
-       !call ek_bulk_spin
        !call ek_bulk2D
        !call ek_bulk2D_spin
         call gapshape

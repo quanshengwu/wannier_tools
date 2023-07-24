@@ -1,0 +1,43 @@
+&TB_FILE
+Hrfile = 'Graphene_hr.dat'
+/
+
+!> bulk band structure calculation flag
+&CONTROL
+BulkBand_plane_calc = T
+/
+
+&SYSTEM
+NumOccupied = 1
+SOC = 0                 ! soc
+E_FERMI =  -1.2533      ! e-fermi
+/
+
+
+&PARAMETERS
+Nk1 = 201          ! number k points 
+Nk2 = 201          ! number k points 
+/
+
+LATTICE
+Angstrom
+2.1377110  -1.2342080   0.0000000        
+0.0000000   2.4684160   0.0000000        
+0.0000000   0.0000000   10.000000        
+
+ATOM_POSITIONS
+2                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+C 0.333333 0.666667 0.500000 C
+C 0.666667 0.333333 0.500000 C
+
+PROJECTORS
+1 1        ! number of projectors
+C  pz
+C  pz
+
+KPLANE_BULK   ! fractional coordinates
+   0.333333  0.333333  0.000000   ! Middle point for a k slice(plane) in 3D BZ. Usually, the position of Dirac points.
+   0.100000  0.000000  0.000000   ! The first vector to define k plane(slice) in 3D BZ
+   0.000000  0.100000  0.000000   ! The second vector to define k plane(slice) in 3D BZ
+
