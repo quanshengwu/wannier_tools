@@ -13,21 +13,21 @@
 
 # DIRECTORIES
 # -------------------------------------------------------------------------
-wannier90win_dir = 'wann\\wannier90.win'    # Path of wannier90.win file
-wannier90wout_dir = 'wann\\wannier90.wout'   # Path of wannier90.wout file
-wanniertools_dir = 'add_sth'    # Path of wanniertools wt.x file
-OUTCAR_dir = 'OUTCAR'          # Path of OUTCAR from self consistent calculation
-kpts_band_dir = 'band\\KPOINTS'       # Path of KPOINTS from band structure calculation
+wannier90win_dir = ''    # Path of wannier90.win file
+wannier90wout_dir = ''   # Path of wannier90.wout file
+wanniertools_dir = ''    # Path of wanniertools wt.x file
+OUTCAR_dir = ''          # Path of OUTCAR from self consistent calculation
+kpts_band_dir = ''       # Path of KPOINTS from band structure calculation
 # -------------------------------------------------------------------------
 
 # SUBMISSION FILE
 # -------------------------------------------------------------------------
-job_name = 'test'            # Name of job
-cores =  24                # Number of cores (always integer)
-INPUT_dir = 'POSCAR'           # Path of POSCAR
-project = 'p12345'             # Name of project to submit job
-memory = 2048                # Memory per CPU (2048, 4096, etc)
-architecture = 'avx512'        # Architecture of HPC system (avx, avx2, avx512, etc)
+job_name = ''            # Name of job
+cores =                  # Number of cores (always integer)
+INPUT_dir = ''           # Path of POSCAR
+project = ''             # Name of project to submit job
+memory =                 # Memory per CPU (2048, 4096, etc)
+architecture = ''        # Architecture of HPC system (avx, avx2, avx512, etc)
 time = '24:00:00'        # Time (follow this format)
 # -------------------------------------------------------------------------
 
