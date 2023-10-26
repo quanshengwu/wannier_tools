@@ -660,7 +660,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
                         if (abs(det3(rho))>eps6) then
                            call inv_r(3, rho)
                            write(rhofileindex(ie), '(19E16.6)')& 
-                              BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau*0.175874356d0, &
+                              BTau_array(i)*Magneticfluxdensity_atomic/Relaxation_Time_Tau, &
                               rho(1, 1:3), rho(2, 1:3), rho(3, 1:3)
                         else
                            write(rhofileindex(ie), '(a)')'# error: sigma is zero since no k points contribute to the calculations of MR'
