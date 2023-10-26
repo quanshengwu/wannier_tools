@@ -608,6 +608,7 @@
      !> Electric field along the stacking direction of a 2D system in eV/Angstrom
      real(dp) :: Electric_field_in_eVpA
      real(dp) :: Symmetrical_Electric_field_in_eVpA
+     integer :: center_atom_for_electric_field  ! At this atom, the electric potential is zero
      logical :: Inner_symmetrical_Electric_Field
 
      !> a parameter to control the Vacumm thickness for the slab system 
@@ -621,7 +622,7 @@
         Add_Zeeman_Field, Effective_gfactor, Zeeman_energy_in_eV, &
         Electric_field_in_eVpA, Symmetrical_Electric_field_in_eVpA, &
         Inner_symmetrical_Electric_Field, ijmax, &
-        Vacuum_thickness_in_Angstrom
+        Vacuum_thickness_in_Angstrom, center_atom_for_electric_field
 
      real(dp),parameter :: alpha= 1.20736d0*1D-6  !> e/2/h*a*a   a=1d-10m, h is the planck constant then the flux equals alpha*B*s
 

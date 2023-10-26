@@ -324,6 +324,8 @@ subroutine readinput
    Electric_field_in_eVpA= 0d0
    Symmetrical_Electric_field_in_eVpA= 0d0
    Inner_symmetrical_Electric_Field= .False.
+   !> by default we don't set the center atom
+   center_atom_for_electric_field = -1
 
    !> by default, Vacuum_thickness_in_Angstrom= 20 Angstrom
    Vacuum_thickness_in_Angstrom = 20d0

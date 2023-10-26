@@ -117,6 +117,7 @@ subroutine dos_sparse
       eigval(:)= W(1:neval)
 
       !> get density of state
+      !> dos(e)= \sum_nk \delta(e-e_nk)
       do ie= 1, NE
          do ib= 1, neval
             x= omega(ie)- eigval(ib)
