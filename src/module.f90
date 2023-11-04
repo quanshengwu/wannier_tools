@@ -445,6 +445,7 @@
      logical :: landau_chern_calc = .false.
      logical :: export_newhr = .false.
      logical :: export_maghr =.false.
+     logical :: valley_projection_calc ! for valley projection, only for sparse hamiltonina, you need to provide the valley operator 
      
      logical :: w3d_nested_calc = .false.
      
@@ -478,7 +479,8 @@
                           LanczosSeqDOS_calc, Translate_to_WS_calc, LandauLevel_k_dos_calc, &
                           LandauLevel_B_dos_calc,LanczosBand_calc,LanczosDos_calc, &
                           LandauLevel_B_calc, LandauLevel_kplane_calc,landau_chern_calc, &
-                          FermiLevel_calc,ANE_calc, export_newhr,export_maghr,w3d_nested_calc
+                          FermiLevel_calc,ANE_calc, export_newhr,export_maghr,w3d_nested_calc, &
+                          valley_projection_calc
 
      integer :: Nslab  ! Number of slabs for 2d Slab system
      integer :: Nslab1 ! Number of slabs for 1D wire system
@@ -498,6 +500,7 @@
      integer :: Num_wann  ! Number of Wannier functions
 
      integer :: Nrpts ! Number of R points
+     integer :: Nrpts_valley ! Number of R points
 
    
      integer :: Nk   ! number of k points for different use
@@ -651,6 +654,7 @@
      real(dp),parameter :: eps9= 1e-9   ! 0.000000001
      real(dp),parameter :: eps12= 1e-12   ! 0.000000000001
      complex(dp),parameter :: zzero= (0.0d0, 0d0)  ! 0
+     complex(dp),parameter :: One_complex= (1.0d0, 0d0)  ! 0
 
      real(Dp),parameter :: Ka(2)=(/1.0d0,0.0d0/)  
      real(Dp),parameter :: Kb(2)=(/0.0d0,1.0d0/)
@@ -851,16 +855,22 @@
      real(dp) :: K3D_vec3_cube(3) ! the 3rd k vector for the k cube
 
      integer, allocatable     :: irvec(:,:)   ! R coordinates in fractional units
+     integer, allocatable     :: irvec_valley(:,:)   ! R coordinates in fractional units
      real(dp), allocatable    :: crvec(:,:)   ! R coordinates in Cartesian coordinates in units of Angstrom
      complex(dp), allocatable :: HmnR(:,:,:)   ! Hamiltonian m,n are band indexes
+     complex(dp), allocatable :: valley_operator_R(:,:,:)   ! Hamiltonian m,n are band indexes
      
      
      !sparse HmnR arraies
      integer,allocatable :: hicoo(:),hjcoo(:),hirv(:)
      complex(dp),allocatable :: hacoo(:)
 
+     !> valley operator 
+     integer,allocatable :: valley_operator_icoo(:), valley_operator_jcoo(:), valley_operator_irv(:)
+     complex(dp),allocatable :: valley_operator_acoo(:)
+
      !> sparse hr length
-     integer :: splen, splen_input
+     integer :: splen, splen_input, splen_valley_input
      
      
      integer, allocatable     :: ndegen(:)  ! degree of degeneracy of R point

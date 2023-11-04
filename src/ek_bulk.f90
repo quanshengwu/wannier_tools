@@ -175,6 +175,115 @@ subroutine ek_bulk_line
    return
 end subroutine ek_bulk_line
 
+
+subroutine ek_bulk_line_valley
+   ! Calculate bulk's energy bands using wannier TB method
+   ! Line mode
+   ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
+
+   use wmpi
+   use para
+
+   implicit none
+
+   integer :: ik, il, ig, io, i, j, knv3, ierr
+   real(dp) :: emin,  emax,  k(3)
+   character*40 :: filename
+   complex(dp), external :: zdotc
+
+   !> eigenvalues of H
+   real(Dp), allocatable :: W(:)
+
+   ! Hamiltonian of bulk system
+   complex(Dp), allocatable :: psi(:), vpsi(:)
+   complex(Dp), allocatable :: Hamk_bulk(:, :), valley_k(:, :)
+
+   ! eigenectors of H
+   real(dp), allocatable :: eigv(:,:), eigv_mpi(:,:)
+   real(dp), allocatable :: weight(:,:), weight_mpi(:,:)
+
+   knv3= nk3_band
+   allocate(W(Num_wann))
+   allocate(Hamk_bulk(Num_wann, Num_wann))
+   allocate(valley_k(Num_wann, Num_wann))
+   allocate( eigv    (Num_wann, knv3))
+   allocate( eigv_mpi(Num_wann, knv3))
+   allocate( weight    (Num_wann, knv3))
+   allocate( weight_mpi(Num_wann, knv3))
+   allocate( psi(Num_wann), vpsi(Num_wann))
+   W       = 0d0; Hamk_bulk = 0d0
+   eigv    = 0d0; eigv_mpi= 0d0
+   weight  = 0d0; weight_mpi = 0d0
+   psi     = 0d0; vpsi= 0d0
+
+
+   do ik= 1+cpuid, knv3, num_cpu
+
+      k = k3points(:, ik)
+      
+      ! calculation bulk hamiltonian
+      Hamk_bulk= 0d0
+
+      call ham_bulk_atomicgauge(k, Hamk_bulk)
+
+      !> diagonalization by call zheev in lapack
+      W= 0d0
+      call eigensystem_c('V', 'U', Num_wann ,Hamk_bulk, W)
+
+      !> get the fourier transform of a valley operator
+      call valley_k_atomicgauge(k, valley_k)
+
+      eigv(:, ik)= W
+      do j=1, Num_wann  !> band
+         psi= Hamk_bulk(:, j)
+         call zgemv('N', Num_wann, Num_wann, One_complex, psi, Num_wann, valley_k, 1, zzero, vpsi, 1)
+         weight(j, ik)= real(zdotc(Num_wann, psi, 1, vpsi, 1))
+      enddo ! i
+   enddo ! ik
+
+#if defined (MPI)
+   call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
+   call mpi_allreduce(weight, weight_mpi,size(weight),&
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+   eigv_mpi= eigv
+   weight_mpi= weight
+#endif
+   eigv_mpi= eigv_mpi/eV2Hartree
+
+   outfileindex= outfileindex+ 1
+   if (cpuid==0)then
+      open(unit=outfileindex, file='bulkek.dat')
+
+      do i=1, Num_wann
+         do ik=1, knv3
+            write(outfileindex, '(200E16.5)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik), &
+               weight_mpi(i, ik)
+         enddo
+         write(outfileindex, *)' '
+      enddo
+      close(outfileindex)
+   endif
+
+   !> minimum and maximum value of energy bands
+   emin=  minval(eigv_mpi)-0.5d0
+   emax=  maxval(eigv_mpi)+0.5d0
+
+   call generate_ek_kpath_gnu('bulkek.dat', 'bulkek.gnu', 'bulkek.pdf', &
+                                 emin, emax, knv3, Nk3lines, &
+                                 k3line_name, k3line_stop, k3len)
+
+   deallocate(W)
+   deallocate(Hamk_bulk)
+   deallocate( eigv    )
+   deallocate( eigv_mpi)
+   deallocate( weight    )
+   deallocate( weight_mpi)
+
+   return
+end subroutine ek_bulk_line_valley
+
   !>> calculate energy band levels at given kpoints
   subroutine ek_bulk_point_mode
 
@@ -1105,6 +1214,205 @@ subroutine sparse_ekbulk
 
    return
 end subroutine sparse_ekbulk
+
+
+!> only test for valley projection
+subroutine sparse_ekbulk_valley
+   use sparse
+   use para
+   implicit none
+
+
+   !> some temporary integers
+   integer :: ik, i, j, ierr, ib, ig
+
+   ! wave vector
+   real(dp) :: k3(3)
+
+   !> dim= Num_wann, knv3
+   real(dp), allocatable :: W(:)
+   real(dp), allocatable :: eigv(:, :)
+   real(dp), allocatable :: eigv_mpi(:, :)
+
+   real(dp) :: emin, emax
+
+   complex(dp) :: alpha_mv, beta_mv
+
+   !> dim= Num_wann*Num_wann
+   integer :: nnzmax, nnz, nnzmax_valley, nnz_valley
+   complex(dp), allocatable :: acoo(:), acoo_valley(:)
+   integer, allocatable :: jcoo(:), jcoo_valley(:)
+   integer, allocatable :: icoo(:), icoo_valley(:)
+
+   !> eigenvector of the sparse matrix acoo. Dim=(Num_wann, neval)
+   complex(dp), allocatable :: psi(:), vpsi(:)
+   complex(dp), allocatable :: psi_project(:)
+   complex(dp), allocatable :: zeigv(:, :)
+
+   !> print the weight for the Selected_WannierOrbitals
+   real(dp), allocatable :: weight_valley(:, :), weight_valley_mpi(:, :)
+
+   !number of ARPACK eigenvalues
+   integer :: neval
+
+   ! number of Arnoldi vectors
+   integer :: nvecs
+
+   !> calculate eigenvector or not
+   logical :: ritzvec
+
+   !shift-invert sigma
+   complex(dp) :: sigma=(0d0,0d0)
+
+   !> time measurement
+   real(dp) :: time1, time2, time3
+
+   !> 
+   character :: matdescra(6)
+
+   ! vector multiply vector v1*v2
+   complex(dp), external :: zdotc
+
+
+   !if (OmegaNum==0) OmegaNum= Num_wann
+   !if (NumSelectedEigenVals==0) NumSelectedEigenVals=OmegaNum
+
+   !> first use NumSelectedEigenVals, if NumSelectedEigenVals is not set, 
+   !> then use OmegaNum; if OmegaNum is also not set, 
+   !> then use Num_wann
+   if (NumSelectedEigenVals>0) then
+      neval= NumSelectedEigenVals
+   else if (OmegaNum>0) then
+      neval= OmegaNum
+   else
+      neval = Num_wann
+   endif
+
+   if (neval>Num_wann-2) neval= Num_wann- 2
+
+   !> ncv
+   nvecs=int(2*neval)
+
+   if (nvecs<20) nvecs= 20
+   if (nvecs>Num_wann) nvecs= Num_wann
+
+   sigma=(1d0,0d0)*E_arc
+   nnzmax=splen+Num_wann
+   nnz=splen
+   allocate( acoo(nnzmax))
+   allocate( jcoo(nnzmax))
+   allocate( icoo(nnzmax))
+
+   nnzmax_valley = splen_valley_input
+   allocate( acoo_valley(nnzmax_valley))
+   allocate( jcoo_valley(nnzmax_valley))
+   allocate( icoo_valley(nnzmax_valley))
+
+   allocate( W( neval))
+   allocate( eigv( neval, nk3_band))
+   allocate( eigv_mpi( neval, nk3_band))
+   allocate( psi(Num_wann), vpsi(Num_wann))
+   allocate( psi_project(Num_wann))
+   allocate( zeigv(Num_wann,nvecs))
+   allocate( weight_valley(neval, nk3_band), weight_valley_mpi(neval, nk3_band))
+   psi=0d0; vpsi=0d0; psi_project= 0d0; zeigv= 0d0
+   weight_valley_mpi=0d0; weight_valley=0d0
+
+   eigv_mpi= 0d0;  eigv    = 0d0
+   acoo= 0d0; icoo=0; jcoo=0
+
+   ritzvec= .True.
+
+   matdescra(1)= 'H'
+   matdescra(2)= 'U'
+   matdescra(3)= 'U'
+   matdescra(4)= 'F'
+
+   !> calculate the energy bands along special k line
+   k3= 0
+   do ik=1+ cpuid, nk3_band, num_cpu
+      if (cpuid==0) write(stdout, '(a, 2i10)') 'BulkBand_calc in sparse mode:', ik,nk3_band
+      k3 = K3points(:, ik)
+      call now(time1)
+      call ham_bulk_coo_sparsehr(k3,acoo,icoo,jcoo)
+      acoo= acoo/eV2Hartree
+      nnz= splen
+      call now(time2)
+      
+      !> diagonalization by call zheev in lapack
+      W= 0d0
+      !> after arpack_sparse_coo_eigs, nnz will be updated.
+      call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
+      call now(time3)
+      eigv(1:neval, ik)= W(1:neval)
+
+      !> get valley operator in coo format
+      call valley_k_coo_sparsehr(nnzmax_valley, k3, acoo_valley, icoo_valley, jcoo_valley)
+
+      !> get the valley projection
+      do ib= 1, neval
+         psi(:)= zeigv(:, ib)  !> the eigenvector of ib'th band
+
+         !> weight_valley= <psi|vz|psi>
+         call mkl_zcoomv('N', Num_wann, Num_wann, One_complex, matdescra, acoo_valley, &
+            icoo_valley, jcoo_valley, nnzmax_valley, psi, zzero, vpsi)
+
+         weight_valley(ib, ik)= real(zdotc(Num_wann, psi, 1, vpsi, 1))
+
+      enddo
+
+      if (cpuid==0)write(stdout, '(a, f20.2, a)')'  >> Time cost for constructing H: ', time2-time1, ' s'
+      if (cpuid==0)write(stdout, '(a, f20.2, a)')'  >> Time cost for diagonalize H: ', time3-time2, ' s'
+   enddo !ik
+
+#if defined (MPI)
+   call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
+   call mpi_allreduce(weight_valley, weight_valley_mpi,size(weight_valley),&
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+   eigv_mpi= eigv
+   weight_valley_mpi= weight_valley
+#endif
+
+   !> minimum and maximum value of energy bands
+   emin= minval(eigv_mpi)+0.05*(maxval(eigv_mpi)-minval(eigv_mpi))
+   emax= maxval(eigv_mpi)-0.05*(maxval(eigv_mpi)-minval(eigv_mpi))
+   
+
+
+   outfileindex= outfileindex+ 1
+   if (cpuid==0)then
+      open(unit=outfileindex, file='bulkek.dat')
+      do i=1, neval
+         do ik=1, nk3_band
+            write(outfileindex, '(300f16.9)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik), &
+               weight_valley_mpi(i, ik)
+         enddo
+         write(outfileindex, *)' '
+      enddo
+      close(outfileindex)
+   endif
+
+   call generate_ek_kpath_gnu('bulkek.dat', 'bulkek.gnu', 'bulkek.pdf', &
+                                 emin, emax, nk3_band, Nk3lines, &
+                                 k3line_name, k3line_stop, k3len)
+
+#if defined (MPI)
+   call mpi_barrier(mpi_cmw, ierr)
+#endif
+
+   deallocate( acoo)
+   deallocate( jcoo)
+   deallocate( icoo)
+   deallocate( W)
+   deallocate( eigv)
+   deallocate( eigv_mpi)
+   deallocate( zeigv)
+   deallocate( weight_valley, weight_valley_mpi)
+
+   return
+end subroutine sparse_ekbulk_valley
 
 
 subroutine sparse_ekbulk_plane

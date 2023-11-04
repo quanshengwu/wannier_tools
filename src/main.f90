@@ -163,9 +163,12 @@
             allocate(HmnR(num_wann,num_wann,nrpts))
             HmnR= 0d0
             call readNormalHmnR()
+            if (valley_projection_calc) call  read_valley_operator
          !> sparse hmnr input
          else
             call readSparseHmnR()
+            if (valley_projection_calc) call  readsparse_valley_operator
+
          end if
       else
          stop "We only support Is_HrFile=.true. for this version"
@@ -216,12 +219,20 @@
       if(cpuid.eq.0)write(stdout, *)' '
       if(cpuid.eq.0)write(stdout, *)'>> Start of calculating bulk band'
       call now(time_start)
-      if(Is_Sparse_Hr) then
+      if (Is_Sparse_Hr) then
 #if defined (INTELMKL)
+         if (valley_projection_calc) then
+            call sparse_ekbulk_valley
+         else
             call sparse_ekbulk
+         endif
 #endif
       else
-         call ek_bulk_line
+         if (valley_projection_calc) then
+            call ek_bulk_line_valley
+         else
+            call ek_bulk_line
+         endif
         !call ek_bulk_spin
         !call ek_bulk_mirror_z
       end if

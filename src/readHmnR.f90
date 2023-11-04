@@ -236,6 +236,77 @@ subroutine readNormalHmnR()
    return
 end subroutine readNormalHmnR
 
+subroutine read_valley_operator()
+   !>> Read in the tight-binding model from wannier90_hr.dat
+   !>  The format is defined by the wannier90 software
+   ! Constructed by quansheng wu 4/2/2010
+   !
+   ! Yifei Guan added the sparse hr file parsing June/2018
+   ! License: GPL V3
+
+   use para
+   !> in: N of wann
+   !> out : nth atom
+
+   implicit none
+
+   character*4 :: c_temp
+
+   integer :: i, j, ir, ia, io 
+   integer :: i1, i2, i3, i4, i5
+   integer :: n, m, ir0
+   integer :: add_electric_field
+   integer :: nwann, nwann_nsoc
+
+   real(dp) :: static_potential
+   real(dp) :: tot, rh, ih
+   real(dp) :: pos(Origin_cell%Num_atoms)
+
+
+   if(cpuid.eq.0)write(stdout,*)' '
+   open(12, file="valley_operator.dat", status='OLD')
+
+   !> skip a comment line
+   read(12, *)
+
+   !> number of Wannier orbitals in the hr file
+   nwann=0
+   read(12, *)nwann
+   if (nwann==0) then
+      stop "ERROR : num_wann is zero in hr file"
+   endif
+   nwann_nsoc=nwann
+   if (SOC>0) nwann_nsoc= nwann/2
+
+   !> number of lattice vectors taken into account
+   read(12, *)Nrpts_valley
+
+   !> The degeneracy of each R point, this is caused by the Fourier transform in the Wigner-Seitz cell
+   read(12, *)(j, i=1, Nrpts_valley)
+   allocate(irvec_valley(3, Nrpts_valley))
+   allocate(valley_operator_R(num_wann, num_wann, Nrpts_valley))
+   ir=0
+   do ir=1,Nrpts_valley
+      do n=1,nwann
+         do m=1,nwann
+            read(12,*,end=1001)i1, i2, i3, i4, i5, rh, ih
+            irvec_valley(1,ir)=i1
+            irvec_valley(2,ir)=i2
+            irvec_valley(3,ir)=i3
+            valley_operator_R(i4,i5,ir)=dcmplx(rh,ih)
+         end do
+      enddo
+   enddo
+   stop
+
+   1001 continue
+   close(12)
+
+   if (cpuid.eq.0) write(stdout, *) ">>> finished reading of valley operator"
+
+end subroutine read_valley_operator
+
+
 
 subroutine get_hmnr_cell(cell)
    !> Get new hmnr for a new cell with the same size as the previous one
@@ -648,6 +719,93 @@ subroutine readSparseHmnR
 
    return
 end subroutine readSparseHmnR
+
+
+subroutine readsparse_valley_operator
+   !> This subroutine not just read the sparse valley operator
+   !> 2023 Nov. 4
+   use para
+   implicit none
+   integer:: i,j,nwann,nwann_nsoc,i1,i2,i3,i4,i5,ir,n,m 
+   real(dp) :: r1, r2
+
+   !> the direction which adding electric field which is also the stacking direction
+   integer :: add_electric_field
+   real(dp) :: Bx_in_au, By_in_au, Bz_in_au
+   complex(dp) :: h_value
+
+   open(13, file='valley_operator.dat')
+
+   !> skip a comment line
+   read(13, *)
+
+   !> comparing with the standard hr file, we add another line to show howmany
+   !> lines that Hmn(R) is not zero.
+   if(Is_Sparse_Hr) then
+      read(13,*) splen_valley_input   !> number of non-zeros lines
+   end if
+
+   !> number of Wannier orbitals in the hr file
+   nwann=0
+   read(13, *)nwann
+   if (nwann==0.or.nwann.ne.Num_wann) then
+      print *, 'nwann, num_wann', nwann, num_wann
+      stop "ERROR : num_wann is zero or num_wann is not consistent with hr.dat"
+   endif
+   nwann_nsoc=nwann
+   if (SOC>0) nwann_nsoc= nwann/2
+
+   !> number of lattice vectors taken into account
+   read(13, *)Nrpts_valley
+   allocate(irvec_valley(3, Nrpts_valley))
+
+   !> The degeneracy of each R point
+   read(13, *)(j, i=1, nrpts)
+   ir=0
+
+   allocate(valley_operator_acoo(splen_valley_input))
+   allocate(valley_operator_icoo(splen_valley_input))
+   allocate(valley_operator_jcoo(splen_valley_input))
+   allocate(valley_operator_irv(splen_valley_input))
+   valley_operator_acoo=(0d0, 0d0)
+   valley_operator_icoo=0
+   valley_operator_jcoo=0
+   valley_operator_irv=0
+
+   j=0
+   ir=1
+   irvec_valley=-9999
+   read(13,*,end=1002)i1, i2, i3, i4, i5, r1, r2
+   irvec_valley(1,ir)=i1
+   irvec_valley(2,ir)=i2
+   irvec_valley(3,ir)=i3
+   !> will reread the above line
+   backspace(13)
+   do i=1,Nrpts_valley
+      do n=1,nwann
+         do m=1,nwann
+            read(13,*,end=1002)i1, i2, i3, i4, i5, r1, r2
+            if (sum(abs(irvec_valley(:,ir)-[i1,i2,i3]))/=0) ir=ir+1
+            j=j+1
+            valley_operator_icoo(j)=i4
+            valley_operator_jcoo(j)=i5
+            valley_operator_irv (j)=ir
+            valley_operator_acoo(j)=dcmplx(r1,r2)
+            irvec_valley(1, ir)= i1
+            irvec_valley(2, ir)= i2
+            irvec_valley(3, ir)= i3
+         end do
+      enddo
+   enddo
+1002 continue
+   !> correct nrpts
+   Nrpts_valley=ir
+
+   if (cpuid.eq.0) write(stdout, '(a, i6)')' >> Nrpts_valley is ', Nrpts_valley
+   if (cpuid.eq.0) write(stdout, '(a)')' >> Valley operator reading finished '
+
+   return
+end subroutine readsparse_valley_operator
 
 
 !> return the maximum distance between two neighbour elements of array x

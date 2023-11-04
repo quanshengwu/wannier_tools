@@ -153,6 +153,7 @@ subroutine readinput
    FermiLevel_calc    = .FALSE.
    ANE_calc              = .FALSE.
    w3d_nested_calc =.false.
+   valley_projection_calc =.false.
    ChargeDensity_selected_bands_calc= .FALSE.
    ChargeDensity_selected_energies_calc= .FALSE.
 
@@ -208,6 +209,7 @@ subroutine readinput
       write(*, *)"Translate_to_WS_calc"
       write(*, *)"FermiLevel_calc"
       write(*, *)"ANE_calc"
+      write(*, *)"valley_projection_calc"
       write(*, *)"ChargeDensity_selected_energies_calc"
       write(*, *)"ChargeDensity_selected_bands_calc"
       write(*, *)"The default Vaule is F"
@@ -287,6 +289,7 @@ subroutine readinput
       write(stdout, *) "Symmetry_Import_calc              : ", Symmetry_Import_calc
       write(stdout, *) "ChargeDensity_selected_bands_calc : ", ChargeDensity_selected_bands_calc
       write(stdout, *) "ChargeDensity_selected_energies_calc : ", ChargeDensity_selected_energies_calc
+      write(stdout, *) "valley_projection_calc : "           , valley_projection_calc
    endif
 
 !===============================================================================================================!
