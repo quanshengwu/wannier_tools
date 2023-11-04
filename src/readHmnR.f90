@@ -297,7 +297,6 @@ subroutine read_valley_operator()
          end do
       enddo
    enddo
-   stop
 
    1001 continue
    close(12)
