@@ -236,7 +236,8 @@ subroutine ek_bulk_line_valley
       eigv(:, ik)= W
       do j=1, Num_wann  !> band
          psi= Hamk_bulk(:, j)
-         call zgemv('N', Num_wann, Num_wann, One_complex, psi, Num_wann, valley_k, 1, zzero, vpsi, 1)
+         vpsi=0d0
+         call zgemv('N', Num_wann, Num_wann, One_complex,  valley_k, Num_wann, psi, 1, zzero, vpsi, 1)
          weight(j, ik)= real(zdotc(Num_wann, psi, 1, vpsi, 1))
       enddo ! i
    enddo ! ik
@@ -258,7 +259,7 @@ subroutine ek_bulk_line_valley
 
       do i=1, Num_wann
          do ik=1, knv3
-            write(outfileindex, '(200E16.5)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik), &
+            write(outfileindex, '(200F16.8)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik), &
                weight_mpi(i, ik)
          enddo
          write(outfileindex, *)' '
@@ -1354,8 +1355,7 @@ subroutine sparse_ekbulk_valley
          psi(:)= zeigv(:, ib)  !> the eigenvector of ib'th band
 
          !> weight_valley= <psi|vz|psi>
-         call mkl_zcoomv('N', Num_wann, Num_wann, One_complex, matdescra, acoo_valley, &
-            icoo_valley, jcoo_valley, nnzmax_valley, psi, zzero, vpsi)
+         call mkl_zcoogemv('N', Num_wann, acoo_valley, icoo_valley, jcoo_valley, nnzmax_valley, psi, vpsi)
 
          weight_valley(ib, ik)= real(zdotc(Num_wann, psi, 1, vpsi, 1))
 

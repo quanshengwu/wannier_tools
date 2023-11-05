@@ -94,16 +94,9 @@ end subroutine ham_bulk_atomicgauge
 
 
 subroutine valley_k_atomicgauge(k,valley_k)
-   ! This subroutine caculates Hamiltonian for
-   ! bulk system with the consideration of the atom's position
-   !
+   ! This subroutine performs the Fourier transform of avalley operator
    ! History
-   !
-   !        May/29/2011 by Quansheng Wu
-   !  Atomic gauge Guan Yifei 2019
-   !  Lattice gauge Hl
-   !  Atomic gauge Ha= U* Hl U 
-   !  where U = e^ik.wc(i) on diagonal
+   !        Nov/5/2023 by Quansheng Wu
 
    use para
    implicit none
@@ -145,6 +138,20 @@ subroutine valley_k_atomicgauge(k,valley_k)
          enddo ! i1
       enddo ! i2
    enddo ! iR
+
+   ! check hermitcity
+   do i1=1, Num_wann
+      do i2=1, Num_wann
+         if(abs(valley_k(i1,i2)-conjg(valley_k(i2,i1))).ge.1e-6)then
+            write(stdout,*)'there is something wrong with Hamk_bulk'
+            write(stdout,*)'i1, i2', i1, i2
+            write(stdout,*)'value at (i1, i2)', valley_k(i1, i2)
+            write(stdout,*)'value at (i2, i1)', valley_k(i2, i1)
+            !stop
+         endif
+      enddo
+   enddo
+
 
    return
 end subroutine valley_k_atomicgauge
@@ -819,14 +826,14 @@ subroutine valley_k_coo_sparsehr(nnz, k,acoo,icoo,jcoo)
    integer :: i,j,ir
 
    do i=1,nnz
-      ir=valley_operator_irv(i)
+      ir= valley_operator_irv(i)
       icoo(i)=valley_operator_icoo(i)
       jcoo(i)=valley_operator_jcoo(i)
       posij=irvec_valley(:, ir)+ Origin_cell%wannier_centers_direct(:, jcoo(i))- Origin_cell%wannier_centers_direct(:, icoo(i))
       kdotr=posij(1)*k(1)+posij(2)*k(2)+posij(3)*k(3)
       ratio= (cos(twopi*kdotr)+zi*sin(twopi*kdotr))
       acoo(i)=ratio*valley_operator_acoo(i)
-   end do
+   enddo
 
    return
 end subroutine valley_k_coo_sparsehr

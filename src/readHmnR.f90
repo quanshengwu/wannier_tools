@@ -237,16 +237,11 @@ subroutine readNormalHmnR()
 end subroutine readNormalHmnR
 
 subroutine read_valley_operator()
-   !>> Read in the tight-binding model from wannier90_hr.dat
-   !>  The format is defined by the wannier90 software
-   ! Constructed by quansheng wu 4/2/2010
-   !
-   ! Yifei Guan added the sparse hr file parsing June/2018
+   !>> Read in the valley operator from valley_operator.dat
+   ! Constructed by quansheng wu 04 Nov. 2023
    ! License: GPL V3
 
    use para
-   !> in: N of wann
-   !> out : nth atom
 
    implicit none
 
@@ -257,6 +252,7 @@ subroutine read_valley_operator()
    integer :: n, m, ir0
    integer :: add_electric_field
    integer :: nwann, nwann_nsoc
+   logical :: exists
 
    real(dp) :: static_potential
    real(dp) :: tot, rh, ih
@@ -264,7 +260,12 @@ subroutine read_valley_operator()
 
 
    if(cpuid.eq.0)write(stdout,*)' '
-   open(12, file="valley_operator.dat", status='OLD')
+   inquire (file ="valley_operator.dat", EXIST = exists)
+   if (exists)then
+      open(12, file="valley_operator.dat", status='OLD')
+   else
+      STOP ">> for valley projection , you have to prepare a file valley_operator.dat"
+   endif
 
    !> skip a comment line
    read(12, *)
@@ -727,13 +728,21 @@ subroutine readsparse_valley_operator
    implicit none
    integer:: i,j,nwann,nwann_nsoc,i1,i2,i3,i4,i5,ir,n,m 
    real(dp) :: r1, r2
+   logical :: exists
 
    !> the direction which adding electric field which is also the stacking direction
    integer :: add_electric_field
    real(dp) :: Bx_in_au, By_in_au, Bz_in_au
    complex(dp) :: h_value
 
-   open(13, file='valley_operator.dat')
+   if(cpuid.eq.0)write(stdout,*)' '
+   inquire (file ="valley_operator.dat", EXIST = exists)
+   if (exists)then
+      open(13, file="valley_operator.dat", status='OLD')
+   else
+      STOP ">> for valley projection , you have to prepare a file valley_operator.dat"
+   endif
+
 
    !> skip a comment line
    read(13, *)
@@ -797,10 +806,12 @@ subroutine readsparse_valley_operator
       enddo
    enddo
 1002 continue
+   close(13)
    !> correct nrpts
    Nrpts_valley=ir
 
    if (cpuid.eq.0) write(stdout, '(a, i6)')' >> Nrpts_valley is ', Nrpts_valley
+   if (cpuid.eq.0) write(stdout, '(a)')' >> splen_valley_input', splen_valley_input, j
    if (cpuid.eq.0) write(stdout, '(a)')' >> Valley operator reading finished '
 
    return
