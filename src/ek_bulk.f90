@@ -187,6 +187,7 @@ subroutine ek_bulk_line_valley
    implicit none
 
    integer :: ik, il, ig, io, i, j, knv3, ierr
+   integer :: ie, ND, NDMAX
    real(dp) :: emin,  emax,  k(3)
    character*40 :: filename
    complex(dp), external :: zdotc
@@ -195,12 +196,13 @@ subroutine ek_bulk_line_valley
    real(Dp), allocatable :: W(:)
 
    ! Hamiltonian of bulk system
-   complex(Dp), allocatable :: psi(:), vpsi(:)
+   complex(Dp), allocatable :: psi(:), vpsi(:), valley_k_nd(:, :)
    complex(Dp), allocatable :: Hamk_bulk(:, :), valley_k(:, :)
 
    ! eigenectors of H
    real(dp), allocatable :: eigv(:,:), eigv_mpi(:,:)
    real(dp), allocatable :: weight(:,:), weight_mpi(:,:)
+   real(dp) :: tolde= 1E-6
 
    knv3= nk3_band
    allocate(W(Num_wann))
@@ -240,6 +242,20 @@ subroutine ek_bulk_line_valley
          call zgemv('N', Num_wann, Num_wann, One_complex,  valley_k, Num_wann, psi, 1, zzero, vpsi, 1)
          weight(j, ik)= real(zdotc(Num_wann, psi, 1, vpsi, 1))
       enddo ! i
+
+      !> check the degeneracy of each band
+      IE=1
+      do while (ie.le.Num_wann)
+         ND=1
+         do while ((ie+ND).le.Num_wann .and. (W(ie+ND)- W(ie)).lt.tolde)
+            ND= ND+1
+         enddo
+
+         !> if the degeneracy is larger than 1, we need to calculate the matrix
+         IE= IE+ ND
+
+      enddo
+
    enddo ! ik
 
 #if defined (MPI)
@@ -256,6 +272,10 @@ subroutine ek_bulk_line_valley
    outfileindex= outfileindex+ 1
    if (cpuid==0)then
       open(unit=outfileindex, file='bulkek.dat')
+      open(unit=outfileindex, file='bulkek_valley_plus.dat')
+      open(unit=outfileindex, file='bulkek_valley_minus.dat')
+
+
 
       do i=1, Num_wann
          do ik=1, knv3

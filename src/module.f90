@@ -611,7 +611,7 @@
      !> Electric field along the stacking direction of a 2D system in eV/Angstrom
      real(dp) :: Electric_field_in_eVpA
      real(dp) :: Symmetrical_Electric_field_in_eVpA
-     integer :: center_atom_for_electric_field  ! At this atom, the electric potential is zero
+     integer :: center_atom_for_electric_field(2)  ! At this atom, the electric potential is zero
      logical :: Inner_symmetrical_Electric_Field
 
      !> a parameter to control the Vacumm thickness for the slab system 

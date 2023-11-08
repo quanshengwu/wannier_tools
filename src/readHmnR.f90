@@ -895,8 +895,9 @@ subroutine get_stacking_direction_and_pos(add_electric_field, pos)
    if (add_electric_field>0) then
       pos=Origin_cell%Atom_position_direct(add_electric_field, :)
       pos= mod(pos, 1d0)-0.5d0
-      if (center_atom_for_electric_field>0) then
-         center=  Origin_cell%Atom_position_direct(add_electric_field, center_atom_for_electric_field)
+      if (sum(center_atom_for_electric_field)>0) then
+         center= (Origin_cell%Atom_position_direct(add_electric_field, center_atom_for_electric_field(1)) &
+                + Origin_cell%Atom_position_direct(add_electric_field, center_atom_for_electric_field(2)))/2d0
          center= mod(center, 1d0)-0.5d0
       else
          center= (maxval(pos)+minval(pos))/2d0
