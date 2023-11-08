@@ -187,7 +187,7 @@ subroutine ek_bulk_line_valley
    implicit none
 
    integer :: ik, il, ig, io, i, j, knv3, ierr
-   integer :: ie, ND, NDMAX
+   integer :: ie, ND, NDMAX, ie1, ie2
    real(dp) :: emin,  emax,  k(3)
    character*40 :: filename
    complex(dp), external :: zdotc
@@ -196,14 +196,16 @@ subroutine ek_bulk_line_valley
    real(Dp), allocatable :: W(:)
 
    ! Hamiltonian of bulk system
-   complex(Dp), allocatable :: psi(:), vpsi(:), valley_k_nd(:, :)
+   complex(Dp), allocatable :: psi(:), vpsi(:), valley_k_nd(:, :), psi1(:), psi2(:)
    complex(Dp), allocatable :: Hamk_bulk(:, :), valley_k(:, :)
+   complex(Dp), allocatable :: VL(:, :), VR(:, :), valley_eig(:)
 
    ! eigenectors of H
    real(dp), allocatable :: eigv(:,:), eigv_mpi(:,:)
    real(dp), allocatable :: weight(:,:), weight_mpi(:,:)
-   real(dp) :: tolde= 1E-6
+   real(dp) :: tolde= 1E-4
 
+   NDMAX= 12
    knv3= nk3_band
    allocate(W(Num_wann))
    allocate(Hamk_bulk(Num_wann, Num_wann))
@@ -213,10 +215,14 @@ subroutine ek_bulk_line_valley
    allocate( weight    (Num_wann, knv3))
    allocate( weight_mpi(Num_wann, knv3))
    allocate( psi(Num_wann), vpsi(Num_wann))
+   allocate( psi1(Num_wann), psi2(Num_wann))
+   allocate( valley_k_nd(NDMAX, NDMAX), valley_eig(NDMAX))
+   allocate( VL(NDMAX, NDMAX), VR(NDMAX, NDMAX))
    W       = 0d0; Hamk_bulk = 0d0
    eigv    = 0d0; eigv_mpi= 0d0
    weight  = 0d0; weight_mpi = 0d0
    psi     = 0d0; vpsi= 0d0
+   valley_k_nd= 0d0
 
 
    do ik= 1+cpuid, knv3, num_cpu
@@ -236,12 +242,14 @@ subroutine ek_bulk_line_valley
       call valley_k_atomicgauge(k, valley_k)
 
       eigv(:, ik)= W
-      do j=1, Num_wann  !> band
-         psi= Hamk_bulk(:, j)
-         vpsi=0d0
-         call zgemv('N', Num_wann, Num_wann, One_complex,  valley_k, Num_wann, psi, 1, zzero, vpsi, 1)
-         weight(j, ik)= real(zdotc(Num_wann, psi, 1, vpsi, 1))
-      enddo ! i
+     !do j=1, Num_wann  !> band
+     !   psi= Hamk_bulk(:, j)
+     !   vpsi=0d0
+     !   call zgemv('N', Num_wann, Num_wann, One_complex,  valley_k, Num_wann, psi, 1, zzero, vpsi, 1)
+     !   weight(j, ik)= real(zdotc(Num_wann, psi, 1, vpsi, 1))
+     !  !print *, 'j, valley', j, weight(j, ik)
+     !enddo ! i
+     !print *, ' '
 
       !> check the degeneracy of each band
       IE=1
@@ -250,6 +258,44 @@ subroutine ek_bulk_line_valley
          do while ((ie+ND).le.Num_wann .and. (W(ie+ND)- W(ie)).lt.tolde)
             ND= ND+1
          enddo
+
+         !> if the degeneracy is larger than 1, we need to calculate the matrix
+         valley_k_nd= 0d0
+         do ie1= 1, ND
+            psi1= hamk_bulk(:, IE+ie1-1)
+            do ie2= 1, ND
+               psi2= hamk_bulk(:, IE+ie2-1)
+               vpsi=0d0
+               call zgemv('N', Num_wann, Num_wann, One_complex,  valley_k, Num_wann, psi2, 1, zzero, vpsi, 1)
+               valley_k_nd(ie1, ie2)= zdotc(Num_wann, psi1, 1, vpsi, 1)
+            enddo
+            if (abs(W(IE+ie1-1)/eV2Hartree)<2d0) &
+            write( *, '(a, 2i5, 200f8.3)') "ND, ie1: ", ND, ie1, valley_k_nd(ie1, 1:ND)
+         enddo
+
+         !> diagonalize the matrix
+         VL = 0d0; VR= 0d0
+         if (ND>1) then
+            call zgeev_sys(ND, valley_k_nd(1:ND, 1:ND), valley_eig(1:ND),'N',VL(1:ND, 1:ND),"V",VR(1:ND, 1:ND) )
+            do ie1= 1, ND
+               weight(IE+ie1-1, ik) = real(valley_eig(ie1))
+            enddo
+         else
+            valley_eig(1)= valley_k_nd(1, 1)
+            weight(IE, ik) = real(valley_k_nd(1, 1))
+         endif
+         !  if (abs(W(IE+ie1-1)/eV2Hartree)<2d0) &
+         ! write(*, '(a, 2i5, a, 200f8.3)'), 'ND, ie', ND, ie, '  valley_eig', real(valley_eig(1:ND))
+         !  if (abs(W(IE+ie1-1)/eV2Hartree)<2d0) &
+         ! print *, ' '
+
+         !> get new eigenvector
+        !do ie1= 1, ND
+        !   psi= 0d0
+        !   do ie2= 1, ND
+        !      psi= psi+ VR(ie2,  ie1)* ham_bulk(:, IE+ie2-1)
+        !   enddo
+        !enddo
 
          !> if the degeneracy is larger than 1, we need to calculate the matrix
          IE= IE+ ND
@@ -272,8 +318,8 @@ subroutine ek_bulk_line_valley
    outfileindex= outfileindex+ 1
    if (cpuid==0)then
       open(unit=outfileindex, file='bulkek.dat')
-      open(unit=outfileindex, file='bulkek_valley_plus.dat')
-      open(unit=outfileindex, file='bulkek_valley_minus.dat')
+     !open(unit=outfileindex, file='bulkek_valley_plus.dat')
+     !open(unit=outfileindex, file='bulkek_valley_minus.dat')
 
 
 
