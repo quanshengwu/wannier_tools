@@ -199,6 +199,7 @@ subroutine ek_bulk_line_valley
    complex(Dp), allocatable :: psi(:), vpsi(:), valley_k_nd(:, :), psi1(:), psi2(:)
    complex(Dp), allocatable :: Hamk_bulk(:, :), valley_k(:, :)
    complex(Dp), allocatable :: VL(:, :), VR(:, :), valley_eig(:)
+   logical, allocatable :: valley_plus(:, :), valley_plus_mpi(:, :)
 
    ! eigenectors of H
    real(dp), allocatable :: eigv(:,:), eigv_mpi(:,:)
@@ -216,6 +217,8 @@ subroutine ek_bulk_line_valley
    allocate( weight_mpi(Num_wann, knv3))
    allocate( psi(Num_wann), vpsi(Num_wann))
    allocate( psi1(Num_wann), psi2(Num_wann))
+   allocate(valley_plus(Num_wann, knv3))
+   allocate(valley_plus_mpi(Num_wann, knv3))
    allocate( valley_k_nd(NDMAX, NDMAX), valley_eig(NDMAX))
    allocate( VL(NDMAX, NDMAX), VR(NDMAX, NDMAX))
    W       = 0d0; Hamk_bulk = 0d0
@@ -223,6 +226,7 @@ subroutine ek_bulk_line_valley
    weight  = 0d0; weight_mpi = 0d0
    psi     = 0d0; vpsi= 0d0
    valley_k_nd= 0d0
+   valley_plus= .False.; valley_plus_mpi= .False.
 
 
    do ik= 1+cpuid, knv3, num_cpu
@@ -242,14 +246,6 @@ subroutine ek_bulk_line_valley
       call valley_k_atomicgauge(k, valley_k)
 
       eigv(:, ik)= W
-     !do j=1, Num_wann  !> band
-     !   psi= Hamk_bulk(:, j)
-     !   vpsi=0d0
-     !   call zgemv('N', Num_wann, Num_wann, One_complex,  valley_k, Num_wann, psi, 1, zzero, vpsi, 1)
-     !   weight(j, ik)= real(zdotc(Num_wann, psi, 1, vpsi, 1))
-     !  !print *, 'j, valley', j, weight(j, ik)
-     !enddo ! i
-     !print *, ' '
 
       !> check the degeneracy of each band
       IE=1
@@ -269,8 +265,8 @@ subroutine ek_bulk_line_valley
                call zgemv('N', Num_wann, Num_wann, One_complex,  valley_k, Num_wann, psi2, 1, zzero, vpsi, 1)
                valley_k_nd(ie1, ie2)= zdotc(Num_wann, psi1, 1, vpsi, 1)
             enddo
-            if (abs(W(IE+ie1-1)/eV2Hartree)<2d0) &
-            write( *, '(a, 2i5, 200f8.3)') "ND, ie1: ", ND, ie1, valley_k_nd(ie1, 1:ND)
+           !if (abs(W(IE+ie1-1)/eV2Hartree)<2d0) &
+           !write( *, '(a, 2i5, 200f8.3)') "ND, ie1: ", ND, ie1, valley_k_nd(ie1, 1:ND)
          enddo
 
          !> diagonalize the matrix
@@ -299,7 +295,9 @@ subroutine ek_bulk_line_valley
 
          !> if the degeneracy is larger than 1, we need to calculate the matrix
          IE= IE+ ND
-
+      enddo
+      do ie=1, Num_wann
+         if (weight(ie, ik)>0) valley_plus(ie, ik)=.true.
       enddo
 
    enddo ! ik
@@ -309,20 +307,18 @@ subroutine ek_bulk_line_valley
       mpi_dp,mpi_sum,mpi_cmw,ierr)
    call mpi_allreduce(weight, weight_mpi,size(weight),&
       mpi_dp,mpi_sum,mpi_cmw,ierr)
+   call mpi_allreduce(valley_plus, valley_plus_mpi,size(valley_plus),&
+      mpi_logical,mpi_land,mpi_cmw,ierr)
 #else
    eigv_mpi= eigv
    weight_mpi= weight
+   valley_plus_mpi= valley_plus
 #endif
    eigv_mpi= eigv_mpi/eV2Hartree
 
    outfileindex= outfileindex+ 1
    if (cpuid==0)then
       open(unit=outfileindex, file='bulkek.dat')
-     !open(unit=outfileindex, file='bulkek_valley_plus.dat')
-     !open(unit=outfileindex, file='bulkek_valley_minus.dat')
-
-
-
       do i=1, Num_wann
          do ik=1, knv3
             write(outfileindex, '(200F16.8)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik), &
@@ -332,6 +328,37 @@ subroutine ek_bulk_line_valley
       enddo
       close(outfileindex)
    endif
+   outfileindex= outfileindex+ 1
+   if (cpuid==0)then
+      open(unit=outfileindex, file='bulkek_valley_plus.dat')
+      do i=1, Num_wann
+         do ik=1, knv3
+            if (valley_plus_mpi(i, ik)) then
+               write(outfileindex, '(200F16.8)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik), &
+                  weight_mpi(i, ik)
+            endif
+         enddo
+         write(outfileindex, *)' '
+      enddo
+      close(outfileindex)
+   endif
+
+   outfileindex= outfileindex+ 1
+   if (cpuid==0)then
+      open(unit=outfileindex, file='bulkek_valley_minus.dat')
+      do i=1, Num_wann
+         do ik=1, knv3
+            if (.not.valley_plus_mpi(i, ik)) then
+               write(outfileindex, '(200F16.8)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik), &
+                  weight_mpi(i, ik)
+            endif
+         enddo
+         write(outfileindex, *)' '
+      enddo
+      close(outfileindex)
+   endif
+
+
 
    !> minimum and maximum value of energy bands
    emin=  minval(eigv_mpi)-0.5d0
