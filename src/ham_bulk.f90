@@ -770,10 +770,9 @@ subroutine ham_bulk_coo_sparsehr_latticegauge(k,acoo,icoo,jcoo)
    integer :: i,j,ir
 
    do i=1,splen
-      ir=hirv(i)
       icoo(i)=hicoo(i)
       jcoo(i)=hjcoo(i)
-      posij=irvec(:, ir)
+      posij= hirv(1:3, i)
       kdotr=posij(1)*k(1)+posij(2)*k(2)+posij(3)*k(3)
       ratio= (cos(twopi*kdotr)+zi*sin(twopi*kdotr))
       acoo(i)=ratio*hacoo(i)
@@ -781,7 +780,6 @@ subroutine ham_bulk_coo_sparsehr_latticegauge(k,acoo,icoo,jcoo)
 
    return
 end subroutine ham_bulk_coo_sparsehr_latticegauge
-
 
 subroutine ham_bulk_coo_sparsehr(k,acoo,icoo,jcoo)
    !> This subroutine use sparse hr format
@@ -797,11 +795,10 @@ subroutine ham_bulk_coo_sparsehr(k,acoo,icoo,jcoo)
    complex(dp) ::  ratio
    integer :: i,j,ir
 
-   do i=1,splen
-      ir=hirv(i)
+   do i=1, splen
       icoo(i)=hicoo(i)
       jcoo(i)=hjcoo(i)
-      posij=irvec(:, ir)+ Origin_cell%wannier_centers_direct(:, jcoo(i))- Origin_cell%wannier_centers_direct(:, icoo(i))
+      posij= hirv(1:3, i)+ Origin_cell%wannier_centers_direct(:, jcoo(i))- Origin_cell%wannier_centers_direct(:, icoo(i))
       kdotr=posij(1)*k(1)+posij(2)*k(2)+posij(3)*k(3)
       ratio= (cos(twopi*kdotr)+zi*sin(twopi*kdotr))
       acoo(i)=ratio*hacoo(i)
@@ -809,6 +806,33 @@ subroutine ham_bulk_coo_sparsehr(k,acoo,icoo,jcoo)
 
    return
 end subroutine ham_bulk_coo_sparsehr
+
+
+subroutine overlap_bulk_coo_sparse(k, acoo, icoo, jcoo)
+   !> This subroutine use sparse hr format
+   !> Here we use atomic gauge which means the atomic position is taken into account
+   !> in the Fourier transformation
+   use para
+   implicit none
+
+   real(dp) :: k(3), posij(3)
+   real(dp) :: kdotr
+   integer,intent(inout) :: icoo(splen_overlap_input),jcoo(splen_overlap_input)
+   complex(dp),intent(inout) :: acoo(splen_overlap_input)
+   complex(dp) ::  ratio
+   integer :: i,j,ir
+
+   do i=1, splen_overlap_input
+      icoo(i)=sicoo(i)
+      jcoo(i)=sjcoo(i)
+      posij= sirv(1:3, i)+ Origin_cell%wannier_centers_direct(:, sjcoo(i))- Origin_cell%wannier_centers_direct(:, sicoo(i))
+      kdotr=posij(1)*k(1)+posij(2)*k(2)+posij(3)*k(3)
+      ratio= (cos(twopi*kdotr)+zi*sin(twopi*kdotr))
+      acoo(i)=ratio*sacoo(i)
+   end do
+
+   return
+end subroutine overlap_bulk_coo_sparse
 
 subroutine valley_k_coo_sparsehr(nnz, k,acoo,icoo,jcoo)
    !> This subroutine use sparse hr format

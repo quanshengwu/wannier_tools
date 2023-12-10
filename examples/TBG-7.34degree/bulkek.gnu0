@@ -20,7 +20,8 @@ set arrow from    0.32755, emin to    0.32755, emax nohead
 #plot 'bulkek.dat' u 1:2  w p pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2
  
 # uncomment the following lines to plot the fatband 
-plot 'bulkek.dat' u 1:2:3  w lp lw 2 pt 7  ps 0.2 lc palette, 0 w l lw 2
+plot 'bulkek_valley_plus.dat' u 1:2:3  w p  pt 7  ps 0.2 lc palette, \
+     'bulkek_valley_minus.dat' u 1:2:3  w p  pt 7  ps 0.2 lc palette, 0 w l lw 2
 # uncomment the following lines to plot the spin if necessary
 #plot 'bulkek.dat' u 1:2 w lp lw 2 pt 7  ps 0.2, \
      'bulkek.dat' u 1:2:($3/6):($4/6) w vec

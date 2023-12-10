@@ -64,15 +64,16 @@ subroutine ek_bulk_line
       W= 0d0
       call eigensystem_c('V', 'U', Num_wann ,Hamk_bulk, W)
       eigv(:, ik)= W
-      do j=1, Num_wann  !> band
-           do ig=1, NumberofSelectedOrbitals_groups
-              do i=1, NumberofSelectedOrbitals(ig)
-                 io=Selected_WannierOrbitals(ig)%iarray(i)
+
+      do j= 1, Num_wann  !> band
+           do ig= 1, NumberofSelectedOrbitals_groups
+              do i= 1, NumberofSelectedOrbitals(ig)
+                 io= Selected_WannierOrbitals(ig)%iarray(i)
                  weight(ig, j, ik)= weight(ig, j, ik)+ abs(Hamk_bulk(io, j))**2 
-              enddo
-           enddo
-      enddo ! i
-   enddo ! ik
+              enddo !i
+           enddo !ig
+      enddo !j
+   enddo !ik
 
 #if defined (MPI)
    call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
@@ -1133,6 +1134,13 @@ subroutine sparse_ekbulk
    integer, allocatable :: jcoo(:)
    integer, allocatable :: icoo(:)
 
+   !> storage for overlap matrix
+   integer :: snnzmax, snnz
+   complex(dp), allocatable :: sacoo_k(:)
+   integer, allocatable :: sjcoo_k(:)
+   integer, allocatable :: sicoo_k(:)
+
+
    !> eigenvector of the sparse matrix acoo. Dim=(Num_wann, neval)
    complex(dp), allocatable :: psi(:)
    complex(dp), allocatable :: psi_project(:)
@@ -1187,12 +1195,22 @@ subroutine sparse_ekbulk
       numk=1
    endif
 
-   sigma=(1d0,0d0)*E_arc
    nnzmax=splen+Num_wann
+   if (.not.Orthogonal_Basis) then
+      nnzmax=splen+Num_wann+splen_overlap_input
+   else
+      nnzmax=splen+Num_wann
+   endif
    nnz=splen
+   snnzmax=splen_overlap_input
    allocate( acoo(nnzmax))
    allocate( jcoo(nnzmax))
    allocate( icoo(nnzmax))
+   if (.not.Orthogonal_Basis) then
+      allocate( sacoo_k(snnzmax))
+      allocate( sjcoo_k(snnzmax))
+      allocate( sicoo_k(snnzmax))
+   endif
    allocate( W( neval))
    allocate( eigv( neval, nk3_band))
    allocate( eigv_mpi( neval, nk3_band))
@@ -1207,24 +1225,41 @@ subroutine sparse_ekbulk
 
    eigv_mpi= 0d0;  eigv    = 0d0
    acoo= 0d0; icoo=0; jcoo=0
+   sacoo_k= 0d0; sicoo_k=0; sjcoo_k=0
 
    ritzvec= BulkFatBand_calc
 
    !> calculate the energy bands along special k line
    k3= 0
+
+   !> change the energy unit from Hatree to eV
+   sigma=(1d0,0d0)*E_arc/eV2Hartree
+
    do ik=1+ cpuid, nk3_band, num_cpu
       if (cpuid==0) write(stdout, '(a, 2i10)') 'BulkBand_calc in sparse mode:', ik,nk3_band
       k3 = K3points(:, ik)
       call now(time1)
+      !> use atomic gauge here
       call ham_bulk_coo_sparsehr(k3,acoo,icoo,jcoo)
+      if (.not.Orthogonal_Basis) then
+         call overlap_bulk_coo_sparse(k3, sacoo_k, sicoo_k, sjcoo_k)
+      endif
+      !> change the energy unit from Hatree to eV
       acoo= acoo/eV2Hartree
       nnz= splen
+      snnz=splen_overlap_input
       call now(time2)
       
       !> diagonalization by call zheev in lapack
       W= 0d0
       !> after arpack_sparse_coo_eigs, nnz will be updated.
-      call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
+      if (.not.Orthogonal_Basis) then
+         !> non-orthogonal basis like, openmx
+         call arpack_sparse_coo_eigs_nonorth(Num_wann, nnzmax, nnz, acoo, jcoo, icoo, &
+             snnzmax, snnz, sacoo_k, sjcoo_k, sicoo_k, neval,nvecs,W,sigma,zeigv, ritzvec)
+      else
+         call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
+      endif
       call now(time3)
       eigv(1:neval, ik)= W(1:neval)
 
@@ -1343,6 +1378,13 @@ subroutine sparse_ekbulk_valley
    integer, allocatable :: jcoo(:), jcoo_valley(:)
    integer, allocatable :: icoo(:), icoo_valley(:)
 
+   !> storage for overlap matrix
+   integer :: snnzmax, snnz
+   complex(dp), allocatable :: sacoo_k(:)
+   integer, allocatable :: sjcoo_k(:)
+   integer, allocatable :: sicoo_k(:)
+
+
    !> eigenvector of the sparse matrix acoo. Dim=(Num_wann, neval)
    complex(dp), allocatable :: psi_project(:)
    complex(dp), allocatable :: zeigv(:, :)
@@ -1401,14 +1443,25 @@ subroutine sparse_ekbulk_valley
    if (nvecs<20) nvecs= 20
    if (nvecs>Num_wann) nvecs= Num_wann
 
-   sigma=(1d0,0d0)*E_arc
    nnzmax=splen+Num_wann
+   if (.not.Orthogonal_Basis) then
+      nnzmax=splen+Num_wann+splen_overlap_input
+   else
+      nnzmax=splen+Num_wann
+   endif
    nnz=splen
+   snnzmax=splen_overlap_input
+ 
    NDMAX= 12
    allocate( acoo(nnzmax))
    allocate( jcoo(nnzmax))
    allocate( icoo(nnzmax))
-
+   if (.not.Orthogonal_Basis) then
+      allocate( sacoo_k(snnzmax))
+      allocate( sjcoo_k(snnzmax))
+      allocate( sicoo_k(snnzmax))
+   endif
+ 
    nnzmax_valley = splen_valley_input
    allocate( acoo_valley(nnzmax_valley))
    allocate( jcoo_valley(nnzmax_valley))
@@ -1437,6 +1490,9 @@ subroutine sparse_ekbulk_valley
 
    ritzvec= .True.
 
+   !> change the energy unit from Hatree to eV
+   sigma=(1d0,0d0)*E_arc/eV2Hartree
+
    !> calculate the energy bands along special k line
    k3= 0
    do ik=1+ cpuid, nk3_band, num_cpu
@@ -1444,16 +1500,27 @@ subroutine sparse_ekbulk_valley
       k3 = K3points(:, ik)
       call now(time1)
       call ham_bulk_coo_sparsehr(k3,acoo,icoo,jcoo)
+      !> change the energy unit from Hatree to eV
       acoo= acoo/eV2Hartree
       nnz= splen
+      if (.not.Orthogonal_Basis) then
+         call overlap_bulk_coo_sparse(k3, sacoo_k, sicoo_k, sjcoo_k)
+      endif
       call now(time2)
-      
+ 
       !> diagonalization by call zheev in lapack
       W= 0d0
       !> after arpack_sparse_coo_eigs, nnz will be updated.
-      call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
+      if (.not.Orthogonal_Basis) then
+         !> non-orthogonal basis like, openmx
+         call arpack_sparse_coo_eigs_nonorth(Num_wann, nnzmax, nnz, acoo, jcoo, icoo, &
+             snnzmax, snnz, sacoo_k, sjcoo_k, sicoo_k, neval,nvecs,W,sigma,zeigv, ritzvec)
+      else
+         call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
+      endif
       call now(time3)
       eigv(1:neval, ik)= W(1:neval)
+
 
       !> get valley operator in coo format
       call valley_k_coo_sparsehr(nnzmax_valley, k3, acoo_valley, icoo_valley, jcoo_valley)
@@ -2246,7 +2313,7 @@ end subroutine ekbulk_elpa
  
      nwann= Num_wann
      if (soc>0) nwann= Num_wann/2
-     print *, 'nwann', nwann
+    !print *, 'nwann', nwann
 
      if (SOC==0) stop 'you should set soc=0 in the input file'
      !> construct spin matrix

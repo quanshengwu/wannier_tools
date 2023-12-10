@@ -360,13 +360,15 @@
      !> define the file index to void the same index in different subroutines
      integer, public, save :: outfileindex= 11932
 
-     character(80) :: Hrfile
-     character(80) :: Particle
-     character(80) :: Package
-     character(80) :: KPorTB
-     real(dp) :: vef
-     logical :: Is_Sparse_Hr, Is_Sparse, Use_ELPA, Is_Hrfile
-     namelist / TB_FILE / Hrfile, Particle, Package, KPorTB, Is_Hrfile, Is_Sparse, Is_Sparse_Hr, Use_ELPA,vef
+     character(80) :: Hrfile             ! filename
+     character(80) :: Overlapfile        ! overlap matrix between basis only when Orthogonal_Basis=F
+     character(80) :: Particle           ! phonon, electron
+     character(80) :: Package            ! VASP, QE
+     character(80) :: KPorTB             ! KP or TB
+     logical       :: Orthogonal_Basis   ! True or False for Orthogonal basis or non-orthogonal basis
+     logical :: Is_Sparse_Hr, Is_Sparse, Is_Hrfile
+     namelist / TB_FILE / Hrfile, Particle, Package, KPorTB, Is_Hrfile, &
+        Is_Sparse, Is_Sparse_Hr, Orthogonal_Basis, Overlapfile
 
      !> control parameters
      logical :: BulkBand_calc    ! Flag for bulk energy band calculation
@@ -558,6 +560,8 @@
      integer :: NBTau, BTauNum  
      integer :: Nslice_BTau_Max
 
+     real(dp) :: symprec= 1E-4
+
      !> cut of radial for summation over R vectors
      real(dp) :: Rcut
 
@@ -585,7 +589,7 @@
         E_arc, Nk1, Nk2, Nk3, NP, Gap_threshold, Tmin, Tmax, NumT, &
         NBTau, BTauNum, BTauMax, Rcut, Magp, Magq, Magp_min, Magp_max, Nslice_BTau_Max, &
         wcc_neighbour_tol, wcc_calc_tol, Beta,NumLCZVecs, &
-        Relaxation_Time_Tau, &
+        Relaxation_Time_Tau,  symprec, &
         NumRandomConfs, NumSelectedEigenVals, projection_weight_mode, topsurface_atom_index
     
      real(Dp) :: E_fermi  ! Fermi energy, search E-fermi in OUTCAR for VASP, set to zero for Wien2k
@@ -862,15 +866,19 @@
      
      
      !sparse HmnR arraies
-     integer,allocatable :: hicoo(:),hjcoo(:),hirv(:)
+     integer,allocatable :: hicoo(:), hjcoo(:), hirv(:, :)
      complex(dp),allocatable :: hacoo(:)
+
+     !> overlap matrix in sparse format
+     integer,allocatable :: sicoo(:), sjcoo(:), sirv(:, :)
+     complex(dp),allocatable :: sacoo(:)
 
      !> valley operator 
      integer,allocatable :: valley_operator_icoo(:), valley_operator_jcoo(:), valley_operator_irv(:)
      complex(dp),allocatable :: valley_operator_acoo(:)
 
      !> sparse hr length
-     integer :: splen, splen_input, splen_valley_input
+     integer :: splen, splen_input, splen_valley_input, splen_overlap_input
      
      
      integer, allocatable     :: ndegen(:)  ! degree of degeneracy of R point
@@ -911,6 +919,11 @@
      complex(dp), allocatable :: mirror_z(:, :)
      complex(dp), allocatable :: C2yT(:, :)
      complex(dp), allocatable :: glide(:, :)
+
+     !> a sparse format to store C3z operator, test only for pz orbital or s orbital
+     complex(dp), allocatable :: C3z_acoo(:)
+     integer, allocatable :: C3z_icoo(:)
+     integer, allocatable :: C3z_jcoo(:)
      
      !> symmetry operator apply on coordinate system
      real(dp), allocatable :: inv_op(:, :)
@@ -918,6 +931,7 @@
      real(dp), allocatable :: mirror_x_op(:, :)
      real(dp), allocatable :: mirror_y_op(:, :)
      real(dp), allocatable :: glide_y_op(:, :)
+     character(10) :: point_group_operator_name(48)
 
      !> weyl point information from the input.dat
      integer :: Num_Weyls
@@ -1043,6 +1057,10 @@
      real(dp), allocatable :: tau_cart(:,:)
      real(dp), allocatable :: tau_direct(:,:)
      real(dp), allocatable :: spatial_inversion(:)
+
+     !> build a map between atoms under the symmetry operation
+     !> dimension number_group_operators, Num_atoms
+     integer, allocatable :: imap_sym(:, :)
 
 
  end module para

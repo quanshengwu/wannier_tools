@@ -52,8 +52,21 @@ subroutine readNormalHmnR()
       nwann_nsoc=nwann
       if (SOC>0) nwann_nsoc= nwann/2
 
+      if ((soc==0 .and. sum(Origin_cell%nprojs)/=nwann .and. .not.Add_Zeeman_Field) .or. &
+        (soc>0 .and. sum(Origin_cell%nprojs)/=nwann/2))then
+        print *, 'sum(Origin_cell%nprojs), num_wann, num_wann/2'
+        print *, sum(Origin_cell%nprojs), nwann, nwann/2
+        print *, "ERROR: Maybe the SOC tags in the SYSTEM is wrongly set"
+        stop "ERROR: the summation of all projectors times spin degeneracy is not equal to num_wann"
+      endif
+  
       !> number of lattice vectors taken into account
       read(12, *)Nrpts
+      if (.not. allocated(HmnR)) allocate(HmnR(Num_wann,Num_wann,nrpts))
+      allocate(irvec(3,nrpts))
+      allocate(ndegen(nrpts))
+      irvec= 0
+      ndegen=1
 
       !> The degeneracy of each R point, this is caused by the Fourier transform in the Wigner-Seitz cell
       read(12, *)(ndegen(i), i=1, Nrpts)
@@ -217,16 +230,17 @@ subroutine readNormalHmnR()
    endif  ! add electric field or not
 
    !> write out Hmn(R=0)
-   if (cpuid.eq.0)then
+   if (cpuid.eq.0 .and. Num_wann< 200)then
       write(stdout, '(a)')" "
+      write(stdout, '(a)')" >> Hopping parameters in the home unit cell"
       write(stdout, '(a)')" >> H00= Hmn(R=0) real part"
       do i=1, Num_wann
-         write(stdout, '(50000f6.2)') real(HmnR(i, :, ir0))/eV2Hartree
+         write(stdout, '(50000f7.3)') real(HmnR(i, :, ir0))/eV2Hartree
       enddo
       write(stdout, '(a)')" "
       write(stdout, '(a)')" >> H00= Hmn(R=0) imagary part"
       do i=1, Num_wann
-         write(stdout, '(50000f6.2)') aimag(HmnR(i, :, ir0))/eV2Hartree
+         write(stdout, '(50000f7.3)') aimag(HmnR(i, :, ir0))/eV2Hartree
       enddo
       write(stdout, '(a)')" "
    endif
@@ -496,13 +510,6 @@ subroutine readSparseHmnR
    nwann_nsoc=nwann
    if (SOC>0) nwann_nsoc= nwann/2
 
-   !> number of lattice vectors taken into account
-   read(12, *)nrpts
-
-   !> The degeneracy of each R point
-   read(12, *)(ndegen(i), i=1, nrpts)
-   ir=0
-
    !> whether we need to add the electric field potential
    add_electric_field=0
    call get_stacking_direction_and_pos(add_electric_field, pos)
@@ -531,53 +538,42 @@ subroutine readSparseHmnR
             splen= splen_input+ 4*nwann_nsoc
          endif
       else
+         !> no electrical field and Zeeman field
          splen= splen_input
       endif
    end if
 
    !> in order to include the Fermi level
-   splen=splen+nwann
+   !> for non-orthogonal_Basis, we can't include the fermi level in to H'
+   if (.not.Orthogonal_Basis) then
+      splen=splen
+   else
+      splen=splen+nwann
+   endif
 
-   allocate(hacoo(splen),hicoo(splen),hjcoo(splen),hirv(splen))
+   allocate(hacoo(splen),hicoo(splen),hjcoo(splen),hirv(3, splen))
    hacoo=(0d0, 0d0)
    hicoo=0
    hjcoo=0
    hirv=0
 
-   j=0
-   ir0=0
-   ir=1
-   irvec=-9999
-   read(12,*,end=1001)i1, i2, i3, i4, i5, r1, r2
-   irvec(1,ir)=i1
-   irvec(2,ir)=i2
-   irvec(3,ir)=i3
    !> will reread the above line
-   backspace(12)
-   do q=1,nrpts
-      do n=1,nwann
-         do m=1,nwann
-            read(12,*,end=1001)i1, i2, i3, i4, i5, r1, r2
-            if (sum(abs(irvec(:,ir)-[i1,i2,i3]))/=0) ir=ir+1
-            j=j+1
-            hicoo(j)=i4
-            hjcoo(j)=i5
-            hirv (j)=ir
-            hacoo(j)=dcmplx(r1,r2)*eV2Hartree
-            if (i1==0.and.i2==0.and.i3==0.and.i4==i5) then
-               ir0= ir
-            endif
-            irvec(1,ir)=i1
-            irvec(2,ir)=i2
-            irvec(3,ir)=i3
-         end do
-      enddo
-   enddo
-1001 continue
-   !> correct nrpts
-   Nrpts=ir
+   do j=1, splen_input
+      read(12,*,end=1001)i1, i2, i3, i4, i5, r1, r2
+      hirv (1, j)=i1
+      hirv (2, j)=i2
+      hirv (3, j)=i3
+      hicoo(j)=i4
+      hjcoo(j)=i5
 
-   if (cpuid.eq.0) write(stdout, '(a, i6)')' >> NRPTS is ', Nrpts
+      if (trim(adjustl(Package))=="OPENMX") then
+         hacoo(j)=dcmplx(r1,r2)
+      else
+         hacoo(j)=dcmplx(r1,r2)*eV2Hartree
+      endif
+   enddo
+   j=j-1
+   1001 continue
 
    !> Adding zeeman field
    !> Bx=Bdirection(1)
@@ -600,7 +596,9 @@ subroutine readSparseHmnR
             j= i+ splen_input
             hicoo(j)=hicoo(i)+nwann_nsoc
             hjcoo(j)=hjcoo(i)+nwann_nsoc
-            hirv (j)=hirv (i)
+            hirv (1, j)=hirv (1, i)
+            hirv (2, j)=hirv (2, i)
+            hirv (3, j)=hirv (3, i)
             hacoo(j)=hacoo(i)
          enddo
       endif
@@ -641,13 +639,17 @@ subroutine readSparseHmnR
                j=j+1
                hicoo(j)= io
                hjcoo(j)= io
-               hirv (j)= ir0
+               hirv (1, j)= 0
+               hirv (2, j)= 0
+               hirv (3, j)= 0
                hacoo(j)= static_potential
                !> spin down
                j=j+1
                hicoo(j)= io + nwann_nsoc
                hjcoo(j)= io + nwann_nsoc
-               hirv (j)= ir0
+               hirv (1, j)= 0
+               hirv (2, j)= 0
+               hirv (3, j)= 0
                hacoo(j)= static_potential
             enddo ! nproj
          enddo ! ia
@@ -669,13 +671,17 @@ subroutine readSparseHmnR
                j=j+1
                hicoo(j)= io
                hjcoo(j)= io
-               hirv (j)= ir0
+               hirv (1, j)= 0
+               hirv (2, j)= 0
+               hirv (3, j)= 0
                hacoo(j)= static_potential
                if (SOC>0) then  ! with SOC
                   j=j+1
                   hicoo(j)= io + nwann_nsoc
                   hjcoo(j)= io + nwann_nsoc
-                  hirv (j)= ir0
+                  hirv (1, j)= 0
+                  hirv (2, j)= 0
+                  hirv (3, j)= 0
                   hacoo(j)= static_potential
                endif
             enddo ! nproj
@@ -683,42 +689,120 @@ subroutine readSparseHmnR
       endif ! Add_Zeeman_Field or not
    endif ! add_electric_field
 
-   !> add Fermi level
-   do n=1,num_wann
-      j=j+1
-      hicoo(j)=n
-      hjcoo(j)=n
-      hirv (j)=ir0
-      hacoo(j)= - E_FERMI*eV2Hartree
-   enddo
+   !> the Fermi level can be added to the Hamiltonian directly only with in the orthogonal basis
+   if (Orthogonal_Basis) then
+      !> add Fermi level
+      do n=1,num_wann
+         j=j+1
+         hicoo(j)=n
+         hjcoo(j)=n
+         hirv (1, j)= 0
+         hirv (2, j)= 0
+         hirv (3, j)= 0
+         hacoo(j)= - E_FERMI*eV2Hartree
+      enddo
+   endif
 
    !> transform it into dense format only when number of wannier orbitals is less than 100
 
    outfileindex= outfileindex+ 1
    if (cpuid.eq.0.and. nwann<500) then
-      open (unit=outfileindex, file='hr.dat-dense')
-      write(outfileindex, *) ' ! HmnR file from sparse hr file'
-      write(outfileindex, '(I10, a)') nwann, '  ! Num_wann: number of wannier orbitals'
-      write(outfileindex, '(I10, a)') Nrpts, '  ! NRPTS: number of R points'
-      write(outfileindex, '(10I5)') ndegen(:)
-      do iR=1, NRPTS
-         do n=1, nwann
-            do m=1, nwann
-               h_value=0d0
-               do i=1, splen
-                  if (hicoo(i)==n.and.hjcoo(i)==m.and.hirv(i)==iR)then
-                     h_value= h_value+ hacoo(i)
-                  endif
-               enddo !i
-               write(outfileindex, '(5I5, 2f12.6)')irvec(:, iR), n, m, h_value/eV2Hartree
-            enddo !m
-         enddo !n
-      enddo !iR
-      close(outfileindex)
+!     open (unit=outfileindex, file='hr.dat-dense')
+!     write(outfileindex, *) ' ! HmnR file from sparse hr file'
+!     write(outfileindex, '(I10, a)') nwann, '  ! Num_wann: number of wannier orbitals'
+!     write(outfileindex, '(I10, a)') Nrpts, '  ! NRPTS: number of R points'
+!     write(outfileindex, '(10I5)') ndegen(:)
+!     do iR=1, NRPTS
+!        i1= irvec(1, iR)
+!        i2= irvec(2, iR)
+!        i3= irvec(3, iR)
+!        do n=1, nwann
+!           do m=1, nwann
+!              h_value=0d0
+!              do i=1, splen
+!                 if (hicoo(i)==n.and.hjcoo(i)==m.and.hirv(1, i)==i1.and.hirv(2, i)==i2.and.hirv(3, i)==i3)then
+!                    h_value= h_value+ hacoo(i)
+!                 endif
+!              enddo !i
+!              write(outfileindex, '(5I5, 2f12.6)')irvec(:, iR), n, m, h_value/eV2Hartree
+!           enddo !m
+!        enddo !n
+!     enddo !iR
+!     close(outfileindex)
    endif
 
    return
 end subroutine readSparseHmnR
+
+subroutine readsparse_overlap
+   !> This subroutine reads the overlap matrix S between the non-orthogonal basis
+   !> 2023 Dec. 4th
+   !> by QSWU (wuquansheng@gmail.com)
+   use para
+   implicit none
+   integer:: i,j,nwann,nwann_nsoc,i1,i2,i3,i4,i5,ir,n,m 
+   real(dp) :: r1, r2
+   logical :: exists
+
+   if(cpuid.eq.0)write(stdout,*)' '
+   if(cpuid.eq.0)write(stdout,'(2a)')' >> Now we are reading the overlap files: ', trim(adjustl(Overlapfile))
+   inquire(file= Overlapfile, EXIST = exists)
+   if (exists)then
+      open(13, file= Overlapfile, status='OLD')
+   else
+      STOP ">> for non-orthogonal basis , you have to prepare a file like overlap.dat"
+   endif
+
+
+   !> skip a comment line
+   read(13, *)
+
+   !> comparing with the standard overlap file, we add another line to show howmany
+   !> lines that S is not zero.
+!  if (Is_Sparse_Hr) then
+   read(13,*) splen_overlap_input   !> number of non-zeros lines
+!  end if
+
+   !> number of Wannier orbitals in the hr file
+   nwann=0
+   read(13, *)nwann
+   if (nwann==0.or.nwann.ne.Num_wann) then
+      print *, 'in readsparse_overlap'
+      print *, 'nwann, num_wann', nwann, num_wann
+      stop "ERROR : num_wann is zero or num_wann is not consistent with hr.dat"
+   endif
+   nwann_nsoc=nwann
+   if (SOC>0) nwann_nsoc= nwann/2
+
+   !> overlap matrix in sparse format
+   allocate(sacoo(splen_overlap_input))
+   allocate(sicoo(splen_overlap_input))
+   allocate(sjcoo(splen_overlap_input))
+   allocate(sirv(3, splen_overlap_input))
+   sacoo=(0d0, 0d0)
+   sicoo=0
+   sjcoo=0
+   sirv=0
+
+   !> will reread the above line
+   do i=1, splen_overlap_input
+      read(13,*,end=1003)i1, i2, i3, i4, i5, r1, r2
+      sirv(1, i)= i1
+      sirv(2, i)= i2
+      sirv(3, i)= i3
+      sicoo(i)=i4
+      sjcoo(i)=i5
+      sacoo(i)=dcmplx(r1,r2)
+   enddo
+   1003 continue
+   close(13)
+
+   if (cpuid.eq.0) write(stdout, '(a, i)')' >> Number of non-zeros splen_overlap_input', splen_overlap_input
+   if (cpuid.eq.0) write(stdout, '(a)')' >> Sparse overlap matrix reading finished '
+
+   return
+end subroutine readsparse_overlap
+
 
 
 subroutine readsparse_valley_operator
@@ -858,9 +942,28 @@ subroutine get_stacking_direction_and_pos(add_electric_field, pos)
 
    integer, intent(inout) :: add_electric_field
    real(dp), intent(out) :: pos(Origin_cell%Num_atoms)
+   real(dp), allocatable :: pos_selected_for_center(:, :)
 
-   integer :: i, ia
+   integer :: i, ia, NumberofSelectedAtoms_center, iter, ia_g, ig
    real(dp) :: dxmax(3), center
+
+   !> sum over all selected atoms
+   NumberofSelectedAtoms_center= sum(NumberofSelectedAtoms(:))
+   allocate(pos_selected_for_center(3, NumberofSelectedAtoms_center))
+   pos_selected_for_center= 0d0
+
+   iter= 0
+   do ig=1,  NumberofSelectedAtoms_groups
+      do ia_g= 1, NumberofSelectedAtoms(ig)
+         iter=iter+1
+         ia= Selected_Atoms(ig)%iarray(ia_g)
+         pos_selected_for_center(:, iter)= Origin_cell%Atom_position_direct(:, ia)
+      enddo
+   enddo
+   if (cpuid.eq.0)then
+      write(stdout, '(a, 3f12.6)') ">>: Center position for zero electrical potential for adding electrical field", &
+         sum(pos_selected_for_center(:, :), dim=2)/NumberofSelectedAtoms_center
+   endif
 
    !> Adding electric field
    !> The electric field is only applied on the 2D system.
@@ -895,12 +998,14 @@ subroutine get_stacking_direction_and_pos(add_electric_field, pos)
    if (add_electric_field>0) then
       pos=Origin_cell%Atom_position_direct(add_electric_field, :)
       pos= mod(pos, 1d0)-0.5d0
+      pos_selected_for_center= mod(pos_selected_for_center, 1d0)-0.5d0
       if (sum(center_atom_for_electric_field)>0) then
          center= (Origin_cell%Atom_position_direct(add_electric_field, center_atom_for_electric_field(1)) &
                 + Origin_cell%Atom_position_direct(add_electric_field, center_atom_for_electric_field(2)))/2d0
          center= mod(center, 1d0)-0.5d0
       else
-         center= (maxval(pos)+minval(pos))/2d0
+        !center= (maxval(pos)+minval(pos))/2d0
+         center= sum(pos_selected_for_center(add_electric_field, :))/NumberofSelectedAtoms_center
       endif
       pos=pos-center
    endif  ! add electric field or not
@@ -947,28 +1052,36 @@ subroutine add_zeeman_sparse_hr(Bx_in_au, By_in_au, Bz_in_au)
       j= j+ 1
       hicoo(j)= i
       hjcoo(j)= i
-      hirv (j)= ir0
+      hirv (1, j)= 0
+      hirv (2, j)= 0
+      hirv (3, j)= 0
       hacoo(j)= Zeeman_energy_in_hartree_factor/2d0*Bz_in_au
    enddo
    do i=1, nwann_nsoc
       j= j+ 1
       hicoo(j)= i+ nwann_nsoc
       hjcoo(j)= i+ nwann_nsoc
-      hirv (j)= ir0
+      hirv (1, j)= 0
+      hirv (2, j)= 0
+      hirv (3, j)= 0
       hacoo(j)= -Zeeman_energy_in_hartree_factor/2d0*Bz_in_au
    enddo
    do i=1, nwann_nsoc
       j= j+ 1
       hicoo(j)= i
       hjcoo(j)= i+ nwann_nsoc
-      hirv (j)= ir0
+      hirv (1, j)= 0
+      hirv (2, j)= 0
+      hirv (3, j)= 0
       hacoo(j)=  Zeeman_energy_in_hartree_factor/2d0*(By_in_au*zi+ Bx_in_au)
    enddo
    do i=1, nwann_nsoc
       j= j+ 1
       hicoo(j)= i+ nwann_nsoc
       hjcoo(j)= i
-      hirv (j)= ir0
+      hirv (1, j)= 0
+      hirv (2, j)= 0
+      hirv (3, j)= 0
       hacoo(j)=  Zeeman_energy_in_hartree_factor/2d0*(-By_in_au*zi+ Bx_in_au)
    enddo
    if (j>splen) stop "ERROR happend in setting zeeman energy in readhmnr.f90"

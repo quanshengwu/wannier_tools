@@ -285,12 +285,13 @@ subroutine landau_level_k
       write(outfileindex, '(a)')'#set xtics offset 0, -1'
       write(outfileindex, '(a)')'#set ylabel offset -1, 0 '
       write(outfileindex, '(a)')'rgb(r,g,b) = int(r)*65536 + int(g)*256 + int(b)'
-      write(outfileindex, 202, advance="no") (k3line_name(i), k3line_mag_stop(i), i=1, nk3lines)
-      write(outfileindex, 203)k3line_name(nk3lines+1), k3line_mag_stop(nk3lines+1)
+      write(outfileindex, 202, advance="no") (k3line_name(i), k3line_mag_stop(i)*Angstrom2atomic, i=1, nk3lines)
+      write(outfileindex, 203)k3line_name(nk3lines+1), k3line_mag_stop(nk3lines+1)*Angstrom2atomic
       write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
 
       do i=1, nk3lines-1
-         write(outfileindex, 204)k3line_mag_stop(i+1), emin, k3line_mag_stop(i+1), emax
+         write(outfileindex, 204)k3line_mag_stop(i+1)*Angstrom2atomic, emin, &
+            k3line_mag_stop(i+1)*Angstrom2atomic, emax
       enddo
 
 202   format('set xtics (',:20('"',A3,'" ',F10.5,','))

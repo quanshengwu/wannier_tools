@@ -1,0 +1,78 @@
+&TB_FILE
+Hrfile = 'H.dat'
+Overlapfile = 'S.dat'
+Package = 'OPENMX'
+Is_Sparse_Hr = T
+Orthogonal_Basis = F
+/
+
+
+!> bulk band structure calculation flag
+&CONTROL
+BulkBand_calc         = T
+DOS_calc              = F
+SlabBand_calc         = F
+SlabSS_calc           = F
+wanniercenter_calc    = F
+/
+
+&SYSTEM
+NumOccupied = 1         ! NumOccupied
+SOC = 1                 ! soc
+/
+
+&PARAMETERS
+E_arc = -5          ! specify the Fermi energy
+OmegaNum = 32       ! omega number       
+OmegaMin = -0.6     ! energy interval
+OmegaMax =  0.2     ! energy interval
+Nk1 = 10           ! number k points 
+NP = 1              ! number of principle layers
+/
+
+LATTICE
+Angstrom
+     3.5228714356697486    0.0001126967654733   -0.0000045697261942
+    -1.7613380944900303    3.0509520831236592    0.0000043347633975
+    -0.0000361780629472    0.0000168923630182   27.7486008981945815
+
+ATOM_POSITIONS
+6                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+Mo   0.6666761284131021  0.3333234129710836  0.3966008567881620 
+Mo   0.3333225911561447  0.6666760972210506  0.1441484616741683 
+Te   0.3333296102529972  0.6666699314530090  0.3312669719246579 
+Te   0.6666646131697589  0.3333343705209685  0.0788668529700386 
+Te   0.6666682236074797  0.3333310117300143  0.2094820551190944 
+Te   0.3333330967010965  0.6666663334757505  0.4618839571489489 
+
+PROJECTORS
+2*14 4*19                ! number of projectors
+Mo s s s px py pz px py pz dz2  dx2-y2 dxy dxz dyz
+Mo s s s px py pz px py pz dz2  dx2-y2 dxy dxz dyz
+Te s s s px py pz px py pz dz2  dx2-y2 dxy dxz dyz dz2  dx2-y2 dxy dxz dyz
+Te s s s px py pz px py pz dz2  dx2-y2 dxy dxz dyz dz2  dx2-y2 dxy dxz dyz
+Te s s s px py pz px py pz dz2  dx2-y2 dxy dxz dyz dz2  dx2-y2 dxy dxz dyz
+Te s s s px py pz px py pz dz2  dx2-y2 dxy dxz dyz dz2  dx2-y2 dxy dxz dyz
+
+SURFACE            ! MoS2 conventional (010) surface
+ 0  1  0
+ 0  0  1
+ 1  0  0
+
+KPATH_BULK            ! k point path
+3              ! number of k line only for bulk band
+  G 0.00000  0.00000  0.00000   M   0.50000  0.00000  0.00000   
+  M 0.50000  0.00000  0.00000   K   0.33333  0.33333  0.00000   
+  K 0.33333  0.33333  0.00000   G   0.00000  0.00000  0.00000   
+
+KPATH_SLAB
+2        ! numker of k line for 2D case
+X -0.5  0.0 G  0.0  0.0  ! k path for 2D case
+G  0.0  0.0 X  0.5  0.0 
+
+KPLANE_BULK
+ 0.00  0.00  0.00   ! Original point for 3D k plane 
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  0.50  0.00   ! The second vector to define 3d k space plane
+

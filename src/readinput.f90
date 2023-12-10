@@ -47,8 +47,7 @@ subroutine readinput
    Is_HrFile= .TRUE.
    Is_Sparse_Hr= .FALSE.
    Is_Sparse   = .FALSE.
-   Use_ELPA= .FALSE.
-   vef=0d0
+   Orthogonal_Basis = .TRUE.
    read(1001, TB_FILE, iostat= stat)
    if (stat/=0) then
       Hrfile='wannier90_hr.dat'
@@ -602,6 +601,7 @@ subroutine readinput
       write(stdout, *) ">>>calculation parameters : "
       write(stdout, '(1x, a, f16.5)')'E_arc : ', E_arc
       write(stdout, '(1x, a, f16.5)')'Eta_arc : ', Eta_arc
+      write(stdout, '(1x, a, f16.5)')'symprec : ', symprec
       write(stdout, '(1x, a, f16.5)')'EF_broadening : ', EF_broadening
       write(stdout, '(1x, a, f16.5)')'Gap_threshold', Gap_threshold
       write(stdout, '(1x, a, f16.5)')'OmegaMin : ', OmegaMin
@@ -3209,7 +3209,7 @@ subroutine readinput
    if (cpuid==0) write(stdout, '(a,i3,a)')'>> There are ', NumberofSelectedOrbitals_groups, ' groups of SelectedOrbitals'
    do ig=1, NumberofSelectedOrbitals_groups
       if (cpuid==0) write(stdout, *)'>> SelectedOrbitals'
-      if (cpuid==0) write(stdout, '(a, 3i10)')'>> Number of orbitals selected (including spin degenarcy)', &
+      if (cpuid==0) write(stdout, '(a, 3i10)')'>> Number of orbitals selected (exclude spin degenarcy)', &
          NumberofSelectedOrbitals(ig)
       if (cpuid==0) write(stdout, '(a)')'>> Orbitals are'
       if (cpuid==0) write(stdout, '(12i8)')Selected_WannierOrbitals(ig)%iarray(:)
