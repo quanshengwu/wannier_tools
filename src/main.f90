@@ -76,11 +76,11 @@
      endif
 
      !> readin the control parameters for this program
+     call now(time_start)
      call readinput
-  
-     !> Check the symmetry operator if Symmetry_Import_calc= T
-     call symmetry
-  
+     call now(time_end)
+     call print_time_cost(time_start, time_end, 'readinput')
+ 
      !> set Num_wann from wt.in, Num_wann should be consistent with the hr.dat
      Num_wann= sum(Origin_cell%nprojs)
      if (SOC>0) num_wann= 2*num_wann
@@ -99,6 +99,13 @@
   
      !> dimension for surface green's function
      Ndim= Num_wann* Np
+ 
+     !> Check the symmetry operator if Symmetry_Import_calc= T
+     call now(time_start)
+     call symmetry
+     call now(time_end)
+     call print_time_cost(time_start, time_end, 'symmetry')
+  
   
      if (cpuid==0)then
         write(stdout,*) ' >> Begin to read Hmn_R.data'
