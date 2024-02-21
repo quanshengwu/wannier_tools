@@ -455,6 +455,542 @@ subroutine  wannier_center3D_plane_mirror
 end subroutine  wannier_center3D_plane_mirror
 
 
+! !> this suboutine is used for wannier center calculation for 3D system
+! !> only for one plane, calculate valley chern number. only choose the bands
+! !> which have the same valley eigenvalue
+! !> when calling this, please make sure that the valley operator matrix is
+! !> properly set in the symmetry.f90.
+! !> You can check it with ek_bulk_valley_z subroutine in ek_bulk.f90
+!subroutine  wannier_center3D_plane_valley
+!   use para
+!   use wmpi
+!   implicit none
+!
+!
+!   integer :: i, j, l, m, ia, nfill, nfill_half
+!
+!   integer :: i1, i2, ik1, ik2, ikp, ierr
+!
+!      !> for sparse hamiltonian
+!      !> dim= Num_wann*Num_wann
+!      integer :: nnzmax, nnz
+!      integer, allocatable :: jcoo(:), icoo(:)
+!      complex(dp), allocatable :: acoo(:)
+!      complex(dp), allocatable :: zeigv(:, :), zeigv_valley(:, :)
+!
+!      !number of ARPACK eigenvalues
+!      integer :: neval
+!   
+!      ! number of Arnoldi vectors
+!      integer :: nvecs
+!   
+!      !> calculate eigenvector or not
+!      logical :: ritzvec
+!   
+!      !shift-invert shiftsigma
+!      complex(dp) :: shiftsigma=(0d0,0d0)
+!
+!
+!   !> k points in kx-ky plane
+!   real(dp), allocatable :: kpoints(:, :, :)
+!
+!   !> hamiltonian for each k point
+!   !> and also the eigenvector of hamiltonian after eigensystem_c
+!   complex(dp), allocatable :: Hamk(:, :), hamk_dag(:, :)
+!
+!   !> eigenvector for each kx
+!   complex(dp), allocatable :: Eigenvector(:, :, :)
+!
+!   !> Mmnkb=<u_n(k)|u_m(k+b)>
+!   !> |u_n(k)> is the periodic part of wave function
+!   complex(dp), allocatable :: Mmnkb(:, :), Mmnkb_com(:, :)
+!
+!   complex(dp), allocatable :: mat1(:, :), mat2(:, :)
+!
+!   complex(dp), allocatable :: Lambda_eig(:), Lambda(:, :), Lambda0(:, :)
+!
+!   !> three matrix for SVD
+!   !> M= U.Sigma.V^\dag
+!   !> VT= V^\dag
+!   complex(dp), allocatable :: U(:, :), VT(:, :)
+!   real   (dp), allocatable :: Sigma(:, :)
+!
+!   !> wannier centers for each ky, bands
+!   real(dp), allocatable :: WannierCenterKy_minus(:, :),WannierCenterKy_minus_mpi(:, :)
+!   real(dp), allocatable :: WannierCenterKy_plus(:, :),WannierCenterKy_plus_mpi(:, :)
+!
+!   !> sumation for Wannier charge center
+!   real(dp) :: gap_sum, gap_step
+!   real(dp), allocatable :: wcc_sum(:)
+!
+!   !> eigenvalue
+!   real(dp), allocatable :: eigenvalue(:)
+!
+!   !> for each orbital, it correspond to an atom
+!   !> dim= Num_wann
+!   integer, allocatable :: AtomIndex_orbital(:)
+!
+!   real(dp) :: Umatrix_t(3, 3)
+!
+!   !> b.R
+!   real(dp) :: br
+!
+!   !> exp(-i*b.R)
+!   complex(dp) :: ratio
+!
+!   real(dp) :: k(3), b(3)
+!
+!   real(dp), allocatable :: xnm(:)
+!   real(dp) :: k0(3), k1(3), k2(3)
+!
+!   !> valley eigenvalue
+!   complex(dp), allocatable :: valley_z_eig(:, :)
+!
+!   !> the band index that has plus valley number
+!   logical, allocatable :: valley_plus(:, :), valley_minus(:, :)
+!
+!   nfill= NumberofSelectedOccupiedBands
+!   nfill_half= NumberofSelectedOccupiedBands/2
+!
+!   allocate(kpoints(3, Nk1, Nk2))
+!   kpoints= 0d0
+!
+!   allocate(Lambda_eig(nfill_half))
+!   allocate(Lambda(nfill_half, nfill_half))
+!   allocate(Lambda0(nfill_half, nfill_half))
+!   allocate(Mmnkb(nfill_half, nfill_half))
+!   allocate(Mmnkb_com(nfill_half, nfill_half))
+!   allocate(mat1(Num_wann, Num_wann))
+!   allocate(mat2(Num_wann, Num_wann))
+!   if (Is_Sparse) then
+!      !> here we only store the wave function that used for calculating the Wilson loop
+!      allocate(Eigenvector(Num_wann, nfill, Nk1))
+!   else
+!      allocate(Eigenvector(Num_wann, Num_wann, Nk1))
+!   endif
+!   allocate(eigenvalue(Num_wann))
+!   allocate(valley_z_eig(nfill, Nk1))
+!   allocate(valley_plus(nfill, Nk1))
+!   allocate(valley_minus(nfill, Nk1))
+!   allocate(U(nfill_half, nfill_half))
+!   allocate(Sigma(nfill_half, nfill_half))
+!   allocate(VT(nfill_half, nfill_half))
+!   allocate(WannierCenterKy_minus(nfill_half, Nk2))
+!   allocate(WannierCenterKy_minus_mpi(nfill_half, Nk2))
+!   allocate(WannierCenterKy_plus(nfill_half, Nk2))
+!   allocate(WannierCenterKy_plus_mpi(nfill_half, Nk2))
+!   allocate(wcc_sum(Nk2))
+!   allocate(AtomIndex_orbital(Num_wann))
+!   allocate(xnm(nfill_half))
+!   valley_minus= .False.
+!   valley_plus= .False.
+!   WannierCenterKy_minus= 0d0
+!   WannierCenterKy_minus_mpi= 0d0
+!   WannierCenterKy_plus= 0d0
+!   WannierCenterKy_plus_mpi= 0d0
+!   eigenvalue=0d0
+!   Eigenvector=0d0
+!   Mmnkb=0d0
+!   Mmnkb_com=0d0
+!   Lambda =0d0
+!   Lambda0=0d0
+!   U= 0d0
+!   Sigma= 0d0
+!   VT= 0d0
+!   if (Is_Sparse) then
+!      allocate(hamk(Num_wann, NumberofSelectedOccupiedBands))
+!      allocate(hamk_dag(Num_wann, NumberofSelectedOccupiedBands))
+!   else
+!      allocate(hamk(Num_wann, Num_wann))
+!      allocate(hamk_dag(Num_wann, Num_wann))
+!   endif
+!
+!
+!   if (Is_Sparse) then
+!      neval=OmegaNum
+!      if (neval>Num_wann-2) neval= Num_wann- 2
+!   
+!      !> ncv
+!      nvecs=int(2*neval)
+!      if (nvecs<50) nvecs= int(6*neval)
+!   
+!      if (nvecs>Num_wann) nvecs= Num_wann
+!
+!      shiftsigma=(1d0,0d0)*E_arc
+!      nnzmax=splen+Num_wann
+!      nnz=splen
+!      allocate( acoo(nnzmax))
+!      allocate( jcoo(nnzmax))
+!      allocate( icoo(nnzmax))
+!      allocate( zeigv(Num_wann,nvecs))
+!      allocate( zeigv_valley(Num_wann,nvecs))
+!   endif
+!
+!
+!   !> set k plane
+!   !> the first dimension should be in one primitive cell, [0, 2*pi]
+!   k0= K3D_start
+!   k1= K3D_vec1
+!   k2= K3D_vec2
+!
+!   do ik2=1, Nk2
+!      do ik1=1, Nk1
+!         kpoints(:, ik1, ik2)= k0+k1*dble(ik1-1.d0)/dble(nk1)+ k2*(ik2-1)/dble(nk2-1d0)
+!      enddo
+!   enddo
+!   b= dble(k1)/dble(nk1)
+!   b= b(1)*Origin_cell%kua+b(2)*Origin_cell%kub+b(3)*Origin_cell%kuc
+!
+!
+!   !> set up atom index for each orbitals in the basis
+!   if (soc>0) then  !> with spin orbital coupling
+!      l= 0
+!      do ia=1, Origin_cell%Num_atoms  !> spin up
+!         do j=1, Origin_cell%nprojs(ia)
+!            l= l+ 1
+!            AtomIndex_orbital(l)= ia
+!         enddo ! l
+!      enddo ! ia
+!      do ia=1, Origin_cell%Num_atoms  !> spin down
+!         do j=1, Origin_cell%nprojs(ia)
+!            l= l+ 1
+!            AtomIndex_orbital(l)= ia
+!         enddo ! l
+!      enddo ! ia
+!   else  !> without spin orbital coupling
+!      l= 0
+!      do ia=1, Origin_cell%Num_atoms  !> spin down
+!         do j=1, Origin_cell%nprojs(ia)
+!            l= l+ 1
+!            AtomIndex_orbital(l)= ia
+!         enddo ! l
+!      enddo ! ia
+!
+!   endif
+!
+!   Umatrix_t= transpose(Umatrix)
+!   call inv_r(3, Umatrix_t)
+!
+!   !>> Get wannier center for ky=0 plane
+!   !> for each ky, we can get wanniercenter
+!   do ik2=1+ cpuid, Nk2, num_cpu
+!      if (cpuid.eq.0) write(stdout, *) 'ik', ik2
+!
+!      valley_plus= .False.
+!      valley_minus= .False.
+!      !> for each k1, we get the eigenvectors
+!      do ik1=1, Nk1
+!         k= kpoints(:, ik1, ik2)
+!
+!         if (Is_Sparse) then
+!            call ham_bulk_coo_sparsehr_latticegauge(k,acoo,icoo,jcoo)
+!            nnz= splen
+!           
+!            ritzvec= .true.
+!            call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,eigenvalue,shiftsigma, zeigv, ritzvec)
+!         else
+!            !> get the TB hamiltonian in k space
+!            call ham_bulk_latticegauge(k,hamk)
+!            !> diagonal hamk
+!            call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
+!              !hamk(1:Num_wann, Selected_Occupiedband_index(1):Selected_Occupiedband_index(NumberofSelectedOccupiedBands))
+!         endif
+! 
+!         !> get valley_plus and valley_minus
+!         !> get valley operator in coo format
+!         call valley_k_coo_sparsehr(nnzmax_valley, k, acoo_valley, icoo_valley, jcoo_valley)
+!   
+!         !> check the degeneracy of each band
+!         IE=1
+!         do while (ie.le.neval)
+!            ND=1
+!            if (ie+ND.le.neval) then
+!               do while ((ie+ND).le.neval .and. (W(ie+ND)- W(ie)).lt.tolde)
+!                  if (ie+ND .ge. neval) exit
+!                  ND= ND+1
+!               enddo
+!            endif
+!   
+!   
+!            !> if the degeneracy is larger than 1, we need to calculate the matrix
+!            valley_k_nd= 0d0
+!            do ie1= 1, ND
+!               psi1= zeigv(:, IE+ie1-1)
+!   
+!               do ie2= 1, ND
+!                  psi2= zeigv(:, IE+ie2-1)
+!                  vpsi=0d0
+!                  call mkl_zcoogemv('N', Num_wann, acoo_valley, icoo_valley, jcoo_valley, nnzmax_valley, psi2, vpsi)
+!                  valley_k_nd(ie1, ie2)= zdotc(Num_wann, psi1, 1, vpsi, 1)
+!               enddo
+!            enddo
+!   
+!            !> diagonalize the matrix
+!            VL = 0d0; VR= 0d0
+!            if (ND>1) then
+!               call zgeev_sys(ND, valley_k_nd(1:ND, 1:ND), valley_eig(1:ND),'N',VL(1:ND, 1:ND),"V",VR(1:ND, 1:ND) )
+!               do ie1= 1, ND
+!                  weight_valley(IE+ie1-1, ik) = real(valley_eig(ie1))
+!               enddo
+!
+!               !> get new eigenvector
+!               do ie1= 1, ND
+!                  psi= 0d0
+!                  do ie2= 1, ND
+!                     psi= psi+ VR(ie2,  ie1)* zeigv(:, IE+ie2-1)
+!                  enddo
+!                  zeigv_valley(:, ie+ ie1- 1)= psi 
+!               enddo
+!            else
+!               valley_eig(1)= valley_k_nd(1, 1)
+!               weight_valley(ie) = real(valley_k_nd(1, 1))
+!               zeigv_valley(:, ie)= zeigv_valley(:, ie)
+!            endif
+!   
+!            IE= IE+ ND
+!         enddo
+!
+!         do ie=1, nfill
+!            if (weight_valley(ie)>0) valley_plus(ie, ik)=.true.
+!         enddo
+!
+!      enddo ! ik1
+!
+!      !> sum over k1 to get wanniercenters for valley plus
+!      Lambda0=0d0
+!      do i=1, nfill_half
+!         Lambda0(i, i)= 1d0
+!      enddo
+!      do ik1=1, Nk1
+!         !> <u_k|u_k+1>
+!         Mmnkb= 0d0
+!         hamk_dag= Eigenvector(:, :, ik1)
+!         if (ik1==Nk1) then
+!            hamk= Eigenvector(:, :, 1)
+!            ikp= 1
+!         else
+!            hamk= Eigenvector(:, :, ik1+ 1)
+!            ikp= ik1+ 1
+!         endif
+!         do m=1, Num_wann
+!            !ia= AtomIndex_orbital(m)
+!            !br= b(1)*Atom_position(1, ia)+ &
+!            !    b(2)*Atom_position(2, ia)+ &
+!            !    b(3)*Atom_position(3, ia)
+!            br= b(1)*Origin_cell%wannier_centers_cart(1, m )+ &
+!               b(2)*Origin_cell%wannier_centers_cart(2, m )+ &
+!               b(3)*Origin_cell%wannier_centers_cart(3, m )
+!            ratio= cos(br)- zi* sin(br)
+!
+!            i1= 0
+!           !do j=1, nfill
+!            do j=Selected_Occupiedband_index(1), Selected_Occupiedband_index(NumberofSelectedOccupiedBands)
+!               if (valley_minus(j, ikp)) cycle
+!               i1= i1+ 1
+!               i2= 0
+!              !do i=1, nfill
+!               do i=Selected_Occupiedband_index(1), Selected_Occupiedband_index(NumberofSelectedOccupiedBands)
+!                  if (valley_minus(i, ik1)) cycle
+!                  i2= i2+ 1
+!                  Mmnkb(i2, i1)=  Mmnkb(i2, i1)+ &
+!                     conjg(hamk_dag(m, i))* hamk(m, j)* ratio
+!               enddo ! i
+!            enddo ! j
+!         enddo ! m
+!
+!         !> perform Singluar Value Decomposed of Mmnkb
+!         call zgesvd_pack(nfill_half, Mmnkb, U, Sigma, VT)
+!
+!         !> after the calling of zgesvd_pack, Mmnkb becomes a temporal matrix
+!         U= conjg(transpose(U))
+!         VT= conjg(transpose(VT))
+!         call mat_mul(nfill_half, VT, U, Mmnkb)
+!
+!         call mat_mul(nfill_half, Mmnkb, Lambda0, Lambda)
+!         Lambda0 = Lambda
+!      enddo  !< ik1
+!
+!      !> diagonalize Lambda to get the eigenvalue
+!      call zgeev_pack(nfill_half, Lambda, Lambda_eig)
+!      do i=1, nfill_half
+!         WannierCenterKy_plus(i, ik2)= aimag(log(Lambda_eig(i)))/2d0/pi
+!         WannierCenterKy_plus(i, ik2)= mod(WannierCenterKy_plus(i, ik2)+10d0, 1d0)
+!      enddo
+!
+!      call sortheap(nfill_half, WannierCenterKy_plus(:, ik2))
+!
+!
+!      !> sum over k1 to get wanniercenters for mirror minus
+!      Lambda0=0d0
+!      do i=1, nfill_half
+!         Lambda0(i, i)= 1d0
+!      enddo
+!      do ik1=1, Nk1
+!         !> <u_k|u_k+1>
+!         Mmnkb= 0d0
+!         hamk_dag= Eigenvector(:, :, ik1)
+!         if (ik1==Nk1) then
+!            hamk= Eigenvector(:, :, 1)
+!            ikp= 1
+!         else
+!            hamk= Eigenvector(:, :, ik1+ 1)
+!            ikp= ik1+ 1
+!         endif
+!         do m=1, Num_wann
+!            !ia= AtomIndex_orbital(m)
+!            !br= b(1)*Atom_position(1, ia)+ &
+!            !    b(2)*Atom_position(2, ia)+ &
+!            !    b(3)*Atom_position(3, ia)
+!            br= b(1)*Origin_cell%wannier_centers_cart(1, m )+ &
+!               b(2)*Origin_cell%wannier_centers_cart(2, m )+ &
+!               b(3)*Origin_cell%wannier_centers_cart(3, m )
+!            ratio= cos(br)- zi* sin(br)
+!
+!            i1= 0
+!           !do j=1, nfill
+!            do j=Selected_Occupiedband_index(1), Selected_Occupiedband_index(NumberofSelectedOccupiedBands)
+!               if (mirror_plus(j, ikp)) cycle
+!               i1= i1+ 1
+!               i2= 0
+!              !do i=1, nfill
+!               do i=Selected_Occupiedband_index(1), Selected_Occupiedband_index(NumberofSelectedOccupiedBands)
+!                  if (mirror_plus(i, ik1)) cycle
+!                  i2= i2+ 1
+!                  Mmnkb(i2, i1)=  Mmnkb(i2, i1)+ &
+!                     conjg(hamk_dag(m, i))* hamk(m, j)* ratio
+!               enddo ! i
+!            enddo ! j
+!         enddo ! m
+!
+!         !> perform Singluar Value Decomposed of Mmnkb
+!         call zgesvd_pack(nfill_half, Mmnkb, U, Sigma, VT)
+!
+!         !> after the calling of zgesvd_pack, Mmnkb becomes a temporal matrix
+!         U= conjg(transpose(U))
+!         VT= conjg(transpose(VT))
+!         call mat_mul(nfill_half, VT, U, Mmnkb)
+!
+!         call mat_mul(nfill_half, Mmnkb, Lambda0, Lambda)
+!         Lambda0 = Lambda
+!      enddo  !< ik1
+!
+!      !> diagonalize Lambda to get the eigenvalue
+!      call zgeev_pack(nfill_half, Lambda, Lambda_eig)
+!      do i=1, nfill_half
+!         WannierCenterKy_minus(i, ik2)= aimag(log(Lambda_eig(i)))/2d0/pi
+!         WannierCenterKy_minus(i, ik2)= mod(WannierCenterKy_minus(i, ik2)+10d0, 1d0)
+!      enddo
+!
+!      call sortheap(nfill_half, WannierCenterKy_minus(:, ik2))
+!
+!   enddo !< ik2
+!
+!   WannierCenterKy_minus_mpi= 0d0
+!   WannierCenterKy_plus_mpi= 0d0
+!#if defined (MPI)
+!   call mpi_allreduce(WannierCenterKy_minus, WannierCenterKy_minus_mpi, &
+!      size(WannierCenterKy_minus), mpi_dp, mpi_sum, mpi_cmw, ierr)
+!   call mpi_allreduce(WannierCenterKy_plus, WannierCenterKy_plus_mpi, &
+!      size(WannierCenterKy_plus), mpi_dp, mpi_sum, mpi_cmw, ierr)
+!#else
+!   WannierCenterKy_minus_mpi= WannierCenterKy_minus
+!   WannierCenterKy_plus_mpi= WannierCenterKy_plus
+!#endif
+!
+!   outfileindex= outfileindex+ 1
+!   if (cpuid==0) then
+!      open(unit=outfileindex, file='wcc-mirrorplus.dat')
+!
+!      write(outfileindex, '(10000A16)')'#      k',  'sum(wcc(:,ik))', &
+!         'wcc(:, ik)'
+!      do ik2=1, Nk2
+!         write(outfileindex, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1), &
+!            dmod(sum(WannierCenterKy_plus_mpi(:, ik2)), 1d0), &
+!            WannierCenterKy_plus_mpi(:, ik2)
+!      enddo
+!      close(outfileindex)
+!   endif
+!
+!   outfileindex= outfileindex+ 1
+!   if (cpuid==0) then
+!      open(unit=outfileindex, file='wcc-mirrorminus.dat')
+!
+!      write(outfileindex, '(10000A16)')'#      k',  'sum(wcc(:,ik))', &
+!         'wcc(:, ik)'
+!      do ik2=1, Nk2
+!         write(outfileindex, '(10000f16.8)') dble(ik2-1)/dble(Nk2-1), &
+!            dmod(sum(WannierCenterKy_minus_mpi(:, ik2)), 1d0), &
+!            WannierCenterKy_minus_mpi(:, ik2)
+!      enddo
+!      close(outfileindex)
+!   endif
+!
+!   !> generate gnu script for wannier charge center plots
+!   outfileindex= outfileindex+ 1
+!   if (cpuid==0) then
+!      open(unit=outfileindex, file='wcc-mirrorchernnumber.gnu')
+!      write(outfileindex, '(a)')"set encoding iso_8859_1"
+!      write(outfileindex, '(a)')'set terminal  postscript enhanced color font ",30"'
+!      write(outfileindex, '(a)')"set output 'wcc-mirrorchernnumber.eps'"
+!      write(outfileindex, '(a)')'set key '
+!      write(outfileindex, '(a)')'set border lw 3 '
+!      write(outfileindex, '(a)')'set xtics offset 0, 0.2'
+!      write(outfileindex, '(a)')'set xtics format "%4.1f" nomirror out '
+!      write(outfileindex, '(a)')'set xlabel "k" '
+!      write(outfileindex, '(a)')'set xlabel offset 0, 0.7 '
+!      write(outfileindex, '(a)')'set ytics 0.5 '
+!      write(outfileindex, '(a)')'set ytics format "%4.1f" nomirror out'
+!      write(outfileindex, '(a)')'set title "Mirror WCC"'
+!      write(outfileindex, '(a)')'#set ylabel offset 2, 0.0 '
+!      write(outfileindex, '(a)')'set ylabel "WCC"'
+!      write(outfileindex, '(a)')'set xrange [0: 1]'
+!      write(outfileindex, '(a)')'set yrange [0:1]'
+!      write(outfileindex, '(a)')"plot 'wcc-mirrorminus.dat' u 1:2 w p pt 7 ps 2  lc 'blue' title 'M=-i', \"
+!      write(outfileindex, '(a)')"     'wcc-mirrorplus.dat'  u 1:2 w p pt 7 ps 2  lc 'red'  title 'M=+i'"
+!      write(outfileindex, '(a)')'#unset key '
+!      write(outfileindex, '(a)')"#plot  \"
+!      write(outfileindex, '(a, i5, a)')"# for [i=3: ", NumberofSelectedOccupiedBands/2+2, &
+!         "]  'wcc-mirrorplus.dat' u 1:i w p  pt 7  ps 1.1 lc 'red', \"
+!      write(outfileindex, '(a, i5, a)')"# for [i=3: ", NumberofSelectedOccupiedBands/2+2, &
+!         "]  'wcc-mirrorminus.dat' u 1:i w p  pt 7  ps 1.1 lc 'blue'"
+!      close(outfileindex)
+!   endif
+!
+!   wcc_sum= dmod(sum(WannierCenterKy_plus_mpi, dim=1), 1d0)
+!   !> determine the chirality
+!   gap_sum= 0d0
+!   do ik2=1, Nk2-1
+!      gap_step= wcc_sum(ik2+1)- wcc_sum(ik2)
+!      if (abs(gap_step+1)<abs(gap_step)) then
+!         gap_step= gap_step+ 1
+!      elseif (abs(gap_step-1)<abs(gap_step))then
+!         gap_step= gap_step- 1
+!      endif
+!      gap_sum= gap_sum+ gap_step
+!   enddo
+!
+!   if (cpuid==0) write(stdout, '(1X, a, i5)')'MCN for ky=0 mirror +i : ', nint(gap_sum)
+!
+!
+!   wcc_sum= dmod(sum(WannierCenterKy_minus_mpi, dim=1), 1d0)
+!   !> determine the chirality
+!   gap_sum= 0d0
+!   do ik2=1, Nk2-1
+!      gap_step= wcc_sum(ik2+1)- wcc_sum(ik2)
+!      if (abs(gap_step+1)<abs(gap_step)) then
+!         gap_step= gap_step+ 1
+!      elseif (abs(gap_step-1)<abs(gap_step))then
+!         gap_step= gap_step- 1
+!      endif
+!      gap_sum= gap_sum+ gap_step
+!   enddo
+!
+!   if (cpuid==0) write(stdout, '(1X, a, i5)')'MCN for ky=0 mirror -i : ', nint(gap_sum)
+!
+!   return
+!end subroutine  wannier_center3D_plane_valley
+
+
 subroutine  wannier_center2D
    ! This suboutine is used for wannier center calculation for slab system
    !

@@ -404,10 +404,9 @@ subroutine ham_3Dlandau_sparseHR(nnz, Ndimq, Nq, k, acoo,jcoo,icoo)
 
          !> sum over R points to get H(k1, k2)
          do ims=1,splen
-            ir=hirv(ims)
-            ia=dble(irvec(1,iR))
-            ib=dble(irvec(2,iR))
-            ic=dble(irvec(3,iR))
+            ia=dble(hirv(1,ims))
+            ib=dble(hirv(2,ims))
+            ic=dble(hirv(3,ims))
 
             !> new lattice
             call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)
@@ -466,10 +465,9 @@ subroutine ham_3Dlandau_sparseHR(nnz, Ndimq, Nq, k, acoo,jcoo,icoo)
 
          !> sum over R points to get H(k1, k2)
          do ims=1,splen
-            ir=hirv(ims)
-            ia=dble(irvec(1,iR))
-            ib=dble(irvec(2,iR))
-            ic=dble(irvec(3,iR))
+            ia=dble(hirv(1,ims))
+            ib=dble(hirv(2,ims))
+            ic=dble(hirv(3,ims))
 
             !> new lattice
             call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)

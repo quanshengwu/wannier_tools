@@ -439,6 +439,7 @@
      !>  Transfer tau: from abc basis (primitive cell)
      !>                to conventioinal cell
      !-----------------------------------------------------------------------------
+     if (cpuid.eq.0) write(stdout, '(3X, a)')'>> Here are the generators we found:'
      num_gen=0
      DO 120 nop=1,18
      IF (SUM(op_tau_mpi(nop,:)).ge.1)then
@@ -677,10 +678,10 @@
         do i=1, number_group_operators 
            write(stdout, '(5x,a, i10)')"No. operators: ", i
            write(stdout, '(5x,a, f5.1)')"Inversion:  ", spatial_inversion(i)
-           write(stdout, '(5x,a24, 10x, a24)')"Direct", "Cartesian"
-           write(stdout,'(8x,6f12.6)')pgop_direct(1, :, i), pgop_cart(1, :, i)
-           write(stdout,'(8x,6f12.6)')pgop_direct(2, :, i), pgop_cart(2, :, i)
-           write(stdout,'(8x,6f12.6)')pgop_direct(3, :, i), pgop_cart(3, :, i)
+           write(stdout, '(5x,a24, 13x, a24)')"Direct", "Cartesian"
+           write(stdout,'(8x,3f12.6, 3x,3f12.6)')pgop_direct(1, :, i), pgop_cart(1, :, i)
+           write(stdout,'(8x,3f12.6, 3x,3f12.6)')pgop_direct(2, :, i), pgop_cart(2, :, i)
+           write(stdout,'(8x,3f12.6, 3x,3f12.6)')pgop_direct(3, :, i), pgop_cart(3, :, i)
            write(stdout,'(5x, "Tau",6f12.6)')tau_direct(:, i), tau_cart(:, i)
            write(stdout,'(a)')" "
         enddo
@@ -718,9 +719,14 @@
      real(dp), allocatable :: tau_cart_left(:,:)
      real(dp), allocatable :: tau_direct_left(:,:)
      real(dp), allocatable :: spatial_inversion_left(:)
+     integer, allocatable :: imap_sym_local(:, :)
+     integer, allocatable :: imap_sym_local_left(:, :)
      allocate(pgop_cart_left(3, 3, 48), pgop_direct_left(3, 3, 48))
      allocate(tau_cart_left(3, 48), tau_direct_left(3, 48), spatial_inversion_left(48))
      allocate(Atom_magnetic_moment_field(3, Origin_cell%Num_atoms))
+     allocate(imap_sym_local(Origin_cell%Num_atoms , number_group_operators))
+     allocate(imap_sym_local_left(Origin_cell%Num_atoms, number_group_operators))
+     imap_sym_local= -1
 
      !> magnetic moment after considering the magnetic field
      do ia=1, Origin_cell%Num_atoms
@@ -766,6 +772,9 @@
               stop
            endif
 
+           !> after the symmtry operation, the iatomA is mapped to ifind
+           imap_sym_local(iatomA, iop)= ifind
+
            !> magnetic moment of atom B which is the image after the symmetry operation R to A
            MM_B= Atom_magnetic_moment_field(:, ifind)
 
@@ -778,19 +787,19 @@
            endif
 
            if (cpuid==0) then
-              write(stdout, '(a, i8)')' No. of operators: ', iop 
-              write(stdout, '(a, 3f8.4)')' Operators in fractional unit with tau = ', tau_direct(:, iop)
-              write(stdout, '(a, f5.1)')' Inversion : ', spatial_inversion(iop)
-              write(stdout, '(2a24)')'Direct', 'Cartesian'
-              do i=1, 3
-                 write(stdout, '(10f8.4)') op_rotate_direct(i, :), op_rotate_cart(i, :)
-              enddo
-              write(stdout, '(a, i5, 5X, 3f8.4)')' Applying on atom A :', iatomA, atom_position_A_direct
-              write(stdout, '(a, i5, 5X, 3f8.4)')' Getting  a  atom B :', ifind, Origin_cell%Atom_position_direct(:, ifind)
-              write(stdout, '(a, 3f8.4)')'Magnetic moment on atom A :', Atom_magnetic_moment_field(:, iatomA)
-              write(stdout, '(a, 3f8.4)')'Magnetic moment on atom B :', Atom_magnetic_moment_field(:, ifind)
-              write(stdout, '(a, 3f8.4)')'Symmetry operation on magnetic moment of atom A ', MM_OP_A
-              write(stdout, *)' '
+             !write(stdout, '(a, i8)')' No. of operators: ', iop 
+             !write(stdout, '(a, 3f8.4)')' Operators in fractional unit with tau = ', tau_direct(:, iop)
+             !write(stdout, '(a, f5.1)')' Inversion : ', spatial_inversion(iop)
+             !write(stdout, '(2a24)')'Direct', 'Cartesian'
+             !do i=1, 3
+             !   write(stdout, '(10f8.4)') op_rotate_direct(i, :), op_rotate_cart(i, :)
+             !enddo
+             !write(stdout, '(a, i5, 5X, 3f8.4)')' Applying on atom A :', iatomA, atom_position_A_direct
+             !write(stdout, '(a, i5, 5X, 3f8.4)')' Getting  a  atom B :', ifind, Origin_cell%Atom_position_direct(:, ifind)
+             !write(stdout, '(a, 3f8.4)')'Magnetic moment on atom A :', Atom_magnetic_moment_field(:, iatomA)
+             !write(stdout, '(a, 3f8.4)')'Magnetic moment on atom B :', Atom_magnetic_moment_field(:, ifind)
+             !write(stdout, '(a, 3f8.4)')'Symmetry operation on magnetic moment of atom A ', MM_OP_A
+             !write(stdout, *)' '
            endif
 
         enddo ! iatomA
@@ -806,38 +815,45 @@
            tau_direct_left(:, number_group_operators_left)= tau_direct(:, iop) 
            tau_cart_left(:, number_group_operators_left)= tau_cart(:, iop) 
            spatial_inversion_left(number_group_operators_left)= spatial_inversion(number_group_operators_left)
+           imap_sym_local_left(:, number_group_operators_left)= imap_sym_local(:, iop) 
         endif
      enddo
      number_group_operators= number_group_operators_left
+     if (allocated(imap_sym)) then
+        deallocate(imap_sym)
+        allocate(imap_sym(Origin_cell%Num_atoms, number_group_operators))
+     endif
+
+     !> only take the compatiable operators
      if (number_group_operators>0) then
         pgop_cart(:, :, 1:number_group_operators)= pgop_cart_left(:, :, 1:number_group_operators)
         pgop_direct(:, :, 1:number_group_operators)= pgop_direct_left(:, :, 1:number_group_operators)
         tau_cart(:, 1:number_group_operators)= tau_cart_left(:, 1:number_group_operators)
         tau_direct(:, 1:number_group_operators)= tau_direct_left(:, 1:number_group_operators)
         spatial_inversion(1:number_group_operators)= spatial_inversion_left(1:number_group_operators)
+        imap_sym(:, 1:number_group_operators) = imap_sym_local_left(:, 1:number_group_operators)
      endif
 
-     !> print out the left symmetry operator
-     if (number_group_operators==0) then
-        if (cpuid==0) then
-           write(stdout, '(a)', advance='no')">>> There is no symmetry operation "
-           write(stdout, *)"after consider the magnetic configuration."
-        endif
-     else
-        if (cpuid==0) then
-           write(stdout, *)">>> After considering the magnetic configuration, "
-           write(stdout, '(a,i6,a)')">>> There are only ",  &
-              number_group_operators, " symmetry operations left."
-           do iop=1, number_group_operators
-              write(stdout, *)" "
-              write(stdout, '(a, 3f8.4)')' Operators in fractional unit with tau = ', tau_direct(:, iop)
-              write(stdout, '(a, f5.1)')' Inversion : ', spatial_inversion(iop)
-              write(stdout, '(a16, 13X, a16)')'Direct', 'Cartesian'
-              do i=1, 3
-                 write(stdout, '(3f8.4, 5X, 3f8.4)') pgop_direct(i, :, iop), pgop_cart(i, :, iop)
-              enddo
+     if (cpuid.eq.0) then
+        write(stdout, '(a)')'>>> Space group operators'
+        do iop= 1, number_group_operators
+           write(stdout, '(a)')' '
+           write(stdout, '(a, i3)')' No. of operators: OP=', iop 
+           write(stdout, '(a, 3f8.4)')' Operators in fractional unit with tau = ', tau_direct(:, iop)
+           write(stdout, '(a, f5.1)')' Inversion : ', spatial_inversion(iop)
+           write(stdout, '(a)')' Rotation matrix:'
+           write(stdout, '(a16, 5x, a24)')'Direct', 'Cartesian'
+           do i=1, 3
+              write(stdout, '(3f8.4, 4X, 3f8.4)') pgop_direct(i, :, iop), pgop_cart(i, :, iop)
            enddo
-        endif
+        enddo  ! iop
+   
+        write(stdout, '(a)')'>> A map between a atom in unit cell and the atom after space group operation'
+        write(stdout, '(4x, a4, a8, 2x, 48("  OP=", i3))')' Name ', 'index ', (iop, iop=1, number_group_operators)
+        do iatomA= 1, Origin_cell%Num_atoms
+           write(stdout, '(3x, a4, 100i8)') trim(adjustl(Origin_cell%Atom_name(iatomA))), iatomA, imap_sym(iatomA, 1:number_group_operators)
+        enddo ! iatomA
+        write(stdout, '(a)')' '
      endif
 
      return
@@ -877,6 +893,8 @@
      allocate(pggen_cart(3, 3, 48), pggen_direct(3, 3, 48))
      allocate(pgop_cart(3, 3, 48), pgop_direct(3, 3, 48))
      allocate(tau_cart(3, 48), tau_direct(3, 48), spatial_inversion(48))
+     allocate(imap_sym(Origin_cell%Num_atoms, 48))
+     imap_sym= -1
      BasicOperations_space= 0d0
      BasicOperations_spin= 0d0
      BasicOperations_inversion= 0d0

@@ -1,5 +1,5 @@
 set terminal pngcairo enhanced color font ",30" size 1920,1680
-set palette defined ( 0 "white", 1  "#D72F01" )
+set palette defined ( 0 "white",  0.2 "black", 1  "#D72F01" )
 set output 'spectrum_unfold_kplane.png'
 set size 0.9, 1
 set origin 0.05,0
@@ -20,6 +20,6 @@ set ylabel 'k_y'
 set colorbox
 set pm3d interpolate 2,2
 set title 'A(k,E)'
-splot 'spectrum_unfold_kplane.dat' u 4:5:(($9 ))  w pm3d
+splot 'spectrum_unfold_kplane.dat' u 4:5:(($11))  w pm3d
 set title 'log(A(k,E))'
-splot 'spectrum_unfold_kplane.dat' u 4:5:(log($9 ))  w pm3d
+splot 'spectrum_unfold_kplane.dat' u 4:5:(log($11+0.1))  w pm3d

@@ -21,18 +21,18 @@
   
    
  >>>Read some paramters from system.in
->> number_layers=      3
->> stacking_sequences:   A  A  B
->> twisted_index_m=     1
->> twisted_angle_degree=    21.786789 degree
->> twisted angle array:  0 1 1
+>> number_layers=      5
+>> stacking_sequences:   A  B  C  A  B
+>> twisted_index_m=     0
+>> twisted_angle_degree=    59.999998 degree
+>> twisted angle array:  0 0 0 0 0
  >> We will generate POSCAR
 >> hr_cutoff=     0.000100 eV
 >> vpppi=    -2.810000 eV
->> iR_cut=      1
+>> iR_cut=      6
 >> lattice_constant_a=     2.460000 Angstrom
 >> lattice_constant_c=     3.360000 Angstrom
->> gen_sparse_hr   T
+>> gen_sparse_hr   F
  >> We don't generate tight-binding model
  
 << Index-angle table >>
@@ -102,10 +102,10 @@ No. atoms:  275428  279076  282748  286444  290164  293908  297676  301468  3052
         
 >>Index-angle table<<
  
-m=    1
-twisted angle    21.79
-length of lattice vector:   6.509 Angstrom
-number of atoms per cell        42
-          42          42
+m=    0
+twisted angle    60.00
+length of lattice vector:   2.460 Angstrom
+number of atoms per cell        10
+          10          10
  Congratulations! you finished the calculation.
  See you next time :)

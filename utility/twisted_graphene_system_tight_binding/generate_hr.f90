@@ -185,6 +185,14 @@
       vsig= vsig0*dexp(qsig* (1d0- dis/asig ))*fc 
       tij= vpi* sin_theta2+  vsig * cos_theta2 
 
+      !> add a hopping \gamma_2  between A1-B3 from the first layer to the third layer, 
+      !> B1 is connected with A2
+      !> this hopping will open an energy gap at K of trilayer graphene
+      if (abs(abs(delta_pos(1)))<0.3d0 .and. abs(abs(delta_pos(2)))<0.3d0 .and. &
+          abs(abs(delta_pos(3))-6.72d0)<0.3d0 ) tij=-0.007d0
+
+
+
       return
    end subroutine get_hopping
 

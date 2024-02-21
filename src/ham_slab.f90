@@ -105,10 +105,9 @@ subroutine ham_slab_sparseHR(nnzmax, k, acoo,jcoo,icoo)
 
          !> sum over R points to get H(k1, k2)
          do ims=1,splen
-            ir=hirv(ims)
-            ia=irvec(1,iR)
-            ib=irvec(2,iR)
-            ic=irvec(3,iR)
+            ia= hirv(1, ims)
+            ib= hirv(2, ims)
+            ic= hirv(3, ims)
 
             !> new lattice
             call latticetransform(ia, ib, ic, new_ia, new_ib, new_ic)

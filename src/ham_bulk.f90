@@ -92,6 +92,70 @@ subroutine ham_bulk_atomicgauge(k,Hamk_bulk)
    return
 end subroutine ham_bulk_atomicgauge
 
+
+subroutine valley_k_atomicgauge(k,valley_k)
+   ! This subroutine performs the Fourier transform of avalley operator
+   ! History
+   !        Nov/5/2023 by Quansheng Wu
+
+   use para
+   implicit none
+
+   integer :: i1,i2,iR
+
+   ! wave vector in 3d
+   real(Dp) :: k(3), kdotr, pos0(3), dis
+
+   complex(dp) :: factor
+
+   real(dp) :: pos(3), pos1(3), pos2(3), pos_cart(3), pos_direct(3)
+   ! Hamiltonian of bulk system
+   complex(Dp),intent(out) :: valley_k(Num_wann, Num_wann)
+   real(dp), external :: norm
+   
+
+   valley_k= 0d0
+   !> the first atom in home unit cell
+   do iR=1, Nrpts_valley
+      do i2=1, Num_wann
+         pos2= Origin_cell%wannier_centers_direct(:, i2)
+         !> the second atom in unit cell R
+         do i1=1, Num_wann
+            pos1= Origin_cell%wannier_centers_direct(:, i1)
+            pos_direct= irvec_valley(:, iR)
+            pos_direct= pos_direct+ pos2- pos1
+
+            call direct_cart_real(pos_direct, pos_cart, Origin_cell%lattice)
+
+            dis= norm(pos_cart)
+            if (dis> Rcut) cycle
+
+            kdotr=k(1)*pos_direct(1) + k(2)*pos_direct(2) + k(3)*pos_direct(3)
+            factor= (cos(twopi*kdotr)+zi*sin(twopi*kdotr))
+
+            valley_k(i1, i2)= valley_k(i1, i2) &
+               + valley_operator_R(i1, i2, iR)*factor
+         enddo ! i1
+      enddo ! i2
+   enddo ! iR
+
+   ! check hermitcity
+   do i1=1, Num_wann
+      do i2=1, Num_wann
+         if(abs(valley_k(i1,i2)-conjg(valley_k(i2,i1))).ge.1e-6)then
+            write(stdout,*)'there is something wrong with Hamk_bulk'
+            write(stdout,*)'i1, i2', i1, i2
+            write(stdout,*)'value at (i1, i2)', valley_k(i1, i2)
+            write(stdout,*)'value at (i2, i1)', valley_k(i2, i1)
+            !stop
+         endif
+      enddo
+   enddo
+
+
+   return
+end subroutine valley_k_atomicgauge
+
 subroutine d2Hdk2_atomicgauge(k, DHDk2_wann)
    !> second derivatve of H(k)
    use para, only : Nrpts, irvec, crvec, Origin_cell, HmnR, ndegen, &
@@ -706,10 +770,9 @@ subroutine ham_bulk_coo_sparsehr_latticegauge(k,acoo,icoo,jcoo)
    integer :: i,j,ir
 
    do i=1,splen
-      ir=hirv(i)
       icoo(i)=hicoo(i)
       jcoo(i)=hjcoo(i)
-      posij=irvec(:, ir)
+      posij= hirv(1:3, i)
       kdotr=posij(1)*k(1)+posij(2)*k(2)+posij(3)*k(3)
       ratio= (cos(twopi*kdotr)+zi*sin(twopi*kdotr))
       acoo(i)=ratio*hacoo(i)
@@ -717,7 +780,6 @@ subroutine ham_bulk_coo_sparsehr_latticegauge(k,acoo,icoo,jcoo)
 
    return
 end subroutine ham_bulk_coo_sparsehr_latticegauge
-
 
 subroutine ham_bulk_coo_sparsehr(k,acoo,icoo,jcoo)
    !> This subroutine use sparse hr format
@@ -733,11 +795,10 @@ subroutine ham_bulk_coo_sparsehr(k,acoo,icoo,jcoo)
    complex(dp) ::  ratio
    integer :: i,j,ir
 
-   do i=1,splen
-      ir=hirv(i)
+   do i=1, splen
       icoo(i)=hicoo(i)
       jcoo(i)=hjcoo(i)
-      posij=irvec(:, ir)+ Origin_cell%wannier_centers_direct(:, jcoo(i))- Origin_cell%wannier_centers_direct(:, icoo(i))
+      posij= hirv(1:3, i)+ Origin_cell%wannier_centers_direct(:, jcoo(i))- Origin_cell%wannier_centers_direct(:, icoo(i))
       kdotr=posij(1)*k(1)+posij(2)*k(2)+posij(3)*k(3)
       ratio= (cos(twopi*kdotr)+zi*sin(twopi*kdotr))
       acoo(i)=ratio*hacoo(i)
@@ -745,6 +806,61 @@ subroutine ham_bulk_coo_sparsehr(k,acoo,icoo,jcoo)
 
    return
 end subroutine ham_bulk_coo_sparsehr
+
+
+subroutine overlap_bulk_coo_sparse(k, acoo, icoo, jcoo)
+   !> This subroutine use sparse hr format
+   !> Here we use atomic gauge which means the atomic position is taken into account
+   !> in the Fourier transformation
+   use para
+   implicit none
+
+   real(dp) :: k(3), posij(3)
+   real(dp) :: kdotr
+   integer,intent(inout) :: icoo(splen_overlap_input),jcoo(splen_overlap_input)
+   complex(dp),intent(inout) :: acoo(splen_overlap_input)
+   complex(dp) ::  ratio
+   integer :: i,j,ir
+
+   do i=1, splen_overlap_input
+      icoo(i)=sicoo(i)
+      jcoo(i)=sjcoo(i)
+      posij= sirv(1:3, i)+ Origin_cell%wannier_centers_direct(:, sjcoo(i))- Origin_cell%wannier_centers_direct(:, sicoo(i))
+      kdotr=posij(1)*k(1)+posij(2)*k(2)+posij(3)*k(3)
+      ratio= (cos(twopi*kdotr)+zi*sin(twopi*kdotr))
+      acoo(i)=ratio*sacoo(i)
+   end do
+
+   return
+end subroutine overlap_bulk_coo_sparse
+
+subroutine valley_k_coo_sparsehr(nnz, k,acoo,icoo,jcoo)
+   !> This subroutine use sparse hr format
+   !> Here we use atomic gauge which means the atomic position is taken into account
+   !> in the Fourier transformation
+   use para
+   implicit none
+
+   real(dp) :: k(3), posij(3)
+   real(dp) :: kdotr
+   integer, intent(in) :: nnz
+   integer,intent(inout) :: icoo(nnz),jcoo(nnz)
+   complex(dp),intent(inout) :: acoo(nnz)
+   complex(dp) ::  ratio
+   integer :: i,j,ir
+
+   do i=1,nnz
+      ir= valley_operator_irv(i)
+      icoo(i)=valley_operator_icoo(i)
+      jcoo(i)=valley_operator_jcoo(i)
+      posij=irvec_valley(:, ir)+ Origin_cell%wannier_centers_direct(:, jcoo(i))- Origin_cell%wannier_centers_direct(:, icoo(i))
+      kdotr=posij(1)*k(1)+posij(2)*k(2)+posij(3)*k(3)
+      ratio= (cos(twopi*kdotr)+zi*sin(twopi*kdotr))
+      acoo(i)=ratio*valley_operator_acoo(i)
+   enddo
+
+   return
+end subroutine valley_k_coo_sparsehr
 
 
 subroutine rotation_to_Ham_basis(UU, mat_wann, mat_ham)

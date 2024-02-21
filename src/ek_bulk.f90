@@ -64,15 +64,16 @@ subroutine ek_bulk_line
       W= 0d0
       call eigensystem_c('V', 'U', Num_wann ,Hamk_bulk, W)
       eigv(:, ik)= W
-      do j=1, Num_wann  !> band
-           do ig=1, NumberofSelectedOrbitals_groups
-              do i=1, NumberofSelectedOrbitals(ig)
-                 io=Selected_WannierOrbitals(ig)%iarray(i)
+
+      do j= 1, Num_wann  !> band
+           do ig= 1, NumberofSelectedOrbitals_groups
+              do i= 1, NumberofSelectedOrbitals(ig)
+                 io= Selected_WannierOrbitals(ig)%iarray(i)
                  weight(ig, j, ik)= weight(ig, j, ik)+ abs(Hamk_bulk(io, j))**2 
-              enddo
-           enddo
-      enddo ! i
-   enddo ! ik
+              enddo !i
+           enddo !ig
+      enddo !j
+   enddo !ik
 
 #if defined (MPI)
    call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
@@ -174,6 +175,213 @@ subroutine ek_bulk_line
 
    return
 end subroutine ek_bulk_line
+
+
+subroutine ek_bulk_line_valley
+   ! Calculate bulk's energy bands using wannier TB method
+   ! Line mode
+   ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
+
+   use wmpi
+   use para
+
+   implicit none
+
+   integer :: ik, il, ig, io, i, j, knv3, ierr
+   integer :: ie, ND, NDMAX, ie1, ie2
+   real(dp) :: emin,  emax,  k(3)
+   character*40 :: filename
+   complex(dp), external :: zdotc
+
+   !> eigenvalues of H
+   real(Dp), allocatable :: W(:)
+
+   ! Hamiltonian of bulk system
+   complex(Dp), allocatable :: psi(:), vpsi(:), valley_k_nd(:, :), psi1(:), psi2(:)
+   complex(Dp), allocatable :: Hamk_bulk(:, :), valley_k(:, :)
+   complex(Dp), allocatable :: VL(:, :), VR(:, :), valley_eig(:)
+   logical, allocatable :: valley_plus(:, :), valley_plus_mpi(:, :)
+
+   ! eigenectors of H
+   real(dp), allocatable :: eigv(:,:), eigv_mpi(:,:)
+   real(dp), allocatable :: weight(:,:), weight_mpi(:,:)
+   real(dp) :: tolde= 1E-4
+
+   NDMAX= 12
+   knv3= nk3_band
+   allocate(W(Num_wann))
+   allocate(Hamk_bulk(Num_wann, Num_wann))
+   allocate( eigv    (Num_wann, knv3))
+   allocate( eigv_mpi(Num_wann, knv3))
+   allocate( weight    (Num_wann, knv3))
+   allocate( weight_mpi(Num_wann, knv3))
+   allocate( psi(Num_wann), vpsi(Num_wann))
+   allocate( psi1(Num_wann), psi2(Num_wann))
+   allocate(valley_k(Num_wann, Num_wann))
+   allocate(valley_plus(Num_wann, knv3))
+   allocate(valley_plus_mpi(Num_wann, knv3))
+   allocate( valley_k_nd(NDMAX, NDMAX), valley_eig(NDMAX))
+   allocate( VL(NDMAX, NDMAX), VR(NDMAX, NDMAX))
+   W       = 0d0; Hamk_bulk = 0d0
+   eigv    = 0d0; eigv_mpi= 0d0
+   weight  = 0d0; weight_mpi = 0d0
+   psi     = 0d0; vpsi= 0d0
+   valley_k_nd= 0d0
+   valley_plus= .False.; valley_plus_mpi= .False.
+
+
+   do ik= 1+cpuid, knv3, num_cpu
+
+      k = k3points(:, ik)
+      
+      ! calculation bulk hamiltonian
+      Hamk_bulk= 0d0
+
+      call ham_bulk_atomicgauge(k, Hamk_bulk)
+
+      !> diagonalization by call zheev in lapack
+      W= 0d0
+      call eigensystem_c('V', 'U', Num_wann ,Hamk_bulk, W)
+
+      !> get the fourier transform of a valley operator
+      call valley_k_atomicgauge(k, valley_k)
+
+      eigv(:, ik)= W
+
+      !> check the degeneracy of each band
+      IE=1
+      do while (ie.le.Num_wann)
+         ND=1
+         if (ie+ND.le.Num_wann) then
+            do while ((ie+ND).le.Num_wann .and. (W(ie+ND)- W(ie)).lt.tolde)
+               if (ie+ND .ge. Num_wann) exit
+               ND= ND+1
+            enddo
+         endif
+
+         !> if the degeneracy is larger than 1, we need to calculate the matrix
+         valley_k_nd= 0d0
+         do ie1= 1, ND
+            psi1= hamk_bulk(:, IE+ie1-1)
+            do ie2= 1, ND
+               psi2= hamk_bulk(:, IE+ie2-1)
+               vpsi=0d0
+               call zgemv('N', Num_wann, Num_wann, One_complex,  valley_k, Num_wann, psi2, 1, zzero, vpsi, 1)
+               valley_k_nd(ie1, ie2)= zdotc(Num_wann, psi1, 1, vpsi, 1)
+            enddo
+           !if (abs(W(IE+ie1-1)/eV2Hartree)<2d0) &
+           !write( *, '(a, 2i5, 200f8.3)') "ND, ie1: ", ND, ie1, valley_k_nd(ie1, 1:ND)
+         enddo
+
+         !> diagonalize the matrix
+         VL = 0d0; VR= 0d0
+         if (ND>1) then
+            call zgeev_sys(ND, valley_k_nd(1:ND, 1:ND), valley_eig(1:ND),'N',VL(1:ND, 1:ND),"V",VR(1:ND, 1:ND) )
+            do ie1= 1, ND
+               weight(IE+ie1-1, ik) = real(valley_eig(ie1))
+            enddo
+         else
+            valley_eig(1)= valley_k_nd(1, 1)
+            weight(IE, ik) = real(valley_k_nd(1, 1))
+         endif
+         !  if (abs(W(IE+ie1-1)/eV2Hartree)<2d0) &
+         ! write(*, '(a, 2i5, a, 200f8.3)'), 'ND, ie', ND, ie, '  valley_eig', real(valley_eig(1:ND))
+         !  if (abs(W(IE+ie1-1)/eV2Hartree)<2d0) &
+         ! print *, ' '
+
+         !> get new eigenvector
+        !do ie1= 1, ND
+        !   psi= 0d0
+        !   do ie2= 1, ND
+        !      psi= psi+ VR(ie2,  ie1)* ham_bulk(:, IE+ie2-1)
+        !   enddo
+        !enddo
+
+         !> if the degeneracy is larger than 1, we need to calculate the matrix
+         IE= IE+ ND
+      enddo
+      do ie=1, Num_wann
+         if (weight(ie, ik)>0) valley_plus(ie, ik)=.true.
+      enddo
+
+   enddo ! ik
+
+
+#if defined (MPI)
+   call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
+   call mpi_allreduce(weight, weight_mpi,size(weight),&
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
+   call mpi_allreduce(valley_plus, valley_plus_mpi,size(valley_plus),&
+      mpi_logical,mpi_lor,mpi_cmw,ierr)
+#else
+   eigv_mpi= eigv
+   weight_mpi= weight
+   valley_plus_mpi= valley_plus
+#endif
+   eigv_mpi= eigv_mpi/eV2Hartree
+
+   outfileindex= outfileindex+ 1
+   if (cpuid==0)then
+      open(unit=outfileindex, file='bulkek.dat')
+      do i=1, Num_wann
+         do ik=1, knv3
+            write(outfileindex, '(200F16.8)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik), &
+               weight_mpi(i, ik)
+         enddo
+         write(outfileindex, *)' '
+      enddo
+      close(outfileindex)
+   endif
+   outfileindex= outfileindex+ 1
+   if (cpuid==0)then
+      open(unit=outfileindex, file='bulkek_valley_plus.dat')
+      do i=1, Num_wann
+         do ik=1, knv3
+            if (valley_plus_mpi(i, ik)) then
+               write(outfileindex, '(200F16.8)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik), &
+                  weight_mpi(i, ik)
+            endif
+         enddo
+         write(outfileindex, *)' '
+      enddo
+      close(outfileindex)
+   endif
+
+   outfileindex= outfileindex+ 1
+   if (cpuid==0)then
+      open(unit=outfileindex, file='bulkek_valley_minus.dat')
+      do i=1, Num_wann
+         do ik=1, knv3
+            if (.not.valley_plus_mpi(i, ik)) then
+               write(outfileindex, '(200F16.8)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik), &
+                  weight_mpi(i, ik)
+            endif
+         enddo
+         write(outfileindex, *)' '
+      enddo
+      close(outfileindex)
+   endif
+
+
+
+   !> minimum and maximum value of energy bands
+   emin=  minval(eigv_mpi)-0.5d0
+   emax=  maxval(eigv_mpi)+0.5d0
+
+   call generate_ek_kpath_gnu('bulkek.dat', 'bulkek.gnu', 'bulkek.pdf', &
+                                 emin, emax, knv3, Nk3lines, &
+                                 k3line_name, k3line_stop, k3len)
+
+   deallocate(W)
+   deallocate(Hamk_bulk)
+   deallocate( eigv    )
+   deallocate( eigv_mpi)
+   deallocate( weight    )
+   deallocate( weight_mpi)
+
+   return
+end subroutine ek_bulk_line_valley
 
   !>> calculate energy band levels at given kpoints
   subroutine ek_bulk_point_mode
@@ -926,6 +1134,13 @@ subroutine sparse_ekbulk
    integer, allocatable :: jcoo(:)
    integer, allocatable :: icoo(:)
 
+   !> storage for overlap matrix
+   integer :: snnzmax, snnz
+   complex(dp), allocatable :: sacoo_k(:)
+   integer, allocatable :: sjcoo_k(:)
+   integer, allocatable :: sicoo_k(:)
+
+
    !> eigenvector of the sparse matrix acoo. Dim=(Num_wann, neval)
    complex(dp), allocatable :: psi(:)
    complex(dp), allocatable :: psi_project(:)
@@ -980,12 +1195,22 @@ subroutine sparse_ekbulk
       numk=1
    endif
 
-   sigma=(1d0,0d0)*E_arc
    nnzmax=splen+Num_wann
+   if (.not.Orthogonal_Basis) then
+      nnzmax=splen+Num_wann+splen_overlap_input
+   else
+      nnzmax=splen+Num_wann
+   endif
    nnz=splen
+   snnzmax=splen_overlap_input
    allocate( acoo(nnzmax))
    allocate( jcoo(nnzmax))
    allocate( icoo(nnzmax))
+   if (.not.Orthogonal_Basis) then
+      allocate( sacoo_k(snnzmax))
+      allocate( sjcoo_k(snnzmax))
+      allocate( sicoo_k(snnzmax))
+   endif
    allocate( W( neval))
    allocate( eigv( neval, nk3_band))
    allocate( eigv_mpi( neval, nk3_band))
@@ -1000,24 +1225,41 @@ subroutine sparse_ekbulk
 
    eigv_mpi= 0d0;  eigv    = 0d0
    acoo= 0d0; icoo=0; jcoo=0
+   sacoo_k= 0d0; sicoo_k=0; sjcoo_k=0
 
    ritzvec= BulkFatBand_calc
 
    !> calculate the energy bands along special k line
    k3= 0
+
+   !> change the energy unit from Hatree to eV
+   sigma=(1d0,0d0)*E_arc/eV2Hartree
+
    do ik=1+ cpuid, nk3_band, num_cpu
       if (cpuid==0) write(stdout, '(a, 2i10)') 'BulkBand_calc in sparse mode:', ik,nk3_band
       k3 = K3points(:, ik)
       call now(time1)
+      !> use atomic gauge here
       call ham_bulk_coo_sparsehr(k3,acoo,icoo,jcoo)
+      if (.not.Orthogonal_Basis) then
+         call overlap_bulk_coo_sparse(k3, sacoo_k, sicoo_k, sjcoo_k)
+      endif
+      !> change the energy unit from Hatree to eV
       acoo= acoo/eV2Hartree
       nnz= splen
+      snnz=splen_overlap_input
       call now(time2)
       
       !> diagonalization by call zheev in lapack
       W= 0d0
       !> after arpack_sparse_coo_eigs, nnz will be updated.
-      call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
+      if (.not.Orthogonal_Basis) then
+         !> non-orthogonal basis like, openmx
+         call arpack_sparse_coo_eigs_nonorth(Num_wann, nnzmax, nnz, acoo, jcoo, icoo, &
+             snnzmax, snnz, sacoo_k, sjcoo_k, sicoo_k, neval,nvecs,W,sigma,zeigv, ritzvec)
+      else
+         call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
+      endif
       call now(time3)
       eigv(1:neval, ik)= W(1:neval)
 
@@ -1105,6 +1347,340 @@ subroutine sparse_ekbulk
 
    return
 end subroutine sparse_ekbulk
+
+
+!> only test for valley projection
+subroutine sparse_ekbulk_valley
+   use sparse
+   use para
+   implicit none
+
+
+   !> some temporary integers
+   integer :: ik, i, j, ierr, ib, ig
+   integer :: ie, ND, NDMAX, ie1, ie2
+
+   ! wave vector
+   real(dp) :: k3(3)
+
+   !> dim= Num_wann, knv3
+   real(dp), allocatable :: W(:)
+   real(dp), allocatable :: eigv(:, :)
+   real(dp), allocatable :: eigv_mpi(:, :)
+
+   real(dp) :: emin, emax
+
+   complex(dp) :: alpha_mv, beta_mv
+
+   !> dim= Num_wann*Num_wann
+   integer :: nnzmax, nnz, nnzmax_valley, nnz_valley
+   complex(dp), allocatable :: acoo(:), acoo_valley(:)
+   integer, allocatable :: jcoo(:), jcoo_valley(:)
+   integer, allocatable :: icoo(:), icoo_valley(:)
+
+   !> storage for overlap matrix
+   integer :: snnzmax, snnz
+   complex(dp), allocatable :: sacoo_k(:)
+   integer, allocatable :: sjcoo_k(:)
+   integer, allocatable :: sicoo_k(:)
+
+
+   !> eigenvector of the sparse matrix acoo. Dim=(Num_wann, neval)
+   complex(dp), allocatable :: psi_project(:)
+   complex(dp), allocatable :: zeigv(:, :)
+
+   ! Hamiltonian of bulk system
+   complex(Dp), allocatable :: psi(:), vpsi(:), valley_k_nd(:, :), psi1(:), psi2(:)
+   complex(Dp), allocatable :: valley_k(:, :)
+   complex(Dp), allocatable :: VL(:, :), VR(:, :), valley_eig(:)
+   logical, allocatable :: valley_plus(:, :), valley_plus_mpi(:, :)
+
+
+   !> print the weight for the Selected_WannierOrbitals
+   real(dp), allocatable :: weight_valley(:, :), weight_valley_mpi(:, :)
+
+   !number of ARPACK eigenvalues
+   integer :: neval
+
+   ! number of Arnoldi vectors
+   integer :: nvecs
+
+   !> calculate eigenvector or not
+   logical :: ritzvec
+
+   !shift-invert sigma
+   complex(dp) :: sigma=(0d0,0d0)
+
+   !> time measurement
+   real(dp) :: time1, time2, time3
+
+   !> 
+
+   ! vector multiply vector v1*v2
+   complex(dp), external :: zdotc
+   real(dp) :: tolde= 1E-4
+
+
+   !if (OmegaNum==0) OmegaNum= Num_wann
+   !if (NumSelectedEigenVals==0) NumSelectedEigenVals=OmegaNum
+
+   !> first use NumSelectedEigenVals, if NumSelectedEigenVals is not set, 
+   !> then use OmegaNum; if OmegaNum is also not set, 
+   !> then use Num_wann
+   if (NumSelectedEigenVals>0) then
+      neval= NumSelectedEigenVals
+   else if (OmegaNum>0) then
+      neval= OmegaNum
+   else
+      neval = Num_wann
+   endif
+
+   if (neval>Num_wann-2) neval= Num_wann- 2
+
+   !> ncv
+   nvecs=int(2*neval)
+
+   if (nvecs<20) nvecs= 20
+   if (nvecs>Num_wann) nvecs= Num_wann
+
+   nnzmax=splen+Num_wann
+   if (.not.Orthogonal_Basis) then
+      nnzmax=splen+Num_wann+splen_overlap_input
+   else
+      nnzmax=splen+Num_wann
+   endif
+   nnz=splen
+   snnzmax=splen_overlap_input
+ 
+   NDMAX= 12
+   allocate( acoo(nnzmax))
+   allocate( jcoo(nnzmax))
+   allocate( icoo(nnzmax))
+   if (.not.Orthogonal_Basis) then
+      allocate( sacoo_k(snnzmax))
+      allocate( sjcoo_k(snnzmax))
+      allocate( sicoo_k(snnzmax))
+   endif
+ 
+   nnzmax_valley = splen_valley_input
+   allocate( acoo_valley(nnzmax_valley))
+   allocate( jcoo_valley(nnzmax_valley))
+   allocate( icoo_valley(nnzmax_valley))
+
+   allocate( W( neval))
+   allocate( eigv( neval, nk3_band))
+   allocate( eigv_mpi( neval, nk3_band))
+   allocate( psi_project(Num_wann))
+   allocate( zeigv(Num_wann,nvecs))
+   allocate( weight_valley(neval, nk3_band), weight_valley_mpi(neval, nk3_band))
+   allocate( psi(Num_wann), vpsi(Num_wann))
+   allocate( psi1(Num_wann), psi2(Num_wann))
+   allocate(valley_k(Num_wann, Num_wann))
+   allocate(valley_plus(Num_wann, nk3_band))
+   allocate(valley_plus_mpi(Num_wann, nk3_band))
+   allocate( valley_k_nd(NDMAX, NDMAX), valley_eig(NDMAX))
+   allocate( VL(NDMAX, NDMAX), VR(NDMAX, NDMAX))
+   valley_k_nd= 0d0
+   valley_plus= .False.; valley_plus_mpi= .False.
+   psi=0d0; vpsi=0d0; psi_project= 0d0; zeigv= 0d0
+   weight_valley_mpi=0d0; weight_valley=0d0
+
+   eigv_mpi= 0d0;  eigv    = 0d0
+   acoo= 0d0; icoo=0; jcoo=0
+
+   ritzvec= .True.
+
+   !> change the energy unit from Hatree to eV
+   sigma=(1d0,0d0)*E_arc/eV2Hartree
+
+   !> calculate the energy bands along special k line
+   k3= 0
+   do ik=1+ cpuid, nk3_band, num_cpu
+      if (cpuid==0) write(stdout, '(a, 2i10)') 'BulkBand_calc in sparse mode:', ik,nk3_band
+      k3 = K3points(:, ik)
+      call now(time1)
+      call ham_bulk_coo_sparsehr(k3,acoo,icoo,jcoo)
+      !> change the energy unit from Hatree to eV
+      acoo= acoo/eV2Hartree
+      nnz= splen
+      if (.not.Orthogonal_Basis) then
+         call overlap_bulk_coo_sparse(k3, sacoo_k, sicoo_k, sjcoo_k)
+      endif
+      call now(time2)
+ 
+      !> diagonalization by call zheev in lapack
+      W= 0d0
+      !> after arpack_sparse_coo_eigs, nnz will be updated.
+      if (.not.Orthogonal_Basis) then
+         !> non-orthogonal basis like, openmx
+         call arpack_sparse_coo_eigs_nonorth(Num_wann, nnzmax, nnz, acoo, jcoo, icoo, &
+             snnzmax, snnz, sacoo_k, sjcoo_k, sicoo_k, neval,nvecs,W,sigma,zeigv, ritzvec)
+      else
+         call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
+      endif
+      call now(time3)
+      eigv(1:neval, ik)= W(1:neval)
+
+
+      !> get valley operator in coo format
+      call valley_k_coo_sparsehr(nnzmax_valley, k3, acoo_valley, icoo_valley, jcoo_valley)
+
+      !> get the valley projection
+!     do ib= 1, neval
+!        psi(:)= zeigv(:, ib)  !> the eigenvector of ib'th band
+
+!        !> weight_valley= <psi|vz|psi>
+!        call mkl_zcoogemv('N', Num_wann, acoo_valley, icoo_valley, jcoo_valley, nnzmax_valley, psi, vpsi)
+
+!        weight_valley(ib, ik)= real(zdotc(Num_wann, psi, 1, vpsi, 1))
+
+!     enddo
+
+      !> check the degeneracy of each band
+      IE=1
+      do while (ie.le.neval)
+         ND=1
+         if (ie+ND.le.neval) then
+            do while ((ie+ND).le.neval .and. (W(ie+ND)- W(ie)).lt.tolde)
+               if (ie+ND .ge. neval) exit
+               ND= ND+1
+            enddo
+         endif
+
+
+         !> if the degeneracy is larger than 1, we need to calculate the matrix
+         valley_k_nd= 0d0
+         do ie1= 1, ND
+            psi1= zeigv(:, IE+ie1-1)
+
+            do ie2= 1, ND
+               psi2= zeigv(:, IE+ie2-1)
+               vpsi=0d0
+               call mkl_zcoogemv('N', Num_wann, acoo_valley, icoo_valley, jcoo_valley, nnzmax_valley, psi2, vpsi)
+               valley_k_nd(ie1, ie2)= zdotc(Num_wann, psi1, 1, vpsi, 1)
+            enddo
+           !if (abs(W(IE+ie1-1)/eV2Hartree)<2d0) &
+           !write( *, '(a, 2i5, 200f8.3)') "ND, ie1: ", ND, ie1, valley_k_nd(ie1, 1:ND)
+         enddo
+
+         !> diagonalize the matrix
+         VL = 0d0; VR= 0d0
+         if (ND>1) then
+            call zgeev_sys(ND, valley_k_nd(1:ND, 1:ND), valley_eig(1:ND),'N',VL(1:ND, 1:ND),"V",VR(1:ND, 1:ND) )
+            do ie1= 1, ND
+               weight_valley(IE+ie1-1, ik) = real(valley_eig(ie1))
+            enddo
+         else
+            valley_eig(1)= valley_k_nd(1, 1)
+            weight_valley(IE, ik) = real(valley_k_nd(1, 1))
+         endif
+         !  if (abs(W(IE+ie1-1)/eV2Hartree)<2d0) &
+         ! write(*, '(a, 2i5, a, 200f8.3)'), 'ND, ie', ND, ie, '  valley_eig', real(valley_eig(1:ND))
+         !  if (abs(W(IE+ie1-1)/eV2Hartree)<2d0) &
+         ! print *, ' '
+
+         !> get new eigenvector
+        !do ie1= 1, ND
+        !   psi= 0d0
+        !   do ie2= 1, ND
+        !      psi= psi+ VR(ie2,  ie1)* zeigv(:, IE+ie2-1)
+        !   enddo
+        !enddo
+
+         !> if the degeneracy is larger than 1, we need to calculate the matrix
+         IE= IE+ ND
+      enddo
+      do ie=1, neval
+         if (weight_valley(ie, ik)>0) valley_plus(ie, ik)=.true.
+      enddo
+
+
+      if (cpuid==0)write(stdout, '(a, f20.2, a)')'  >> Time cost for constructing H: ', time2-time1, ' s'
+      if (cpuid==0)write(stdout, '(a, f20.2, a)')'  >> Time cost for diagonalize H: ', time3-time2, ' s'
+   enddo !ik
+
+#if defined (MPI)
+   call mpi_allreduce(eigv,eigv_mpi,size(eigv),&
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
+   call mpi_allreduce(weight_valley, weight_valley_mpi,size(weight_valley),&
+      mpi_dp,mpi_sum,mpi_cmw,ierr)
+   call mpi_allreduce(valley_plus, valley_plus_mpi,size(valley_plus),&
+      mpi_logical,mpi_lor,mpi_cmw,ierr)
+#else
+   eigv_mpi= eigv
+   weight_valley_mpi= weight_valley
+   valley_plus_mpi= valley_plus
+#endif
+
+   !> minimum and maximum value of energy bands
+   emin= minval(eigv_mpi)+0.05*(maxval(eigv_mpi)-minval(eigv_mpi))
+   emax= maxval(eigv_mpi)-0.05*(maxval(eigv_mpi)-minval(eigv_mpi))
+   
+
+
+   outfileindex= outfileindex+ 1
+   if (cpuid==0)then
+      open(unit=outfileindex, file='bulkek.dat')
+      do i=1, neval
+         do ik=1, nk3_band
+            write(outfileindex, '(300f16.9)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik), &
+               weight_valley_mpi(i, ik)
+         enddo
+         write(outfileindex, *)' '
+      enddo
+      close(outfileindex)
+   endif
+
+   outfileindex= outfileindex+ 1
+   if (cpuid==0)then
+      open(unit=outfileindex, file='bulkek_valley_plus.dat')
+      do i=1, neval
+         do ik=1, nk3_band
+            if (valley_plus_mpi(i, ik)) then
+               write(outfileindex, '(200F16.8)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik), &
+                  weight_valley_mpi(i, ik)
+            endif
+         enddo
+         write(outfileindex, *)' '
+      enddo
+      close(outfileindex)
+   endif
+
+   outfileindex= outfileindex+ 1
+   if (cpuid==0)then
+      open(unit=outfileindex, file='bulkek_valley_minus.dat')
+      do i=1, neval
+         do ik=1, nk3_band
+            if (.not.valley_plus_mpi(i, ik)) then
+               write(outfileindex, '(200F16.8)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik), &
+                  weight_valley_mpi(i, ik)
+            endif
+         enddo
+         write(outfileindex, *)' '
+      enddo
+      close(outfileindex)
+   endif
+
+
+   call generate_ek_kpath_gnu('bulkek.dat', 'bulkek.gnu', 'bulkek.pdf', &
+                                 emin, emax, nk3_band, Nk3lines, &
+                                 k3line_name, k3line_stop, k3len)
+
+#if defined (MPI)
+   call mpi_barrier(mpi_cmw, ierr)
+#endif
+
+   deallocate( acoo)
+   deallocate( jcoo)
+   deallocate( icoo)
+   deallocate( W)
+   deallocate( eigv)
+   deallocate( eigv_mpi)
+   deallocate( zeigv)
+   deallocate( weight_valley, weight_valley_mpi)
+
+   return
+end subroutine sparse_ekbulk_valley
 
 
 subroutine sparse_ekbulk_plane
@@ -1737,7 +2313,7 @@ end subroutine ekbulk_elpa
  
      nwann= Num_wann
      if (soc>0) nwann= Num_wann/2
-     print *, 'nwann', nwann
+    !print *, 'nwann', nwann
 
      if (SOC==0) stop 'you should set soc=0 in the input file'
      !> construct spin matrix
