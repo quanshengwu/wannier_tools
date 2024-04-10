@@ -64,7 +64,7 @@ For magnetoresistance calculation, please also cite Magnetoresistance from Fermi
 
 For non-magnetic symmetrization processing, please cite "wannhr_symm: A tool for symmetrization of non-magnetic WannierTB, https://github.com/quanshengwu/wannier\_tools/tree/master/utility/wannhr_symm/, Changming Yue".
 
-For magnetic symmetrization processing, please cite "wannhr_symm_Mag: A tool for symmetrization of magnetic WannierTB, https://github.com/quanshengwu/wannier\_tools/edit/master/utility/wannhr_symm_Mag/, Changming Yue".
+For magnetic symmetrization processing, please cite "wannhr_symm_Mag: A tool for symmetrization of magnetic WannierTB, https://github.com/quanshengwu/wannier\_tools/tree/master/utility/wannhr_symm_Mag, Changming Yue".
 
 For phonon system calculation, please cite "PhononTB: a tool to construct tight-binding model for phonon systems, https://github.com/quanshengwu/wannier\_tools/tree/master/utility/phonopyTB, Changming Yue". 
 
