@@ -15,7 +15,7 @@ np.set_printoptions(precision=6,suppress=True,linewidth=150)
 if __name__ == '__main__':
 
     # the original wannier110_hr.dat
-    print ">>> copyright Changming YUE@IOP,CAS, CHINA. yuechangming8@gmail.com"
+    print ">>> copyright: Changming Yue from Department of Physics, Southern University of Science and Technology (SusTech, China). yuechangming8@gmail.com"
     print ">>> Loading wannier90_hr.dat ..." 
 
     # max hopping distance in terms of lattice vector -sdim to sdim
