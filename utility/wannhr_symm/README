@@ -1,3 +1,6 @@
+Please cite as "wannhr_symm: A tool for symmetrization of non-magnetic WannierTB, Changming Yue". 
+
+
 New feature: if you put an empty file "write_symmop.flag" in the symmetrization folder,
 then representation matrices of all the space group operations in the wannier basis
 will be generated. This would be helful to write down Mirror matrix to calculate, e.g.
@@ -6,7 +9,6 @@ mirror Chern number.
 Copyright: Changming Yue, Department of Physics, Southern University of Science and Technology, Shenzhen 518055, China.
 Email:    yuecm@sustech.edu.cn; yuechangming8@gmail.com
 
-A tool for symmetrization of non-magnetic wannier90_hr.dat. 
 
 Generally there are some violations to symmetry of wannier Hamiltonian due to 
 numerical errors, bad disentanglements, asymmetry of Wigner-Sceitz cell. The tool 
