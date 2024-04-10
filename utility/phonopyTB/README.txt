@@ -1,3 +1,6 @@
+Copyright: Changming Yue, Department of Physics, Southern University of Science and Technology, Shenzhen 518055, China. 
+Email: yuecm@sustech.edu.cn; yuechangming8@gmail.com
+
 # it is well tested with phonopy==1.11.8
 
 A python tool based on Phononpy to generate phonon tight-binding Hamiltonian
