@@ -15,7 +15,7 @@ QQ group number : 709225749
 WannierTools was initialized by QuanSheng Wu (IOP CAS) and Shengnan Zhang (IOP CAS) at IOP CAS Beijing in 2012. 
 Now, it's an open-source software, there are serveral contributors including
 
-* Changming Yue (UniFR CH) : symmetrization of Wannier tight-binding Hamiltonian and obtain phonon tight-binding Hamiltonian.
+* Changming Yue (SusTech) : symmetrization of Wannier tight-binding Hamiltonian and obtain phonon tight-binding Hamiltonian.
 * Yifei Guan (EPFL CH) : Landau level calculation.
 * Tiantian Zhang (Tokyo Institute of Technology ): LOTO correction in phonon systems.
 * Yi Liu (BNU Beijing) : Ruge-Kutta integration.
