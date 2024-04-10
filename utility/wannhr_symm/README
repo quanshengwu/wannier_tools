@@ -3,8 +3,8 @@ then representation matrices of all the space group operations in the wannier ba
 will be generated. This would be helful to write down Mirror matrix to calculate, e.g.
 mirror Chern number.
 
-Copyright: Changming Yue, Institute of Physics, Chinese Academy of Sciences.
-Email:     yuechangming8@gmail.com
+Copyright: Changming Yue, Department of Physics, Southern University of Science and Technology, Shenzhen 518055, China.
+Email:    yuecm@sustech.edu.cn; yuechangming8@gmail.com
 
 A tool for symmetrization of non-magnetic wannier90_hr.dat. 
 
