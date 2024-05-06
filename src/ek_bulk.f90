@@ -1108,7 +1108,6 @@ end subroutine ek_bulk_cube
 
 
 
-#if defined (INTELMKL)
 subroutine sparse_ekbulk
    use sparse
    use para
@@ -1184,7 +1183,11 @@ subroutine sparse_ekbulk
    if (neval>Num_wann-2) neval= Num_wann- 2
 
    !> ncv
-   nvecs=int(2*neval)
+   if (NumLCZVecs.ne.0) then
+      nvecs= NumLCZVecs
+   else
+      nvecs=int(2*neval)
+   endif
 
    if (nvecs<20) nvecs= 20
    if (nvecs>Num_wann) nvecs= Num_wann
@@ -1556,7 +1559,8 @@ subroutine sparse_ekbulk_valley
             do ie2= 1, ND
                psi2= zeigv(:, IE+ie2-1)
                vpsi=0d0
-               call mkl_zcoogemv('N', Num_wann, acoo_valley, icoo_valley, jcoo_valley, nnzmax_valley, psi2, vpsi)
+               !call mkl_zcoogemv('N', Num_wann, acoo_valley, icoo_valley, jcoo_valley, nnzmax_valley, psi2, vpsi)
+               call coomv_z(Num_wann, nnzmax_valley, acoo_valley, icoo_valley, jcoo_valley, psi2, vpsi)
                valley_k_nd(ie1, ie2)= zdotc(Num_wann, psi1, 1, vpsi, 1)
             enddo
            !if (abs(W(IE+ie1-1)/eV2Hartree)<2d0) &
@@ -1918,7 +1922,6 @@ subroutine sparse_ekbulk_plane
    return
 end subroutine sparse_ekbulk_plane
 
-#endif
 
 #if defined (ELPA)
 subroutine ekbulk_elpa

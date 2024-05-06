@@ -1657,7 +1657,7 @@ subroutine  wannier_center3D_plane_mirror_minus
    real(dp) :: maxgap0
 
    !> Z2 calculation for time reversal invariant system
-   integer :: Z2
+   real(dp) :: Z2
    integer :: Delta
 
    real(dp) :: g
@@ -2042,7 +2042,7 @@ subroutine  wannier_center3D_plane_mirror_plus
    real(dp) :: maxgap0
 
    !> Z2 calculation for time reversal invariant system
-   integer :: Z2
+   real(dp) :: Z2
    integer :: Delta
 
    real(dp) :: g
@@ -2344,7 +2344,7 @@ subroutine  wannier_center3D_plane0
    real(dp), allocatable :: largestgap(:)
 
    !> Z2 calculation for time reversal invariant system
-   integer :: Z2
+   real(dp) :: Z2
 
    allocate(wcc(NumberofSelectedOccupiedBands, Nk2))
    allocate(largestgap(Nk2))
@@ -2471,7 +2471,7 @@ end subroutine  wannier_center3D_plane0
       real(dp) :: maxgap0
 
       !> Z2 calculation for time reversal invariant system
-      integer :: Z2
+      real(dp) :: Z2
       integer :: Delta
 
       real(dp) :: g
@@ -2719,7 +2719,7 @@ subroutine  wannier_center3D_k
    real(dp), allocatable :: largestgap(:)
 
    !> Z2 calculation for time reversal invariant system
-   integer :: Z2
+   real(dp) :: Z2
 
    real(dp),allocatable :: kpoints(:,:,:)
    integer :: nkp1,nkp2
@@ -2879,7 +2879,7 @@ subroutine  wannier_center3D_kpath(kpoints, nkp1, nkp2, largest_gap, wcc, Z2)
    real(dp) :: maxgap0
 
    !> Z2 calculation for time reversal invariant system
-   integer :: Z2
+   real(dp) :: Z2
    integer :: Delta
 
    real(dp) :: g
@@ -3863,8 +3863,8 @@ subroutine  Z2_3D
    real(dp) :: kvec1(3)
    real(dp) :: kvec2(3)
 
-   integer :: Z2
-   integer :: Z2_all(6)
+   real(dp) :: Z2
+   real(dp) :: Z2_all(6)
 
    !> wannier centers for each ky, bands
    real(dp), allocatable :: wcc(:, :)

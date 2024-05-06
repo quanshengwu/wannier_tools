@@ -1,0 +1,22 @@
+
+#ifndef SUPERLU_CONFIG_H
+#define SUPERLU_CONFIG_H
+
+
+
+
+
+
+
+
+
+
+
+#if (XSDK_INDEX_SIZE == 64)
+#include <stdint.h>
+#define _LONGINT 1
+#else
+#endif
+
+#endif 
+

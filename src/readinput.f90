@@ -562,7 +562,7 @@ subroutine readinput
    Magp_max=0   
    wcc_calc_tol= 0.08
    wcc_neighbour_tol= 0.3
-   NumLCZVecs=400
+   NumLCZVecs=100
    NumRandomConfs=1
    NumSelectedEigenVals=0 
    Beta= 100
@@ -3523,7 +3523,7 @@ subroutine readinput
 
    ! build the map between supercell (Origin_cell) and primitive cell (Folded_cell)
    if (BulkBand_unfold_line_calc.or.BulkBand_unfold_plane_calc.or.QPI_unfold_plane_calc.or.Landaulevel_unfold_line_calc)then
-      call build_map_supercell_primitivecell(Origin_cell, Folded_cell)
+      call build_map_supercell_primitivecell
    endif
 
    !> close wt.in

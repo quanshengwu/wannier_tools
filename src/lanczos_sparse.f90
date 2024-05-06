@@ -83,9 +83,10 @@ subroutine lanczos_seqsparse_cpu_z(NumLczVectors, NumLczVectors_out, Mdim, nnz, 
    vec_0= 1d0/betan(1)* vec_0
 
    !* perform |vec(1,:)>=Ham |vec(0,:)>
-#if defined (INTELMKL)
-   call mkl_zcsrgemv('N', Mdim, acsr, icsr, jcsr, vec_0, vec_1)
-#endif
+!#if defined (INTELMKL)
+!   call mkl_zcsrgemv('N', Mdim, acsr, icsr, jcsr, vec_0, vec_1)
+!#endif
+   call csrmv_z(Mdim, nnz, acsr, icsr, jcsr, vec_0, vec_1)
 
    !* a_0= <phi_0|H|phi_0>
    alpha(1) = zdotc(Mdim, vec_0, 1, vec_1, 1)
@@ -114,9 +115,10 @@ subroutine lanczos_seqsparse_cpu_z(NumLczVectors, NumLczVectors_out, Mdim, nnz, 
       call now(time_start)
 
 
-#if defined (INTELMKL)
-      call mkl_zcsrgemv('N', Mdim, acsr, icsr, jcsr, vec_1, vec_2)
-#endif
+!#if defined (INTELMKL)
+!      call mkl_zcsrgemv('N', Mdim, acsr, icsr, jcsr, vec_1, vec_2)
+!#endif
+      call csrmv_z(Mdim, nnz, acsr, icsr, jcsr, vec_1, vec_2)
 
       !* calculate alpha, betan
       t_z1= zdotc(Mdim, vec_1, 1, vec_2, 1)

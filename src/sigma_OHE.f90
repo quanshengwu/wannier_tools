@@ -78,6 +78,8 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
       
       real(dp) :: time_start, time_end
       real(dp) :: time_start0, time_end0
+      real(dp) :: time_start1, time_end1
+      real(dp) :: time_rkf45, time_velocity, time_integral
       integer :: NSlice_Btau_inuse
 
       !> Btau slices for Runge-Kutta integration
@@ -117,7 +119,8 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
       !> number of steps used in the Runge-Kutta integration
       integer :: NSlice_Btau
       integer :: NSlice_Btau_local
-      real(dp), allocatable :: kout(:, :)
+      real(dp), allocatable :: kout(:, :), kout_all(:, :)
+      real(dp), allocatable :: weights(:)
 
       !> define some arrays for different bands. Since there are different number
       !> of k points left for different bands.
@@ -148,7 +151,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
 
       !> file index
       !integer, allocatable  :: myfileindex(:)
-      character(80) :: sigmafilename, bandname, tname, muname
+      character(80) :: sigmafilename, bandname, tname, muname, ibname, ikname, filename
 
 
       !> inverse of group operator
@@ -234,6 +237,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
       Nk_start= KCube3D_total%Nk_start
       Nk_end= KCube3D_total%Nk_end
 
+      allocate( weights(Nslice_BTau_Max))
       allocate( Ek(Nband_Fermi_Level))
       allocate( Enk(Nk_start:Nk_end, Nband_Fermi_Level))
       allocate( velocity(3, Nk_start:Nk_end, Nband_Fermi_Level))
@@ -246,6 +250,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
       velocity_k= 0d0
       velocity_bar= 0d0
       velocity_bar_k= 0d0
+      weights = 0d0
 
       time_start= 0d0
       time_end= 0d0
@@ -525,7 +530,9 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
 
       !> a temp array used in RKFS
       allocate(kout(3, NSlice_Btau))
+      allocate(kout_all(3, NSlice_Btau))
       kout= 0d0
+      kout_all= 0d0
 
       !> allocate array for sigmafileindex and rhofileindex
       allocate(sigmafileindex(OmegaNum))
@@ -871,6 +878,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
    
             !> Runge-Kutta only applied with BTauMax>0
             !> if the magnetic field is zero. 
+            call now(time_start1)
             if (BTauMax>eps3) then
                NSlice_Btau_inuse= NSlice_Btau
                call RKF45_pack(magnetic_field, bands_fermi_level(iband),  &
@@ -882,6 +890,8 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
                enddo
                NSlice_Btau_inuse = NSlice_Btau
             endif
+            call now(time_end1)
+            time_rkf45= time_end1-time_start1
    
             if (NSlice_Btau_inuse==1) then
                write(stdout, '(a, i6, a, i4, a, i6, a, 3f12.6)')&
@@ -896,10 +906,12 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
                cycle
             endif
   
+            call now(time_start1)
             if (NSlice_Btau_inuse==1)then  ! vxB=0
                call velocity_calc_iband(bands_fermi_level(iband), k_start, v_t)
                do ibtau=1, NSlice_Btau
                   kout(:, ibtau)= k_start(:)
+                  kout_all(:, ibtau)= k_start(:)
                   klist_iband(iband)%velocity_k(:, ibtau)= v_t
                enddo
                NSlice_Btau_inuse = NSlice_Btau
@@ -908,20 +920,39 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
                   k= kout(:, it) 
                   call velocity_calc_iband(bands_fermi_level(iband), k, v_t)
                   klist_iband(iband)%velocity_k(:, it)= v_t
+                  kout_all(:, it) = k
                enddo ! integrate over time step
    
                !> periodic kpath in the BZ can be reused
                do i=2, NSlice_Btau_inuse/icycle
                   do j=1, icycle
                      klist_iband(iband)%velocity_k(:, j+(i-1)*icycle)= klist_iband(iband)%velocity_k(:, j)
+                     kout_all(:, j+(i-1)*icycle) = kout(:, j)
                   enddo
                enddo
                do i=(NSlice_Btau_inuse/icycle)*icycle+1, NSlice_Btau
                   klist_iband(iband)%velocity_k(:, i)= klist_iband(iband)%velocity_k(:, i-(NSlice_Btau_inuse/icycle)*icycle)
+                  kout_all(:, i) = kout(:, i-(NSlice_Btau_inuse/icycle)*icycle)
                enddo
             endif
+            call now(time_end1)
+            time_velocity=  time_end1- time_start1
 
- 
+            if (cpuid==0.and.iprint_level==3) then
+               write(ibname, '(i6)')iband
+               write(ikname, '(i6)')ik
+               write(filename, '(5a)')'klist_ib_', trim(Adjustl(ibname)), '_ik', trim(Adjustl(ikname)), '.txt'
+               open(unit=324232, file=filename)
+
+               write(324232, *)'#icycle= ', icycle, ', NSlice_Btau= ', NSlice_Btau
+               do i=1, NSlice_Btau
+                  write(324232, "(i9, 6f16.6)") i, kout_all(:, i), klist_iband(iband)%velocity_k(:, i)
+               enddo
+               close(324232)
+
+            endif
+
+            call now(time_start1)
             !> calculate the conductivity/tau
             do ikt=1, NumT
                KBT= KBT_array(ikt)
@@ -950,6 +981,11 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
                         !> in the relaxation time approximation
                         v_k= klist_iband(iband)%velocity_k(:, 1+ishift)
                         if (BTau>eps3.and.NSlice_Btau_local>2) then
+                           ! set weight 
+                           do it=1, NSlice_Btau_local
+                              weights(it) = exp(-DeltaBtau*(it-1d0))
+                           enddo
+                           !> trapezoidal integral
                            velocity_bar_k= 0d0
                            do it=1, NSlice_Btau_local
                              velocity_bar_k= velocity_bar_k+ &
@@ -959,6 +995,23 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
                            - 0.5d0*DeltaBtau*(exp(-(NSlice_Btau_local-1d0)*DeltaBtau)&
                            * klist_iband(iband)%velocity_k(:, NSlice_Btau_local+ishift)  &
                            + klist_iband(iband)%velocity_k(:, 1+ishift))
+
+                          !> Simpson's integral
+                          !> add the first and the last term
+                         ! velocity_bar_k=  weights(1)*klist_iband(iband)%velocity_k(:, 1)
+                         ! velocity_bar_k= velocity_bar_k+ weights(NSlice_Btau_local)*klist_iband(iband)%velocity_k(:, NSlice_Btau_local)
+                         !
+                         ! !> add the middle part
+                         ! do it = 2, NSlice_Btau_local-1, 2
+                         !    velocity_bar_k = velocity_bar_k + 4d0 * weights(it) * klist_iband(iband)%velocity_k(:, it)
+                         ! end do
+                         !
+                         ! do it = 3, NSlice_Btau_local-2, 2
+                         !    velocity_bar_k = velocity_bar_k + 2d0 * weights(it) * klist_iband(iband)%velocity_k(:, it)
+                         ! end do
+                         !
+                         ! velocity_bar_k = velocity_bar_k * (DeltaBtau / 3d0)
+
                         else
                            velocity_bar_k= v_k
                         endif
@@ -1019,9 +1072,15 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
                   enddo ! ibtau  Btau
                enddo ! ie  mu
             enddo ! ikt KBT
+            call now(time_end1)
+            time_integral= time_end1- time_start1
+            if (cpuid.eq.0) write(stdout, '(a, i9, a, i10)')'>> icycle = ', icycle, ' , NSlice_Btau', NSlice_Btau
+            if (cpuid.eq.0) write(stdout, '(a, f16.2, a)')'>> time cost for RKF45_pack is    ', time_rkf45, ' s'
+            if (cpuid.eq.0) write(stdout, '(a, f16.2, a)')'>> time cost for velocity_calc is ', time_velocity, ' s'
+            if (cpuid.eq.0) write(stdout, '(a, f16.2, a)')'>> time cost for integral is      ', time_integral, ' s'
             call now(time_end)
             sigma_iband_k(iband)%time_cost_mpi(ik)= time_end- time_start
-            if (cpuid.eq.0) write(stdout, '(a, f16.2, a)')'>> time cost for this loop is ', time_end- time_start, ' s'
+            if (cpuid.eq.0) write(stdout, '(a, f16.2, a)')'>> time cost for this loop is     ', time_end- time_start, ' s'
          enddo ! ik  kpoints
    
       end subroutine cal_sigma_iband_k
@@ -1420,6 +1479,16 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
       ! calculation bulk hamiltonian
       call ham_bulk_latticegauge(k, Hamk_bulk)
 
+!     call eigensystem_c( 'V', 'U', Num_wann, Hamk_bulk, W)
+
+!     !> Only the energy levels close to the Fermi level contribute to the conductivity
+!     if (abs(W(iband))/eV2Hartree>EF_broadening) then
+!        velocity_k= 0d0
+!        return
+!     endif
+
+!     UU= Hamk_bulk(:, iband)
+
       call zheevx_pack('V', 'U', Num_wann, iband, iband, Hamk_bulk, W, UU)
 
       !> Only the energy levels close to the Fermi level contribute to the conductivity
@@ -1558,7 +1627,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
          
 
          call periodic_diff(kout(:,2), kout(:,1), kdiff)
-         if (it>2)dis_smallest= norm(kdiff)
+         if (it>2)dis_smallest= norm(kdiff)/1 
 
          !> check if kout(:, it)==kout(:, 1)
          !> if it's a close orbit, we don't have to calculate all of them.

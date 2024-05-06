@@ -29,8 +29,7 @@ Se pz px py
 !> bulk band structure calculation flag
 &CONTROL
 BulkBand_calc         = T
-!BulkBand_points_calc  = T
-Symmetry_Import_calc = T
+BulkBand_points_calc  = T
 /
 
 &SYSTEM

@@ -13,8 +13,8 @@
      real(dp), intent(inout)  :: time_now
 
      call Date_and_time(values=time_new)
-     time_now= time_new(3)*24*3600+time_new(5)*3600+&
-               time_new(6)*60+time_new(7)+time_new(8)/1000d0
+     time_now= time_new(3)*24d0*3600d0+time_new(5)*3600d0+&
+               time_new(6)*60d0+time_new(7)+time_new(8)/1000d0
   
      return
   end subroutine now

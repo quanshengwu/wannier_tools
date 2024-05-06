@@ -176,9 +176,7 @@ subroutine unfolding_kpath
             W= 0d0
             !> after arpack_sparse_coo_eigs, nnz will be updated.
             ritzvec= .true.
-#if defined (INTELMKL)
             call arpack_sparse_coo_eigs(Ndimq,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
-#endif
          else
             call ham_3Dlandau(Ndimq, Magq, k_SBZ_direct, hamk_bulk)
             zeigv=hamk_bulk
@@ -197,9 +195,7 @@ subroutine unfolding_kpath
             W= 0d0
             !> after arpack_sparse_coo_eigs, nnz will be updated.
             ritzvec= .true.
-#if defined (INTELMKL)
             call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
-#endif
             call now(time3)
          else
             ! dense hr
@@ -490,9 +486,7 @@ subroutine unfolding_kplane
          W= 0d0
          !> after arpack_sparse_coo_eigs, nnz will be updated.
          ritzvec= .true.
-#if defined (INTELMKL)
          call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
-#endif
          call now(time3)
       else
  
@@ -505,9 +499,7 @@ subroutine unfolding_kplane
             W= 0d0
             !> after arpack_sparse_coo_eigs, nnz will be updated.
             ritzvec= .true.
-#if defined (INTELMKL)
             call arpack_sparse_coo_eigs(Num_wann,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,W,sigma, zeigv, ritzvec)
-#endif
             call now(time3)
          else
             ! dense hr

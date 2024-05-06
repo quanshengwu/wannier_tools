@@ -450,7 +450,11 @@
      logical :: valley_projection_calc ! for valley projection, only for sparse hamiltonina, you need to provide the valley operator 
      
      logical :: w3d_nested_calc = .false.
-     
+    
+     !> an integer to print the messages
+     !> iprint_level=3 : print all the debug messages
+     integer :: iprint_level = 1       
+
      namelist / Control / BulkBand_calc, BulkFS_calc,  BulkFS_Plane_calc, &
                           BulkFS_plane_stack_calc,  BulkGap_plane_calc, &
                           QPI_unfold_plane_calc, &
@@ -482,7 +486,7 @@
                           LandauLevel_B_dos_calc,LanczosBand_calc,LanczosDos_calc, &
                           LandauLevel_B_calc, LandauLevel_kplane_calc,landau_chern_calc, &
                           FermiLevel_calc,ANE_calc, export_newhr,export_maghr,w3d_nested_calc, &
-                          valley_projection_calc
+                          valley_projection_calc, iprint_level
 
      integer :: Nslab  ! Number of slabs for 2d Slab system
      integer :: Nslab1 ! Number of slabs for 1D wire system
@@ -1062,6 +1066,9 @@
      !> dimension number_group_operators, Num_atoms
      integer, allocatable :: imap_sym(:, :)
 
+     real(dp) :: time_cost_t1=0d0
+     real(dp) :: time_cost_t2=0d0
+     real(dp) :: time_cost_t3=0d0
 
  end module para
 

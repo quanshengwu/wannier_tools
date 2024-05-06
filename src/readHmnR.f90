@@ -181,6 +181,11 @@ subroutine readNormalHmnR()
       endif
    endif
 
+   !> get the ir index that the R(ir)=(0, 0, 0)
+   ir0=0
+   do ir=1, nrpts
+      if (irvec(1, ir)==0.and.irvec(2, ir)==0.and.irvec(3, ir)==0) ir0=ir
+   enddo
 
    !> Adding zeeman field
    !> Bx=Bdirection(1)
@@ -190,22 +195,19 @@ subroutine readNormalHmnR()
    !> sx, sy, sz are Pauli matrices.
    if (Add_Zeeman_Field) then
       if (abs(Zeeman_energy_in_eV)<eps6)then
-         Zeeman_energy_in_eV= Bmagnitude*Effective_gfactor*Bohr_magneton
+         Zeeman_energy_in_eV= Bmagnitude*Effective_gfactor*Bohr_magneton/eV2Hartree
          if (cpuid==0)then
-            write(stdout, '(1x, a, 3f16.6)')"Zeeman_energy_in_eV: ",  Zeeman_energy_in_eV/eV2Hartree
+            write(stdout, '(1x, a, 3f16.6)')"Zeeman_energy_in_eV: ",  Zeeman_energy_in_eV
          endif
       endif
+      call add_zeeman_normal_hr()
 
       !> After considering the Zeeman field, we already extended the spin space to spin-full.
       SOC = 1
+
    endif ! Add_Zeeman_Field
 
-
    call get_stacking_direction_and_pos(add_electric_field, pos)
-   ir0=0
-   do ir=1, nrpts
-      if (irvec(1, ir)==0.and.irvec(2, ir)==0.and.irvec(3, ir)==0) ir0=ir
-   enddo
  
    if (add_electric_field>0) then
      io=0
@@ -797,7 +799,7 @@ subroutine readsparse_overlap
    1003 continue
    close(13)
 
-   if (cpuid.eq.0) write(stdout, '(a, i)')' >> Number of non-zeros splen_overlap_input', splen_overlap_input
+   if (cpuid.eq.0) write(stdout, '(a, i10)')' >> Number of non-zeros splen_overlap_input', splen_overlap_input
    if (cpuid.eq.0) write(stdout, '(a)')' >> Sparse overlap matrix reading finished '
 
    return
@@ -1129,71 +1131,70 @@ end subroutine reorder_wannierbasis
 
 
 
-!subroutine add_zeeman_normal_hr(Bx_in_Tesla, By_in_Tesla, Bz_in_Tesla)
-!  !> add Zeeman energy on the sparse hmnr based on the magnetic field strength
-!  !> magnetic_field_in_tesla is in Tesla
-!  !> Here the coordinate system is the same as user-specified in the LATTICE card.
-!  use para
-!  implicit none
+ subroutine add_zeeman_normal_hr()
+   !> add Zeeman energy on the sparse hmnr based on Zeeman_energy_in_eV and the magnetic field direction
+   !> Bx=Bdirection(1)
+   !> By=Bdirection(2)
+   !> Bz=Bdirection(3)
+   !> magnetic_field_in_tesla is in Tesla
+   !> Here the coordinate system is the same as user-specified in the LATTICE card.
+   !> H_zeeman
+   use para
+   implicit none
 
-!  real(dp), intent(in) :: Bx_in_Tesla, By_in_Tesla, Bz_in_Tesla
+   real(dp) :: Bdirection_x, Bdirection_y, Bdirection_z
 
-!  integer :: nwann_nsoc, i, j, ir0, ir
-!  real(dp) :: Zeeman_energy_in_eV_factor
+   integer :: nwann_nsoc, n, m, ir0, ir
+   real(dp) :: Zeeman_energy_in_au
 
-!  nwann_nsoc= Num_wann/2
+   if (.not.Add_Zeeman_Field) return
 
-!  if (.not.Add_Zeeman_Field) return
+   nwann_nsoc= Num_wann/2
 
-!  ir0=0
-!  do ir=1, Nrpts
-!     if (irvec(1,ir)==0.and.irvec(2,ir)==0.and.irvec(3,ir)==0) then
-!        ir0= ir
-!     endif
-!  enddo
-!  if (ir0==0) stop 'something wrong with irvec in subroutine add_zeeman_sparse_hr'
+   ir0=0
+   do ir=1, Nrpts
+      if (irvec(1,ir)==0.and.irvec(2,ir)==0.and.irvec(3,ir)==0) then
+         ir0= ir
+      endif
+   enddo
+   if (ir0==0) stop 'something wrong with irvec in subroutine add_zeeman_sparse_hr'
 
-!  Zeeman_energy_in_eV_factor= Effective_gfactor*Bohr_magneton
+   if (abs(Zeeman_energy_in_eV)<eps9)then
+      !> in atomic unit
+      Zeeman_energy_in_au= Effective_gfactor*Bohr_magneton*Bmagnitude
+   else
+      Zeeman_energy_in_au= Zeeman_energy_in_eV*eV2Hartree
+   endif
 
-!  if (SOC==0) then
-!     do ir=1, Nrpts
-!        do n=1, nwann_nsoc
-!           do m=1, nwann_nsoc
-!              if (irvec(1, ir)==0.and.irvec(2, ir)==0.and.irvec(3, ir)==0.and.n==m) then
-!                 HmnR(n+nwann_nsoc, m+nwann_nsoc, ir)= HmnR(n, m, ir)- Zeeman_energy_in_eV_factor/2d0*Bz_in_Tesla
-!                 HmnR(n, m, ir)            = HmnR(n, m, ir)+ Zeeman_energy_in_eV_factor/2d0*Bz_in_Tesla
-!                 HmnR(n      , m+nwann_nsoc, ir)=                 Zeeman_energy_in_eV_factor/2d0*Bx_in_Tesla &
-!                                                           - zi*Zeeman_energy_in_eV_factor/2d0*By_in_Tesla
-!                 HmnR(n+nwann_nsoc, m      , ir)=                 Zeeman_energy_in_eV_factor/2d0*Bx_in_Tesla &
-!                                                           + zi*Zeeman_energy_in_eV_factor/2d0*By_in_Tesla
-!              else
-!                 HmnR(n+nwann_nsoc, m+nwann_nsoc, ir)= HmnR(n, m, ir)
-!              endif ! R=0
-!           enddo ! m
-!        enddo ! n
-!     enddo ! ir
-!  else
-!     do ir=1, Nrpts
-!        if (irvec(1, ir)/=0.or.irvec(2, ir)/=0.or.irvec(3, ir)/=0) cycle
-!        do n=1, nwann_nsoc
-!           do m=1, nwann_nsoc
-!              if (n==m) then
-!                 HmnR(n+nwann_nsoc, m+nwann_nsoc, ir)= HmnR(n+nwann_nsoc, &
-!                 m+nwann_nsoc, ir)-Zeeman_energy_in_eV_factor/2d0*Bz_in_Tesla
-!                 HmnR(n      , m+nwann_nsoc, ir)= HmnR(n, m+nwann_nsoc, ir)+ &
-!                   Zeeman_energy_in_eV_factor/2d0*Bx_in_Tesla &
-!                                                           -zi*Zeeman_energy_in_eV_factor/2d0*By_in_Tesla
-!                 HmnR(n+nwann_nsoc, m      , ir)= HmnR(n+nwann_nsoc, m, ir)+  &
-!                  Zeeman_energy_in_eV_factor/2d0*Bx_in_Tesla &
-!                                                           +zi*Zeeman_energy_in_eV_factor/2d0*By_in_Tesla
-!                 HmnR(n, m, ir)= HmnR(n, m, ir)+Zeeman_energy_in_eV_factor/2d0*Bz_in_Tesla
-!              endif ! R=0
-!           enddo ! m
-!        enddo ! n
-!     enddo ! ir
-!  endif ! SOC
+   if (SOC==0) then
+      !> We need to extend the spin up to the spin down part
+      do n=1, nwann_nsoc
+         HmnR(n, n, ir0)            = HmnR(n, n, ir0)+ Zeeman_energy_in_au/2d0*Bdirection(3)
+         HmnR(n+nwann_nsoc, n+nwann_nsoc, ir0)= HmnR(n, n, ir0)- Zeeman_energy_in_au/2d0*Bdirection(3)
+         HmnR(n      , n+nwann_nsoc, ir0)= Zeeman_energy_in_au/2d0*Bdirection(1) &
+                                         - zi*Zeeman_energy_in_au/2d0*Bdirection(2)
+         HmnR(n+nwann_nsoc, n      , ir0)= Zeeman_energy_in_au/2d0*Bdirection(1) &
+                                         + zi*Zeeman_energy_in_au/2d0*Bdirection(2)
+      enddo
+ 
+      do ir=1, Nrpts
+         do m=1, nwann_nsoc
+            do n=1, nwann_nsoc
+               HmnR(n+nwann_nsoc, m+nwann_nsoc, ir)= HmnR(n, m, ir)
+            enddo ! m
+         enddo ! n
+      enddo ! ir
+   else
+      do n=1, nwann_nsoc
+         HmnR(n, n, ir0)            = HmnR(n, n, ir0)+ Zeeman_energy_in_au/2d0*Bdirection(3)
+         HmnR(n+nwann_nsoc, n+nwann_nsoc, ir0)= HmnR(n, n, ir0)- Zeeman_energy_in_au/2d0*Bdirection(3)
+         HmnR(n      , n+nwann_nsoc, ir0)= Zeeman_energy_in_au/2d0*Bdirection(1) &
+                                         - zi*Zeeman_energy_in_au/2d0*Bdirection(2)
+         HmnR(n+nwann_nsoc, n      , ir0)= Zeeman_energy_in_au/2d0*Bdirection(1) &
+                                         + zi*Zeeman_energy_in_au/2d0*Bdirection(2)
+      enddo
+   endif ! SOC
 
+   return
 
-!  return
-
-!end subroutine add_zeeman_normal_hr
+ end subroutine add_zeeman_normal_hr

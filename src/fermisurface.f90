@@ -439,7 +439,7 @@
 
      integer :: ia, ik, i, j, i1, i2, ig, io
      integer :: knv3, nkx, nky, ierr, nwann
-     real(dp) :: kz, k(3), s0(3)
+     real(dp) :: kz, k(3), s0(3), s0t(3), s0_len
      
      ! Hamiltonian of bulk system
      complex(Dp), allocatable :: Hamk_bulk(:, :)
@@ -463,6 +463,7 @@
      complex(dp), allocatable :: ones(:, :), ctemp(:, :)
 
      logical, external :: if_in_the_WS
+     real(dp), external :: norm
 
 
      nkx= Nk
@@ -665,9 +666,14 @@
            write(outfileindex, "('#column', i5, 3000i16)")(i, i=1, 7+4*NumberofSelectedOrbitals_groups)
            do ik=1, knv3
               do ig=1, NumberofSelectedOrbitals_groups
-                 s0(1)= sx_selected_mpi(ik, ig)  /dos_selected_mpi(ik, ig)
-                 s0(2)= sy_selected_mpi(ik, ig)  /dos_selected_mpi(ik, ig)
-                 s0(3)= sz_selected_mpi(ik, ig)  /dos_selected_mpi(ik, ig)
+                 s0(1)= sx_selected_mpi(ik, ig)   /dos_selected_mpi(ik, ig)
+                 s0(2)= sy_selected_mpi(ik, ig)   /dos_selected_mpi(ik, ig)
+                 s0(3)= sz_selected_mpi(ik, ig)   /dos_selected_mpi(ik, ig)
+
+                !s0_len= norm(s0t)
+                !if (s0_len>eps6) then
+                !   s0= s0t/s0_len
+                !endif
                  call rotate_k3_to_kplane(s0, s1(:, ig))
               enddo
               write(outfileindex, '(3000E16.8)')kxy_shape(:, ik)*Angstrom2atomic, kxy_plane(:, ik)*Angstrom2atomic, &

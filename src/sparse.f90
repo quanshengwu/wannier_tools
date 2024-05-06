@@ -196,10 +196,10 @@ module sparse
    public :: WTParCSRMatrixCreate
    public :: csr_sort_indices
    public :: csr_sum_duplicates
-#if defined (INTELMKL)
    public :: arpack_sparse_coo_eigs
    public :: arpack_sparse_coo_eigs_nonorth
-#endif
+   public :: csrmv_z
+   public :: coomv_z
 
 contains
 
@@ -2163,7 +2163,102 @@ contains
          return
       end subroutine csr_sum_duplicates
 
-# if defined (INTELMKL)
+      !> csrmv_z multiplies a CSR matrix A times a vector x; y=A*x
+      !> inputs:
+      !> ndim, integer, the row dimension of the matrix
+      !> nnz, integer, number of non-zero entries, the dimension of A_csr,
+      !ja_csr
+      !> complex A_csr(nnz), integer ia_csr(ndim+1), ja_csr(nnz), the matrix in
+      !CSR Compresed Sparse Row format
+      !> complex x(ndim)
+      !> outputs:
+      !> complex y(ndim)
+      subroutine csrmv_z(ndim, nnz, A_csr, ia_csr, ja_csr, x, y)
+
+         use para, only : dp
+         implicit none
+
+         integer, intent(in) :: ndim
+         integer, intent(in) :: nnz
+         complex(dp), intent(in) :: A_csr(nnz)
+         integer, intent(in) :: ia_csr(ndim+1)
+         integer, intent(in) :: ja_csr(nnz)
+         complex(dp), intent(in) :: x(ndim)
+         complex(dp), intent(out) :: y(ndim)
+
+         integer :: i, k
+         complex(dp) :: t_z
+
+!        real(dp) :: time1, time2
+
+!        call now(time1)
+#if defined (INTELMKL)
+         call mkl_zcsrgemv('N', ndim, a_csr, ia_csr, ja_csr, x, y)
+#else
+      !> A naive implementation
+         do i=1, ndim
+            t_z= 0d0
+            do k=ia_csr(i), ia_csr(i+1)-1
+               t_z= t_z+ A_csr(k) * x(ja_csr(k))
+               
+            enddo
+            y(i) = t_z
+         enddo
+#endif
+
+!        call now(time2)
+!        time_total_debug= time_total_debug+ time2- time1
+         return
+
+      end subroutine csrmv_z
+
+      !> coomv_z multiplies a COO matrix A times a vector x; y=A*x
+      !> inputs:
+      !> ndim, integer, the row dimension of the matrix
+      !> nnz, integer, number of non-zero entries, the dimension of A_COO,
+      !ja_COO
+      !> complex A_COO(nnz), integer ia_COO(ndim+1), ja_COO(nnz), the matrix in
+      !COO Compresed Sparse Row format
+      !> complex x(ndim)
+      !> outputs:
+      !> complex y(ndim)
+      subroutine coomv_z(ndim, nnz, A_coo, ia_coo, ja_coo, x, y)
+
+         use para, only : dp
+         implicit none
+
+         integer, intent(in) :: ndim
+         integer, intent(in) :: nnz
+         complex(dp), intent(in) :: A_coo(nnz)
+         integer, intent(in) :: ia_coo(ndim+1)
+         integer, intent(in) :: ja_coo(nnz)
+         complex(dp), intent(in) :: x(ndim)
+         complex(dp), intent(out) :: y(ndim)
+
+         integer :: i, k
+         complex(dp) :: t_z
+
+!        real(dp) :: time1, time2
+
+!        call now(time1)
+#if defined (INTELMKL)
+         call mkl_zcoogemv('N', ndim, a_coo, ia_coo, ja_coo, nnz, x, y)
+#else
+      !> A naive implementation
+         do i=1, nnz
+            y(ia_coo(i)) = y(ia_coo(i))+ a_coo(i)* x(ja_coo(i))
+         enddo
+#endif
+
+!        call now(time2)
+!        time_total_debug= time_total_debug+ time2- time1
+         return
+
+      end subroutine coomv_z
+
+
+
+
       subroutine arpack_sparse_coo_eigs(ndims,nnzmax,nnz,acoo,jcoo,icoo,neval,nvecs,deval,sigma,zeigv, ritzvec)
          use para, only : dp
          implicit none
@@ -2205,12 +2300,16 @@ contains
          complex(dp),intent(out) :: zeigv(ndims, nvecs)
         
          zeigv= 0d0
-         !> get eigenvalues of a sparse matrix by calling arpack subroutine
-         !> here acoo, icoo, jcoo are stored in COO format
-         !call zmat_arpack_zndrv1(ndims, nnzmax, nnz,  acoo, jcoo, icoo, sigma, neval, nvecs, deval, zeigv)
 
+#if defined (INTELMKL)
+         !> get eigenvalues of a sparse matrix by calling arpack subroutine
          !> acoo, jcoo, icoo would be converted in to A-sigma*I, then converted into CSR format
          call zmat_arpack_zndrv2(ndims, nnzmax, nnz, acoo, jcoo, icoo, sigma, neval, nvecs, deval, zeigv, ritzvec)
+#else
+         !> here acoo, icoo, jcoo are stored in COO format
+         !> use matrix vector multiplication
+         call zmat_arpack_zndrv1(ndims, nnzmax, nnz,  acoo, jcoo, icoo, sigma, neval, nvecs, deval, zeigv, ritzvec)
+#endif
 
 
          return
@@ -2339,6 +2438,9 @@ contains
 ! axuiliary integer variables
          integer :: itmp, iter
 
+         real(dp) :: time_cost_mv, time_cost_zgesv, time_cost_convert,  time_cost_znaupd
+         real(dp) :: time_start, time_end
+
 ! auxiliary real(dp) variables
          real(dp) :: dtmp
 
@@ -2425,6 +2527,10 @@ contains
          bmat  = 'G'
          which = 'LM'
 
+
+         time_cost_mv= 0d0; time_cost_zgesv= 0d0; time_cost_convert= 0d0
+         time_cost_znaupd= 0d0
+
          !
          !     %----------------------------------------------------%
          !     | Construct C = A - SIGMA*S                          |
@@ -2440,6 +2546,7 @@ contains
          if (nnz>nnzmax) stop "ERROR: in zndrv4, nnz is larger than nnzmax"
 
 
+         call now(time_start)
          !> prepare hamiltonian
          !> transform coo format to csr format
          call ConvertCooToCsr(ndims, nnz, acsr, icsr, jcsr, iwk)
@@ -2454,6 +2561,8 @@ contains
          !> eleminate the same entries in the sparse matrix
          call csr_sum_duplicates(ndims, snnz, sicsr, sjcsr, sacsr)
          call csr_sort_indices(ndims, snnz, sicsr, sjcsr, sacsr)
+         call now(time_end)
+         time_cost_convert= time_end- time_start
 
 !
 !     %---------------------------------------------------%
@@ -2505,8 +2614,15 @@ contains
 !        | has been exceeded.                          |
 !        %---------------------------------------------%
 !
+         call now(time_start)
+#if defined (ARPACK)
          call znaupd ( ido, bmat, n, which, nev, tol, resid, ncv, &
             zeigv, ldv, iparam, ipntr, workd, workl, lworkl, rwork, info )
+#else
+         STOP "ERROR : Please install WannierTools with ARPACK"
+#endif
+         call now(time_end)
+         time_cost_znaupd=  time_cost_znaupd+ time_end- time_start
 
          iter = iter + 1
          if (mod(iter,100) .eq. 0 .and. cpuid==0) then
@@ -2531,10 +2647,18 @@ contains
 !
  
             !> first perform S*x
-            call mkl_zcsrgemv('N', ndims, sacsr, sicsr, sjcsr, workd(ipntr(1)), workd(ipntr(2)))
+            call now(time_start)
+            !call mkl_zcsrgemv('N', ndims, sacsr, sicsr, sjcsr, workd(ipntr(1)), workd(ipntr(2)))
+            call csrmv_z(ndims, snnz, sacsr, sicsr, sjcsr, workd(ipntr(1)), workd(ipntr(2)))
+            call now(time_end)
+            time_cost_mv=  time_cost_mv+ time_end- time_start
             call zcopy (ndims, workd(ipntr(2)),  1, workd(ipntr(1)), 1)
             !> then perform inv[A-SIGMA*S]*S*x
-            call zmat_mkldss_zgesv(ndims, nnz, acsr, jcsr, icsr, workd(ipntr(1)), workd(ipntr(2)))
+            call now(time_start)
+            !call zmat_mkldss_zgesv(ndims, nnz, acsr, jcsr, icsr, workd(ipntr(1)), workd(ipntr(2)))
+            call sparse_solver(ndims, nnz, acsr, icsr, jcsr, workd(ipntr(1)), workd(ipntr(2)))
+            call now(time_end)
+            time_cost_zgesv= time_cost_zgesv+ time_cost_mv+ time_end- time_start
 
 !           %-----------------------------------------%
 !           | L O O P   B A C K to call ZNAUPD again. |
@@ -2554,7 +2678,11 @@ contains
 !           |    y  =workd(ipntr(2))
 !           %-----------------------------------------%
 !
-            call zmat_mkldss_zgesv(ndims, nnz, acsr, jcsr, icsr, workd(ipntr(3)), workd(ipntr(2)))
+            call now(time_start)
+            !call zmat_mkldss_zgesv(ndims, nnz, acsr, jcsr, icsr, workd(ipntr(3)), workd(ipntr(2)))
+            call sparse_solver(ndims, nnz, acsr, icsr, jcsr, workd(ipntr(3)), workd(ipntr(2)))
+            call now(time_end)
+            time_cost_zgesv= time_cost_zgesv+ time_cost_mv+ time_end- time_start
 
             go to 10
 !
@@ -2570,7 +2698,11 @@ contains
 !           |    y = workd(ipntr(2))
 !           %-------------------------------------%
 !
-            call mkl_zcsrgemv('N', ndims, sacsr, sicsr, sjcsr, workd(ipntr(1)), workd(ipntr(2)))
+            call now(time_start)
+            !call mkl_zcsrgemv('N', ndims, sacsr, sicsr, sjcsr, workd(ipntr(1)), workd(ipntr(2)))
+            call csrmv_z(ndims, snnz, sacsr, sicsr, sjcsr, workd(ipntr(1)), workd(ipntr(2)))
+            call now(time_end)
+            time_cost_mv=  time_cost_mv+ time_end- time_start
 !
 !           %-----------------------------------------%
 !           | L O O P   B A C K to call ZNAUPD  again. |
@@ -2613,10 +2745,14 @@ contains
             rvec = .false.
             if (LandauLevel_wavefunction_calc.or.SlabBand_calc) rvec = .true.
 
+#if defined (ARPACK)
             call zneupd (rvec, 'A', select, d, zeigv, ldv, sigma, &
                workev, bmat, n, which, nev, tol, resid, ncv,&
                zeigv, ldv, iparam, ipntr, workd, workl, lworkl, &
                rwork, ierr)
+#else
+         STOP "ERROR : Please install WannierTools with ARPACK"
+#endif
 !
 !        %----------------------------------------------%
 !        | Eigenvalues are returned in the one          |
@@ -2660,8 +2796,10 @@ contains
 !               %---------------------------%
 !
 
-                  call mkl_zcsrgemv('N', ndims, sacsr, sicsr, sjcsr, zeigV(1,j), mx)
-                  call mkl_zcsrgemv('N', ndims, acsr, icsr, jcsr, zeigV(1,j), ax)
+                  !call mkl_zcsrgemv('N', ndims, sacsr, sicsr, sjcsr, zeigV(1,j), mx)
+                  call csrmv_z(ndims, snnz, sacsr, sicsr, sjcsr, zeigV(1,j), mx)
+                  !call mkl_zcsrgemv('N', ndims, acsr, icsr, jcsr, zeigV(1,j), ax)
+                  call csrmv_z(ndims, nnz, acsr, icsr, jcsr, zeigV(1,j), ax)
                   call zaxpy(n, -d(j), mx, 1, ax, 1)
                   rd(j,1) = dble(d(j))
                   rd(j,2) = dimag(d(j))
@@ -2709,6 +2847,13 @@ contains
             if (cpuid==0) write(stdout, *) ' The number of OP*x is ', iparam(9)
             if (cpuid==0) write(stdout, *) ' The convergence criterion is ', tol
             if (cpuid==0) write(stdout, *) ' '
+            if (cpuid==0) write(stdout, '(a,f8.4, " s")') ' time_cost_zgesv: ', time_cost_zgesv
+            if (cpuid==0) write(stdout, '(a,f8.4, " s")') ' time_cost_mv: ', time_cost_mv
+            if (cpuid==0) write(stdout, '(a,f8.4, " s")') ' time_cost_t1: ', time_cost_t1
+            if (cpuid==0) write(stdout, '(a,f8.4, " s")') ' time_cost_t2: ', time_cost_t2
+            if (cpuid==0) write(stdout, '(a,f8.4, " s")') ' time_cost_t3: ', time_cost_t3
+            if (cpuid==0) write(stdout, '(a,f8.4, " s")') ' time_cost_convert', time_cost_convert
+            if (cpuid==0) write(stdout, '(a,f8.4, " s")') ' time_cost_znaupd:', time_cost_znaupd
 
          end if
 !
@@ -2954,8 +3099,12 @@ contains
 !        | has been exceeded.                          |
 !        %---------------------------------------------%
 !
+#if defined (ARPACK)
          call znaupd ( ido, bmat, n, which, nev, tol, resid, ncv, &
             zeigv, ldv, iparam, ipntr, workd, workl, lworkl, rwork, info )
+#else
+         STOP "ERROR : Please install WannierTools with ARPACK"
+#endif
 
          iter = iter + 1
          if (mod(iter,100) .eq. 0 .and. cpuid==0) then
@@ -2976,10 +3125,12 @@ contains
 !
  
             !> first perform A*x
-            call mkl_zcsrgemv('N', ndims, acsr, icsr, jcsr, workd(ipntr(1)), workd(ipntr(2)))
+            !call mkl_zcsrgemv('N', ndims, acsr, icsr, jcsr, workd(ipntr(1)), workd(ipntr(2)))
+            call csrmv_z(ndims, nnz, acsr, icsr, jcsr, workd(ipntr(1)), workd(ipntr(2)))
             call zcopy (ndims, workd(ipntr(2)),  1, workd(ipntr(1)), 1)
             !> first perform inv[S]*A*x
-            call zmat_mkldss_zgesv(ndims, snnz, sacsr, sjcsr, sicsr, workd(ipntr(1)), workd(ipntr(2)))
+            !call zmat_mkldss_zgesv(ndims, snnz, sacsr, sjcsr, sicsr, workd(ipntr(1)), workd(ipntr(2)))
+            call sparse_solver(ndims, snnz, sacsr, sicsr, sjcsr, workd(ipntr(1)), workd(ipntr(2)))
 !
 !           %-----------------------------------------%
 !           | L O O P   B A C K to call ZNAUPD again. |
@@ -2996,7 +3147,8 @@ contains
 !           | workd(ipntr(2)).                    |
 !           %-------------------------------------%
 !
-            call mkl_zcsrgemv('N', ndims, sacsr, sicsr, sjcsr, workd(ipntr(1)), workd(ipntr(2)))
+            !call mkl_zcsrgemv('N', ndims, sacsr, sicsr, sjcsr, workd(ipntr(1)), workd(ipntr(2)))
+            call csrmv_z(ndims, snnz, sacsr, sicsr, sjcsr, workd(ipntr(1)), workd(ipntr(2)))
 !
 !           %-----------------------------------------%
 !           | L O O P   B A C K to call ZNAUPD  again. |
@@ -3039,10 +3191,14 @@ contains
             rvec = .false.
             if (LandauLevel_wavefunction_calc.or.SlabBand_calc) rvec = .true.
 
+#if defined (ARPACK)
             call zneupd (rvec, 'A', select, d, zeigv, ldv, sigma, &
                workev, bmat, n, which, nev, tol, resid, ncv,&
                zeigv, ldv, iparam, ipntr, workd, workl, lworkl, &
                rwork, ierr)
+#else
+         STOP "ERROR : Please install WannierTools with ARPACK"
+#endif
 !
 !        %----------------------------------------------%
 !        | Eigenvalues are returned in the one          |
@@ -3086,8 +3242,10 @@ contains
 !               %---------------------------%
 !
 
-                  call mkl_zcsrgemv('N', ndims, sacsr, sicsr, sjcsr, zeigV(1,j), mx)
-                  call mkl_zcsrgemv('N', ndims, acsr, icsr, jcsr, zeigV(1,j), ax)
+                  !call mkl_zcsrgemv('N', ndims, sacsr, sicsr, sjcsr, zeigV(1,j), mx)
+                  call csrmv_z(ndims, snnz, sacsr, sicsr, sjcsr, zeigV(1,j), mx)
+                  !call mkl_zcsrgemv('N', ndims, acsr, icsr, jcsr, zeigV(1,j), ax)
+                  call csrmv_z(ndims, nnz, acsr, icsr, jcsr, zeigV(1,j), ax)
                   call zaxpy(n, -d(j), mx, 1, ax, 1)
                   rd(j,1) = dble(d(j))
                   rd(j,2) = dimag(d(j))
@@ -3168,7 +3326,7 @@ contains
          return
       end subroutine zmat_arpack_zndrv3
 
-      subroutine zmat_arpack_zndrv1(ndims, nnzmax, nnz, acsr, jcsr, icsr, sigma, neval, nvecs, deval, zeigv)
+      subroutine zmat_arpack_zndrv1(ndims, nnzmax, nnz, acsr, jcsr, icsr, sigma, neval, nvecs, deval, zeigv, ritzvec)
          use para, only : dp, stdout, cpuid
          implicit none
 
@@ -3201,6 +3359,9 @@ contains
 
 ! eigenvector for selected "which"
          complex(dp), intent(out) :: zeigv(ndims, nvecs)
+
+!> calculate eigenvector or not
+         logical, intent(in) :: ritzvec
 
 ! loop index over neval
          integer :: ival, jval
@@ -3237,12 +3398,11 @@ contains
 !     %---------------%
 !
          character  :: bmat*1, which*2
-         integer    :: ido, n, nev, ncv, lworkl, info, j, &
+         integer    :: ido, n, nev, ncv, lworkl, info, i, j, &
             ierr, nconv, maxitr, ishfts, mode, ldv
-         integer    :: istat
+         integer    :: istat 
          integer    :: lwrkl, lwrkv, lwrkd
          real(dp)    :: tol
-         logical    :: rvec
 !
 !     %-----------------------------%
 !     | BLAS & LAPACK routines used |
@@ -3296,6 +3456,15 @@ contains
 
          bmat  = 'I'
          which = 'SM'
+
+         !> added in the diagonal part, shift the spectrum by sigma
+         do i=1, ndims
+            j=i+nnz
+            icsr(j)= i
+            jcsr(j)= i
+            acsr(j)= -sigma
+         enddo
+         nnz= nnz+ ndims
 
          !> prepare hamiltonian
          !> transform coo format to csr format
@@ -3355,8 +3524,12 @@ contains
 !        | has been exceeded.                          |
 !        %---------------------------------------------%
 !
+#if defined (ARPACK)
          call znaupd ( ido, bmat, n, which, nev, tol, resid, ncv, &
             zeigv, ldv, iparam, ipntr, workd, workl, lworkl, rwork, info )
+#else
+         STOP "ERROR : Please install WannierTools with ARPACK"
+#endif
 
          iter = iter + 1
          if (mod(iter,100) .eq. 0 .and. cpuid==0) then
@@ -3375,7 +3548,8 @@ contains
 !           | product to workd(ipntr(2)).               |
 !           %-------------------------------------------%
 !
-            call mkl_zcsrgemv('N', ndims, acsr, icsr, jcsr, workd(ipntr(1)), workd(ipntr(2)))
+            !call mkl_zcsrgemv('N', ndims, acsr, icsr, jcsr, workd(ipntr(1)), workd(ipntr(2)))
+            call csrmv_z(ndims, nnz, acsr, icsr, jcsr, workd(ipntr(1)), workd(ipntr(2)))
 !
 !           %-----------------------------------------%
 !           | L O O P   B A C K to call ZNAUPD again. |
@@ -3415,13 +3589,14 @@ contains
 !        | desired.  (indicated by rvec = .true.)    |
 !        %-------------------------------------------%
 !
-            rvec = .false.
-            if (LandauLevel_wavefunction_calc.or.SlabBand_calc) rvec = .true.
-
-            call zneupd (rvec, 'A', select, d, zeigv, ldv, sigma, &
+#if defined (ARPACK)
+            call zneupd (ritzvec, 'A', select, d, zeigv, ldv, sigma, &
                workev, bmat, n, which, nev, tol, resid, ncv,&
                zeigv, ldv, iparam, ipntr, workd, workl, lworkl, &
                rwork, ierr)
+#else
+         STOP "ERROR : Please install WannierTools with ARPACK"
+#endif
 !
 !        %----------------------------------------------%
 !        | Eigenvalues are returned in the one          |
@@ -3464,10 +3639,8 @@ contains
 !               | tolerance)                |
 !               %---------------------------%
 !
-                  !$ call av(nx, zeigv(1,j), ax)
-
-                  !$ call zmat_sparse_csrmv0(ndims, nnzmax, acsr, jcsr, icsr, zeigv(1,j), ax)
-                  call mkl_zcsrgemv('N', ndims, acsr, icsr, jcsr, zeigV(1,j), ax)
+                  !call mkl_zcsrgemv('N', ndims, acsr, icsr, jcsr, zeigV(1,j), ax)
+                  call csrmv_z(ndims, nnz, acsr, icsr, jcsr, zeigV(1,j), ax)
                   call zaxpy(n, -d(j), zeigv(1,j), 1, ax, 1)
                   rd(j,1) = dble(d(j))
                   rd(j,2) = dimag(d(j))
@@ -3521,9 +3694,9 @@ contains
 !     | Done with program zndrv1. |
 !     %---------------------------%
 !
-
+         !shift back the spectrum by sigma
          do ival=1,neval
-            deval(ival) = real(d(ival))
+            deval(ival) = real(d(ival)+sigma)
            !zeigv(1:ndims, ival) = V(1:ndims, ival)
          enddo ! over ival={1,neval} loop
 
@@ -3774,8 +3947,12 @@ contains
          !    write(*,*) 'ncv,nev',ncv,nev,n
 
          
+#if defined (ARPACK)
          call znaupd ( ido, bmat, n, which, nev, tol, resid, ncv, &
             zeigv, ldv, iparam, ipntr, workd, workl, lworkl, rwork,info )
+#else
+         STOP "ERROR : Please install WannierTools with ARPACK"
+#endif
 
          iter = iter + 1
          if (mod(iter,10) .eq. 0 .and. cpuid==0 ) then
@@ -3795,8 +3972,8 @@ contains
             !           call zcopy( n, workd(ipntr(1)),1, workd(ipntr(2)), 1)
             !
             !           call zgttrs('N', n, 1, dl, dd, du, du2, ipiv, workd(ipntr(2)), n, ierr)
-!        call sparse_zgesv_csr(ndims,nnz,acsr,jcsr,icsr,workd(ipntr(1)), workd(ipntr(2)))
-            call zmat_mkldss_zgesv(ndims, nnz, acsr, jcsr, icsr, workd(ipntr(1)), workd(ipntr(2)))
+            !call zmat_mkldss_zgesv(ndims, nnz, acsr, jcsr, icsr, workd(ipntr(1)), workd(ipntr(2)))
+            call sparse_solver(ndims, nnz, acsr, icsr, jcsr, workd(ipntr(1)), workd(ipntr(2)))
             !
             !           %-----------------------------------------%
             !           | L O O P   B A C K to call ZNAUPD again. |
@@ -3836,10 +4013,14 @@ contains
             !        %-------------------------------------------%
             !
 
+#if defined (ARPACK)
             call zneupd (ritzvec, 'A', select, d, zeigv, ldv, sigma, &
                workev, bmat, n, which, nev, tol, resid, ncv,&
                zeigv, ldv, iparam, ipntr, workd, workl, lworkl, &
                rwork, ierr)
+#else
+         STOP "ERROR : Please install WannierTools with ARPACK"
+#endif
             !
             !        %----------------------------------------------%
             !        | Eigenvalues are returned in the one          |
@@ -3882,7 +4063,8 @@ contains
                   !              %---------------------------%
                   !
                   !$ call av(n, zeigv(1,j), ax)
-                  call mkl_zcsrgemv('N', ndims, acsr, icsr, jcsr, zeigv(1,j), ax)
+                  !call mkl_zcsrgemv('N', ndims, acsr, icsr, jcsr, zeigv(1,j), ax)
+                  call csrmv_z(ndims, nnz, acsr, icsr, jcsr, zeigV(1,j), ax)
                   call zaxpy(n, -d(j), zeigv(1,j), 1, ax, 1)
                   rd(j,1) = dble(d(j))
                   rd(j,2) = dimag(d(j))
@@ -3976,84 +4158,6 @@ contains
 
          return
       end subroutine zmat_arpack_zndrv2
-
-      subroutine zmat_mkldss_zgesv(ndims, nnzmax, acsr, jcsr, icsr, xvec, yvec)
-         use mkl_dss
-         use para, only : dp, stdout
-
-         implicit none
-
-         ! external arguments
-         ! dimension of matrix A
-         integer, intent(in) :: ndims
-
-         ! non-zero elements of matrix A
-         integer, intent(in) :: nnzmax
-
-         ! compressed sparse row storage of matrix A
-         complex(dp), intent(in) :: acsr(nnzmax)
-         integer, intent(in) :: jcsr(nnzmax)
-         integer, intent(in) :: icsr(ndims+1)
-
-         ! xvec vector with dimension "ndims"
-         complex(dp), intent(in) :: xvec(ndims)
-
-         ! yvec vector with dimension "ndims"
-         complex(dp), intent(out) :: yvec(ndims)
-
-         ! local variables
-         type(mkl_dss_handle) :: handle
-         integer :: nrhs
-         integer :: ierr
-         integer :: perm(1)
-
-         !>>> step 0: setup the problem to be solved
-         nrhs = 1
-         perm(1) = 0
-
-         !>>> step 1: initialize the solver.
-         ierr = dss_create( handle, mkl_dss_defaults )
-         if (ierr .ne. mkl_dss_success) then
-            write(*,*) "mkl_dss_create returned error code", ierr; stop
-         endif 
-
-         !>>> step 2: define the non-zero structure of the matrix.
-         !ierr = dss_define_structure( handle, mkl_dss_symmetric_structure_complex, icsr, ndims, ndims, jcsr, nnzmax )
-         ierr = dss_define_structure( handle, MKL_DSS_NON_SYMMETRIC_COMPLEX, icsr, ndims, ndims, jcsr, nnzmax )
-         if (ierr .ne. mkl_dss_success) then
-            write(*,*) "mkl_dss_define_structure returned error code", ierr; stop
-         endif ! back if (ierr .ne. mkl_dss_success} block
-
-         !>>> step 3: reorder the matrix.
-         ierr = dss_reorder( handle, mkl_dss_defaults, perm )
-         if (ierr .ne. mkl_dss_success) then
-            write(*,*) "mkl_dss_reorder returned error code", ierr; stop
-         endif ! back if (ierr .ne. mkl_dss_success} block
-
-         !>>> step 4: factor the matrix.
-         ierr = dss_factor_complex( handle, mkl_dss_defaults, acsr )
-         if (ierr .ne. mkl_dss_success) then
-            write(*,*) "mkl_dss_factor_complex returned error code", ierr; stop
-         endif ! back if (ierr .ne. mkl_dss_success} block
-
-         ! allocate the solution vector and solve the problem.
-         ierr = dss_solve_complex( handle, mkl_dss_defaults, xvec, nrhs, yvec )
-
-         if (ierr .ne. mkl_dss_success) then
-            write(*,*) "mkl_dss_solve_complex returned error code", ierr; stop
-         endif ! back if (ierr .ne. mkl_dss_success} block
-
-         ! deallocate solver storage and various local arrays.
-         ierr = dss_delete( handle, mkl_dss_defaults )
-
-         if (ierr .ne. mkl_dss_success) then
-            write(*,*) "mkl_dss_solver returned error code", ierr; stop
-         endif ! back if (ierr .ne. mkl_dss_success} block
-
-         return
-      end subroutine zmat_mkldss_zgesv
-#endif
-
 
    end module sparse
 

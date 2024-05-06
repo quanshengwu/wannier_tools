@@ -325,17 +325,17 @@ subroutine ham_bulk_latticegauge(k,Hamk_bulk)
    !Hamk_bulk= (Hamk_bulk+ mat2)/2d0
 
    ! check hermitcity
-   do i1=1, Num_wann
-      do i2=1, Num_wann
-         if(abs(Hamk_bulk(i1,i2)-conjg(Hamk_bulk(i2,i1))).ge.1e-6)then
-            write(stdout,*)'there is something wrong with Hamk_bulk'
-            write(stdout,*)'i1, i2', i1, i2
-            write(stdout,*)'value at (i1, i2)', Hamk_bulk(i1, i2)
-            write(stdout,*)'value at (i2, i1)', Hamk_bulk(i2, i1)
-            !stop
-         endif
-      enddo
-   enddo
+  !do i1=1, Num_wann
+  !   do i2=1, Num_wann
+  !      if(abs(Hamk_bulk(i1,i2)-conjg(Hamk_bulk(i2,i1))).ge.1e-6)then
+  !         write(stdout,*)'there is something wrong with Hamk_bulk'
+  !         write(stdout,*)'i1, i2', i1, i2
+  !         write(stdout,*)'value at (i1, i2)', Hamk_bulk(i1, i2)
+  !         write(stdout,*)'value at (i2, i1)', Hamk_bulk(i2, i1)
+  !         !stop
+  !      endif
+  !   enddo
+  !enddo
 
    return
 end subroutine ham_bulk_latticegauge
@@ -833,6 +833,66 @@ subroutine overlap_bulk_coo_sparse(k, acoo, icoo, jcoo)
 
    return
 end subroutine overlap_bulk_coo_sparse
+
+subroutine ham_bulk_tpaw(mdim, k, Hamk_moire)
+   ! This subroutine caculates Hamiltonian for
+   ! a twist system
+   !
+   !  Lattice gauge Hl
+   !  Atomic gauge Ha= U* Hl U 
+   !  where U = e^ik.wc(i) on diagonal
+   ! contact wuquansheng@gmail.com
+   ! 2024 Jan 19
+
+   use para
+   implicit none
+
+   !> leading dimension of Ham_moire
+   integer, intent(in) :: mdim
+   real(dp), intent(in) :: k(3)
+   complex(dp), intent(inout) :: hamk_moire(mdim, mdim)
+
+   ! wave vector in 3d
+   real(Dp) :: kdotr, pos0(3), dis
+
+   complex(dp) :: factor
+
+   real(dp) :: pos(3), pos1(3), pos2(3), pos_cart(3), pos_direct(3)
+
+   integer :: Num_gvectors
+
+   !> dimension 3*Num_gvectors 
+   real(dp), allocatable :: gvectors(:, :)
+
+   integer :: i1, i2
+
+   !> for a test, we assume a twist homo-bilayer system
+   ! mdim= Num_gvectors* Folded_cell%NumberOfspinorbitals*2
+
+   hamk_moire=0d0
+
+   !> first, set G vectors
+
+   !> construct T matrix
+   !> the dimension of the T matrix is num_wann
+   
+
+   ! check hermitcity
+   do i1=1, mdim
+      do i2=1, mdim
+         if(abs(hamk_moire(i1,i2)-conjg(hamk_moire(i2,i1))).ge.1e-6)then
+            write(stdout,*)'there is something wrong with hamk_moire'
+            write(stdout,*)'i1, i2', i1, i2
+            write(stdout,*)'value at (i1, i2)', hamk_moire(i1, i2)
+            write(stdout,*)'value at (i2, i1)', hamk_moire(i2, i1)
+            !stop
+         endif
+      enddo
+   enddo
+
+   return
+end subroutine ham_bulk_tpaw
+
 
 subroutine valley_k_coo_sparsehr(nnz, k,acoo,icoo,jcoo)
    !> This subroutine use sparse hr format

@@ -111,8 +111,8 @@
         write(outfileindex, '(a)')'set xlabel "Energy (eV)"'
         write(outfileindex, '(a)')'set ylabel "AHC (S/cm)"'
         write(outfileindex, '(5a)')"plot '",  trim(adjustl(ahcfilename)),  "' u 1:2 w l title '\sigma_{xy}' lc rgb 'red' lw 4, \"
-        write(outfileindex, '(5a)')"'",  trim(adjustl(ahcfilename)), "' u 1:3 w l title '\sigma_{zx}' lc rgb 'blue' lw 4, \"
-        write(outfileindex, '(5a)')"'", trim(adjustl(ahcfilename)), "' u 1:4 w l title '\sigma_{xz}' lc rgb 'orange' lw 4 "
+        write(outfileindex, '(5a)')"'",  trim(adjustl(ahcfilename)), "' u 1:3 w l title '\sigma_{yz}' lc rgb 'blue' lw 4, \"
+        write(outfileindex, '(5a)')"'", trim(adjustl(ahcfilename)), "' u 1:4 w l title '\sigma_{zx}' lc rgb 'orange' lw 4 "
         close(outfileindex)
      endif
 

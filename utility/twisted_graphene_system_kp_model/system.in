@@ -1,5 +1,5 @@
    &PARAMETERS
-   number_layers = 4
+   number_layers = 2
 
    !> magic angle
    twisted_angle_degree= 1.0661
@@ -25,6 +25,7 @@
    u_AA=0.0797  ! eV  parameters from Phys. Rev. X 8, 031087
    u_AB=0.0975  ! eV 
    vf=5.253084  ! eV/Angstrom 2.1354*2.46
+   gamma_4 = 0.03
 
   !u_AA=0.000   ! eV parameters from PhysRevLett.122.106405
   !u_AB=0.110   ! eV
