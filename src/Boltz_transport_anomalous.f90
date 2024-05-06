@@ -50,6 +50,7 @@
      NumberofEta = 9 
 
      allocate(eta_array(NumberofEta))
+     allocate(T_list(NumT))
      allocate( energy(OmegaNum))
      allocate( sigma_tensor_ahc    (3, OmegaNum, NumberofEta))
      sigma_tensor_ahc    = 0d0

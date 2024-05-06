@@ -5,16 +5,16 @@
 A python tool based on Phononpy to generate phonon tight-binding Hamiltonian
 whose format is similar to wannier90\_hr.dat produced by Wannier90.
 
-Author: Changming Yue, Institute of Physics, CAS.
-Email: yuechangming8@gmail.com
+Copyright: Changming Yue, Department of Physics, Southern University of Science and Technology, Shenzhen 518055, China.
+Email:    yuecm@sustech.edu.cn; yuechangming8@gmail.com
 
 
 2.  **wannhr\_symm** and **wannhr\_symm\_Mag**
 
 Python tools to symmetrize the tight binding model wannier90\_hr.dat without and with magnetization.
 
-Author: Changming Yue, Institute of Physics, CAS.
-Email: yuechangming8@gmail.com
+Copyright: Changming Yue, Department of Physics, Southern University of Science and Technology, Shenzhen 518055, China.
+Email:    yuecm@sustech.edu.cn; yuechangming8@gmail.com
 
 3. **twisted\_graphene\_system\_kp\_model**
 

@@ -15,7 +15,7 @@ QQ group number : 709225749
 WannierTools was initialized by QuanSheng Wu (IOP CAS) and Shengnan Zhang (IOP CAS) at IOP CAS Beijing in 2012. 
 Now, it's an open-source software, there are serveral contributors including
 
-* Changming Yue (UniFR CH) : symmetrization of Wannier tight-binding Hamiltonian and obtain phonon tight-binding Hamiltonian.
+* Changming Yue (SusTech) : symmetrization of Wannier tight-binding Hamiltonian and obtain phonon tight-binding Hamiltonian.
 * Yifei Guan (EPFL CH) : Landau level calculation.
 * Tiantian Zhang (Tokyo Institute of Technology ): LOTO correction in phonon systems.
 * Yi Liu (BNU Beijing) : Ruge-Kutta integration.
@@ -62,7 +62,11 @@ For the Wilson loop calculation, please also cite PhysRevB.84.075119 and PhysRev
 
 For magnetoresistance calculation, please also cite Magnetoresistance from Fermi surface topology, ShengNan Zhang, QuanSheng Wu, Yi Liu, and Oleg V. Yazyev, Phys. Rev. B 99, 035142 (2019)
 
-For phonon system calculation, please cite "PhononTB: a tool to construct tight-binding model for phonon systems, https://github.com/quanshengwu/wannier\_tools/tree/master/utility/phonopyTB, Changming Yue"
+For non-magnetic symmetrization processing, please cite "wannhr_symm: A tool for symmetrization of non-magnetic WannierTB, https://github.com/quanshengwu/wannier\_tools/tree/master/utility/wannhr_symm/, Changming Yue".
+
+For magnetic symmetrization processing, please cite "wannhr_symm_Mag: A tool for symmetrization of magnetic WannierTB, https://github.com/quanshengwu/wannier\_tools/tree/master/utility/wannhr_symm_Mag, Changming Yue".
+
+For phonon system calculation, please cite "PhononTB: a tool to construct tight-binding model for phonon systems, https://github.com/quanshengwu/wannier\_tools/tree/master/utility/phonopyTB, Changming Yue". 
 
 Reference 
 

@@ -24,8 +24,10 @@
 ! version     2.6.1  At Beijing, China, April 10. 2022 clean for the Wannier90 tutorial 2022
 ! version     2.7.0  At IOP CAS Beijing, China, July 22. 2023, added ANE, SHC,
 !                    added symmetrization part for magnetic hamiltonian fixed several bugs
+! version     2.7.1  At IOP CAS Beijing, China, May 6 2024, try to build interface with openmx
+!                    to adapted the non-orthogonal basis; fixed several bugs
 !
-! Corresponding to : wuquansheng@gmail.com, quansheng.wu@iphy.ac.cn
+! Corresponding to Quansheng Wu: wuquansheng@gmail.com, quansheng.wu@iphy.ac.cn
 !
 ! License: GPL V3
 !--------+--------+--------+--------+--------+--------+--------+------!

@@ -68,7 +68,7 @@ def print_author():
     print("""
     A python tool based on Phononpy to generate phonon tight-binding Hamiltonian
     whose format is similar to wannier90_hr.dat produced by Wannier90.
-    Author: Changming Yue, Institute of Physics, CAS.
+    Author: Changming Yue, Department of Physics, Southern University of Science and Technology.
     email: yuechangming8@gmail.com
     """)
     

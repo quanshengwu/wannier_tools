@@ -15,7 +15,7 @@ np.set_printoptions(precision=6,suppress=True,linewidth=150)
 if __name__ == '__main__':
 
     # the original wannier110_hr.dat
-    print ">>> copyright: Changming Yue, Univeristy of Fribourg+Sustech. yuechangming8@gmail.com"
+    print ">>> copyright: Changming Yue from Department of Physics, Southern University of Science and Technology (SusTech, China). yuechangming8@gmail.com"
 
     nsymm_mag = 0; mag_symm_index=[]; primed_index=[]
     rotmap = np.zeros((natom_wan),np.int32) # rot map for atoms

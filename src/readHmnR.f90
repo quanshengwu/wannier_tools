@@ -799,7 +799,7 @@ subroutine readsparse_overlap
    1003 continue
    close(13)
 
-   if (cpuid.eq.0) write(stdout, '(a, i10)')' >> Number of non-zeros splen_overlap_input', splen_overlap_input
+   if (cpuid.eq.0) write(stdout, '(a, i20)')' >> Number of non-zeros splen_overlap_input', splen_overlap_input
    if (cpuid.eq.0) write(stdout, '(a)')' >> Sparse overlap matrix reading finished '
 
    return
@@ -897,7 +897,7 @@ subroutine readsparse_valley_operator
    Nrpts_valley=ir
 
    if (cpuid.eq.0) write(stdout, '(a, i6)')' >> Nrpts_valley is ', Nrpts_valley
-   if (cpuid.eq.0) write(stdout, '(a)')' >> splen_valley_input', splen_valley_input, j
+   if (cpuid.eq.0) write(stdout, '(a, 2i10)')' >> splen_valley_input', splen_valley_input, j
    if (cpuid.eq.0) write(stdout, '(a)')' >> Valley operator reading finished '
 
    return
