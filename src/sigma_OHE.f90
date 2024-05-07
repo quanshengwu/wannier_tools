@@ -1526,7 +1526,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
    !> a pack for rkf45
    subroutine RKF45_pack(magnetic_field, iband, NSlice_Btau, k_start, Btau_start, Btau_final, kout, icycle, fail)
       use wmpi
-      use para, only : dp, eps9, eps8, cpuid, stdout, eps6, Bdirection, eps3
+      use para, only : dp, eps9, eps8, cpuid, stdout, eps6, Bdirection, eps3, RKF45_PERIODIC_LEVEL
       implicit none
 
       !> inout variable 
@@ -1810,7 +1810,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
       do ib=1, Nband_Fermi_Level
          if (cpuid.eq.0) then
             write(bandname, '(i10)')bands_fermi_level(ib)
-            write(evolvefilename, '(3a)')'evolve_band_', trim(adjustl(bandname)), '.dat'
+            write(evolvefilename, '(3a)')'evolve_band_', trim(adjustl(bandname)), '.txt'
             open(unit=myfileindex(ib), file=evolvefilename)
             write(myfileindex(ib), '(a10, i5, a16, f16.8)')'# evolve k ', bands_fermi_level(ib), 'energy level', Ek(ib)
             write(myfileindex(ib), '("#", a13, 24a16)')'BTau (T.ps)', &
@@ -1889,7 +1889,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
                  write(myfileindex(ib), '(1X, a, 3f12.5, a, i8)')"# Starting k point (fractional coordinates) :", k_start, ' ith-band ', bands_fermi_level(ib)
                  write(myfileindex(ib), '(a, f16.8, a)')'# At energy level', Ek(ib)/eV2Hartree, ' eV'
                  write(myfileindex(ib), '("#", a13, 20a16)')'BTau (T.ps)', &
-                    'Omega*Tau', 'kx', 'ky', 'kz', 'vx', 'vy', 'vz', 'k1', 'k2','k3'
+                     'kx', 'ky', 'kz', 'vx', 'vy', 'vz', 'k1', 'k2','k3', "vx'", "vy'", "vz'"
                  do it=1, NSlice_Btau_all(ik)
                     k= kout_all(:, it, ik) 
                     !call velocity_calc_iband(ib+bands_fermi_level(1)-1, k, v_t)
@@ -1898,7 +1898,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
                     call direct_cart_rec(kout_all(:, it, ik), k)
                     call project_k3_to_kplane_defined_by_direction(v_t, Bdirection, v_t2)
                     write(myfileindex(ib), '(100f16.8)')Btau*Magneticfluxdensity_atomic/Relaxation_Time_Tau, &
-                        k, v_t, kout_all(:, it, ik), E_iband, v_t2
+                        k, v_t, kout_all(:, it, ik), v_t2
                  enddo
               endif
            endif

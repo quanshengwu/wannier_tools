@@ -450,11 +450,7 @@
      logical :: valley_projection_calc ! for valley projection, only for sparse hamiltonina, you need to provide the valley operator 
      
      logical :: w3d_nested_calc = .false.
-    
-     !> an integer to print the messages
-     !> iprint_level=3 : print all the debug messages
-     integer :: iprint_level = 1       
-
+   
      namelist / Control / BulkBand_calc, BulkFS_calc,  BulkFS_Plane_calc, &
                           BulkFS_plane_stack_calc,  BulkGap_plane_calc, &
                           QPI_unfold_plane_calc, &
@@ -486,7 +482,7 @@
                           LandauLevel_B_dos_calc,LanczosBand_calc,LanczosDos_calc, &
                           LandauLevel_B_calc, LandauLevel_kplane_calc,landau_chern_calc, &
                           FermiLevel_calc,ANE_calc, export_newhr,export_maghr,w3d_nested_calc, &
-                          valley_projection_calc, iprint_level
+                          valley_projection_calc
 
      integer :: Nslab  ! Number of slabs for 2d Slab system
      integer :: Nslab1 ! Number of slabs for 1D wire system
@@ -596,14 +592,18 @@
 
      !> a real number to control when it's a cycle in subroutine RKF45_pack
      !> by default RKF45_PERIODIC_LEVEL= 1
-     real(dp) :: RKF45_PERIODIC_LEVE
+     real(dp) :: RKF45_PERIODIC_LEVEL
+ 
+     !> an integer to print the messages
+     !> iprint_level=3 : print all the debug messages
+     integer :: iprint_level = 1       
 
      !> namelist parameters
      namelist /PARAMETERS/ Eta_Arc,EF_broadening, OmegaNum, OmegaNum_unfold, OmegaMin, OmegaMax, &
         E_arc, Nk1, Nk2, Nk3, NP, Gap_threshold, Tmin, Tmax, NumT, &
         NBTau, BTauNum, BTauMax, Rcut, Magp, Magq, Magp_min, Magp_max, Nslice_BTau_Max, &
-        wcc_neighbour_tol, wcc_calc_tol, Beta,NumLCZVecs, &
-        Relaxation_Time_Tau,  symprec, arpack_solver, RKF45_PERIODIC_LEVE, &
+        wcc_neighbour_tol, wcc_calc_tol, Beta,NumLCZVecs, iprint_level, &
+        Relaxation_Time_Tau,  symprec, arpack_solver, RKF45_PERIODIC_LEVEL, &
         NumRandomConfs, NumSelectedEigenVals, projection_weight_mode, topsurface_atom_index
     
      real(Dp) :: E_fermi  ! Fermi energy, search E-fermi in OUTCAR for VASP, set to zero for Wien2k

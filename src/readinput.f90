@@ -570,6 +570,7 @@ subroutine readinput
    topsurface_atom_index= 0
    arpack_solver= 'zndrv1'
    RKF45_PERIODIC_LEVEL= 1
+   iprint_level = 1
 
 
    !> by default, we only project on atoms for a given wave function
@@ -624,6 +625,8 @@ subroutine readinput
       write(stdout, '(1x, a, f16.5)')'Relaxation_Time_Tau (ps)', Relaxation_Time_Tau
       write(stdout, '(1x, a, f16.5)')'Rcut', Rcut
       write(stdout, '(1x, a, i16  )')'Magp', Magp
+      write(stdout, '(1x, a, i16  )')'iprint_level', iprint_level
+      write(stdout, '(1x, a, f16.2)')'RKF45_PERIODIC_LEVEL', RKF45_PERIODIC_LEVEL
       write(stdout, '(1x, a, i16  )')'Magp_min', Magp_min
       write(stdout, '(1x, a, i16  )')'Magp_max', Magp_max
       write(stdout, '(1x, a, f16.5)')'wcc_calc_tol', wcc_calc_tol
