@@ -1814,7 +1814,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
             open(unit=myfileindex(ib), file=evolvefilename)
             write(myfileindex(ib), '(a10, i5, a16, f16.8)')'# evolve k ', bands_fermi_level(ib), 'energy level', Ek(ib)
             write(myfileindex(ib), '("#", a13, 24a16)')'BTau (T.ps)', &
-               'OmegaTau', 'kx', 'ky', 'kz', 'vx', 'vy', 'vz', 'k1', 'k2','k3', 'Energy(ev)', "vx'", "vy'", "vz'"
+                'kx', 'ky', 'kz', 'vx', 'vy', 'vz', 'k1', 'k2','k3', 'Energy(ev)', "vx'", "vy'", "vz'"
          endif
       enddo
 #if defined (MPI)
@@ -1898,7 +1898,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
                     call direct_cart_rec(kout_all(:, it, ik), k)
                     call project_k3_to_kplane_defined_by_direction(v_t, Bdirection, v_t2)
                     write(myfileindex(ib), '(100f16.8)')Btau*Magneticfluxdensity_atomic/Relaxation_Time_Tau, &
-                       Btau*Magneticfluxdensity_atomic/Relaxation_Time_Tau*0.175874356d0, k, v_t, kout_all(:, it, ik), E_iband, v_t2
+                        k, v_t, kout_all(:, it, ik), E_iband, v_t2
                  enddo
               endif
            endif

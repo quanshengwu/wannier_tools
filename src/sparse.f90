@@ -2302,12 +2302,19 @@ contains
          zeigv= 0d0
 
 #if defined (INTELMKL)
+         !> zndrv2 needs a sparse solver to solve (A-sigma*I)*x=B with given A, sigma, and B
          !> get eigenvalues of a sparse matrix by calling arpack subroutine
          !> acoo, jcoo, icoo would be converted in to A-sigma*I, then converted into CSR format
-         call zmat_arpack_zndrv2(ndims, nnzmax, nnz, acoo, jcoo, icoo, sigma, neval, nvecs, deval, zeigv, ritzvec)
+         !> usually zndrv1 is about 10 times faster then zndrv2
+         if (arpack_solver=='zndrv2') then
+            call zmat_arpack_zndrv2(ndims, nnzmax, nnz, acoo, jcoo, icoo, sigma, neval, nvecs, deval, zeigv, ritzvec)
+         else
+            call zmat_arpack_zndrv1(ndims, nnzmax, nnz,  acoo, jcoo, icoo, sigma, neval, nvecs, deval, zeigv, ritzvec)
+         endif
 #else
          !> here acoo, icoo, jcoo are stored in COO format
          !> use matrix vector multiplication
+         !> zndrv1 needs a matrix vector multiplication operator A*x
          call zmat_arpack_zndrv1(ndims, nnzmax, nnz,  acoo, jcoo, icoo, sigma, neval, nvecs, deval, zeigv, ritzvec)
 #endif
 
@@ -2619,7 +2626,7 @@ contains
          call znaupd ( ido, bmat, n, which, nev, tol, resid, ncv, &
             zeigv, ldv, iparam, ipntr, workd, workl, lworkl, rwork, info )
 #else
-         STOP "ERROR : Please install WannierTools with ARPACK"
+         STOP "ERROR : Please install WannierTools with ARPACK since you are diagonalizing a large sparse matrix"
 #endif
          call now(time_end)
          time_cost_znaupd=  time_cost_znaupd+ time_end- time_start
@@ -2751,7 +2758,7 @@ contains
                zeigv, ldv, iparam, ipntr, workd, workl, lworkl, &
                rwork, ierr)
 #else
-         STOP "ERROR : Please install WannierTools with ARPACK"
+         STOP "ERROR : Please install WannierTools with ARPACK since you are diagonalizing a large sparse matrix"
 #endif
 !
 !        %----------------------------------------------%
@@ -3103,7 +3110,7 @@ contains
          call znaupd ( ido, bmat, n, which, nev, tol, resid, ncv, &
             zeigv, ldv, iparam, ipntr, workd, workl, lworkl, rwork, info )
 #else
-         STOP "ERROR : Please install WannierTools with ARPACK"
+         STOP "ERROR : Please install WannierTools with ARPACK since you are diagonalizing a large sparse matrix"
 #endif
 
          iter = iter + 1
@@ -3197,7 +3204,7 @@ contains
                zeigv, ldv, iparam, ipntr, workd, workl, lworkl, &
                rwork, ierr)
 #else
-         STOP "ERROR : Please install WannierTools with ARPACK"
+         STOP "ERROR : Please install WannierTools with ARPACK since you are diagonalizing a large sparse matrix"
 #endif
 !
 !        %----------------------------------------------%
@@ -3528,7 +3535,7 @@ contains
          call znaupd ( ido, bmat, n, which, nev, tol, resid, ncv, &
             zeigv, ldv, iparam, ipntr, workd, workl, lworkl, rwork, info )
 #else
-         STOP "ERROR : Please install WannierTools with ARPACK"
+         STOP "ERROR : Please install WannierTools with ARPACK since you are diagonalizing a large sparse matrix"
 #endif
 
          iter = iter + 1
@@ -3662,7 +3669,7 @@ contains
 !
             if ( info .eq. 1) then
                if (cpuid==0) write(stdout, *) ' '
-               if (cpuid==0) write(stdout, *) ' Maximum number of iterations reached.'
+               if (cpuid==0) write(stdout, *) ' Maximum number of iterations reached. try increasing NCV'
                if (cpuid==0) write(stdout, *) ' '
             else if ( info .eq. 3) then
                if (cpuid==0) write(stdout, *) ' '
@@ -3951,7 +3958,7 @@ contains
          call znaupd ( ido, bmat, n, which, nev, tol, resid, ncv, &
             zeigv, ldv, iparam, ipntr, workd, workl, lworkl, rwork,info )
 #else
-         STOP "ERROR : Please install WannierTools with ARPACK"
+         STOP "ERROR : Please install WannierTools with ARPACK since you are diagonalizing a large sparse matrix"
 #endif
 
          iter = iter + 1
@@ -3969,10 +3976,6 @@ contains
             !           | the result to workd(ipntr(2)).            |
             !           %-------------------------------------------%
             !
-            !           call zcopy( n, workd(ipntr(1)),1, workd(ipntr(2)), 1)
-            !
-            !           call zgttrs('N', n, 1, dl, dd, du, du2, ipiv, workd(ipntr(2)), n, ierr)
-            !call zmat_mkldss_zgesv(ndims, nnz, acsr, jcsr, icsr, workd(ipntr(1)), workd(ipntr(2)))
             call sparse_solver(ndims, nnz, acsr, icsr, jcsr, workd(ipntr(1)), workd(ipntr(2)))
             !
             !           %-----------------------------------------%
@@ -4019,7 +4022,7 @@ contains
                zeigv, ldv, iparam, ipntr, workd, workl, lworkl, &
                rwork, ierr)
 #else
-         STOP "ERROR : Please install WannierTools with ARPACK"
+         STOP "ERROR : Please install WannierTools with ARPACK since you are diagonalizing a large sparse matrix"
 #endif
             !
             !        %----------------------------------------------%

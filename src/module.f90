@@ -587,13 +587,19 @@
      !> specify the atom index that located on the top surface that you want to study
      integer :: topsurface_atom_index
      real(dp) :: shift_to_topsurface_cart(3)
+     
+     !> a tag to control how do we call ARPACK to diagonalize a sparse matrix
+     !> value: zndrv1 using A*x
+     !>        zndrv2 using inv(A)
+     !> default "zndrv1"
+     character(20) :: arpack_solver
 
      !> namelist parameters
      namelist /PARAMETERS/ Eta_Arc,EF_broadening, OmegaNum, OmegaNum_unfold, OmegaMin, OmegaMax, &
         E_arc, Nk1, Nk2, Nk3, NP, Gap_threshold, Tmin, Tmax, NumT, &
         NBTau, BTauNum, BTauMax, Rcut, Magp, Magq, Magp_min, Magp_max, Nslice_BTau_Max, &
         wcc_neighbour_tol, wcc_calc_tol, Beta,NumLCZVecs, &
-        Relaxation_Time_Tau,  symprec, &
+        Relaxation_Time_Tau,  symprec, arpack_solver, &
         NumRandomConfs, NumSelectedEigenVals, projection_weight_mode, topsurface_atom_index
     
      real(Dp) :: E_fermi  ! Fermi energy, search E-fermi in OUTCAR for VASP, set to zero for Wien2k

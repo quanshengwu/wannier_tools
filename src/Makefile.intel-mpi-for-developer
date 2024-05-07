@@ -1,5 +1,5 @@
 OBJ =  module.o sparse.o wt_aux.o math_lib.o symmetry.o \
-		 readHmnR.o inverse.o proteus.o \
+		 c_fortran_zgssv.o readHmnR.o inverse.o proteus.o \
        eigen.o ham_qlayer2qlayer.o psi.o unfolding.o rand.o \
   		 ham_slab.o ham_bulk.o ek_slab.o ek_bulk_polar.o ek_bulk.o \
        readinput.o fermisurface.o surfgreen.o surfstat.o \
@@ -13,9 +13,11 @@ OBJ =  module.o sparse.o wt_aux.o math_lib.o symmetry.o \
 	main.o
 
 # compiler
-F90  = mpif90 -fpp -DMPI -fpe3 -O3 -DARPACK -DINTELMKL  #  -check all -traceback -g
+F90  = mpif90 -fpp -DMPI -fpe3 -O3 -DARPACK #-DINTELMKL -DSUPERLU #  -check all -traceback -g
+#F90  = ifort -fpp  -DINTELMKL -fpe3 -check all -traceback -g
+CC = mpicc -fpp -O3 #-DINTELMKL -DSUPERLU
 
-INCLUDE = -I${MKLROOT}/include
+INCLUDE = -I${MKLROOT}/include -I/Users/user/quan/work/workplace/github-repositories/superlu/SRC
 WFLAG = -nogen-interface
 OFLAG = -O3 -static-intel
 FFLAG = $(OFLAG) $(WFLAG)
@@ -23,6 +25,9 @@ LFLAG = $(OFLAG)
 
 # ARPACK LIBRARY
 ARPACK=/Users/user/quan/work/workplace/ARPACK/libarpack_MAC.a
+
+# need to specify if -DSUPERLU privided in the F90 
+SUPERLULIB=/usr/local/lib/libsuperlu.a
 
 # blas and lapack libraries
 # static linking
@@ -32,7 +37,7 @@ ARPACK=/Users/user/quan/work/workplace/ARPACK/libarpack_MAC.a
 		  ${ARPACK}
 
 # dynamic linking
-LIBS = ${ARPACK} -L/${MKLROOT}/lib/intel64 -lmkl_core -lmkl_sequential -lmkl_intel_lp64 -lpthread 
+LIBS = ${ARPACK} -L/${MKLROOT}/lib/intel64 -lmkl_core -lmkl_sequential -lmkl_intel_lp64 -lpthread ${SUPERLULIB}
  
 main : $(OBJ)
 	$(F90) $(LFLAG) $(OBJ) -o wt.x $(LIBS)
@@ -42,6 +47,8 @@ main : $(OBJ)
 
 .f90.o :
 	$(F90) $(FFLAG) $(INCLUDE) -c $*.f90
+.c.o:
+	$(CC) $(CFLAGS) -I$(INCLUDE) -c $< $(VERBOSE)
 
 clean :
 	rm -f *.o *.mod *~ wt.x
