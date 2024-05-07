@@ -569,6 +569,7 @@ subroutine readinput
    Relaxation_Time_Tau= 1d0  ! in ps
    topsurface_atom_index= 0
    arpack_solver= 'zndrv1'
+   RKF45_PERIODIC_LEVEL= 1
 
 
    !> by default, we only project on atoms for a given wave function

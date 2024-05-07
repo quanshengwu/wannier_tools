@@ -594,12 +594,16 @@
      !> default "zndrv1"
      character(20) :: arpack_solver
 
+     !> a real number to control when it's a cycle in subroutine RKF45_pack
+     !> by default RKF45_PERIODIC_LEVEL= 1
+     real(dp) :: RKF45_PERIODIC_LEVE
+
      !> namelist parameters
      namelist /PARAMETERS/ Eta_Arc,EF_broadening, OmegaNum, OmegaNum_unfold, OmegaMin, OmegaMax, &
         E_arc, Nk1, Nk2, Nk3, NP, Gap_threshold, Tmin, Tmax, NumT, &
         NBTau, BTauNum, BTauMax, Rcut, Magp, Magq, Magp_min, Magp_max, Nslice_BTau_Max, &
         wcc_neighbour_tol, wcc_calc_tol, Beta,NumLCZVecs, &
-        Relaxation_Time_Tau,  symprec, arpack_solver, &
+        Relaxation_Time_Tau,  symprec, arpack_solver, RKF45_PERIODIC_LEVE, &
         NumRandomConfs, NumSelectedEigenVals, projection_weight_mode, topsurface_atom_index
     
      real(Dp) :: E_fermi  ! Fermi energy, search E-fermi in OUTCAR for VASP, set to zero for Wien2k

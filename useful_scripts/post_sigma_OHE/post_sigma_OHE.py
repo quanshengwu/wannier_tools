@@ -83,7 +83,10 @@ def readwtin():
     OmegaMax = parameters['OMEGAMAX']
     OmegaNum = parameters['OMEGANUM']
     BTauMax = parameters['BTAUMAX']
-    BTauNum = parameters['BTAUNUM']
+    try:
+        BTauNum = parameters['BTAUNUM']
+    except
+        BTauNum = parameters['NBTAU']
 
     print('Tmin = ',Tmin, '\nTmax = ',Tmax, '\nNumT = ',NumT, '\nOmegaMin = ',OmegaMin, '\nOmegaMax = ',
             OmegaMax, '\nOmegaNum = ',OmegaNum, '\nBTauMax = ',BTauMax, '\nBTauNum = ',BTauNum)

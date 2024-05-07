@@ -1627,7 +1627,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
          
 
          call periodic_diff(kout(:,2), kout(:,1), kdiff)
-         if (it>2)dis_smallest= norm(kdiff)/1 
+         if (it>2)dis_smallest= norm(kdiff)/RKF45_PERIODIC_LEVEL
 
          !> check if kout(:, it)==kout(:, 1)
          !> if it's a close orbit, we don't have to calculate all of them.
