@@ -5,7 +5,7 @@
 # ( in testing )
 
 '''
-0. Required Packages: numpy, matplotlib, scipy, re, os
+0. Required Packages: PYTHON3, numpy, matplotlib, scipy, re, os
    Required files : wt.in, sigma_bands_mu_*.dat
    Copy this file to your work folder where contains wt.in and sigma files 
    Usage : python post_sigma_OHE.py
@@ -83,7 +83,10 @@ def readwtin():
     OmegaMax = parameters['OMEGAMAX']
     OmegaNum = parameters['OMEGANUM']
     BTauMax = parameters['BTAUMAX']
-    BTauNum = parameters['BTAUNUM']
+    try:
+        BTauNum = parameters['BTAUNUM']
+    except:
+        BTauNum = parameters['NBTAU']
 
     print('Tmin = ',Tmin, '\nTmax = ',Tmax, '\nNumT = ',NumT, '\nOmegaMin = ',OmegaMin, '\nOmegaMax = ',
             OmegaMax, '\nOmegaNum = ',OmegaNum, '\nBTauMax = ',BTauMax, '\nBTauNum = ',BTauNum)
