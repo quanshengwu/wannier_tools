@@ -438,7 +438,7 @@ subroutine ham_3Dlandau_sparseHR(nnz, Ndimq, Nq, k, acoo,jcoo,icoo)
             phase=phase2(Ri,Rj)
             fac= cos(phase)+ zi*sin(phase)
 
-            tmp=hacoo(ims)*ratio/ndegen(iR)* fac
+            tmp=hacoo(ims)*ratio* fac
             if(abs(tmp)/eV2Hartree > 1e-6) then
                ncoo=ncoo+1
                icoo(ncoo)=hicoo(ims)+(i1-1)*Num_wann
@@ -500,7 +500,7 @@ subroutine ham_3Dlandau_sparseHR(nnz, Ndimq, Nq, k, acoo,jcoo,icoo)
             phase=phase2(Ri,Rj)
             fac= cos(phase)+ zi*sin(phase)
 
-            tmp=hacoo(ims)*ratio/ndegen(iR)* fac
+            tmp=hacoo(ims)*ratio* fac
             if(abs(tmp)/eV2Hartree  > 1e-6) then
                ncoo=ncoo+1
                icoo(ncoo)=hicoo(ims)+(i1-1)*Num_wann
