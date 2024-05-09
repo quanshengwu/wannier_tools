@@ -897,11 +897,18 @@
      
      integer, allocatable     :: ndegen(:)  ! degree of degeneracy of R point
 
-     complex(dp), allocatable :: HmnR_newcell(:,:,:)   ! Hamiltonian m,n are band indexes
+     complex(dp), allocatable :: HmnR_surfacecell(:,:,:)   ! Hamiltonian m,n are band indexes
      real(dp), allocatable :: Atom_position_cart_newcell(:,:)   ! Hamiltonian m,n are band indexes
      real(dp), allocatable :: Atom_position_direct_newcell(:,:)   ! Hamiltonian m,n are band indexes
-     integer, allocatable     :: irvec_newcell(:,:)   ! R coordinates
-     integer, allocatable     :: ndegen_newcell(:)  ! degree of degeneracy of R point
+     integer, allocatable     :: irvec_surfacecell(:,:)   ! R coordinates
+     integer, allocatable     :: ndegen_surfacecell(:)  ! degree of degeneracy of R point
+     
+     real(dp), allocatable     :: Rmn_old(:)
+     real(dp), allocatable     :: Rmn_new(:)
+     real(dp), allocatable     :: irvec_new(:)
+     integer, allocatable     :: irvec_new_int(:)
+     integer, allocatable     :: nrpts_surfacecell
+
      real(dp),public, save :: Rua_newcell(3) !> three rotated primitive vectors in old coordinate system
      real(dp),public, save :: Rub_newcell(3) !> three rotated primitive vectors in old coordinate system
      real(dp),public, save :: Ruc_newcell(3) !> three rotated primitive vectors in old coordinate system
