@@ -153,6 +153,7 @@ subroutine readinput
    ANE_calc              = .FALSE.
    w3d_nested_calc =.false.
    valley_projection_calc =.false.
+   Matrix_Element_calc  =.false.
    ChargeDensity_selected_bands_calc= .FALSE.
    ChargeDensity_selected_energies_calc= .FALSE.
 
@@ -571,6 +572,13 @@ subroutine readinput
    arpack_solver= 'zndrv1'
    RKF45_PERIODIC_LEVEL= 1
    iprint_level = 1
+   penetration_lambda_arpes= 5 ! in angstrom
+   photon_energy_arpes= 0d0 ! photon energy for ARPES in ev
+   polarization_phi_arpes = (0d0/180d0)*3.14159265358979d0 
+   polarization_xi_arpes= (0d0/180d0)*3.14159265358979d0
+   polarization_alpha_arpes= (45d0/180d0)*3.14159265358979d0
+   polarization_delta_arpes= (0d0/180d0)*3.14159265358979d0
+
 
 
    !> by default, we only project on atoms for a given wave function
@@ -636,6 +644,11 @@ subroutine readinput
       write(stdout, '(1x, a, i6   )')'NumRandomConfs:', NumRandomConfs
       write(stdout, '(1x, a, a    )')'Projection weight mode:', projection_weight_mode
       write(stdout, '(1x, a, i8   )')'The size of magnetic supercell is Magq= :', Magq
+      write(stdout, '(1x, a, i8   )')'Penetration depth of incoming photon for ARPES, in unit angstrom :', penetration_lambda_arpes
+      write(stdout, '(1x, a, i8   )')'Photon energy for ARPES, in unit eV :', photon_energy_arpes
+      write(stdout, '(1x, a, i8   )')'Incoming light is at alpha angular to the normal line of the experiment plane :', polarization_alpha_arpes
+      write(stdout, '(1x, a, i8   )')'The ratio between two orthogonal polarization vector components', polarization_xi_arpes 
+      write(stdout, '(1x, a, i8   )')'The relative phase between two orthogonal polarization vector components', polarization_delta_arpes
    endif
 
    !> changed to atomic units
@@ -645,6 +658,8 @@ subroutine readinput
    OmegaMax= OmegaMax*eV2Hartree
    Gap_threshold= Gap_threshold*eV2Hartree
    Rcut= Rcut*Ang2Bohr
+   penetration_lambda_arpes= penetration_lambda_arpes*Ang2Bohr
+   photon_energy_arpes= photon_energy_arpes*eV2Hartree
 
    !> change the unit of relaxtion time from ps to atomic unit
    Relaxation_Time_Tau= Relaxation_Time_Tau*1E-12/Time_atomic

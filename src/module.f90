@@ -450,7 +450,8 @@
      logical :: valley_projection_calc ! for valley projection, only for sparse hamiltonina, you need to provide the valley operator 
      
      logical :: w3d_nested_calc = .false.
-   
+     logical :: Matrix_Element_calc = .false. ! Matrix element calculation
+
      namelist / Control / BulkBand_calc, BulkFS_calc,  BulkFS_Plane_calc, &
                           BulkFS_plane_stack_calc,  BulkGap_plane_calc, &
                           QPI_unfold_plane_calc, &
@@ -482,7 +483,7 @@
                           LandauLevel_B_dos_calc,LanczosBand_calc,LanczosDos_calc, &
                           LandauLevel_B_calc, LandauLevel_kplane_calc,landau_chern_calc, &
                           FermiLevel_calc,ANE_calc, export_newhr,export_maghr,w3d_nested_calc, &
-                          valley_projection_calc
+                          valley_projection_calc, Matrix_Element_calc
 
      integer :: Nslab  ! Number of slabs for 2d Slab system
      integer :: Nslab1 ! Number of slabs for 1D wire system
@@ -598,13 +599,24 @@
      !> iprint_level=3 : print all the debug messages
      integer :: iprint_level = 1       
 
+     !> parameters for matrix element
+     real(dp) :: penetration_lambda_arpes ! penetration depth of photon, appear in polarization term and the overlp_i in unfolding.f90
+     real(dp) :: photon_energy_arpes  ! photon energy ,input unit eV
+     real(dp) :: test_namelist
+     real(dp) :: polarization_phi_arpes ! the incoming plane get phi angle with y axis
+     real(dp) :: polarization_alpha_arpes ! incoming light is at alpha angular to the normal line of the experiment plane
+     real(dp) :: polarization_xi_arpes ! defines the ratio between two orthogonal polarization vector components
+     real(dp) :: polarization_delta_arpes ! the relative phase between two orthogonal polarization vector components
+
      !> namelist parameters
      namelist /PARAMETERS/ Eta_Arc,EF_broadening, OmegaNum, OmegaNum_unfold, OmegaMin, OmegaMax, &
         E_arc, Nk1, Nk2, Nk3, NP, Gap_threshold, Tmin, Tmax, NumT, &
         NBTau, BTauNum, BTauMax, Rcut, Magp, Magq, Magp_min, Magp_max, Nslice_BTau_Max, &
         wcc_neighbour_tol, wcc_calc_tol, Beta,NumLCZVecs, iprint_level, &
         Relaxation_Time_Tau,  symprec, arpack_solver, RKF45_PERIODIC_LEVEL, &
-        NumRandomConfs, NumSelectedEigenVals, projection_weight_mode, topsurface_atom_index
+        NumRandomConfs, NumSelectedEigenVals, projection_weight_mode, topsurface_atom_index, &
+        photon_energy_arpes, polarization_xi_arpes, test_namelist,&
+        polarization_alpha_arpes, polarization_delta_arpes, penetration_lambda_arpes, polarization_phi_arpes
     
      real(Dp) :: E_fermi  ! Fermi energy, search E-fermi in OUTCAR for VASP, set to zero for Wien2k
 
@@ -1121,3 +1133,920 @@
 
  end module wcc_module
 
+
+
+ !> information from periodic element table stored in one module   
+ module element_table
+   use para, only: dp, pi, zi, photon_energy_arpes, polarization_phi_arpes, polarization_xi_arpes, polarization_alpha_arpes, &
+   polarization_delta_arpes, penetration_lambda_arpes
+   
+   implicit none
+   
+   integer, parameter :: lenth_of_table = 104 ! number of elements in this table
+   integer, parameter :: lines_of_table = 7 ! the number of lines in the table
+   integer, parameter :: angular_number = 4 ! the number of angular orbitals that we considered
+   integer, parameter :: magnetic_number_max = 7 ! the max number of orbitals with different magnetic number
+   real, parameter :: a_0 = 5.29177210903E-1 ! Bohr radius in the unit of angstrom
+   
+   
+   character(len=10) :: element_name(lenth_of_table) = ['H','He','Li','Be','B','C','N','O','F','Ne','Na','Mg','Al','Si','P','S','Cl','Ar','K','Ca','Sc','Ti','V','Cr','Mn','Fe','Co','Ni','Cu','Zn','Ga','Ge','As','Se','Br','Kr','Rb','Sr','Y','Zr','Nb','Mo','Tc','Ru','Rh','Pd','Ag','Cd','In','Sn','Sb','Te','I','Xe','Cs','Ba','La','Ce','Pr','Nd','Pm','Sm','Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb','Lu','Hf','Ta','W','Re','Os','Ir','Pt','Au','Hg','Tl','Pb','Bi','Po','At','Rn','Fr','Ra','Ac','Th','Pa','U','Np','Pu','Am','Cm','Bk','Cf','Es','Fm','Md','No','Lr','Rf']
+
+   ! Each element's electron configuration
+   character(len=64) :: element_electron_config(lenth_of_table) = [&
+   '1s1'&
+   ,'1s2'&
+   ,'1s22s1'&
+   ,'1s22s2'&
+   ,'1s22s22p1'&
+   ,'1s22s22p2'&
+   ,'1s22s22p3'&
+   ,'1s22s22p4'&
+   ,'1s22s22p5'&
+   ,'1s22s22p6'&
+   ,'1s22s22p63s1'&
+   ,'1s22s22p63s2'&
+   ,'1s22s22p63s23p1'&
+   ,'1s22s22p63s23p2'&
+   ,'1s22s22p63s23p3'&
+   ,'1s22s22p63s23p4'&
+   ,'1s22s22p63s23p5'&
+   ,'1s22s22p63s23p6'&
+   ,'1s22s22p63s23p64s1'&
+   ,'1s22s22p63s23p64s2'&
+   ,'1s22s22p63s23p63d14s2'&
+   ,'1s22s22p63s23p63d24s2'&
+   ,'1s22s22p63s23p63d34s2'&
+   ,'1s22s22p63s23p63d54s1'&
+   ,'1s22s22p63s23p63d54s2'&
+   ,'1s22s22p63s23p63d64s2'&
+   ,'1s22s22p63s23p63d74s2'&
+   ,'1s22s22p63s23p63d84s2'&
+   ,'1s22s22p63s23p63d104s1'&
+   ,'1s22s22p63s23p63d104s2'&
+   ,'1s22s22p63s23p63d104s24p1'&
+   ,'1s22s22p63s23p63d104s24p2'&
+   ,'1s22s22p63s23p63d104s24p3'&
+   ,'1s22s22p63s23p63d104s24p4'&
+   ,'1s22s22p63s23p63d104s24p5'&
+   ,'1s22s22p63s23p63d104s24p6'&
+   ,'1s22s22p63s23p63d104s24p65s1'&
+   ,'1s22s22p63s23p63d104s24p65s2'&
+   ,'1s22s22p63s23p63d104s24p64d15s2'&
+   ,'1s22s22p63s23p63d104s24p64d25s2'&
+   ,'1s22s22p63s23p63d104s24p64d45s1'&
+   ,'1s22s22p63s23p63d104s24p64d55s1'&
+   ,'1s22s22p63s23p63d104s24p64d55s2'&
+   ,'1s22s22p63s23p63d104s24p64d75s1'&
+   ,'1s22s22p63s23p63d104s24p64d85s1'&
+   ,'1s22s22p63s23p63d104s24p64d10'&
+   ,'1s22s22p63s23p63d104s24p64d105s1'&
+   ,'1s22s22p63s23p63d104s24p64d105s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p1'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p3'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p4'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p5'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p6'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p66s1'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p66s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p65d16s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f15d16s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f36s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f46s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f56s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f66s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f76s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f75d16s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f96s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f106s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f116s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f126s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f136s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f146s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d16s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d26s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d36s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d46s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d56s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d66s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d76s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d96s1'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s1'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p1'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p3'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p4'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p5'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p6'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p67s1'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p67s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p66d17s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p66d27s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f26d17s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f36d17s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f46d17s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f67s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f77s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f76d17s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f97s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f107s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f117s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f127s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f137s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f147s2'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f147s27p1'&
+   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f146d27s2']
+
+   character :: orb_ang_sign(angular_number) = ['s','p','d','f'] ! angular signs of orbital, only "spdf" are included
+   character(10) :: orb_sign(magnetic_number_max, angular_number) = &
+   [['','','','s','','',''],&
+   ['','','py','pz','px','',''],&
+   ['','dxy','dyz','dz2','dxz','dx2-y2',''],&
+   ['fy(3x2-y2)','fxyz','fyz2','fz3','fxz2','fz(x2-y2)','fx(x2-3y2)']]
+   
+contains
+
+   !> Find the specific element's index
+   subroutine get_element_index(name, index_)
+       
+       character(len=10), intent(in) :: name ! the element we want to know its index
+
+       integer :: index_
+       integer :: i
+       
+       index_ = 0
+       do i = 1, size(element_name)
+           if ( element_name(i) == name ) then
+               index_ = i
+               exit                
+           end if
+       end do
+
+       if ( index_ == 0 )  write(*,*) "Element is not in this table !"
+
+   end subroutine get_element_index
+   
+   !> Find the specific orbital's (l,m)
+   subroutine get_orbital_index(orbital_name,  index_l, index_m)
+     
+       implicit none
+       character(10), intent(in) :: orbital_name
+
+       integer :: index_l  
+       integer :: index_m 
+       integer :: i, j
+       
+       index_l = -1
+       index_m = 0
+       do i = 1, magnetic_number_max
+           do j = 1, angular_number
+               if(orbital_name == orb_sign(i,j)) then
+                   index_m = i-angular_number
+                   index_l = j-1
+                   exit
+               end if
+           end do
+       end do
+
+       ! if we have not find the element, l is the default value -1
+       if (index_l == -1) then
+           write(*,*) "Orbital is not in this table !"
+       end if
+
+   end subroutine get_orbital_index
+
+
+
+   !> Get specific element's extranuclear electron arrangement
+   !-----------------------------------------------------------------------------------------------------!
+        ! we now consider all the electrons have pricipal quantum number n<7 
+        ! and angular quantum number l<4
+        ! output list *configuration* have two indexes 
+        ! the first n is the principal quantum number, the second l is the angular quantum number
+        ! integer in *configuration* is the number of corresponding orbital
+   !-----------------------------------------------------------------------------------------------------!
+
+   subroutine get_electron_config(name, configuration)
+
+       implicit none
+       
+       character(len=10), intent(in) :: name
+       integer ::  configuration(lines_of_table,angular_number) 
+       integer :: index_ 
+       integer :: n ! principal quantum number , also the first index of configuration
+       character(len=64) :: config_temporary,orbital_temporary ! save the single element's configuration and
+                                                               ! orbital information temporarily
+       integer :: j,k,ifst,isec
+
+       call get_element_index(name , index_)
+       config_temporary = element_electron_config(index_)
+       
+       configuration = 0
+       do while(.True.)
+           if (len(trim(config_temporary)) == 0 )exit
+           
+               !> get one specific orbital's name first
+               ifst = 1 + 1
+               isec = len(trim(config_temporary)) + 2
+               findfirstorbital: do j = 1, len(trim(config_temporary))
+                   do k = 1, size(orb_ang_sign)
+                       if(orb_ang_sign(k) == config_temporary(j:j)) then
+                           ifst = j
+                           exit findfirstorbital !when get one orbital jump out of the cycle instantly 
+                       end if
+                   end do ! first k loop
+               end do findfirstorbital! first j loop
+               
+               !>then get the second orbital beside the first nearestly
+               findnextorbital:do j = (ifst + 1) , len(trim(config_temporary))
+                   do k = 1, size(orb_ang_sign)
+                       
+                       if(orb_ang_sign(k) == config_temporary(j:j)) then
+                           isec = j
+                           exit findnextorbital
+                       end if
+                   end do ! second k loop
+               end do findnextorbital! second j loop
+               
+
+               orbital_temporary = config_temporary((ifst - 1) :(isec - 2))
+               config_temporary = config_temporary((isec - 1):)
+
+               !> then we try to pick up the number of electrons on this orbital
+               read(orbital_temporary(1:1),'(I4)') n ! turn characters into integers
+               do k = 1,size(orb_ang_sign)
+                   if (orbital_temporary(2:2) == orb_ang_sign(k)) read(orbital_temporary(3:),'(I8)') configuration(n,k) 
+
+               end do 
+           
+       end do
+
+   end subroutine get_electron_config
+
+
+   !> Get the valence electrons' configuration of a specific element
+   subroutine get_valence_config(name, v_configuration )
+       implicit none
+       
+       character(len=10), intent(in) :: name
+       integer ::  v_configuration(lines_of_table,angular_number) 
+       ! we now consider all the electrons have pricipal quantum number n<7 and angular quantum number l<4
+       ! only the valence electrons considered 
+
+       integer ::  configuration(lines_of_table,angular_number)
+       integer ::  Rgas_configuration(lines_of_table,angular_number)
+       integer ::  Rgas(6) = [2,10,18,36,54,86] ! rare gases' atomic numbers, used for references
+
+       integer :: i, Rgas_nearest, id
+
+       call get_element_index(name,id)
+       Rgas_nearest = 0
+       do i = 1 , size(Rgas)
+           if (Rgas(i) .GE. id) exit
+           Rgas_nearest = i
+       end do 
+
+       configuration = 0
+       Rgas_configuration = 0
+       call get_electron_config(name , configuration)
+       if(Rgas_nearest >0) call get_electron_config(element_name(Rgas(Rgas_nearest)) , Rgas_configuration)
+       v_configuration = configuration - Rgas_configuration
+       
+   end subroutine get_valence_config
+   
+   
+   !> Factorial calculation
+   subroutine factorial(n,  res)
+       integer, intent(in) :: n
+       integer, intent(out) ::  res
+
+       integer :: i
+       
+       res = 1
+       if(n==0) then
+           res = 1
+           return
+       else
+           do i = 1, n
+               res = res*i
+           end do
+       end if 
+       
+   end subroutine factorial
+
+end module element_table
+
+
+!> module used for matrix element calculation for simulation of ARPES experiment 
+!-----------------------------------------------------------------------------------------------------!
+    ! implemented functions
+        !! slater type radial function's generation and effective nuclear charge numer Z_eff's calculation
+        !! matrix element calculation using slater type orbital
+        !! calculating the effect of photon energy
+        !! calculating the effect of photon polarization
+
+    ! references
+        !! An experimentalist's guide to the matrix element in angle resolved photoemission, Simon Moser
+        !! ARPES signatures of few-layer twistronic graphenes, J. E. Nunn et al. 
+
+!-----------------------------------------------------------------------------------------------------!
+module me_calculate
+    use element_table
+ 
+ 
+    implicit none
+    integer :: p_num = 200 ! how many sections we divide the integrate interval into
+    real(dp) :: inte_b = 50d0 ! the integral upper limit we sKtart from to approach infinity
+    real(dp) :: convergence_delta = 0.001d0 ! the convergence condition, when the integral result comes to slow down to a extent
+    real(dp) :: inte_step = 10d0 ! step lenth when approaching infinity
+    ! real(dp) :: E_eigen = 0d0 ! eigen energy where calculating this element
+    real(dp) :: k_cart_abs = 0d0 ! final k mod
+   ! real(dp) :: epsilon_dot_kf_square = 1d0 ! polarization term result
+ 
+    contains
+ 
+!> calculate the gaunt coefficients for dipole transition under complex spherical function basis
+    subroutine gaunt(l, m, dl, dm, gaunt_value)
+
+        implicit none
+        integer :: l, m, dl, dm !dl should value from {1, -1}, and dm should from {1, 0 , -1}, if not, gaunt_value will get 0 
+        real(dp) ::  gaunt_value
+        
+    ! formula copied from chinook, see "Computational framework chinook for angle-resolved photoemission spectroscopy" by Ryan P. Day et al.
+
+        if (abs(m+dm) > l+dl) then ! |m| <= l
+            gaunt_value = 0d0
+            return 
+
+        else 
+            if (dl == 1) then
+                if (dm == 1) then
+                    gaunt_value = (-1d0)**(m+1)*sqrt(3*(l+m+2)*(l+m+1)/(8*pi*(2*l+3)*(2*l+1)))
+                    return
+
+                else if (dm == 0) then
+                    gaunt_value = (-1d0)**(m)*sqrt(3*(l-m+1)*(l+m+1)/(4*pi*(2*l+3)*(2*l+1)))
+                    return
+                    
+                else if (dm == -1) then
+                    gaunt_value = (-1d0)**(m-1)*sqrt(3*(l-m+2)*(l-m+1)/(8*pi*(2*l+3)*(2*l+1)))
+                    return
+
+                end if
+
+            else if (dl == -1) then
+                if (dm == 1) then
+                    gaunt_value = (-1d0)**(m)*sqrt(3*(l-m)*(l-m-1)/(8*pi*(2*l+1)*(2*l-1)))
+                    return
+
+                else if (dm == 0) then
+                    gaunt_value = (-1d0)**(m)*sqrt(3*(l+m)*(l-m)/(4*pi*(2*l+1)*(2*l-1)))
+                    return
+
+                else if (dm == -1) then
+                    gaunt_value = (-1d0)**(m)*sqrt(3*(l+m)*(l+m-1)/(8*pi*(2*l+1)*(2*l-1)))
+                    return
+
+                end if
+
+
+            end if
+
+        end if
+
+        gaunt_value = 0d0
+        
+        
+        return 
+    end subroutine gaunt
+
+!> count the number of zero in input m values, we will use it in the following subroutine       
+    subroutine m_equal_0_number(input_m,  m_equal_0_num)
+
+        implicit none
+        integer :: input_m,  m_equal_0_num
+        
+        
+        if ( input_m == 0 ) then
+            m_equal_0_num =  m_equal_0_num + 1
+        end if
+        
+        return
+    end subroutine m_equal_0_number
+
+    !> use the subrountine gaunt to calculate the gaunt coefficients under real spherical function basis, and give the m_3 that coefficient does not equal zero, here we combined the spherical harmonics and the gaunt coefficients together.
+    subroutine gaunt_real_basis(l, m, dl, dm, realbasis_gaunt_value , k_theta, k_phi)
+
+        implicit none
+        integer :: l, m, dl, dm !dl should value from {1, -1}, and dm should from {1, 0 , -1}, if not, gaunt_value will get 0 
+        integer :: m_sign, dm_sign, i_sign
+        integer :: m_3, real_or_complex, m_equal_0_num  !the m_3 that coefficient does not equal zero
+
+
+        integer :: sum_abs_m !identify how many 1/2 we need, defined by the m_equal_0_num
+        real(dp) ::  realbasis_gaunt_value !result gaunt value in realbasis
+        real(dp) ::  t_gaunt_value, sign_gaunt_real
+        real(dp) :: k_theta, k_phi
+        
+        real_or_complex = 1  !justify if we get no real value
+        m_sign = 1 !sign of m, 1 for positive and 0 for negative
+        dm_sign = 1
+        i_sign = 1
+        m_equal_0_num = 0
+
+        !count the number of zero of m and dm, we will get m_equal_0_num of 1/2 if there are zeroes in m and dm
+        call m_equal_0_number(m , m_equal_0_num)
+        call m_equal_0_number(dm , m_equal_0_num)
+
+        !we will get an imaginary number i when there are negative value in m and dm
+        if ( m < 0 ) then
+            real_or_complex = -1*real_or_complex
+            m_sign = 0
+        end if
+
+        if ( dm < 0 ) then
+            real_or_complex = -1*real_or_complex
+            dm_sign = 0
+        end if
+
+        !if dm < 0 and m < 0, we will get square of i, so there a (-1) factor we will get
+        if ( dm < 0 .and. m < 0 ) then
+            i_sign = -1
+        end if
+           
+        realbasis_gaunt_value = 0d0 
+
+        call gaunt(l, m, dl, dm, t_gaunt_value) 
+
+        !the real basis result is a combination of m+dm and m-dm imaginary basis results with proper coefficients
+        sum_abs_m = abs(m)/(abs(m) + 1E-10) + abs(dm)/(abs(dm) + 1E-10) 
+        if ( (m+dm)<0 ) then
+            sign_gaunt_real = (-1)**(m+dm)*(-1)**(m*m_sign)*(-1)**(dm*dm_sign)
+        else if ( (m+dm)>0 ) then
+            sign_gaunt_real = (-1)**(m+dm)*(-1)**((m-1)*(m_sign-1))*(-1)**((dm-1)*(dm_sign-1))
+        else if ((m+dm) == 0 ) then
+            sign_gaunt_real = (-1)**(m+dm)*(-1)**(m*m_sign)*(-1)**(dm*dm_sign) + (-1)**(m+dm)*(-1)**((m-1)*(m_sign-1))*(-1)**((dm-1)*(dm_sign-1))
+       end if
+       
+        realbasis_gaunt_value = realbasis_gaunt_value + i_sign*sign_gaunt_real*1d0/(sqrt(2d0))**sum_abs_m*t_gaunt_value*Ylm(k_theta, k_phi, l+dl, real_or_complex*abs(m+dm))
+
+        call gaunt(l, m, dl, -dm, t_gaunt_value) 
+
+        sum_abs_m = abs(m)/(abs(m) + 1E-10) + abs(dm)/(abs(dm) + 1E-10) 
+        if ( (m-dm)<0 ) then
+            sign_gaunt_real = (-1)**(m-dm)*(-1)**(m*m_sign)*(-1)**((dm-1)*(dm_sign-1))
+        else if ( (m-dm)>0 ) then
+            sign_gaunt_real = (-1)**(m-dm)*(-1)**((m-1)*(m_sign-1))*(-1)**(dm*dm_sign)
+        else if ((m-dm) == 0 ) then
+            sign_gaunt_real = (-1)**(m-dm)*(-1)**(m*m_sign)*(-1)**((dm-1)*(dm_sign-1)) + (-1)**(m+dm)*(-1)**((m-1)*(m_sign-1))*(-1)**(dm*dm_sign)
+       end if
+    
+
+       realbasis_gaunt_value = realbasis_gaunt_value + i_sign*sign_gaunt_real*1d0/(sqrt(2d0))**sum_abs_m*t_gaunt_value*Ylm(k_theta, k_phi, l+dl, real_or_complex*abs(m-dm))
+
+       realbasis_gaunt_value = realbasis_gaunt_value*(1d0/2d0)**(m_equal_0_num)
+       return
+    end subroutine gaunt_real_basis
+
+    !> This subroutine is used to calculate the polarization vector of the incoming light 
+    subroutine polarization_vector(polar_epsilon)
+        implicit none
+        complex(dp) :: polar_epsilon(3)
+         
+        
+        polar_epsilon(1) = cos(polarization_xi_arpes)*cos(polarization_phi_arpes) - (cos(polarization_delta_arpes) + zi*sin(polarization_delta_arpes))*sin(polarization_xi_arpes)*cos(polarization_alpha_arpes)*sin(polarization_phi_arpes)
+     
+        polar_epsilon(2) = cos(polarization_xi_arpes)*sin(polarization_phi_arpes) + (cos(polarization_delta_arpes) + zi*sin(polarization_delta_arpes))*sin(polarization_xi_arpes)*cos(polarization_alpha_arpes)*cos(polarization_phi_arpes)
+        
+        polar_epsilon(3) = (cos(polarization_delta_arpes) + zi*sin(polarization_delta_arpes))*sin(polarization_xi_arpes)*sin(polarization_alpha_arpes)
+        
+        
+        return
+    end subroutine polarization_vector
+ 
+    !> This subroutine is used to calculate the effective nuclear charge number Z_eff under slater rules
+    subroutine Z_eff_cal(name, n, l, Z_eff)
+        
+ 
+        implicit none
+        character(len=10) ,intent(in) :: name
+        integer, intent(in) :: n ! the pricipal quantum number of the electron we are interested in 
+        integer, intent(in) :: l ! the angular quantum number
+ 
+        real(dp) :: Z_eff, sigma ! sigma is the shielding factor Z_eff = Z - sigma
+        integer :: id ! element atomic number
+        integer :: total_config(lines_of_table,angular_number) ! the total electron configuration of this element
+        integer :: i,j,flag ! posi is the group number of the electron we are interested in 
+        
+        call get_element_index(name , id)
+        call get_electron_config(name , total_config)
+
+ 
+        sigma = 0d0
+        flag = 0
+ 
+
+ 
+        if (n == 1 .and. l == 0) then
+            sigma = 0.3d0
+            flag = -1
+        end if 
+ 
+        if (flag /= -1) then
+            if ( l == 0 .or. l == 1 ) then 
+                ! slater rules , if electron we consider is on s or p orbital , the other electrons in the same
+                ! group shield 0.35 , the electrons in n-1 group shield 0.85 , the electrons in n-2 or less than
+                ! n-2 groups shield 1.00
+                do i = 1 , n
+                    
+                    if(i<(n-1)) then
+                        do j = 1, angular_number
+                            sigma = sigma + 1d0*total_config(i,j)
+                        end do
+                    else if(i == (n-1)) then
+                        do j = 1, angular_number
+                            sigma = sigma + 0.85d0*total_config(i,j)
+                        end do
+                        
+                    else if(i == n) then
+                        do j = 1, 2
+                            if(j == (l+1)) then
+                                sigma = sigma + 0.35d0*(total_config(i,j)-1)
+                            else
+                                sigma = sigma + 0.35d0*(total_config(i,j))
+                            end if
+                        end do
+                        
+                    end if
+                end do
+ 
+            else if (l == 2 .or. l == 3) then
+                !slater rules , if electron we consider is on d or f orbital , the other electrons in the same
+                !group shield 0.35 , the electrons in n-1 or less than n-1 groups shield 1.00
+                                            
+                do i = 1 , n
+                    
+                    if(i<n) then
+                        do j = 1, angular_number
+                            sigma = sigma + 1d0*total_config(i,j)
+                        end do
+                    else if(i == n) then
+                        do j = 1, angular_number
+                            if(j == (l+1)) then
+                                sigma = sigma + 0.35d0*(total_config(i,j)-1)
+                            else
+                                sigma = sigma + 1d0*(total_config(i,j))
+                            end if
+                        end do
+                    end if
+                end do
+        
+            end if
+        end if ! first if
+ 
+        Z_eff = 1d0*id - sigma
+
+ 
+    end subroutine Z_eff_cal
+ 
+ 
+ 
+    !> This subroutine is used for generating Slater-type radial wave function Rnl(r) 
+    real(dp) function slater_Rn (r, n, Z_eff)
+        
+ 
+ 
+        implicit none
+        integer, intent(in):: n ! principal quantum number
+        real(dp), intent(in) :: r ! radial lenth , in Cartesian coordinate , unit is angstrom
+        real(dp), intent(in) :: Z_eff ! effective nuclear charge number under slater rules
+        
+ 
+
+        real(dp) ::  Rn_r ! answer of Rnl(r)
+        real(dp) :: norm ! normalization factor
+        integer :: n_fac
+        
+        call factorial(2*n , n_fac)
+        
+        norm = ((2d0*Z_eff)/(n*a_0))**n * sqrt(((2d0*Z_eff)/(n*a_0))/(n_fac)) ! normalization factor
+        Rn_r = norm*(r)**(n-1)*exp(-((Z_eff*r)/(n*a_0)))
+ 
+        slater_Rn = Rn_r
+    end function slater_Rn
+ 
+    !>When l=0,1,2,3 calculate the spherical bessel function
+    real(dp) function spherical_bessel(x, l)
+ 
+ 
+        implicit none
+        integer, intent(in) :: l 
+        real(dp) :: x
+ 
+ 
+        x = x + 4d0*atan(1d0)*1E-10
+        if (l == 0) then
+            spherical_bessel = sin(x)/x
+        else if(l == 1) then
+            spherical_bessel = -cos(x)/x + sin(x)/(x**2)
+        else if(l == 2) then
+            spherical_bessel = -sin(x)/x - 3d0*cos(x)/(x**2) + 3d0*sin(x)/(x**3)
+        else if(l == 3) then
+            spherical_bessel = -cos(x)/x - 6d0*sin(x)/(x**2) - 15d0*cos(x)/(x**3) + 15d0*sin(x)/(x**4)
+        else
+            spherical_bessel = 0d0
+        end if
+ 
+    end function spherical_bessel
+ 
+ 
+    !>When l=0,1,2,3 calculate the spherical harmonics in real basis
+    complex(dp) function Ylm(theta, phi, l, m)
+  
+  
+    implicit none
+    real(dp), intent(in) :: theta, phi
+    integer, intent(in) :: l, m
+ 
+ 
+    if (l == 0) then
+        if(abs(m) == 0) then
+            Ylm = 0.5d0*sqrt(1.0/Pi)*cmplx(1.0d0, 0.0d0)
+        else
+            Ylm = cmplx(0.0d0, 0.0d0)
+        end if
+    else if(l == 1) then
+        if(m == 0) then
+            Ylm = 0.5*sqrt(3.0/Pi)*cos(theta)*cmplx(1.0d0, 0.0d0)
+        else if(m == 1) then
+            Ylm = 0.5*sqrt(3.0/(Pi))*sin(theta)*cos(phi)
+        else if(m == -1) then
+            Ylm = 0.5*sqrt(3.0/(Pi))*sin(theta)*sin(phi)
+        else 
+            Ylm = cmplx(0.0d0, 0.0d0)
+        end if
+    else if(l == 2) then
+        if(abs(m) == 0) then
+            Ylm = 0.25*sqrt(5/Pi)*(3*cos(theta)**2-1)*cmplx(1.0d0, 0.0d0)
+        else if(m == 1) then
+            Ylm = 0.5*sqrt(15.0/(Pi))*sin(theta)*cos(theta)*cos(phi)
+        else if(m == -1) then
+            Ylm = 0.5*sqrt(15.0/(Pi))*sin(theta)*cos(theta)*sin(phi)
+        else if(m == 2) then
+            Ylm = 0.25*sqrt(15.0/(Pi))*sin(theta)**2*cos(2d0*phi)
+        else if(m == -2) then
+            Ylm = 0.25*sqrt(15.0/(Pi))*sin(theta)**2*sin(2d0*phi)
+        else
+            Ylm = cmplx(0.0d0, 0.0d0)
+        end if
+    else if(l == 3) then
+        if(m == 0) then
+            Ylm = 0.25*sqrt(7/Pi)*(5*cos(theta)**3-3*cos(theta))
+        else if(m == 1) then
+            Ylm = 0.25*sqrt(21/(2d0*Pi))*sin(theta)*(5*cos(theta)**2-1)*cos(phi)
+        else if(m == -1) then
+            Ylm = 0.25*sqrt(21/(2d0*Pi))*sin(theta)*(5*cos(theta)**2-1)*sin(phi)
+        else if(m == 2) then
+            Ylm = 0.25*sqrt(105/(Pi))*sin(theta)**2*cos(theta)*cos(2d0*phi)
+        else if(m == -2) then
+            Ylm = 0.25*sqrt(105/(Pi))*sin(theta)**2*cos(theta)*sin(2d0*phi)
+        else if(m == 3) then
+            Ylm = 0.25*sqrt(35/(2d0*Pi))*sin(theta)**3*cos(3d0*phi)
+        else if(m == -3) then
+            Ylm = 0.25*sqrt(35/(2d0*Pi))*sin(theta)**3*sin(3d0*phi)
+        else
+            Ylm = cmplx(0.0d0, 0.0d0)
+        end if
+    end if
+ 
+ end function Ylm
+ 
+ 
+ 
+    !> Generate the integrand function
+    real(dp) function integrand(r, k_f, name, n, l)
+ 
+ 
+        implicit none
+        character(len=10) ,intent(in) :: name
+        real(dp), intent(in) :: r
+        real(dp), intent(in) :: k_f
+        integer, intent(in) :: n
+        integer, intent(in) :: l
+ 
+ 
+        real(dp) :: Z_eff ! effective nuclear charge number under slater rules
+        real(dp) :: res
+ 
+ 
+        call Z_eff_cal(name, n, l, Z_eff)
+        res = (r**2)*slater_Rn(r, n, Z_eff)*spherical_bessel(k_f*r, l) 
+        integrand = res
+    end function integrand
+ 
+ 
+    !> Simpson integral
+    subroutine integral_simpson(a, b, func, k_f, name, n, l, ans)
+ 
+ 
+        implicit none
+        real(dp), external :: func
+        real(dp), intent(in) :: a
+        real(dp), intent(in) :: b
+        
+        character(len=10) ,intent(in) :: name
+        real(dp), intent(in) :: k_f
+        integer, intent(in) :: n
+        integer, intent(in) :: l
+ 
+        real(dp) :: ans, aa
+        real(dp) :: step
+        integer :: i
+ 
+        step = (b-a)/p_num
+        ans = 0d0
+        aa = a
+        do i = 1, p_num
+            aa = aa + step
+            ans = (step/6d0)*(func(aa, k_f, name, n, l) + func((aa+step), k_f, name, n, l) + 4d0*func((2d0*aa+step)/2d0,&
+             k_f, name, n, l))  + ans   
+        end do
+        
+        
+    end subroutine integral_simpson
+ 
+ 
+    !> Simposon integral to infinity
+    subroutine inf_integral(a, b, is_a_inf, is_b_inf, func, k_f, name, n, l, ans)
+ 
+ 
+        implicit none
+        real(dp), external :: func
+        real(dp), intent(in) :: a
+        real(dp), intent(in) :: b
+        real(dp), intent(in) :: k_f
+        logical, intent(in) :: is_a_inf, is_b_inf
+        integer, intent(in) :: n
+        integer, intent(in) :: l
+        !external :: integral_simpson
+ 
+        character(len=10) ,intent(in) :: name
+        
+ 
+ 
+        real(dp) :: ans
+        real(dp) :: s, s_1, s_2, a_1, b_1, a_2, b_2
+ 
+        
+        s_1 = 0d0
+        s_2 = 0d0
+        a_1 = a
+        b_1 = b
+        a_2 = b + inte_step
+        b_2 = a_2 + inte_step
+        call integral_simpson(a_1, b_1, func, k_f, name, n, l, s)
+ 
+        NO_1: do while(.true.)
+            
+            if ((is_a_inf == .false.).and.(is_b_inf == .false.)) then
+                exit NO_1
+            else
+                if (is_a_inf == .true.) then
+                    a_1 = a_1 - inte_step
+                    a_2 = a_1 - inte_step
+                    b_1 = b_1 - inte_step
+                    b_2 = b_1 - inte_step
+                    call integral_simpson(a_1, b_1, func, k_f, name, n, l, s_1)
+                    call integral_simpson(a_2, b_2, func, k_f, name, n, l, s_2)
+                end if
+ 
+                if (is_b_inf == .true.) then
+                    a_1 = b_1
+                    b_1 = a_2
+                    a_2 = b_2
+                    b_2 = b_2 + inte_step
+                    !write(*,*) s, s_1, s_2
+                    !write(*,*) a_1, b_1
+                    call integral_simpson(a_1, b_1, func, k_f, name, n, l, s_1)
+                    call integral_simpson(a_2, b_2, func, k_f, name, n, l, s_2)
+                    !write(*,*) s, s_1, s_2 
+                    s_1 = s + s_1
+                    s_2 = s_1 + s_2
+                    s = s_1
+ 
+ 
+                end if
+ 
+ 
+                if (abs(abs(s_2 - s_1) - abs(s_1 - s)) < convergence_delta  ) exit NO_1
+            end if
+ 
+ 
+ 
+        end do NO_1
+ 
+        ans = s_2
+        !write(*,*) a_2, b_2
+ 
+    end subroutine inf_integral
+ 
+ 
+    !> Transform the k in cartesian to spherical coordinate
+    subroutine cartesian_to_spherical(k_cart, k_f, theta, phi)
+     
+ 
+        implicit none
+        real(dp), intent(in):: k_cart(3)
+        real(dp) :: k_z, k_f, theta, phi ! value of phi is in [-π, π] 
+
+        k_f = k_cart_abs !this value contains the effect of photon energy
+        k_z = sqrt(k_f**2 - k_cart(1)**2 - k_cart(2)**2)
+        theta = acos(k_z/k_f)
+        phi = sign(acos(k_cart(1)/sqrt(k_cart(1)**2 + k_cart(2)**2 + 0.0000001d0)), k_cart(1))
+       
+    end subroutine cartesian_to_spherical
+ 
+ 
+ 
+     !> Main subroutine to calculate the Matrix Element
+    subroutine get_matrix_element(ele_name, orb_name, k_cart, matrix_element_res)
+ 
+ 
+        implicit none
+        character(len=10), intent(in) :: ele_name
+        character(len=10), intent(in) :: orb_name
+        real(dp) :: k_cart(3) ! k in cartesian coordinate
+        real(dp) :: gaunt_value_tmp
+        complex(dp) :: Ylm_gaunt_vec(3) ! values of gaunt coefficient plus Ylm corresponding to polarization vector
+        complex(dp) :: polar_epsilon_vec(3) ! polarization vector 
+       
+ 
+        integer :: i, j
+        integer :: n, l, m ! orbital quantum numbers
+        integer :: ele_ind ! element index
+        integer :: ele_valence_configuration(lines_of_table, angular_number) ! valence electrons' configuration of element 
+        integer :: dl, m_3 ! dl values from {-1, +1}
+        
+        real(dp) :: Z_eff
+        real(dp) :: inte_res, inte_a = 0d0 
+        real(dp) :: k_theta, k_phi, k_f ! k under spherical coordinate, k_f in the unit of angstrom^-1, k_theta and k_phi are in radian
+        !real(dp) :: matrix_element_res
+        complex(dp) :: matrix_element_res
+        real(dp) :: time_start, time_end
+ 
+        
+        
+        !> get n,m,l of selected orbital
+        call get_element_index(ele_name, ele_ind)
+        call get_orbital_index(orb_name, l, m)
+        call get_valence_config(ele_name, ele_valence_configuration)
+ 
+        do i = 1, lines_of_table
+            if(ele_valence_configuration(i, l+1) /= 0) then
+                n = i
+                exit
+            end if
+        end do
+
+        !> generate the polarization vector epsilon
+        call polarization_vector(polar_epsilon_vec)
+
+
+        !> calculate the integral
+        
+        call cartesian_to_spherical(k_cart, k_f, k_theta, k_phi) ! get k under spherical coordinate
+        call Z_eff_cal(ele_name, n, l, Z_eff)
+
+        matrix_element_res = 0d0
+        do j = 0, 1
+            ! generate the dl
+            dl = j*2-1
+            call integral_simpson(inte_a, inte_b, integrand, k_f, ele_name, n, l+dl, inte_res)
+
+
+            
+            !!> initialize the gaunt coefficients
+            call gaunt_real_basis(l, m, dl, 1, gaunt_value_tmp, k_theta, k_phi)
+        
+            Ylm_gaunt_vec(1) = gaunt_value_tmp
+            call gaunt_real_basis(l, m, dl, -1, gaunt_value_tmp, k_theta, k_phi)
+           
+            Ylm_gaunt_vec(2) = gaunt_value_tmp
+            call gaunt_real_basis(l, m, dl, 0, gaunt_value_tmp, k_theta, k_phi)
+          
+            Ylm_gaunt_vec(3) = gaunt_value_tmp
+
+
+            !> calculate the matrix element
+
+            matrix_element_res = matrix_element_res + (zi)**(l+dl)*4d0*Pi*inte_res*dot_product(polar_epsilon_vec, Ylm_gaunt_vec)
+
+
+        end do ! j loop
+
+        return
+    end subroutine get_matrix_element
+ 
+ 
+ end module me_calculate
