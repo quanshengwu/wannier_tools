@@ -154,3 +154,40 @@ subroutine cross_product(R1, R2, R3)
 
    return
 end subroutine cross_product
+
+
+      Module Kronecker
+
+      contains
+
+! Takes in Matrices A(i,j),B(k,l), assumed 2D, returns Kronecker Product
+! C(i*k,j*l)
+      function KronProd(A,B) result(C)
+
+       use para, only : Dp
+       IMPLICIT NONE
+
+       complex(Dp), dimension (:,:), intent(in)  :: A, B
+       complex(Dp), dimension (:,:), allocatable :: C
+       !real, dimension (:,:), intent(in)  :: A, B
+       !real, dimension (:,:), allocatable :: C
+       integer :: i = 0, j = 0, k = 0, l = 0
+       integer :: m = 0, n = 0, p = 0, q = 0
+
+
+       allocate(C(size(A,1)*size(B,1),size(A,2)*size(B,2)))
+       C = 0
+
+       do i = 1,size(A,1)
+        do j = 1,size(A,2)
+         n=(i-1)*size(B,1) + 1
+         m=n+size(B,1) - 1
+         p=(j-1)*size(B,2) + 1
+         q=p+size(B,2) - 1
+         C(n:m,p:q) = A(i,j)*B
+        enddo
+       enddo
+
+      end function KronProd
+      end module Kronecker
+
