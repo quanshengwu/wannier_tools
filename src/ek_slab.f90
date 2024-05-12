@@ -314,7 +314,7 @@ subroutine ek_slab_sparseHR
    if (nvecs>Ndimq) nvecs= Ndimq
 
 
-   sigma=(1d0,0d0)*E_arc
+   sigma=(1d0,0d0)*iso_energy
    
    allocate( acoo(nnzmax), stat= ierr)
    call printallocationinfo('acoo', ierr)

@@ -593,6 +593,7 @@ subroutine readinput
 
    !>>>> read a lot of parameters from namilist PARAMETERS
    read(1001, PARAMETERS, iostat= stat)
+
    if (Magp<1) Magp= 0
    if (Magp_max<1) Magp_max= Magp
    if (Magq==0) Magq= Nslab
@@ -601,6 +602,8 @@ subroutine readinput
    else
       if (OmegaNum_unfold==0) OmegaNum_unfold= 200
    endif
+
+   if (NumLCZVecs> Num_wann) NumLCZVecs= Num_wann
 
    if (stat>0) then
 
@@ -612,7 +615,7 @@ subroutine readinput
    endif
 
    !> try to compatible with old version of WannierTools
-   !> Eta_Arc and E_arc are set in PARAMETERS
+   !> Fermi_broadening and iso_energy are set in PARAMETERS
    if (Eta_Arc>-998d0) Fermi_broadening= Eta_Arc
    if (E_Arc>-998d0) iso_energy= E_Arc
 
@@ -622,13 +625,13 @@ subroutine readinput
    if (cpuid==0) then
       write(stdout, *) "  "
       write(stdout, *) ">>>calculation parameters : "
-      write(stdout, '(1x, a, f16.5)')'E_arc : ', E_arc
-      write(stdout, '(1x, a, f16.5)')'Fermi_broadening : ', Fermi_broadening
+      write(stdout, '(1x, a, f16.5, a)')'iso_energy : ', iso_energy, ' eV'
+      write(stdout, '(1x, a, f16.5, a)')'Fermi_broadening : ', Fermi_broadening, ' eV'
       write(stdout, '(1x, a, f16.5)')'symprec : ', symprec
-      write(stdout, '(1x, a, f16.5)')'EF_integral_range : ', EF_integral_range
-      write(stdout, '(1x, a, f16.5)')'Gap_threshold', Gap_threshold
-      write(stdout, '(1x, a, f16.5)')'OmegaMin : ', OmegaMin
-      write(stdout, '(1x, a, f16.5)')'OmegaMax : ', OmegaMax
+      write(stdout, '(1x, a, f16.5, a)')'EF_integral_range : ', EF_integral_range, ' eV'
+      write(stdout, '(1x, a, f16.5, a)')'Gap_threshold', Gap_threshold, ' eV'
+      write(stdout, '(1x, a, f16.5, a)')'OmegaMin : ', OmegaMin, ' eV'
+      write(stdout, '(1x, a, f16.5, a)')'OmegaMax : ', OmegaMax, ' eV'
       write(stdout, '(1x, a, i6   )')'OmegaNum : ', OmegaNum
       write(stdout, '(1x, a, i6   )')'OmegaNum_unfold : ', OmegaNum_unfold
       write(stdout, '(1x, a, i6   )')'Nk1 : ', Nk1
@@ -664,8 +667,8 @@ subroutine readinput
    endif
 
    !> changed to atomic units
-   E_arc= E_arc*eV2Hartree
-   Eta_Arc = Eta_Arc*eV2Hartree
+   iso_energy= iso_energy*eV2Hartree
+   Fermi_broadening = Fermi_broadening*eV2Hartree
    OmegaMin= OmegaMin*eV2Hartree
    OmegaMax= OmegaMax*eV2Hartree
    Gap_threshold= Gap_threshold*eV2Hartree
@@ -3561,7 +3564,7 @@ subroutine readinput
    !> close wt.in
    close(1001)
 
-   eta=(omegamax- omegamin)/omeganum*2d0
+   !eta=(omegamax- omegamin)/omeganum*2d0
 
    if(cpuid==0)write(stdout,*)'<<<Read wt.in file successfully'
 

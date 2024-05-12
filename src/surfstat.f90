@@ -21,7 +21,7 @@
      ! general loop index
      integer :: i, j, io, ikp, nw_half, spindoslfile, spindosrfile
 
-     real(dp) :: emin, emax, w, k(2), time_start, time_end, s0(3), s1(3)
+     real(dp) :: emin, emax, w, k(2), time_start, time_end, s0(3), s1(3), eta_broadening
 
      real(dp), allocatable :: omega(:)
 
@@ -81,7 +81,7 @@
      sx_r_mpi     = 0d0;      sy_r_mpi     = 0d0;      sz_r_mpi     = 0d0
 
 
-     eta=(omegamax- omegamin)/dble(omeganum)*3.0d0
+     eta_broadening=(omegamax- omegamin)/dble(omeganum)*3.0d0
 
      do i= 1, omeganum
         omega(i)=omegamin+(i-1)*(omegamax-omegamin)/dble(omeganum)
@@ -143,8 +143,8 @@
            ! there are two method to calculate surface green's function
            ! the method in 1985 is better, you can find the ref in the
            ! subroutine
-           call surfgreen_1985(w,GLL,GRR,GB,H00,H01,ones)
-           ! call surfgreen_1984(w,GLL,GRR,H00,H01,ones)
+           call surfgreen_1985(w,GLL,GRR,GB,H00,H01,ones, eta_broadening)
+           ! call surfgreen_1984(w,GLL,GRR,H00,H01,ones, eta_broadening)
 
            ! calculate spectral function
            do i= 1, NtopOrbitals
@@ -306,7 +306,7 @@
          close(spindoslfile)
          close(spindosrfile)
          write(stdout,*)'ndim',ndim
-         write(stdout,*) 'knv2,omeganum,eta',knv2, omeganum, eta/eV2Hartree
+         write(stdout,*) 'knv2,omeganum,eta_broadening',knv2, omeganum, eta_broadening/eV2Hartree
          write(stdout,*)'calculate density of state successfully'
      ENDIF
 
@@ -637,7 +637,7 @@ SUBROUTINE surfstat_jdos
     ! general loop index
     INTEGER  :: i, j, io, iq, iq1, ik1, ikp
     INTEGER  :: Nk_half, imin1, imax1, nw_half
-    REAL(DP) :: ktmp(2), eta, s0(3), s1(3)
+    REAL(DP) :: ktmp(2), eta_broadening, s0(3), s1(3)
     ! string for integer
     CHARACTER(LEN=140) :: ichar, jchar, kchar, fmt
 
@@ -700,12 +700,12 @@ SUBROUTINE surfstat_jdos
     sx_r_mpi     = 0d0;      sy_r_mpi     = 0d0;      sz_r_mpi     = 0d0
 
     ! Broaden coeffient
-    eta=(omegamax- omegamin)/DBLE(omeganum)
+    eta_broadening=(omegamax- omegamin)/DBLE(omeganum)
     ! omega list
     DO i = 1, omeganum
-        omega(i) = omegamin+(i-1)*eta
+        omega(i) = omegamin+(i-1)*eta_broadening
     ENDDO
-    eta = eta * 3.0d0
+    eta_broadening = eta_broadening * 3.0d0
 
     DO i=1,Ndim
         ones(i,i) = 1.0d0
@@ -740,8 +740,8 @@ SUBROUTINE surfstat_jdos
             ! there are two method to calculate surface green's function
             ! the method in 1985 is better, you can find the ref in the
             ! subroutine
-            CALL surfgreen_1985(omega(j),GLL,GRR,GB,H00,H01,ones)
-            ! call surfgreen_1984(w,GLL,GRR,H00,H01,ones)
+            CALL surfgreen_1985(omega(j),GLL,GRR,GB,H00,H01,ones, eta_broadening)
+            ! call surfgreen_1984(w,GLL,GRR,H00,H01,ones, eta_broadening)
             ! calculate spectral function
             DO i = 1, NtopOrbitals
                 io = TopOrbitals(i)

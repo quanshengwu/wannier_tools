@@ -616,7 +616,7 @@ end subroutine  wannier_center3D_plane_mirror
 !   
 !      if (nvecs>Num_wann) nvecs= Num_wann
 !
-!      shiftsigma=(1d0,0d0)*E_arc
+!      shiftsigma=(1d0,0d0)*iso_energy
 !      nnzmax=splen+Num_wann
 !      nnz=splen
 !      allocate( acoo(nnzmax))

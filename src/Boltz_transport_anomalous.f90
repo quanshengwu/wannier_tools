@@ -56,7 +56,7 @@
      sigma_tensor_ahc    = 0d0
       
      eta_array=(/0.1d0, 0.2d0, 0.4d0, 0.8d0, 1.0d0, 2d0, 4d0, 8d0, 10d0/)
-     eta_array= eta_array*Eta_Arc
+     eta_array= eta_array*Fermi_broadening
 
 
      !> energy
@@ -101,7 +101,7 @@
      !> write script for gnuplot
      outfileindex= outfileindex+ 1
      if (cpuid==0) then
-        write(etaname, '(f12.2)')Eta_Arc*1000d0/eV2Hartree
+        write(etaname, '(f12.2)')Fermi_broadening*1000d0/eV2Hartree
         write(ahcfilename, '(7a)')'sigma_ahc_eta', trim(adjustl(etaname)), 'meV.txt'
         open(unit=outfileindex, file='sigma_ahc.gnu')
         write(outfileindex, '(a)') 'set terminal pdf enhanced color font ",20"'
@@ -184,7 +184,7 @@
    minus_dfde = 0.0d0
 
    eta_array=(/0.1d0, 0.2d0, 0.4d0, 0.8d0, 1.0d0, 2d0, 4d0, 8d0, 10d0/)
-   eta_array= eta_array*Eta_Arc
+   eta_array= eta_array*Fermi_broadening
 
    !> energy to be integrated
    do ie = 1,  num_step+1
@@ -281,7 +281,7 @@
    !> write script for gnuplot
    outfileindex = outfileindex+1
    if(cpuid .eq. 0) then
-         write(etaname, '(f12.2)')Eta_Arc*1000d0/eV2Hartree
+         write(etaname, '(f12.2)')Fermi_broadening*1000d0/eV2Hartree
          write(anefilename, '(7a)')'alpha_ane_eta', trim(adjustl(etaname)), 'meV.txt'
          open(unit=outfileindex, file='alpha_ane.gnu')
          write(outfileindex, '(a)') 'set terminal pdfcairo enhanced color font ",30" size 13, 6'
@@ -570,7 +570,7 @@ subroutine sigma_ahc_vary_ChemicalPotential(NumOfmu, mulist, NumberofEta, eta_ar
      pauli_matrices= 0d0
  
      eta_array=(/0.1d0, 0.2d0, 0.4d0, 0.8d0, 1.0d0, 2d0, 4d0, 8d0, 10d0/)
-     eta_array= eta_array*Eta_Arc
+     eta_array= eta_array*Fermi_broadening
 
      nwann= Num_wann/2
      !> spin operator matrix
@@ -656,7 +656,7 @@ subroutine sigma_ahc_vary_ChemicalPotential(NumOfmu, mulist, NumberofEta, eta_ar
 
               do ieta= 1, NumberofEta
                  eta_local= eta_array(ieta)
-                 !> \Omega_spin^l_n^{\gamma}(k)=-2\sum_{m}*aimag(Im({js(\gamma),v(\alpha)}/2)_nm*v_beta_mn))/((w(n)-w(m))^2+eta_arc^2)
+                 !> \Omega_spin^l_n^{\gamma}(k)=-2\sum_{m}*aimag(Im({js(\gamma),v(\alpha)}/2)_nm*v_beta_mn))/((w(n)-w(m))^2+Fermi_broadening^2)
                  do ibeta= 1, 3
                     Omega_spin= 0d0
                     do n= 1, Num_wann
@@ -737,7 +737,7 @@ subroutine sigma_ahc_vary_ChemicalPotential(NumOfmu, mulist, NumberofEta, eta_ar
      !> write script for gnuplot
      outfileindex= outfileindex+ 1
      if (cpuid==0) then
-        write(etaname, '(f12.2)')Eta_Arc*1000d0/eV2Hartree
+        write(etaname, '(f12.2)')Fermi_broadening*1000d0/eV2Hartree
         write(shcfilename, '(7a)')'sigma_shc_eta', trim(adjustl(etaname)), 'meV.txt'
         open(unit=outfileindex, file='sigma_shc.gnu')
         write(outfileindex, '(a)') 'set terminal pdf enhanced color font ",20"'

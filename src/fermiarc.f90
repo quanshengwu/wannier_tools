@@ -39,6 +39,7 @@
      real(dp) :: s0(3), s1(3)
      real(dp) :: K2D_vec_a(2), K2D_vec_b(2)
      real(dp) :: sx_bulk, sy_bulk, sz_bulk
+     real(dp) :: eta_broadening
 
      integer , allocatable :: ik12(:,:)
      real(dp), allocatable :: k12(:,:), k12_shape(:,:)
@@ -189,8 +190,8 @@
        !endif
      endif
 
-     omega = E_arc
-     eta= eta_arc
+     omega = iso_energy
+     eta_broadening= Fermi_broadening
 
      !> deal with phonon system
      !> for phonon system, omega should be changed to omega^2
@@ -225,8 +226,8 @@
         ! the method in 1985 is better, you can find the ref in the
         ! subroutine
         call now(time1)
-        call surfgreen_1985(omega,GLL,GRR,GB,H00,H01,ones)
-        ! call surfgreen_1984(omega,GLL,GRR,H00,H01,ones)
+        call surfgreen_1985(omega,GLL,GRR,GB,H00,H01,ones, eta_broadening)
+        ! call surfgreen_1984(omega,GLL,GRR,H00,H01,ones, eta_broadening)
         call now(time2)
         time_ss= time_ss+time2-time1
 
@@ -488,7 +489,7 @@
 
      if (cpuid.eq.0)then
         write(stdout,*)'Ndim: ',ndim
-        write(stdout,*)'Nk1,Nk2,eta: ',nkx, nky, eta
+        write(stdout,*)'Nk1,Nk2,eta_broadening: ',nkx, nky, eta_broadening
         write(stdout,*)'Calculated surface density of state successfully'
      endif
 

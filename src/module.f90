@@ -525,9 +525,8 @@
      integer :: Soc, SOC_in  ! A parameter to control soc;  Soc=0 means no spin-orbit coupling; Soc>0 means spin-orbit coupling
 
     
-     real(Dp) :: eta     ! used to calculate dos epsilon+i eta
      real(Dp) :: Eta_Arc ! used to calculate dos epsilon+i eta
-     real(Dp) :: Fermi_broadening ! used to calculate dos epsilon+i eta From version 2.7.1, we replace eta_arc by Fermi_broadening
+     real(Dp) :: Fermi_broadening ! used to calculate dos epsilon+i eta From version 2.7.1, we replace Fermi_broadening by Fermi_broadening
      
      real(Dp) :: EF_integral_range ! in eV used to define the energy range around fermi energy in calculating sigma_OHE
 
@@ -544,7 +543,7 @@
      real(dp) :: OmegaMin, OmegaMax ! omega interval 
   
      real(Dp) :: E_arc ! Fermi energy for arc calculation
-     real(Dp) :: iso_energy ! an iso energy for some properties at a fixed energy. replace E_arc with iso_energy from version 2.7.2
+     real(Dp) :: iso_energy ! an iso energy for some properties at a fixed energy. replace iso_energy with iso_energy from version 2.7.2
 
    
      real(Dp) :: Gap_threshold  ! threshold value for output the the k points data for Gap3D
@@ -612,8 +611,8 @@
      real(dp) :: polarization_delta_arpes ! the relative phase between two orthogonal polarization vector components
 
      !> namelist parameters
-     namelist /PARAMETERS/ Eta_Arc, Fermi_broadening, EF_integral_range, OmegaNum, OmegaNum_unfold, OmegaMin, OmegaMax, &
-        E_arc, iso_energy, Nk1, Nk2, Nk3, NP, Gap_threshold, Tmin, Tmax, NumT, &
+     namelist /PARAMETERS/ E_arc, Fermi_broadening, EF_integral_range, OmegaNum, OmegaNum_unfold, OmegaMin, OmegaMax, &
+        Eta_Arc, iso_energy, Nk1, Nk2, Nk3, NP, Gap_threshold, Tmin, Tmax, NumT, &
         NBTau, BTauNum, BTauMax, Rcut, Magp, Magq, Magp_min, Magp_max, Nslice_BTau_Max, &
         wcc_neighbour_tol, wcc_calc_tol, Beta,NumLCZVecs, iprint_level, &
         Relaxation_Time_Tau,  symprec, arpack_solver, RKF45_PERIODIC_LEVEL, &

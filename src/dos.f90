@@ -54,7 +54,7 @@ subroutine dos_sparse
 
    if (OmegaNum<2) OmegaNum=2
    NE= OmegaNum
-   sigma=(1d0,0d0)*E_arc
+   sigma=(1d0,0d0)*iso_energy
    nnzmax=splen+ Ndimq
    nnz=splen
 
@@ -79,7 +79,7 @@ subroutine dos_sparse
    emax= OmegaMax
 
    eta_array=(/0.1d0, 0.2d0, 0.4d0, 0.8d0, 1.0d0, 2d0, 4d0, 8d0, 10d0/)
-   eta_array= eta_array*Eta_Arc
+   eta_array= eta_array*Fermi_broadening
 
    !eta= (emax- emin)/ dble(NE)*3d0
 
@@ -155,7 +155,7 @@ subroutine dos_sparse
    if (cpuid==0) then
       open(unit=outfileindex, file='dos.gnu')
       write(outfileindex, '(a)')"set encoding iso_8859_1"
-      write(outfileindex, '(a)')'set terminal  pdf enhanced color font ",14" '
+      write(outfileindex, '(a)')'set terminal pdf enhanced color font ",16" size 5,4'
       write(outfileindex, '(a)')"set output 'dos.pdf'"
       write(outfileindex, '(a)')'set border lw 2'
       write(outfileindex, '(a)')'set autoscale fix'
@@ -245,7 +245,7 @@ subroutine charge_density_sparse
 
    if (OmegaNum<2) OmegaNum=2
    NE= OmegaNum
-   sigma=(1d0,0d0)*E_arc
+   sigma=(1d0,0d0)*iso_energy
    nnzmax=splen+ Ndimq
    nnz=splen
 
@@ -418,7 +418,7 @@ subroutine dos_sub
    emin= OmegaMin
    emax= OmegaMax
    eta_array=(/0.1d0, 0.2d0, 0.4d0, 0.8d0, 1.0d0, 2d0, 4d0, 8d0, 10d0/)
-   eta_array= eta_array*Eta_Arc
+   eta_array= eta_array*Fermi_broadening
 
 
    !> energy
@@ -496,8 +496,8 @@ subroutine dos_sub
    if (cpuid==0) then
       open(unit=outfileindex, file='dos.gnu')
       write(outfileindex, '(a)')"set encoding iso_8859_1"
-      write(outfileindex, '(a)')'set terminal  postscript enhanced color font ",24" '
-      write(outfileindex, '(a)')"set output 'dos.eps'"
+      write(outfileindex, '(a)')'set terminal pdf enhanced color font ",16" size 5,4 '
+      write(outfileindex, '(a)')"set output 'dos.pdf'"
       write(outfileindex, '(a)')'set border lw 2'
       write(outfileindex, '(a)')'set autoscale fix'
       write(outfileindex, '(a, f16.6,a)')'set yrange [0:', maxval(dos)*eV2Hartree+0.5, '1]'
@@ -543,6 +543,7 @@ subroutine joint_dos
    !> the integration k space
    real(dp) :: emin
    real(dp) :: emax
+   real(dp) :: eta_broadening
 
    integer :: ik, ie, ib, ib1, ib2
    integer :: ikx, iky, ikz, knv3, NE, ierr
@@ -641,7 +642,7 @@ subroutine joint_dos
 
    emin= 0d0
    emax= OmegaMax
-   eta= (emax- emin)/ dble(NE)*3d0
+   eta_broadening= (emax- emin)/ dble(NE)*3d0
 
 
    !> energy
@@ -658,7 +659,7 @@ subroutine joint_dos
          do ib1= 1, iband_tot-1
             do ib2= ib1+1, iband_tot
                x= omega(ie)- eigval(ib2, ik) + eigval(ib1, ik)
-               jdos_mpi(ie) = jdos_mpi(ie)+ delta(eta, x)* (fermi_dis(ib1, ik)- fermi_dis(ib2, ik))
+               jdos_mpi(ie) = jdos_mpi(ie)+ delta(eta_broadening, x)* (fermi_dis(ib1, ik)- fermi_dis(ib2, ik))
             enddo ! ib2
          enddo ! ib1
       enddo ! ik
@@ -712,6 +713,7 @@ subroutine dos_joint_dos
    !> the integration k space
    real(dp) :: emin
    real(dp) :: emax
+   real(dp) :: eta_broadening
 
    integer :: ik, ie, ib, ib1, ib2
    integer :: ikx, iky, ikz, knv3, NE, ierr
@@ -768,7 +770,7 @@ subroutine dos_joint_dos
 
    emin= 0d0
    emax= OmegaMax
-   eta= (emax- emin)/ dble(NE)*5d0
+   eta_broadening= (emax- emin)/ dble(NE)*5d0
 
    !> energy
    do ie=1, NE
@@ -814,7 +816,7 @@ subroutine dos_joint_dos
          do ib1= iband_low, iband_high-1
             do ib2= ib1+1, iband_high
                x= omega_jdos(ie)- W(ib2) + W(ib1)
-               jdos_mpi(ie)= jdos_mpi(ie)+ delta(eta, x)* (fermi_dis(ib1)- fermi_dis(ib2))
+               jdos_mpi(ie)= jdos_mpi(ie)+ delta(eta_broadening, x)* (fermi_dis(ib1)- fermi_dis(ib2))
             enddo ! ib2
          enddo ! ib1
       enddo ! ie
@@ -824,7 +826,7 @@ subroutine dos_joint_dos
          !> intergrate with k
          do ib= iband_low, iband_high-1
             x= omega_dos(ie)- W(ib)
-            dos_mpi(ie) = dos_mpi(ie)+ delta(eta, x)
+            dos_mpi(ie) = dos_mpi(ie)+ delta(eta_broadening, x)
          enddo ! ib
       enddo ! ie
 

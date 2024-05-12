@@ -285,7 +285,7 @@
         endif
 
 
-        Hamk_bulk= (E_arc -zi* eta_arc)* ones - Hamk_bulk
+        Hamk_bulk= (iso_energy -zi* Fermi_broadening)* ones - Hamk_bulk
         call inv(Num_wann, Hamk_bulk)
         do i=1, Num_wann
            dos(ik, i)= aimag(Hamk_bulk(i, i))/pi
@@ -567,7 +567,7 @@
         Hamk_bulk= 0d0
         call ham_bulk_latticegauge(k, Hamk_bulk)
 
-        Hamk_bulk= (E_arc -zi* eta_arc)* ones - Hamk_bulk
+        Hamk_bulk= (iso_energy -zi* Fermi_broadening)* ones - Hamk_bulk
 
         !> Hamk_bulk is the Green's function after subroutine inv.
         call inv(Num_wann, Hamk_bulk)
@@ -894,7 +894,7 @@ subroutine fermisurface_stack
            Hamk_bulk= 0d0
            call ham_bulk_latticegauge(k, Hamk_bulk)
    
-           Hamk_bulk= (E_arc -zi* eta_arc)* ones - Hamk_bulk
+           Hamk_bulk= (iso_energy -zi* Fermi_broadening)* ones - Hamk_bulk
            call inv(Num_wann, Hamk_bulk)
    
            do i=1, Num_wann
@@ -1583,7 +1583,7 @@ subroutine fermisurface_stack
       density = 0d0
       
       eta_array=(/0.1d0, 0.2d0, 0.4d0, 0.8d0, 1.0d0, 2d0, 4d0, 8d0, 10d0/)
-      eta_array= eta_array*Eta_Arc
+      eta_array= eta_array*Fermi_broadening
 
       if (NumT>1) then
          do iT=1, NumT

@@ -1166,8 +1166,8 @@ subroutine sparse_ekbulk
    real(dp) :: time1, time2, time3
 
 
-   !if (OmegaNum==0) OmegaNum= Num_wann
-   !if (NumSelectedEigenVals==0) NumSelectedEigenVals=OmegaNum
+   if (OmegaNum==0) OmegaNum= Num_wann
+   if (NumSelectedEigenVals==0) NumSelectedEigenVals=OmegaNum
 
    !> first use NumSelectedEigenVals, if NumSelectedEigenVals is not set, 
    !> then use OmegaNum; if OmegaNum is also not set, 
@@ -1188,6 +1188,8 @@ subroutine sparse_ekbulk
    else
       nvecs=int(2*neval)
    endif
+
+   if (neval+2>=nvecs) neval= nvecs-2
 
    if (nvecs<20) nvecs= 20
    if (nvecs>Num_wann) nvecs= Num_wann
@@ -1232,11 +1234,18 @@ subroutine sparse_ekbulk
 
    ritzvec= BulkFatBand_calc
 
+   if (cpuid.eq.0)then
+      write(stdout, *)'# parameters for ARPACK in ek_bulk'
+      write(stdout, *)'NEV=', neval
+      write(stdout, *)'NCV=', nvecs
+      write(stdout, *)'Dimension=', Num_wann
+   endif
+
    !> calculate the energy bands along special k line
    k3= 0
 
    !> change the energy unit from Hatree to eV
-   sigma=(1d0,0d0)*E_arc/eV2Hartree
+   sigma=(1d0,0d0)*iso_energy/eV2Hartree
 
    do ik=1+ cpuid, nk3_band, num_cpu
       if (cpuid==0) write(stdout, '(a, 2i10)') 'BulkBand_calc in sparse mode:', ik,nk3_band
@@ -1494,7 +1503,7 @@ subroutine sparse_ekbulk_valley
    ritzvec= .True.
 
    !> change the energy unit from Hatree to eV
-   sigma=(1d0,0d0)*E_arc/eV2Hartree
+   sigma=(1d0,0d0)*iso_energy/eV2Hartree
 
    !> calculate the energy bands along special k line
    k3= 0
@@ -1786,7 +1795,7 @@ subroutine sparse_ekbulk_plane
       enddo
    enddo
 
-   sigma=(1d0,0d0)*E_arc
+   sigma=(1d0,0d0)*iso_energy
    nnzmax=splen+Num_wann
    nnz=splen
    allocate( acoo(nnzmax))
@@ -2541,7 +2550,7 @@ end subroutine ekbulk_elpa
         Hamk_bulk= Hamk_bulk/eV2Hartree
 
         !> diagonalization by call zheev in lapack
-        Hamk_bulk= Hamk_bulk+ zi*eta_arc
+        Hamk_bulk= Hamk_bulk+ zi*Fermi_broadening
         call inv(Num_wann, Hamk_bulk)
         do i=1, Num_wann
            dos(ik)= dos(ik) -aimag(Hamk_bulk(i, i))

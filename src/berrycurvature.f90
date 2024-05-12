@@ -1,6 +1,6 @@
   subroutine berry_curvarture_singlek_EF(k, mu, Omega_x, Omega_y, Omega_z)
      !> Calculate Berry curvature for a sigle k point
-     !> The Fermi distribution is determined by the Fermi level E_arc
+     !> The Fermi distribution is determined by the Fermi level iso_energy
      !> ref : Physical Review B 74, 195118(2006)
      !
      !> eqn (34)
@@ -69,8 +69,8 @@
      Omega_z= -Omega_z*2d0*zi
 
      !> consider the Fermi-distribution according to the broadening Earc_eta
-     if (Eta_Arc<eps6) Eta_Arc= eps6
-     beta_fake= 1d0/Eta_Arc
+     if (Fermi_broadening<eps6) Fermi_broadening= eps6
+     beta_fake= 1d0/Fermi_broadening
      do m= 1, Num_wann
         Omega_x(m)= Omega_x(m)*fermi(W(m)-mu, beta_fake)
         Omega_y(m)= Omega_y(m)*fermi(W(m)-mu, beta_fake)
@@ -664,7 +664,7 @@
 
         !call berry_curvarture_singlek_numoccupied_old(k, Omega_x, Omega_y, Omega_z)
         if (Berrycurvature_kpath_EF_calc) then
-           call berry_curvarture_singlek_EF(k, E_arc, Omega_x, Omega_y, Omega_z)
+           call berry_curvarture_singlek_EF(k, iso_energy, Omega_x, Omega_y, Omega_z)
         else if (BerryCurvature_kpath_Occupied_calc) then
            call berry_curvarture_singlek_numoccupied_total(k, Omega_x(1), Omega_y(1), Omega_z(1))
         else
@@ -891,7 +891,7 @@
         write(outfileindex, '(3f12.6)') Origin_cell%Kuc
         do m=1, Num_wann
            do ik= 1, knv3
-              write(outfileindex, '(E18.10)') eigval_allk_mpi(m, ik)-E_arc
+              write(outfileindex, '(E18.10)') eigval_allk_mpi(m, ik)-iso_energy
            enddo
         enddo
         do m=1, Num_wann
@@ -917,7 +917,7 @@
         write(outfileindex, '(3f12.6)') Origin_cell%Kuc
         do m=1, Num_wann
            do ik= 1, knv3
-              write(outfileindex, '(E18.10)') eigval_allk_mpi(m, ik)-E_arc
+              write(outfileindex, '(E18.10)') eigval_allk_mpi(m, ik)-iso_energy
            enddo
         enddo
         do m=1, Num_wann
@@ -943,7 +943,7 @@
         write(outfileindex, '(3f12.6)') Origin_cell%Kuc
         do m=1, Num_wann
            do ik= 1, knv3
-              write(outfileindex, '(E18.10)') eigval_allk_mpi(m, ik)-E_arc
+              write(outfileindex, '(E18.10)') eigval_allk_mpi(m, ik)-iso_energy
            enddo
         enddo
         do m=1, Num_wann
@@ -967,7 +967,7 @@
         write(outfileindex, '(3f12.6)') Origin_cell%Kuc
         do m=1, Num_wann
            do ik= 1, knv3
-              write(outfileindex, '(E18.10)') eigval_allk_mpi(m, ik)-E_arc
+              write(outfileindex, '(E18.10)') eigval_allk_mpi(m, ik)-iso_energy
            enddo
         enddo
         do m=1, Num_wann
@@ -991,7 +991,7 @@
         write(outfileindex, '(3f12.6)') Origin_cell%Kuc
         do m=1, Num_wann
            do ik= 1, knv3
-              write(outfileindex, '(E18.10)') eigval_allk_mpi(m, ik)-E_arc
+              write(outfileindex, '(E18.10)') eigval_allk_mpi(m, ik)-iso_energy
            enddo
         enddo
         do m=1, Num_wann
@@ -1015,7 +1015,7 @@
         write(outfileindex, '(3f12.6)') Origin_cell%Kuc
         do m=1, Num_wann
            do ik= 1, knv3
-              write(outfileindex, '(E18.10)') eigval_allk_mpi(m, ik)-E_arc
+              write(outfileindex, '(E18.10)') eigval_allk_mpi(m, ik)-iso_energy
            enddo
         enddo
         do m=1, Num_wann
@@ -1136,14 +1136,14 @@
         enddo
 
         !> consider the Fermi-distribution according to the broadening Earc_eta
-        if (Eta_Arc<eps6) Eta_Arc= eps6
-        beta_fake= 1d0/Eta_Arc
+        if (Fermi_broadening<eps6) Fermi_broadening= eps6
+        beta_fake= 1d0/Fermi_broadening
         do i=1, 3
            do m= 1, Num_wann
-              Omega_allk_EF(1, i, ik)= Omega_allk_EF(1, i, ik)+ Omega_BerryCurv(m, i)*fermi(W(m)-E_arc, beta_fake)
-              m_OrbMag_allk_EF(1, i, ik)= m_OrbMag_allk_EF(1, i, ik)+ m_OrbMag(m, i)*fermi(W(m)-E_arc, beta_fake)
-              Omega_allk_EF(2, i, ik)= Omega_allk_EF(2, i, ik)+ Omega_BerryCurv(m, i)*delta(Eta_arc, W(m)-E_arc)
-              m_OrbMag_allk_EF(2, i, ik)= m_OrbMag_allk_EF(2, i, ik)+ m_OrbMag(m, i)*delta(Eta_arc, W(m)-E_arc)
+              Omega_allk_EF(1, i, ik)= Omega_allk_EF(1, i, ik)+ Omega_BerryCurv(m, i)*fermi(W(m)-iso_energy, beta_fake)
+              m_OrbMag_allk_EF(1, i, ik)= m_OrbMag_allk_EF(1, i, ik)+ m_OrbMag(m, i)*fermi(W(m)-iso_energy, beta_fake)
+              Omega_allk_EF(2, i, ik)= Omega_allk_EF(2, i, ik)+ Omega_BerryCurv(m, i)*delta(Fermi_broadening, W(m)-iso_energy)
+              m_OrbMag_allk_EF(2, i, ik)= m_OrbMag_allk_EF(2, i, ik)+ m_OrbMag(m, i)*delta(Fermi_broadening, W(m)-iso_energy)
            enddo
         enddo
 
@@ -1992,7 +1992,7 @@
 
         !call berry_curvarture_singlek_numoccupied_old(k, Omega_x, Omega_y, Omega_z)
         if (Berrycurvature_EF_calc) then
-           call berry_curvarture_singlek_EF(k, E_arc, Omega_x, Omega_y, Omega_z)
+           call berry_curvarture_singlek_EF(k, iso_energy, Omega_x, Omega_y, Omega_z)
         else
            call berry_curvarture_singlek_numoccupied_total(k, Omega_x(1), Omega_y(1), Omega_z(1))
         endif
