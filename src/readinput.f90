@@ -644,11 +644,11 @@ subroutine readinput
       write(stdout, '(1x, a, i6   )')'NumRandomConfs:', NumRandomConfs
       write(stdout, '(1x, a, a    )')'Projection weight mode:', projection_weight_mode
       write(stdout, '(1x, a, i8   )')'The size of magnetic supercell is Magq= :', Magq
-      write(stdout, '(1x, a, i8   )')'Penetration depth of incoming photon for ARPES, in unit angstrom :', penetration_lambda_arpes
-      write(stdout, '(1x, a, i8   )')'Photon energy for ARPES, in unit eV :', photon_energy_arpes
-      write(stdout, '(1x, a, i8   )')'Incoming light is at alpha angular to the normal line of the experiment plane :', polarization_alpha_arpes
-      write(stdout, '(1x, a, i8   )')'The ratio between two orthogonal polarization vector components', polarization_xi_arpes 
-      write(stdout, '(1x, a, i8   )')'The relative phase between two orthogonal polarization vector components', polarization_delta_arpes
+      write(stdout, '(1x, a, f16.5)')'Penetration depth of incoming photon for ARPES, in unit angstrom :', penetration_lambda_arpes
+      write(stdout, '(1x, a, f16.5)')'Photon energy for ARPES, in unit eV :', photon_energy_arpes
+      write(stdout, '(1x, a, f16.5)')'Incoming light is at alpha angular to the normal line of the experiment plane :', polarization_alpha_arpes
+      write(stdout, '(1x, a, f16.5)')'The ratio between two orthogonal polarization vector components', polarization_xi_arpes 
+      write(stdout, '(1x, a, f16.5)')'The relative phase between two orthogonal polarization vector components', polarization_delta_arpes
    endif
 
    !> changed to atomic units

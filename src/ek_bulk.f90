@@ -3363,6 +3363,7 @@ subroutine generate_ek_kpath_gnu(datafilename, gnufilename, gnuoutfilename, &
    outfileindex= outfileindex+ 1
    if (cpuid==0) then
       open(unit=outfileindex, file=gnufilename)
+      write(outfileindex, '(a)') '# requirement: gnuplot version>5.4'
       write(outfileindex, '(a)') 'set terminal pdf enhanced color font ",24"'
       write(outfileindex,'(2a)') 'set palette defined ( 0  "green", ', &
          '5 "yellow", 10 "red" )'
@@ -3374,6 +3375,7 @@ subroutine generate_ek_kpath_gnu(datafilename, gnufilename, gnuoutfilename, &
       write(outfileindex, '(a)')'#set ytics font ",24"'
       write(outfileindex, '(a)')'#set ylabel font ",24"'
       write(outfileindex, '(a)')'set ylabel offset 0.5,0'
+      write(outfileindex, '(a)')'set border lw 2'
       write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(klen*Angstrom2atomic), ']'
       write(outfileindex, '(a,f12.6)')'emin=', emin
       write(outfileindex, '(a,f12.6)')'emax=', emax
@@ -3397,15 +3399,15 @@ subroutine generate_ek_kpath_gnu(datafilename, gnufilename, gnuoutfilename, &
       write(outfileindex, '(2a)')"# please comment the following lines to plot the fatband "
       if (Is_Sparse_Hr) then
          write(outfileindex, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
-            " w p pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2"
+            " w p pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2 dt 2"
       else
          write(outfileindex, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
-            " w lp lw 2 pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2"
+            " w lp lw 2 pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2 dt 2"
       endif
       write(outfileindex, '(2a)')" " 
       write(outfileindex, '(2a)')"# uncomment the following lines to plot the fatband "
       write(outfileindex, '(2a)')"#plot 'bulkek.dat' u 1:2:3 ",  &
-         " w lp lw 2 pt 7  ps 0.2 lc palette, 0 w l lw 2"
+         " w lp lw 2 pt 7  ps 0.2 lc palette, 0 w l lw 2 dt 2"
       write(outfileindex, '(2a)')"# uncomment the following lines to plot the spin if necessary"
       write(outfileindex, '(2a)')"#plot 'bulkek.dat' u 1:2 ",  &
          "w lp lw 2 pt 7  ps 0.2, \"
@@ -3416,7 +3418,7 @@ subroutine generate_ek_kpath_gnu(datafilename, gnufilename, gnuoutfilename, &
 
 202 format('set xtics (',20('"',A3,'" ',F10.5,','))
 203 format(A3,'" ',F10.5,')')
-204 format('set arrow from ',F10.5,',',A5,' to ',F10.5,',',A5, ' nohead')
+204 format('set arrow from ',F10.5,',',A5,' to ',F10.5,',',A5, ' nohead lw 2')
 
     return
 end subroutine

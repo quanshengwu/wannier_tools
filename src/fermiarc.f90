@@ -109,24 +109,30 @@
         sx_r_mpi=0d0; sy_r_mpi=0d0; sz_r_mpi=0d0
      endif
 
-     !> ceiling if K2D_vec are positive, floor if K2D_vec are negative
-     do i  = 1, 2
-         if (K2D_vec1(i)>0) then
-               K2D_vec_a(i)= ceiling(K2D_vec1(i))
-         else
-               K2D_vec_a(i)= floor(K2D_vec1(i))
+     if (SlabQPI_kplane_calc) then
+        !> ceiling if K2D_vec are positive, floor if K2D_vec are negative
+        do i  = 1, 2
+            if (K2D_vec1(i)>0) then
+                  K2D_vec_a(i)= ceiling(K2D_vec1(i))
+            else
+                  K2D_vec_a(i)= floor(K2D_vec1(i))
+            endif
+   
+            if (K2D_vec2(i)>0) then
+               K2D_vec_b(i)= ceiling(K2D_vec2(i))
+            else
+               K2D_vec_b(i)= floor(K2D_vec2(i))
+            endif
+         enddo 
+         if (cpuid==0) then
+            write(stdout, '(a)')'WARNING : Your setting of KPLANE_SLAB has been modified because QPI calculation requires the information of the full BZ. '
+           write(outfileindex, '(a)') '# requirement: gnuplot version>5.4'
+            write(stdout, '((a, 2f8.4))')'The first modified vector in QPI: ', K2D_vec_a
+            write(stdout, '((a, 2f8.4))')'The second modified vector in QPI: ', K2D_vec_b
          endif
-
-         if (K2D_vec2(i)>0) then
-            K2D_vec_b(i)= ceiling(K2D_vec2(i))
-         else
-            K2D_vec_b(i)= floor(K2D_vec2(i))
-         endif
-      enddo 
-      if (cpuid==0) then
-         write(stdout, '(a)')'WARNING : Your setting of KPLANE_SLAB has been modified because QPI calculation requires the information of the full BZ. '
-         write(stdout, '((a, 2f8.4))')'The first modified vector in QPI: ', K2D_vec_a
-         write(stdout, '((a, 2f8.4))')'The second modified vector in QPI: ', K2D_vec_b
+      else
+         K2D_vec_a= K2D_vec1
+         K2D_vec_b= K2D_vec2
       endif
 
 

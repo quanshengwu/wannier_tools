@@ -177,14 +177,14 @@ subroutine landau_level_k
                enddo ! sweep the selected orbitals
             enddo ! iq sweep the magnetic supercell
             if (landau_chern_calc) then
-               do iq=1, 2  ! edge states
+               do iq=1, 1  ! edge states
                   if (iq>Nq) cycle
                   do i= 1, NumberofSelectedOrbitals(ig)
                      j= Num_wann*(iq-1)+ Selected_WannierOrbitals(ig)%iarray(i)
                      dos_l_selected(ib, ik, ig)= dos_l_selected(ib, ik, ig)+ abs(psi(j))**2
                   enddo ! sweep the selected orbitals
                enddo ! iq sweep the magnetic supercell
-               do iq=Nq-1, Nq ! edge states
+               do iq=Nq, Nq ! edge states
                   if (iq<1) cycle
                   do i= 1, NumberofSelectedOrbitals(ig)
                      j= Num_wann*(iq-1)+ Selected_WannierOrbitals(ig)%iarray(i)
@@ -763,7 +763,7 @@ subroutine landau_level_B
             psi(:)= ham_landau(:, ie)  !> the eigenvector of ib'th band
             do ig=1, NumberofSelectedOrbitals_groups
                do iq=1, Nq
-                  do i= 1, NumberofSelectedOrbitals(i)
+                  do i= 1, NumberofSelectedOrbitals(ig)
                      j= Num_wann*(iq-1)+ Selected_WannierOrbitals(ig)%iarray(i)
                      dos_selected(ie, ib, ig)= dos_selected(ie, ib, ig)+ abs(psi(j))**2
                   enddo ! sweep the selected orbitals
