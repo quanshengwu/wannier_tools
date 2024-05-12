@@ -29,6 +29,7 @@ Se pz px py
 !> bulk band structure calculation flag
 &CONTROL
 BulkBand_calc         = T
+Dos_calc              = T
 BulkBand_points_calc  = T
 /
 
@@ -47,6 +48,11 @@ SELECTED_WANNIERORBITALS
 
 &PARAMETERS
 Nk1 = 41            ! number k points  odd number would be better
+Nk2 = 41            ! number k points  odd number would be better
+Nk3 = 41            ! number k points  odd number would be better
+OmegaNum= 1001          ! for DOS
+OmegaMin= -5            ! in eV
+OmegaMax=  5            ! in eV
 /
 
 KPATH_BULK            ! k point path
@@ -63,6 +69,12 @@ Direct
 0.5  0.0  0.0
 0.0  0.5  0.0
 0.0  0.0  0.5
+
+KCUBE_BULK
+0 0 0
+1 0 0
+0 1 0
+0 0 1
 
 WANNIER_CENTRES     ! copy from wannier90.wout
 Cartesian

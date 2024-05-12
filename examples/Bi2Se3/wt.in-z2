@@ -1,5 +1,6 @@
 &TB_FILE
 Hrfile = 'wannier90_hr.dat'      
+!Hrfile = 'wannier90_hr.dat_nsymm12'
 Package = 'VASP'             ! obtained from VASP, it could be 'VASP', 'QE', 'Wien2k', 'OpenMx'
 /
 
@@ -26,11 +27,15 @@ Se pz px py
 Se pz px py
 Se pz px py
 
+SURFACE            ! See doc for details
+ 1  0  0
+ 0  1  0
+
+
 !> bulk band structure calculation flag
 &CONTROL
-BulkBand_calc         = T
-Dos_calc              = T
-BulkBand_points_calc  = T
+Z2_3D_calc            = T
+Wanniercenter_calc    = T
 /
 
 &SYSTEM
@@ -39,42 +44,15 @@ SOC = 1                 ! soc
 E_FERMI = 4.4195        ! e-fermi
 /
 
-! get projected bands onto different orbitals, here we only consider orbital and omit the spin freedom
-SELECTED_WANNIERORBITALS
-2 
-1-6                ! Bi
-7-15               ! Se
-
-
 &PARAMETERS
 Nk1 = 41            ! number k points  odd number would be better
 Nk2 = 41            ! number k points  odd number would be better
-Nk3 = 41            ! number k points  odd number would be better
-OmegaNum= 1001          ! for DOS
-OmegaMin= -5            ! in eV
-OmegaMax=  5            ! in eV
 /
 
-KPATH_BULK            ! k point path
-4              ! number of k line only for bulk band
-G 0.00000 0.00000 0.0000 Z 0.00000 0.00000 0.5000
-Z 0.00000 0.00000 0.5000 F 0.50000 0.50000 0.0000
-F 0.50000 0.50000 0.0000 G 0.00000 0.00000 0.0000
-G 0.00000 0.00000 0.0000 L 0.50000 0.00000 0.0000  
-
-KPOINTS_3D
-4 
-Direct
-0.0  0.0  0.0
-0.5  0.0  0.0
-0.0  0.5  0.0
-0.0  0.0  0.5
-
-KCUBE_BULK
-0 0 0
-1 0 0
-0 1 0
-0 0 1
+KPLANE_BULK
+ 0.00  0.00  0.00   ! Original point for 3D k plane 
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  0.50  0.00   ! The second vector to define 3d k space plane
 
 WANNIER_CENTRES     ! copy from wannier90.wout
 Cartesian

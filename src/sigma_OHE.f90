@@ -285,7 +285,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
            !vcrossB(2)= -v_t(3)*Bdirection(1)+ v_t(1)*Bdirection(3)
            !vcrossB(3)= -v_t(1)*Bdirection(2)+ v_t(2)*Bdirection(1)
            !if (abs(Enk(ik, iband))<0.05d0.and.dsqrt(sum((abs(vcrossB)**2)))>eps3) then
-            if (abs(Enk(ik, iband))/eV2Hartree<EF_broadening) then
+            if (abs(Enk(ik, iband))/eV2Hartree<EF_integral_range) then
                it = it+ 1
             endif
          enddo ! ik
@@ -322,7 +322,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
            !vcrossB(2)= -v_t(3)*Bdirection(1)+ v_t(1)*Bdirection(3)
            !vcrossB(3)= -v_t(1)*Bdirection(2)+ v_t(2)*Bdirection(1)
            !if (abs(Enk(ik, iband))<0.05d0.and.dsqrt(sum((abs(vcrossB)**2)))>eps3) then
-            if (abs(Enk(ik, iband))/eV2Hartree<EF_broadening) then
+            if (abs(Enk(ik, iband))/eV2Hartree<EF_integral_range) then
                it = it+ 1
                KCube3D_left(iband)%weight_k_local(it) = KCube3D_symm%weight_k(ik)
                KCube3D_left(iband)%ik_array(it) = KCube3D_symm%ik_array_symm(ik)
@@ -1284,7 +1284,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
       do iband=1, Nband_Fermi_Level
          !> skip the values far away from the fermi surface
          !if (abs(W(bands_fermi_level(iband)))/eV2Hartree>0.05d0)then
-         if (abs(W(bands_fermi_level(iband)))/eV2Hartree>EF_broadening)then
+         if (abs(W(bands_fermi_level(iband)))/eV2Hartree>EF_integral_range)then
             cycle
          endif
 
@@ -1409,7 +1409,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
 
       E_iband= W(1)
       !> Only the energy levels close to the Fermi level contribute to the conductivity
-      if (abs(W(1))/eV2Hartree>EF_broadening) then
+      if (abs(W(1))/eV2Hartree>EF_integral_range) then
          velocity_k= 0d0
          return
       endif
@@ -1482,7 +1482,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
 !     call eigensystem_c( 'V', 'U', Num_wann, Hamk_bulk, W)
 
 !     !> Only the energy levels close to the Fermi level contribute to the conductivity
-!     if (abs(W(iband))/eV2Hartree>EF_broadening) then
+!     if (abs(W(iband))/eV2Hartree>EF_integral_range) then
 !        velocity_k= 0d0
 !        return
 !     endif
@@ -1492,7 +1492,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
       call zheevx_pack('V', 'U', Num_wann, iband, iband, Hamk_bulk, W, UU)
 
       !> Only the energy levels close to the Fermi level contribute to the conductivity
-      if (abs(W(1))/eV2Hartree>EF_broadening) then
+      if (abs(W(1))/eV2Hartree>EF_integral_range) then
          velocity_k= 0d0
          return
       endif
@@ -2138,7 +2138,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
               !vcrossB(2)= -v_t(3)*Bdirection(1)+ v_t(1)*Bdirection(3)
               !vcrossB(3)= -v_t(1)*Bdirection(2)+ v_t(2)*Bdirection(1)
               !if (abs(Enk(ik, ib))/eV2Hartree<0.05d0.and.dsqrt(sum((abs(vcrossB)**2)))>eps3) then
-               if (abs(Enk(ik, ib))/eV2Hartree<EF_broadening) then
+               if (abs(Enk(ik, ib))/eV2Hartree<EF_integral_range) then
                   it = it+ 1
                endif
             enddo ! ik
@@ -2172,7 +2172,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
               !vcrossB(2)= -v_t(3)*Bdirection(1)+ v_t(1)*Bdirection(3)
               !vcrossB(3)= -v_t(1)*Bdirection(2)+ v_t(2)*Bdirection(1)
               !if (abs(Enk(ik, ib))/eV2Hartree<0.05d0.and.dsqrt(sum((abs(vcrossB)**2)))>eps3) then
-               if (abs(Enk(ik, ib))/eV2Hartree<EF_broadening) then
+               if (abs(Enk(ik, ib))/eV2Hartree<EF_integral_range) then
                   it = it+ 1
                   KCube2D_left(ib)%ik_array(it) = ik
                   KCube2D_left(ib)%Ek_local(it) = Enk(ik, ib)

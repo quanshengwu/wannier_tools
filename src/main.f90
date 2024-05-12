@@ -529,7 +529,7 @@
 
 
      !> wannier center calculate
-     if (wanniercenter_calc)then
+     if (Wilsonloop_calc)then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Wilson loop'
         call now(time_start)

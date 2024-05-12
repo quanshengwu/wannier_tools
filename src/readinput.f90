@@ -113,6 +113,7 @@ subroutine readinput
    SlabSpintexture_calc  = .FALSE.
    BulkSpintexture_calc  = .FALSE.
    wanniercenter_calc    = .FALSE.
+   Wilsonloop_calc       = .FALSE.
    Z2_3D_calc            = .FALSE.
    Chern_3D_calc         = .FALSE.
    WeylChirality_calc    = .FALSE.
@@ -177,7 +178,7 @@ subroutine readinput
       write(*, *)"SlabQPI_calc"
       write(*, *)"SlabQPI_kpath_calc"
       write(*, *)"SlabQPI_kplane_calc"
-      write(*, *)"SlabSpintexture,wanniercenter_calc"
+      write(*, *)"SlabSpintexture,wanniercenter_calc, Wilsonloop_calc, "
       write(*, *)"BerryPhase_calc,BerryCurvature_calc, BerryCurvature_EF_calc"
       write(*, *)"Berrycurvature_kpath_EF_calc, BerryCurvature_kpath_Occupied_calc"
       write(*, *)"BerryCurvature_slab_calc, BerryCurvature_Cube_calc"
@@ -252,6 +253,7 @@ subroutine readinput
       write(stdout, *) "SlabArc_calc                      : ",  SlabArc_calc
       write(stdout, *) "SlabSpintexture_calc              : ",  SlabSpintexture_calc
       write(stdout, *) "wanniercenter_calc                : ", wanniercenter_calc
+      write(stdout, *) "Wilsonloop_calc                   : ", Wilsonloop_calc  
       write(stdout, *) "BerryPhase_calc                   : ", BerryPhase_calc
       write(stdout, *) "BerryCurvature_calc               : ", BerryCurvature_calc
       write(stdout, *) "BerryCurvature_EF_calc            : ", BerryCurvature_EF_calc
@@ -291,6 +293,8 @@ subroutine readinput
       write(stdout, *) "ChargeDensity_selected_energies_calc : ", ChargeDensity_selected_energies_calc
       write(stdout, *) "valley_projection_calc : "           , valley_projection_calc
    endif
+
+   Wilsonloop_calc= Wilsonloop_calc.or.wanniercenter_calc
 
 !===============================================================================================================!
 !> SYSTEM namelist
@@ -358,11 +362,12 @@ subroutine readinput
       BerryPhase_calc.or.BerryCurvature_EF_calc.or.BerryCurvature_calc.or.&
       BerryCurvature_plane_selectedbands_calc.or.BerryCurvature_slab_calc.or.&
       MirrorChern_calc.or.WeylChirality_calc.or.NLChirality_calc.or.&
-      FindNodes_calc) then
-         write(*, *)"ERROR: you should set Numoccupied in namelist SYSTEM correctly"
+      FindNodes_calc.or.FermiLevel_calc) then
+         write(*, *)"ERROR: you should set Numoccupied in namelist SYSTEM correctly!!!"
          stop
       else 
          Numoccupied = 1
+         if (cpuid.eq.0)write(stdout, *)"Warning: Numoccupied is set to 1 since you didn't set it!"
       endif
    endif
 
@@ -537,9 +542,10 @@ subroutine readinput
 
 
    !> set up parameters for calculation
-   E_arc = 0.0d0
-   Eta_Arc= 0.001d0
-   EF_broadening= 0.05d0
+   E_arc = -999d0
+   Eta_Arc= -999d0
+   Fermi_broadening= 0.005d0
+   EF_integral_range= 0.05d0
    OmegaNum = 100
    OmegaNum_unfold = 0
    OmegaMin = -1d0
@@ -585,6 +591,7 @@ subroutine readinput
    projection_weight_mode = "NORMAL"
 
 
+   !>>>> read a lot of parameters from namilist PARAMETERS
    read(1001, PARAMETERS, iostat= stat)
    if (Magp<1) Magp= 0
    if (Magp_max<1) Magp_max= Magp
@@ -604,6 +611,11 @@ subroutine readinput
 
    endif
 
+   !> try to compatible with old version of WannierTools
+   !> Eta_Arc and E_arc are set in PARAMETERS
+   if (Eta_Arc>-998d0) Fermi_broadening= Eta_Arc
+   if (E_Arc>-998d0) iso_energy= E_Arc
+
    NBTau= max(NBTau, BTauNum)
   
    projection_weight_mode= upper(projection_weight_mode)
@@ -611,9 +623,9 @@ subroutine readinput
       write(stdout, *) "  "
       write(stdout, *) ">>>calculation parameters : "
       write(stdout, '(1x, a, f16.5)')'E_arc : ', E_arc
-      write(stdout, '(1x, a, f16.5)')'Eta_arc : ', Eta_arc
+      write(stdout, '(1x, a, f16.5)')'Fermi_broadening : ', Fermi_broadening
       write(stdout, '(1x, a, f16.5)')'symprec : ', symprec
-      write(stdout, '(1x, a, f16.5)')'EF_broadening : ', EF_broadening
+      write(stdout, '(1x, a, f16.5)')'EF_integral_range : ', EF_integral_range
       write(stdout, '(1x, a, f16.5)')'Gap_threshold', Gap_threshold
       write(stdout, '(1x, a, f16.5)')'OmegaMin : ', OmegaMin
       write(stdout, '(1x, a, f16.5)')'OmegaMax : ', OmegaMax

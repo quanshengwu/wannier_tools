@@ -402,6 +402,7 @@
      logical :: SlabSpintexture_calc ! Flag for surface state spin-texture calculation
      logical :: BulkSpintexture_calc ! Flag for spin-texture calculation
      logical :: WannierCenter_calc  ! Flag for Wilson loop calculation
+     logical :: Wilsonloop_calc  ! Flag for Wilson loop calculation
      logical :: Z2_3D_calc  ! Flag for Z2 number calculations of 6 planes
      logical :: WeylChirality_calc  ! Weyl chirality calculation
      logical :: NLChirality_calc  ! Chirality calculation for nodal line
@@ -465,7 +466,7 @@
                           SlabSS_calc, SlabArc_calc, SlabSpintexture_calc,&
                           ChargeDensity_selected_bands_calc, &
                           ChargeDensity_selected_energies_calc, &
-                          WireBand_calc, &
+                          WireBand_calc, Wilsonloop_calc, &
                           WannierCenter_calc,BerryPhase_calc, &
                           BerryCurvature_EF_calc, BerryCurvature_calc, &
                           Berrycurvature_kpath_EF_calc, BerryCurvature_kpath_Occupied_calc, &
@@ -526,8 +527,9 @@
     
      real(Dp) :: eta     ! used to calculate dos epsilon+i eta
      real(Dp) :: Eta_Arc ! used to calculate dos epsilon+i eta
+     real(Dp) :: Fermi_broadening ! used to calculate dos epsilon+i eta From version 2.7.1, we replace eta_arc by Fermi_broadening
      
-     real(Dp) :: EF_broadening ! used to define the energy range around fermi energy in calculating sigma_OHE
+     real(Dp) :: EF_integral_range ! in eV used to define the energy range around fermi energy in calculating sigma_OHE
 
    
      integer :: OmegaNum   ! The number of energy slices between OmegaMin and OmegaMax
@@ -542,6 +544,7 @@
      real(dp) :: OmegaMin, OmegaMax ! omega interval 
   
      real(Dp) :: E_arc ! Fermi energy for arc calculation
+     real(Dp) :: iso_energy ! an iso energy for some properties at a fixed energy. replace E_arc with iso_energy from version 2.7.2
 
    
      real(Dp) :: Gap_threshold  ! threshold value for output the the k points data for Gap3D
@@ -609,8 +612,8 @@
      real(dp) :: polarization_delta_arpes ! the relative phase between two orthogonal polarization vector components
 
      !> namelist parameters
-     namelist /PARAMETERS/ Eta_Arc,EF_broadening, OmegaNum, OmegaNum_unfold, OmegaMin, OmegaMax, &
-        E_arc, Nk1, Nk2, Nk3, NP, Gap_threshold, Tmin, Tmax, NumT, &
+     namelist /PARAMETERS/ Eta_Arc, Fermi_broadening, EF_integral_range, OmegaNum, OmegaNum_unfold, OmegaMin, OmegaMax, &
+        E_arc, iso_energy, Nk1, Nk2, Nk3, NP, Gap_threshold, Tmin, Tmax, NumT, &
         NBTau, BTauNum, BTauMax, Rcut, Magp, Magq, Magp_min, Magp_max, Nslice_BTau_Max, &
         wcc_neighbour_tol, wcc_calc_tol, Beta,NumLCZVecs, iprint_level, &
         Relaxation_Time_Tau,  symprec, arpack_solver, RKF45_PERIODIC_LEVEL, &
