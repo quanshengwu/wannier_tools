@@ -3100,7 +3100,7 @@ subroutine  wannier_center3D_nodalline
    if (cpuid==0) write(stdout, '(a, a8, 5a10,a15)')'#', 'k1', 'k2', 'k3', 'kx', 'ky', 'kz', 'Chirality'
    if (cpuid==0) then
       do i=1, Num_NLs
-         write(stdout, '(6f10.5,i8)')NL_center_position_direct(:, i), NL_center_position_cart(:,i),chirality_all(i)
+         write(stdout, '(6f10.5,i8)')NL_center_position_direct(:, i), NL_center_position_cart(:,i)*Angstrom2atomic,chirality_all(i)
       enddo
    endif
 
@@ -3217,7 +3217,7 @@ subroutine  wannier_center3D_weyl
    if (cpuid==0) write(stdout, '(a, a8, 5a10,a15)')'#', 'k1', 'k2', 'k3', 'kx', 'ky','kz', 'Chirality'
    if (cpuid==0) then
       do i=1, Num_Weyls
-         write(stdout, '(6f10.5,i8)')weyl_position_direct(:, i), weyl_position_cart(:,i), chirality_all(i)
+         write(stdout, '(6f10.5,i8)')weyl_position_direct(:, i), weyl_position_cart(:,i)*Angstrom2atomic, chirality_all(i)
       enddo
    endif
 
@@ -3545,7 +3545,7 @@ subroutine  wannier_center3D_weyl_func_sphere(k0, r0, wcc, chirality)
          do ik1=1, NK1
             k_direct= kpoints(:, ik1, ik2)
             call direct_cart_rec(k_direct, k_cart)
-            write(outfileindex, '(6f10.4)') k_cart, k_direct
+            write(outfileindex, '(6f10.4)') k_cart*Angstrom2atomic, k_direct
          enddo
       enddo
       close(outfileindex)

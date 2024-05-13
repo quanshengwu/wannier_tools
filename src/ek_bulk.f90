@@ -465,7 +465,7 @@ end subroutine ek_bulk_line_valley
         do ik=1, Nk3_point_mode
            write(outfileindex, '(a, i10)')'# No. of k point', ik
            write(outfileindex, '("#",a9,100a10)')'k1', 'k2', 'k3', 'kx', 'ky', 'kz'  
-           write(outfileindex, '(100f10.6)')k3points_pointmode_direct(:, ik), k3points_pointmode_cart(:, ik)
+           write(outfileindex, '(100f10.6)')k3points_pointmode_direct(:, ik), k3points_pointmode_cart(:, ik)*Angstrom2atomic
            write(outfileindex, '("#", a11, a19, a)')'band index', 'Eigenvalue', '     orbital weights (0-255)'
            do i=1, Num_wann
               write(outfileindex, '(i12, f19.10, 1000i5)')i, eigv_mpi(i, ik), &
