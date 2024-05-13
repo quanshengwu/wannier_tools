@@ -361,6 +361,7 @@ subroutine get_hmnr_cell(cell)
 
    allocate(Rmn_old(3))
    allocate(Rmn_new(3))
+   allocate(irvec_new(3))
    allocate(irvec_new_int(3))
 
    ! call cart_direct_real(shift_to_topsurface_cart, shift_vec_direct, cell%lattice)

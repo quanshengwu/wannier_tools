@@ -73,8 +73,13 @@
         k= k2_path(i, :)
         chamk=0.0d0 
 
-        call ham_slab(k,Chamk)
-
+        !> surface Zeeman splitting for BdG
+        if (abs(Bz_surf)>eps9.or.abs(Bx_surf)>eps9.or.abs(By_surf)>eps9) then
+           call ham_slab_surface_zeeman(k,Chamk)
+        !> no surface Zeeman splitting
+        else
+           call ham_slab(k,Chamk)
+        endif
 
         eigenvalue=0.0d0
 

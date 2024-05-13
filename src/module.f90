@@ -387,6 +387,7 @@
      logical :: BulkGap_cube_calc  ! Flag for Gap_cube calculation
      logical :: BulkGap_plane_calc ! Flag for Gap_plane calculation
      logical :: SlabBand_calc  ! Flag for 2D slab energy band calculation
+     logical :: SlabBdG_calc   ! Flag for 2D slab BdG energy band calculation
      logical :: SlabBandWaveFunc_calc  ! Flag for 2D slab band wave function
      logical :: SlabBand_plane_calc  ! Flag for 2D slab energy band calculation
      logical :: WireBand_calc  ! Flag for 1D wire energy band calculation
@@ -402,6 +403,7 @@
      logical :: SlabSpintexture_calc ! Flag for surface state spin-texture calculation
      logical :: BulkSpintexture_calc ! Flag for spin-texture calculation
      logical :: WannierCenter_calc  ! Flag for Wilson loop calculation
+     logical :: BdGChern_calc  ! Flag for Wilson loop calculation of Slab BdG Hamiltonian
      logical :: Wilsonloop_calc  ! Flag for Wilson loop calculation
      logical :: Z2_3D_calc  ! Flag for Z2 number calculations of 6 planes
      logical :: WeylChirality_calc  ! Weyl chirality calculation
@@ -484,7 +486,7 @@
                           LandauLevel_B_dos_calc,LanczosBand_calc,LanczosDos_calc, &
                           LandauLevel_B_calc, LandauLevel_kplane_calc,landau_chern_calc, &
                           FermiLevel_calc,ANE_calc, export_newhr,export_maghr,w3d_nested_calc, &
-                          valley_projection_calc, Matrix_Element_calc
+                          valley_projection_calc, Matrix_Element_calc, BdGChern_calc, SlabBdG_calc
 
      integer :: Nslab  ! Number of slabs for 2d Slab system
      integer :: Nslab1 ! Number of slabs for 1D wire system
@@ -502,6 +504,8 @@
      real(dp) :: Ntotch !> Number of electrons
     
      integer :: Num_wann  ! Number of Wannier functions
+
+     integer :: Num_wann_BdG  ! Number of Wannier functions for BdG
 
      integer :: Nrpts ! Number of R points
      integer :: Nrpts_valley ! Number of R points
@@ -629,6 +633,21 @@
      real(dp) :: Bmagnitude  ! sqrt(Bx*Bx+By*By+Bz*Bz) in Tesla
      real(dp) :: Bdirection(3) !> a unit vector to represent the direction of B. 
 
+     !>Zeeman field on surface for slab hamiltonian
+     integer :: Add_surf_zeeman_field ! A parameter to control surface zeeman field; 
+                                      ! Add_surf_zeeman_field=1 means Zeeman field only in the bottom slab; 
+                                      ! Add_surf_zeeman_field=2 means Zeeman field only in the top slab;
+                                      ! Add_surf_zeeman_field=3 means Zeeman field only in top & bottom two slab
+     real(dp) :: Bx_surf, By_surf, Bz_surf !> surface zeeman field
+
+     !> for the parameters of BdG Hamiltionian
+     integer  :: Add_Delta_BdG        ! A parameter to control s-wave superconducting pairing;
+                                      ! Add_Delta_BdG=1 means s-wave superconducting pairing only in the bottom slab; 
+                                      ! Add_Delta_BdG=2 means s-wave superconducting pairing only in the top slab;
+                                      ! Add_Delta_BdG=3 means s-wave superconducting pairing in whole slab
+     real(dp) :: mu_BdG               !> Chemical potential mu
+     real(dp) :: Delta_BdG            !> s-wave superconducting pairing 
+
      !> related to Zeeman effect, Zeeman energy =Effective_gfactor*Bohr_magneton*magneticfield
      !> eg. Effective_gfactor=2, magneticfield=1Tesla, then Zeeman_energy_in_eV =1.16*1E-4 eV  
      logical :: Add_Zeeman_Field  ! if consider zeeman effect in the tight binding model
@@ -654,6 +673,7 @@
      !> Some parameters that relate to the properties of the bulk hamiltonian
      namelist / SYSTEM / Soc, E_fermi, Bx, By, Bz, Btheta, Bphi, surf_onsite, &
         Nslab, Nslab1, Nslab2, Numoccupied, Ntotch, Bmagnitude, &
+        Add_surf_zeeman_field, Bx_surf, By_surf, Bz_surf, Add_Delta_BdG, Delta_BdG, mu_BdG, &
         Add_Zeeman_Field, Effective_gfactor, Zeeman_energy_in_eV, &
         Electric_field_in_eVpA, Symmetrical_Electric_field_in_eVpA, &
         Inner_symmetrical_Electric_Field, ijmax, &
@@ -921,7 +941,7 @@
      real(dp), allocatable     :: Rmn_new(:)
      real(dp), allocatable     :: irvec_new(:)
      integer, allocatable     :: irvec_new_int(:)
-     integer, allocatable     :: nrpts_surfacecell
+     integer                  :: nrpts_surfacecell
 
      real(dp),public, save :: Rua_newcell(3) !> three rotated primitive vectors in old coordinate system
      real(dp),public, save :: Rub_newcell(3) !> three rotated primitive vectors in old coordinate system
