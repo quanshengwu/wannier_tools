@@ -941,7 +941,7 @@
      real(dp), allocatable     :: Rmn_new(:)
      real(dp), allocatable     :: irvec_new(:)
      integer, allocatable     :: irvec_new_int(:)
-     integer, allocatable     :: nrpts_surfacecell
+     integer                  :: nrpts_surfacecell
 
      real(dp),public, save :: Rua_newcell(3) !> three rotated primitive vectors in old coordinate system
      real(dp),public, save :: Rub_newcell(3) !> three rotated primitive vectors in old coordinate system
