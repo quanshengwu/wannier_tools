@@ -158,6 +158,9 @@ subroutine readinput
    ChargeDensity_selected_bands_calc= .FALSE.
    ChargeDensity_selected_energies_calc= .FALSE.
 
+   SlabBdG_calc          = .FALSE.
+   BdGChern_calc         = .FALSE.   
+
    read(1001, CONTROL, iostat=stat)
    SlabQPI_kplane_calc= SlabQPI_kplane_calc.or.SlabQPI_calc
 
@@ -173,7 +176,7 @@ subroutine readinput
       write(*, *)"QPI_unfold_plane_calc, "
       write(*, *)"BulkFatBand_calc, "
       write(*, *)"BulkGap_cube_calc,BulkGap_plane_calc"
-      write(*, *)"SlabBand_calc,SlabBandWaveFunc_calc"
+      write(*, *)"SlabBand_calc,SlabBdG_calc,SlabBandWaveFunc_calc"
       write(*, *)"WireBand_calc,SlabSS_calc,SlabArc_calc "
       write(*, *)"SlabQPI_calc"
       write(*, *)"SlabQPI_kpath_calc"
@@ -188,6 +191,7 @@ subroutine readinput
       write(*, *)"Z2_3D_calc"
       write(*, *)"Chern_3D_calc"
       write(*, *)"MirrorChern_calc"
+      write(*, *)"BdGChern_calc"
       write(*, *)"WeylChirality_calc"
       write(*, *)"NLChirality_calc"
       write(*, *)"LOTO_correction"
@@ -292,6 +296,8 @@ subroutine readinput
       write(stdout, *) "ChargeDensity_selected_bands_calc : ", ChargeDensity_selected_bands_calc
       write(stdout, *) "ChargeDensity_selected_energies_calc : ", ChargeDensity_selected_energies_calc
       write(stdout, *) "valley_projection_calc : "           , valley_projection_calc
+      write(stdout, *) "SlabBdG_calc        : ",  SlabBdG_calc
+      write(stdout, *) "BdGChern_calc       : ",  BdGChern_calc
    endif
 
    Wilsonloop_calc= Wilsonloop_calc.or.wanniercenter_calc
@@ -314,7 +320,20 @@ subroutine readinput
    Bx = 0d0
    By = 0d0
    Bz = 0d0
-   
+
+   !>Zeeman field on surface for slab hamiltonian
+   Add_surf_zeeman_field= 1
+   Bx_surf= 0d0
+   By_surf= 0d0
+   Bz_surf= 0d0
+
+   !>Chemical potential mu for BdG
+   mu_BdG = 0d0
+
+   !>s-Wave Superconducting gap
+   Add_Delta_BdG = 3
+   Delta_BdG = 0d0   
+
    Bmagnitude = 0d0
    Btheta = -99999d0
    Bphi = -99999d0
@@ -397,6 +416,7 @@ subroutine readinput
       write(stdout, '(1x, a, 3f16.6)')"Fermi energy (eV) :", E_FERMI
       write(stdout, '(1x, a, 3f16.6)')"surf_onsite (eV): ", surf_onsite
       write(stdout, '(1x, a, L)')"Add_Zeeman_Field: ", Add_Zeeman_Field
+      write(stdout, '(1x, a, i6)')"Add_surf_zeeman_field for slab system: ",Add_surf_zeeman_field
       write(stdout, '(1x, a, 3f16.6)')"Zeeman_energy_in_eV (eV): ",  Zeeman_energy_in_eV
       write(stdout, '(1x, a, 3f16.6)')"Electric_field_in_eVpA (eV/Angstrom): ",  Electric_field_in_eVpA
       write(stdout, '(1x, a, 3f16.6)')"Symmetrical_Electric_field_in_eVpA (eV/Angstrom): ",  Symmetrical_Electric_field_in_eVpA
@@ -416,6 +436,10 @@ subroutine readinput
       write(stdout, "(1x,a)") "If you specify both of them together, we will choose the first one."
       write(stdout, "(1x,a)") "If choose the first one, but not specify Btheta, Bphi, then "
       write(stdout, "(1x,a)") "by default we set Btheta=0, Bphi=0 which means B is along z direction."
+      write(stdout, '(1x, a, 3f16.6)')"Bx_surf, By_surf, Bz_surf :", Bx_surf,By_surf, Bz_surf
+      write(stdout, '(1x, a, 3f16.6)')"Chemical potential mu for BdG (eV):", mu_BdG
+      write(stdout, '(1x, a, i6)')"Add_Delta_BdG for slab system: ", Add_Delta_BdG
+      write(stdout, '(1x, a, 3f16.6)')"s-wave superconducting pairing Delta (eV): ", Delta_BdG
    endif
 
    !> check if Bmagnitude is specified in the input.dat/wt.in

@@ -98,7 +98,9 @@
         endif
      endif
   
-  
+     !> dimension for slab BdG hamiltonians
+     Num_wann_BdG= 2*Num_wann     
+
      !> dimension for surface green's function
      Ndim= Num_wann* Np
  
@@ -465,6 +467,17 @@
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the slab band structure'
      endif
 
+     !> slab band BdG
+     if (SlabBdG_calc)then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the slab BdG band structure'
+        call now(time_start)
+        call ek_slab_BdG
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'SlabBand')
+        if(cpuid.eq.0)write(stdout, *)'<< End of calculating the slab BdG band structure'
+     endif     
+
      if (BerryCurvature_slab_calc)then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Berry curvature for a slab system'
@@ -536,6 +549,17 @@
         call wannier_center3D_plane_adaptive
         call now(time_end)
         call print_time_cost(time_start, time_end, 'WannierCenter')
+        if(cpuid.eq.0)write(stdout, *)'<< End of calculating the Wilson loop'
+     endif
+
+     !> Slab BdG wannier center calculate
+     if (BdGChern_calc)then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Wilson loop for Slab BdG'
+        call now(time_start)
+        call wannier_center2D_BdG   ! tmp added by luoay at 2022/04/02
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'WannierCenterBdG')
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the Wilson loop'
      endif
 
