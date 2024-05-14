@@ -10,11 +10,11 @@ OBJ =  module.o sparse.o wt_aux.o math_lib.o symmetry.o \
 		 berry.o wanniercenter_adaptive.o \
   		 effective_mass.o findnodes.o \
 		 sigma_OHE.o sigma.o Boltz_transport_anomalous.o \
-		 2D_TSC.o \ 
-	main.o
+		 2D_TSC.o \
+		main.o
 
 # compiler
-F90  = mpif90 -fpp -DMPI -fpe3 -O3 -DARPACK -DINTELMKL #-check all -traceback -g
+F90  = mpif90 -fpp -DMPI -fpe3 -O3 -DARPACK -DINTELMKL # -check all -traceback -g
 #F90  = ifort -fpp  -DINTELMKL -fpe3 -check all -traceback -g
 CC = mpicc -cpp -O3 -DINTELMKL 
 

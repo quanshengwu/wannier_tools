@@ -29,8 +29,8 @@ Se pz px py
 !> bulk band structure calculation flag
 &CONTROL
 BulkBand_calc         = T
-Dos_calc              = T
-BulkBand_points_calc  = T
+Dos_calc              = F
+BulkBand_points_calc  = F
 /
 
 &SYSTEM
