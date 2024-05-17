@@ -111,9 +111,12 @@
         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set xrange [', OmegaMin/eV2Hartree, ':', OmegaMax/eV2Hartree, ']'
         write(outfileindex, '(a)')'set xlabel "Energy (eV)"'
         write(outfileindex, '(a)')'set ylabel "AHC (S/cm)"'
-        write(outfileindex, '(5a)')"plot '",  trim(adjustl(ahcfilename)),  "' u 1:2 w l title '\sigma_{xy}' lc rgb 'red' lw 4, \"
+        write(outfileindex, '(5a)')"#plot '",  trim(adjustl(ahcfilename)),  "' u 1:2 w l title '\sigma_{xy}' lc rgb 'red' lw 4, \"
         write(outfileindex, '(5a)')"'",  trim(adjustl(ahcfilename)), "' u 1:3 w l title '\sigma_{yz}' lc rgb 'blue' lw 4, \"
         write(outfileindex, '(5a)')"'", trim(adjustl(ahcfilename)), "' u 1:4 w l title '\sigma_{zx}' lc rgb 'orange' lw 4 "
+        write(outfileindex, '(5a)')"plot '",  trim(adjustl(ahcfilename)),  "' u 1:2 w l title '{/Symbol s}_{xy}' lc rgb 'red' lw 4, \"
+        write(outfileindex, '(5a)')"'",  trim(adjustl(ahcfilename)), "' u 1:3 w l title '{/Symbol s}_{yz}' lc rgb 'blue' lw 4, \"
+        write(outfileindex, '(5a)')"'", trim(adjustl(ahcfilename)), "' u 1:4 w l title '{/Symbol s}_{zx}' lc rgb 'orange' lw 4 "
         close(outfileindex)
      endif
 
@@ -747,9 +750,12 @@ subroutine sigma_ahc_vary_ChemicalPotential(NumOfmu, mulist, NumberofEta, eta_ar
         write(outfileindex, '(a, f10.5, a, f10.5, a)')'set xrange [', OmegaMin/eV2Hartree, ':', OmegaMax/eV2Hartree, ']'
         write(outfileindex, '(a)')'set xlabel "Energy (eV)"'
         write(outfileindex, '(a)')'set ylabel "SHC (\hbar/e)S/cm"'
-        write(outfileindex, '(5a)')"plot '",  trim(adjustl(shcfilename)),  "' u 1:21 w l title '\sigma_{xy}^z' lc rgb 'red' lw 4, \"
+        write(outfileindex, '(5a)')"#plot '",  trim(adjustl(shcfilename)),  "' u 1:21 w l title '\sigma_{xy}^z' lc rgb 'red' lw 4, \"
         write(outfileindex, '(5a)')"'",  trim(adjustl(shcfilename)), "' u 1:17 w l title '\sigma_{zx}^y' lc rgb 'blue' lw 4, \"
         write(outfileindex, '(5a)')"'", trim(adjustl(shcfilename)), "' u 1:13 w l title '\sigma_{xz}^y' lc rgb 'orange' lw 4 "
+        write(outfileindex, '(5a)')"plot '",  trim(adjustl(shcfilename)),  "' u 1:21 w l title '{/Symbol s}_{xy}^z' lc rgb 'red' lw 4, \"
+        write(outfileindex, '(5a)')"'",  trim(adjustl(shcfilename)), "' u 1:17 w l title '{/Symbol s}_{zx}^y' lc rgb 'blue' lw 4, \"
+        write(outfileindex, '(5a)')"'", trim(adjustl(shcfilename)), "' u 1:13 w l title '{/Symbol s}_{xz}^y' lc rgb 'orange' lw 4 "
         close(outfileindex)
      endif
 

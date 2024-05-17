@@ -13,7 +13,6 @@ BulkBand_calc         = T
 SOC = 1                 ! soc
 E_FERMI = 0        ! e-fermi
 Bx= 0, By= 0, Bz= 1     ! Bx By Bz
-surf_onsite= 0.0        ! surf_onsite
 Add_Zeeman_Field = T
 Zeeman_energy_in_eV = 0.5 ! in eV
 /
