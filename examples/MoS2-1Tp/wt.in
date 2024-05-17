@@ -6,15 +6,15 @@ Package = 'VASP'
 
 !> bulk band structure calculation flag
 &CONTROL
-BulkBand_calc         = T
+BulkBand_calc         = F
 DOS_calc              = F
 SlabBand_calc         = F
 SlabSS_calc           = T
-wanniercenter_calc    = T
+wanniercenter_calc    = F
 /
 
 &SYSTEM
-NSLAB = 20 
+NSLAB = 10 
 NumOccupied = 28        ! NumOccupied
 SOC = 1                 ! soc
 E_FERMI =  -3.60        ! e-fermi
@@ -56,8 +56,8 @@ S pz px py
 
 SURFACE            ! MoS2 conventional (010) surface
  0  1  0
- 0  0  1
  1  0  0
+ 0  0  1
 
 KPATH_BULK            ! k point path
 4              ! number of k line only for bulk band

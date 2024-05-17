@@ -6,9 +6,9 @@ Package = 'VASP'
 
 !> bulk band structure calculation flag
 &CONTROL
-BulkBand_calc         = T
+BulkBand_calc         = F
 SlabBand_calc         = F
-SlabSS_calc           = T
+SlabSS_calc           = F
 wanniercenter_calc    = T
 /
 
@@ -25,7 +25,7 @@ OmegaMin = -1.0     ! energy interval
 OmegaMax =  0.5     ! energy interval
 Nk1 = 61          ! number k points 
 Nk2 = 101          ! number k points 
-NP = 1              ! number of principle layers
+NP = 2              ! number of principle layers
 /
 
 LATTICE

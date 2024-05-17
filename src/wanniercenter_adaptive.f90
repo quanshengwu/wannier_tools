@@ -332,7 +332,7 @@
          write(outfileindex, '(a)')'set ytics format "%4.1f" nomirror out'
          write(outfileindex, '(a)')'set ylabel "WCC"'
          write(outfileindex, '(a)')'set ylabel offset 2, 0.0 '
-         write(outfileindex, '(a)')'set xrange [0: 0.5]'
+         write(outfileindex, '(a)')'set xrange [0: 1.0]'
          write(outfileindex, '(a)')'set yrange [0:1]'
          write(outfileindex, '(a, i5, a)')"plot for [i=4: ", NumberofSelectedOccupiedBands+3, &
             "] 'wcc.dat' u 1:i w p  pt 7  ps 0.5 lc 'black'"

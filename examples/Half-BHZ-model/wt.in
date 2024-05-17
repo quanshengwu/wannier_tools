@@ -1,40 +1,46 @@
 &TB_FILE
-Hrfile = "BHZ_hr.dat"
+Hrfile = "HalfBHZ_hr.dat"
 /
-
 
 !> bulk band structure calculation flag
 &CONTROL
 AHC_calc              = T
 BulkBand_calc         = T
-SlabBand_calc = T
+BulkBand_plane_calc   = F
+SlabBand_calc         = T
+FindNodes_calc        = F
+SlabSS_calc           = F
+SlabArc_calc          = F
+Wanniercenter_calc    = T
+LandauLevel_B_calc    = F
+LandauLevel_B_dos_calc = F
+BerryCurvature_calc   = T
 /
 
 &SYSTEM
-SOC = 1                 ! soc
+NSLAB =40
+NumOccupied = 1         ! NumOccupied
+SOC = 0                 ! soc
 E_FERMI = 0        ! e-fermi
-Bx= 0, By= 0, Bz= 1     ! Bx By Bz
-surf_onsite= 0.0        ! surf_onsite
-Add_Zeeman_Field = T
-Zeeman_energy_in_eV = 0.5 ! in eV
 /
 
 &PARAMETERS
-Eta_Arc = 0.001     ! infinite small value, like brodening 
-E_arc = 0.0         ! energy for calculate Fermi Arc
+Fermi_broadening = 0.01     ! infinite small value, like brodening 
+iso_energy = 0.0         ! energy for calculate Fermi Arc
 OmegaNum = 400  ! omega number       
-OmegaMin = -8.0     ! energy interval
-OmegaMax =  8.0     ! energy interval
+OmegaMin = -4.0     ! energy interval
+OmegaMax =  4.0     ! energy interval
 Nk1 = 60            ! number k points 
 Nk2 = 60            ! number k points 
 Nk3 = 1             ! number k points 
+NP = 2              ! number of principle layers
 /
 
 LATTICE
 Angstrom
-1 0 0 
-0 1 0
-0 0 1
+3 0 0 
+0 3 0
+0 0 10
 
 ATOM_POSITIONS
 1                               ! number of atoms for projectors
@@ -45,13 +51,6 @@ PROJECTORS
 2            ! number of projectors
 C s pz
 
-KPATH_SLAB
-3        ! numker of k line for 2D case
--X 0. -0.5 G 0.0 0.0  ! k path for 2D case
-G 0.0 0.0 X 0.0 0.5
-X 0.0 0.50 M 0.5 0.5  ! k path for 2D case
-
-
 
 SURFACE            ! See doc for details
  0  0  1
@@ -61,7 +60,17 @@ SURFACE            ! See doc for details
 KPATH_BULK            ! k point path
 2              ! number of k line only for bulk band
   X   0.50000  0.00000  0.00000   G  0.00000   0.00000  0.00000
-  G   0.00000  0.00000  0.00000   Y  0.00000   0.50000  0.50000
+  G   0.00000  0.00000  0.00000   Y  0.00000   0.50000  0.00000
+
+KPATH_SLAB
+2        ! numker of k line for 2D case
+-X 0. -0.5 G 0.0 0.0  ! k path for 2D case
+G 0.0 0.0 X 0.0 0.5
+
+KPLANE_BULK
+ 0.00  0.00  0.00   ! Original point for 3D k plane 
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  1.00  0.00   ! The second vector to define 3d k space plane
 
 
 KCUBE_BULK
