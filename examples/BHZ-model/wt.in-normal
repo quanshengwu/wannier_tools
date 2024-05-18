@@ -7,7 +7,6 @@ Hrfile = "BHZ_hr.dat"
 BulkBand_calc   = T   ! bulk band structure
 SlabBand_calc   = T   ! slab band structure
 SHC_calc        = T   ! spin Hall conductivity
-AHC_calc        = T   ! anomalous Hall conductivity
 Wilsonloop_calc = T   ! Wilson loop
 /
 
@@ -15,9 +14,6 @@ Wilsonloop_calc = T   ! Wilson loop
 SOC = 1                 ! soc
 E_FERMI = 0        ! e-fermi
 NumOccupied = 2
-Bx= 0, By= 0, Bz= 1     ! Bx By Bz
-Add_Zeeman_Field = T
-Zeeman_energy_in_eV = 0.5 ! in eV
 /
 
 &PARAMETERS
@@ -61,11 +57,6 @@ KPATH_BULK            ! k point path
 2              ! number of k line only for bulk band
   X   0.50000  0.00000  0.00000   G  0.00000   0.00000  0.00000
   G   0.00000  0.00000  0.00000   Y  0.00000   0.50000  0.50000
-
-KPLANE_BULK
-0 0 0
-1 0 0
-0 0.5 0
 
 KCUBE_BULK
 -0.50 -0.50 -0.50   ! Original point for 3D k plane 

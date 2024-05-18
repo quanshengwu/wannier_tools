@@ -743,12 +743,26 @@
       VT= 0d0
 
       if (Is_Sparse) then
-         neval=OmegaNum
-         if (neval>Num_wann-2) neval= Num_wann- 2
+
+         if (OmegaNum==0) OmegaNum= Num_wann
+         if (NumSelectedEigenVals==0) NumSelectedEigenVals=OmegaNum
       
-         !> ncv
-         nvecs=int(2*neval)
-         if (nvecs<50) nvecs= int(6*neval)
+         neval= NumSelectedEigenVals
+      
+         if (neval>Num_wann-2) then
+            neval= Num_wann- 2
+            nvecs= Num_wann
+         endif
+      
+         !> ncv= NumLCZVecs if specfied in wt.in
+         if (NumLCZVecs.ne.0) then
+            nvecs= NumLCZVecs
+         else
+            nvecs=int(2*neval)
+            if (nvecs<50) nvecs= int(6*neval)
+         endif
+      
+         if (neval+2>=nvecs) neval= nvecs-2
       
          if (nvecs>Num_wann) nvecs= Num_wann
 

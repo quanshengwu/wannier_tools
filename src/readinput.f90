@@ -609,8 +609,6 @@ subroutine readinput
    polarization_alpha_arpes= (45d0/180d0)*3.14159265358979d0
    polarization_delta_arpes= (0d0/180d0)*3.14159265358979d0
 
-
-
    !> by default, we only project on atoms for a given wave function
    projection_weight_mode = "NORMAL"
 
@@ -627,7 +625,6 @@ subroutine readinput
       if (OmegaNum_unfold==0) OmegaNum_unfold= 200
    endif
 
-   if (NumLCZVecs> Num_wann) NumLCZVecs= Num_wann
 
    if (stat>0) then
 
@@ -1136,7 +1133,7 @@ subroutine readinput
       stop
    endif
 
-
+   if (NumLCZVecs> NumberOfspinorbitals) NumLCZVecs= NumberOfspinorbitals
 
 110 continue
 
