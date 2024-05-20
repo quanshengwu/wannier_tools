@@ -34,7 +34,7 @@ NumOccupied = 6        ! set it anyway even don't use it.
 OmegaNum = 1        ! omega number
 OmegaMin = 0     ! energy interval
 OmegaMax = 0     ! energy interval E_i= OmegaMin+ (OmegaMax-OmegaMin)/(OmegaNum-1)*(i-1)
-EF_broadening = 0.05  ! in eV, a broadening factor to choose the k points for integration
+EF_integral_range = 0.05  ! in eV, a broadening factor to choose the k points for integration
 Nk1 =81            ! Kmesh(1) for KCUBE_BULK
 Nk2 =81            ! Kmesh(2) for KCUBE_BULK
 Nk3 =81            ! Kmesh(3) for KCUBE_BULK

@@ -19,7 +19,7 @@ NumOccupied = 6        ! set it anyway even don't use it.
 OmegaNum = 1        ! omega number       
 OmegaMin = 0     ! energy interval
 OmegaMax = 0     ! energy interval E_i= OmegaMin+ (OmegaMax-OmegaMin)/(OmegaNum-1)*(i-1)
-EF_broadening = 0.15
+EF_integral_range = 0.15
 Nk1 =41            ! Kmesh(1) for KCUBE_BULK
 Nk2 =41            ! Kmesh(2) for KCUBE_BULK
 Nk3 =41            ! Kmesh(3) for KCUBE_BULK

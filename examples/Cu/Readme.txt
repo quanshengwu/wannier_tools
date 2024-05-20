@@ -1,5 +1,7 @@
 # Added on Sep.05.2019 By QuanSheng Wu
 This is a example for calculating ordinary magnetoresistance with given magnetic field direction.
+0. unzip the hr.dat.tar.gz
+   $ tar xzvf wannier90_hr.dat_nsymm48.tar.gz
 1. Calculate band structure and Fermi surface
    $ cp wt.in-bands wt.in
    $ mpiexec -np 4 wt.x&

@@ -22,7 +22,7 @@ OmegaMax = 0     ! energy interval E_i= OmegaMin+ (OmegaMax-OmegaMin)/(OmegaNum-
 Nk1 =41            ! Kmesh(1) for KCUBE_BULK
 Nk2 =41            ! Kmesh(2) for KCUBE_BULK
 Nk3 =41            ! Kmesh(3) for KCUBE_BULK
-EF_broadening = 0.15
+EF_integral_range = 0.15
 BTauNum= 100        ! Number of B*tau we calculate
 BTauMax = 40.0      ! The maximum B*tau, starting from Btau=0.
 Tmin = 30           ! Temperature in Kelvin
