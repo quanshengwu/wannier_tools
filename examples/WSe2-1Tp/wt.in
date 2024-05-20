@@ -6,9 +6,9 @@ Package = 'VASP'
 
 !> bulk band structure calculation flag
 &CONTROL
-BulkBand_calc         = F
-SlabBand_calc         = F
-SlabSS_calc           = F
+BulkBand_calc         = T
+SlabBand_calc         = T
+SlabSS_calc           = T
 wanniercenter_calc    = T
 /
 
