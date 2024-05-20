@@ -19,9 +19,9 @@ Eta_arc = 0.01
 OmegaNum = 901
 OmegaMin = -1
 OmegaMax = 1
-Nk1 = 101        ! number k points  odd number would be better
-Nk2 = 101        ! number k points  odd number would be better
-Nk3 = 101        ! number k points  odd number would be better
+Nk1 = 21     ! 251*251*251 is enough to get a good convergence
+Nk2 = 21     ! number k points  odd number would be better
+Nk3 = 21     ! number k points  odd number would be better
 /
 
 LATTICE
