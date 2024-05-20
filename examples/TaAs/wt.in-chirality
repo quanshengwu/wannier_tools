@@ -1,0 +1,83 @@
+&TB_FILE
+Hrfile = "wannier90_hr.dat"
+Package='VASP'
+/
+
+
+!> bulk band structure calculation flag
+&CONTROL
+WeylChirality_calc    = T
+/
+
+&SYSTEM
+NumOccupied = 16        ! NumOccupied
+SOC = 1                 ! without soc : SOC=0; with soc : SOC=1
+E_FERMI = 6.8549         ! e-fermi
+/
+
+&PARAMETERS
+Nk1 = 41           ! number k points 
+Nk2 = 41           ! number k points 
+/
+
+LATTICE
+Angstrom
+3.437000 -0.000000 -0.000000
+-0.000000 3.437000 0.000000
+-1.718500 -1.718500 5.828000
+
+ATOM_POSITIONS
+4                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+ Ta    0.25000   0.75000   0.50000 
+ Ta    0.00000   0.00000   0.00000 
+ As    0.66700   0.16700   0.33400 
+ As    0.41700   0.41700   0.83400 
+
+
+PROJECTORS
+5 5 3 3            ! number of projectors
+Ta dz2 dxz dyz dx2-y2 dxy
+Ta dz2 dxz dyz dx2-y2 dxy
+As pz px py 
+As pz px py 
+
+SURFACE     
+ 1  0  0
+ 0  1  0
+
+KCUBE_BULK
+-0.50 -0.50 -0.50   ! Original point for 3D k plane 
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  1.00  0.00   ! The second vector to define 3d k space plane
+ 0.00  0.00  1.00   ! The third vector to define 3d k cube
+
+
+WEYL_CHIRALITY
+24           ! Num_Weyls
+Cartesian    ! Direct or Cartesian coordinate
+0.004        ! Radius of the ball surround a Weyl point
+   -0.93249310   -0.01476294    0.00000008   
+    0.93249310    0.01476294    0.00000003   
+   -0.93249310    0.01476294    0.00000007   
+    0.93249310   -0.01476294   -0.00000004   
+   -0.51671210    0.03600881   -0.31744043   
+   -0.51671210   -0.03600881   -0.31744043   
+   -0.51671209    0.03600881    0.31744044   
+   -0.03600881    0.51671210   -0.31744044   
+   -0.03600882    0.51671210    0.31744043   
+    0.03600882    0.51671210    0.31744043   
+   -0.03600882   -0.51671209    0.31744044   
+   -0.51671209   -0.03600882    0.31744043   
+   -0.01476294   -0.93249311    0.00000000   
+    0.01476294    0.93249310    0.00000003   
+    0.01476294   -0.93249310   -0.00000001   
+    0.03600882   -0.51671209   -0.31744044   
+    0.03600881   -0.51671209    0.31744043   
+   -0.03600882   -0.51671209   -0.31744044   
+    0.03600882    0.51671209   -0.31744043   
+    0.51671210   -0.03600881   -0.31744043   
+    0.51671210    0.03600881   -0.31744043   
+    0.51671209   -0.03600882    0.31744044   
+    0.51671209    0.03600881    0.31744044   
+   -0.01476294    0.93249310    0.00000006   
