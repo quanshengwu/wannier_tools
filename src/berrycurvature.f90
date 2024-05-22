@@ -1049,7 +1049,7 @@
      !> output the Berry curvature to file
      outfileindex= outfileindex+ 1
      if (cpuid==0) then
-        open(unit=outfileindex, file='Berrycurvature_line.dat')
+        open(unit=outfileindex, file='Berrycurvature_line_sepband.txt')
         write(outfileindex, '(a)')'# Column 1 kpath with accumulated length in the kpath, Coloum 2: energy'
         write(outfileindex, '(a)')'# Column 2-4 Berry curvature (Ang^2)'
         write(outfileindex, "('#column', i5, 20i16)")(i, i=1, 8)
@@ -1058,7 +1058,7 @@
            'm_x', 'm_y', 'm_z'
         do i=1, Num_wann
            do ik=1, n_kpoints
-              write(outfileindex, '(200f16.9)')k3len(ik)*Angstrom2atomic, eigval_allk_mpi(i, ik), &
+              write(outfileindex, '(200E16.6)')k3len(ik)*Angstrom2atomic, eigval_allk_mpi(i, ik)/eV2Hartree, &
                  Omega_allk_mpi(i, :, ik), m_OrbMag_allk_mpi(i, :, ik)
            enddo
            write(outfileindex, *)' '
@@ -1070,13 +1070,60 @@
      endif
 
      !> minimum and maximum value of energy bands
-     emin=  minval(eigval_allk_mpi)-0.5d0
-     emax=  maxval(eigval_allk_mpi)+0.5d0
+     emin=  minval(eigval_allk_mpi)/eV2Hartree-0.5d0
+     emax=  maxval(eigval_allk_mpi)/eV2Hartree+0.5d0
 
-     call generate_ek_kpath_gnu('Berrycurvature_line.dat', 'Berrycurvature_line.gnu', 'Berrycurvature_line.pdf', &
-                                 emin, emax, n_kpoints, Nk3lines, &
-                                 k3line_name, k3line_stop, k3len)
-   
+      !> write script for gnuplot
+     outfileindex= outfileindex+ 1
+     if (cpuid==0) then
+        open(unit=outfileindex, file='Berrycurvature_line_sepband.gnu')
+        write(outfileindex, '(a)') '# requirement: gnuplot version>5.4'
+        write(outfileindex, '(2a)') '# Please open the data file to check the data: Berrycurvature_line_sepband.txt  '
+        write(outfileindex, '(a)') 'set terminal pdf enhanced color font ",24"'
+        write(outfileindex,'(2a)') 'set palette defined ( 0  "green", ', &
+           '5 "yellow", 10 "red" )'
+        write(outfileindex, '(3a)')"set output 'Berrycurvature_line_sepband.pdf'"
+        write(outfileindex, '(a)')'set style data linespoints'
+        write(outfileindex, '(a)')'unset key'
+        write(outfileindex, '(a)')'set pointsize 0.8'
+        write(outfileindex, '(a)')'#set xtics font ",24"'
+        write(outfileindex, '(a)')'#set ytics font ",24"'
+        write(outfileindex, '(a)')'#set ylabel font ",24"'
+        write(outfileindex, '(a)')'set ylabel offset 0.5,0'
+        write(outfileindex, '(a)')'set border lw 2'
+        write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k3len*Angstrom2atomic), ']'
+        write(outfileindex, '(a,f12.6)')'emin=', emin
+        write(outfileindex, '(a,f12.6)')'emax=', emax
+        write(outfileindex, '(a)')' '
+        write(outfileindex, '(a)')'#set cbrange if the number is too large meeting some band crossings'
+        write(outfileindex, '(a)')'set cbrange [-100:100]'
+        write(outfileindex, '(a)')' '
+        if (index(Particle,'phonon')/=0) then
+           write(outfileindex, '(a)')'set yrange [0: emax]'
+           write(outfileindex, '(a)')'set ylabel "Frequency (THz)"'
+        else
+           write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+           write(outfileindex, '(a)')'set yrange [ emin : emax ]'
+        endif
+        write(outfileindex, 202, advance="no") (k3line_name(i), k3line_stop(i)*Angstrom2atomic, i=1, Nk3lines)
+        write(outfileindex, 203)k3line_name(Nk3lines+1), k3line_stop(Nk3lines+1)*Angstrom2atomic
+  
+        do i=1, Nk3lines-1
+           if (index(Particle,'phonon')/=0) then
+              write(outfileindex, 204)k3line_stop(i+1)*Angstrom2atomic, '0.0', k3line_stop(i+1)*Angstrom2atomic, 'emax'
+           else
+              write(outfileindex, 204)k3line_stop(i+1)*Angstrom2atomic, 'emin', k3line_stop(i+1)*Angstrom2atomic, 'emax'
+           endif
+        enddo
+        write(outfileindex, '(4a)')"plot 'Berrycurvature_line_sepband.txt' u 1:2:5 ",  &
+           " w lp lw 2 pt 7  ps 0.2 lc palette, 0 w l lw 2 dt 2"
+        close(outfileindex)
+     endif
+
+202 format('set xtics (',20('"',A3,'" ',F10.5,','))
+203 format(A3,'" ',F10.5,')')
+204 format('set arrow from ',F10.5,',',A5,' to ',F10.5,',',A5, ' nohead lw 2')
+
      ENDIF
 
 

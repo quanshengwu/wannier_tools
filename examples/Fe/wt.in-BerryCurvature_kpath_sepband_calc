@@ -1,0 +1,48 @@
+&TB_FILE
+Hrfile = wannier90_hr.dat
+/
+
+
+&CONTROL
+BerryCurvature_kpath_sepband_calc = T
+/
+
+&SYSTEM
+SOC = 1                 ! soc
+E_FERMI = 9.1839        ! e-fermi
+/
+
+&PARAMETERS
+Fermi_broadening = 0.01     ! infinite small value, like brodening 
+Nk1 = 61            ! number k points 
+/
+
+LATTICE
+Angstrom
+   1.4350000     1.4350000    -1.4350000
+  -1.4350000     1.4350000     1.4350000
+   1.4350000    -1.4350000     1.4350000
+
+ATOM_POSITIONS
+1                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+ Fe      0.0000000     0.0000000     0.000
+
+PROJECTORS
+ 8          ! number of projectors
+Fe pz px py dz2 dxz dyz dx2-y2 dxy
+
+SURFACE            ! See doc for details
+ 1  0  0
+ 0  1  0
+ 0  0  1
+
+KPATH_BULK            ! k point path
+6              ! number of k line only for bulk band
+G 0.0 0.0 0.0   H 0.5 -0.5 0.5   
+H 0.5 -0.5 0.5   N 0.0 0.0 0.5   
+N 0.0 0.0 0.5   G 0.0 0.0 0.0   
+G 0.0 0.0 0.0   P 0.25 0.25 0.25   
+P 0.25 0.25 0.25   H 0.5 -0.5 0.5   
+H 0.25 0.25 0.25   N 0.0 0.0 0.5  
+

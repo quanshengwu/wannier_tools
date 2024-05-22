@@ -508,7 +508,7 @@
         if(cpuid.eq.0)write(stdout, *)'End of calculating the Berry curvature'
      endif
 
-     if (BerryCurvature_Cube_calc.or.BerryCurvature_kpath_sepband_calc)then
+     if (BerryCurvature_Cube_calc .or. BerryCurvature_kpath_sepband_calc)then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Berry curvature in a k-cube'
         call now(time_start)
