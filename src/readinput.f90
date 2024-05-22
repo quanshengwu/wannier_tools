@@ -125,6 +125,7 @@ subroutine readinput
    BerryCurvature_Cube_calc   = .FALSE.
    BerryCurvature_slab_calc = .FALSE.
    Berrycurvature_kpath_EF_calc = .FALSE.
+   BerryCurvature_kpath_sepband_calc = .FALSE.
    BerryCurvature_kpath_Occupied_calc = .FALSE.
    MirrorChern_calc      = .FALSE.
    Dos_calc              = .FALSE.
@@ -184,6 +185,7 @@ subroutine readinput
       write(*, *)"SlabSpintexture,wanniercenter_calc, Wilsonloop_calc, "
       write(*, *)"BerryPhase_calc,BerryCurvature_calc, BerryCurvature_EF_calc"
       write(*, *)"Berrycurvature_kpath_EF_calc, BerryCurvature_kpath_Occupied_calc"
+      write(*, *)"BerryCurvature_kpath_sepband_calc"
       write(*, *)"BerryCurvature_slab_calc, BerryCurvature_Cube_calc"
       write(*, *)"Dos_calc, JDos_calc, FindNodes_calc"
       write(*, *)"BulkFS_plane_calc"
@@ -2015,11 +2017,11 @@ subroutine readinput
    allocate(k3len(nk3_band))
    allocate(k3len_mag(nk3_band))
    allocate(k3len_unfold(nk3_band))
-   allocate(k3points(3, nk3_band))
+   allocate(kpath_3d(3, nk3_band))
    k3len=0d0
    k3len_mag=0d0
    k3len_unfold=0d0
-   k3points= 0d0
+   kpath_3d= 0d0
    t1= 0d0
    do j=1, nk3lines
       do i=1, NN
@@ -2030,7 +2032,7 @@ subroutine readinput
          !k1= kstart
          !k2= kend
 
-         k3points(:, i+ (j-1)*NN)= kstart+ (kend- kstart)*dble(i-1)/dble(NN-1)
+         kpath_3d(:, i+ (j-1)*NN)= kstart+ (kend- kstart)*dble(i-1)/dble(NN-1)
 
          temp= dsqrt((k2(1)- k1(1))**2 &
             +(k2(2)- k1(2))**2  &

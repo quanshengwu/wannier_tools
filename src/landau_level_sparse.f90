@@ -1054,7 +1054,7 @@ subroutine sparse_landau_level_k
       call now(time_start)
 
       if (cpuid==0) write(stdout, '(a, 2i10)') 'LandauLevel_k_calc', ik,nk3_band
-      k3 = K3points(:, ik)
+      k3 = kpath_3d(:, ik)
       nnz= nnzmax
       call now(time1)
       acoo= 0d0

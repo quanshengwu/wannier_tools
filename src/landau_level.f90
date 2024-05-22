@@ -140,7 +140,7 @@ subroutine landau_level_k
 
       call now(time_start)
 
-      k3= k3points(:, ik)
+      k3= kpath_3d(:, ik)
       call ham_3Dlandau(Ndimq, Nq, k3, ham_landau)
       ham_landau= ham_landau/eV2Hartree
 

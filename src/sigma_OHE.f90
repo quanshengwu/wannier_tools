@@ -1831,7 +1831,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
         NSlice_Btau_all_mpi = 0; NSlice_Btau_all=0
         kout_all= 0d0; kout_all_mpi= 0d0
         do ik= 1+cpuid, nk3_band, num_cpu
-           k_start = k3points(:, ik)
+           k_start = kpath_3d(:, ik)
            if (cpuid.eq.0) then
               write( stdout, *)'ib, ik', ib, ik
            endif
@@ -1871,7 +1871,7 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
  
 
         do ik= 1, nk3_band
-           k_start = k3points(:, ik)
+           k_start = kpath_3d(:, ik)
            call velocity_calc(Nband_Fermi_Level, bands_fermi_level, k_start, velocity_k, Ek)
            if (cpuid.eq.0) then
            endif

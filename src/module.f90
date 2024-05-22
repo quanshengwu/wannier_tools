@@ -415,6 +415,7 @@
      logical :: BerryCurvature_plane_selectedbands_calc ! Flag for Berry curvature calculation
      logical :: BerryCurvature_EF_calc ! Flag for Berry curvature calculation
      logical :: BerryCurvature_kpath_EF_calc ! Flag for Berry curvature calculation in kpath model at EF
+     logical :: BerryCurvature_kpath_sepband_calc ! Flag for Berry curvature calculation in kpath model for each band
      logical :: BerryCurvature_kpath_Occupied_calc ! Flag for Berry curvature calculation in kpath model sum over all occupied bands
      logical :: BerryCurvature_Cube_calc ! Flag for Berry curvature calculation
      logical :: BerryCurvature_slab_calc ! Flag for Berry curvature calculation for a slab system
@@ -469,7 +470,7 @@
                           ChargeDensity_selected_bands_calc, &
                           ChargeDensity_selected_energies_calc, &
                           WireBand_calc, Wilsonloop_calc, &
-                          WannierCenter_calc,BerryPhase_calc, &
+                          WannierCenter_calc,BerryPhase_calc, BerryCurvature_kpath_sepband_calc, &
                           BerryCurvature_EF_calc, BerryCurvature_calc, &
                           Berrycurvature_kpath_EF_calc, BerryCurvature_kpath_Occupied_calc, &
                           BerryCurvature_plane_selectedbands_calc, &
@@ -818,14 +819,14 @@
 
      ! k list for 3D case band
      integer :: nk3lines  ! Howmany k lines for bulk band calculation
-     integer :: nk3_band  ! Howmany k points for each k line
+     integer :: nk3_band  ! Howmany k points for whole kpath
      character(4), allocatable :: k3line_name(:) ! Name of the K points
      real(dp),allocatable :: k3line_stop(:)  ! Connet points
      real(dp),allocatable :: k3line_start(:, :) ! Start point for each k line
      real(dp),allocatable :: k3line_end(:, :) ! End point for each k line
      real(dp),allocatable :: K3list_band(:, :) ! coordinate of k points for bulk band calculation in kpath mode
      real(dp),allocatable :: K3len(:)  ! put all k points in a line in order to plot the bands 
-     real(dp),allocatable :: K3points(:, :) ! coordinate of k points for bulk band calculation in cube mode
+     real(dp),allocatable :: kpath_3d(:, :) ! coordinate of k points for bulk band calculation in cube mode
 
      !> k points in the point mode 
      integer :: Nk3_point_mode

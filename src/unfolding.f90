@@ -136,7 +136,7 @@ subroutine unfolding_kpath
    !> first unfold the kpoints from the kpath of the supercell
    do ik= 1+cpuid, nk3_band, num_cpu
       if (cpuid==0) write(stdout, '(a, i10," /", i10)') 'BulkBand unfolding at :', ik, nk3_band
-      k_PBZ_direct= k3points(:, ik)
+      k_PBZ_direct= kpath_3d(:, ik)
       call direct_cart_rec_unfold(k_PBZ_direct, k_cart)
       if (Landaulevel_unfold_line_calc) then 
          call cart_direct_rec_magneticcell(k_cart, k_PBZ_direct_in_SBZ)

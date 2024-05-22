@@ -425,7 +425,7 @@ subroutine sigma_ahc_vary_ChemicalPotential(NumOfmu, mulist, NumberofEta, eta_ar
 
         !> calculate Berry curvature at a single k point for all bands
         !> \Omega_n^{\gamma}(k)=i\sum_{\alpha\beta}\epsilon_{\gamma\alpha\beta}(D^{\alpha\dag}D^{\beta})_{nn}
-        call berry_curvarture_singlek_allbands(Dmn_Ham, Omega_BerryCurv)
+        call Berry_curvature_singlek_allbands(Dmn_Ham, Omega_BerryCurv)
  
         do ieta= 1, NumberofEta
            eta_local = eta_array(ieta)

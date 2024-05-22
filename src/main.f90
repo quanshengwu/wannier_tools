@@ -482,7 +482,7 @@
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Berry curvature for a slab system'
         call now(time_start)
-        call berry_curvarture_slab
+        call Berry_curvature_slab
         call now(time_end)
         call print_time_cost(time_start, time_end, 'BerryCurvature_slab')
         if(cpuid.eq.0)write(stdout, *)'End of calculating the Berry curvature for a slab system'
@@ -492,7 +492,7 @@
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Berry curvature'
         call now(time_start)
-        call berry_curvarture_line
+        call Berry_curvature_line_occupied
         call now(time_end)
         call print_time_cost(time_start, time_end, 'BerryCurvature')
         if(cpuid.eq.0)write(stdout, *)'End of calculating the Berry curvature'
@@ -502,17 +502,17 @@
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Berry curvature'
         call now(time_start)
-        call berry_curvarture_plane_full
+        call Berry_curvature_plane_full
         call now(time_end)
         call print_time_cost(time_start, time_end, 'BerryCurvature')
         if(cpuid.eq.0)write(stdout, *)'End of calculating the Berry curvature'
      endif
 
-     if (BerryCurvature_Cube_calc)then
+     if (BerryCurvature_Cube_calc.or.BerryCurvature_kpath_sepband_calc)then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Berry curvature in a k-cube'
         call now(time_start)
-        call berry_curvarture_cube
+        call Berry_curvature_cube
         call now(time_end)
         call print_time_cost(time_start, time_end, 'BerryCurvature_Cube')
         if(cpuid.eq.0)write(stdout, *)'End of calculating the Berry curvature in a cube'

@@ -700,7 +700,7 @@ subroutine LandauLevel_k_dos_Lanczos
    use sparse
    use wmpi
    use para, only : Magq, Num_Wann, Bx, By, zi, pi, Fermi_broadening, Angstrom2atomic, &
-      OmegaNum, OmegaMin, OmegaMax, nk3_band, Magp, stdout, k3points, eV2Hartree, &
+      OmegaNum, OmegaMin, OmegaMax, nk3_band, Magp, stdout, kpath_3d, eV2Hartree, &
       outfileindex, K3len_mag,splen,Is_Sparse_Hr,ijmax,NumLCZVecs, MagneticSuperProjectedArea, &
       Nk3lines, k3line_mag_stop, k3line_name, NumRandomConfs
    implicit none
@@ -823,7 +823,7 @@ subroutine LandauLevel_k_dos_Lanczos
          InitialVector= InitialVector/dsqrt(dble(norm))
 
          if (cpuid==0) write(stdout, '(a, 2i10)') 'LandauLevel_k_DOS', ik, nk3_band
-         k3= k3points(:, ik)
+         k3= kpath_3d(:, ik)
          nnz= nnzmax
          if(Is_Sparse_Hr) then
             call ham_3Dlandau_sparseHR(nnz,Mdim,NQ,k3,acsr,jcsr,icsr)
@@ -930,7 +930,7 @@ subroutine bulkbandk_dos_lanczos
    use sparse
    use wmpi
    use para, only : Magq, Num_Wann, Bx, By, zi, pi, Fermi_broadening, Angstrom2atomic, &
-      OmegaNum, OmegaMin, OmegaMax, nk3_band, Magp, stdout, k3points, &
+      OmegaNum, OmegaMin, OmegaMax, nk3_band, Magp, stdout, kpath_3d, &
       outfileindex, K3len,splen,Is_Sparse_Hr,ijmax,NumLCZVecs, eV2Hartree
    implicit none
 
@@ -1016,7 +1016,7 @@ subroutine bulkbandk_dos_lanczos
       InitialVector= InitialVector/dsqrt(dble(norm))
 
       if (cpuid==0) write(stdout, '(a, 2i10)') 'LandauLevel_k_DOS', ik, nk3_band
-      k3= k3points(:, ik)
+      k3= kpath_3d(:, ik)
       nnz= nnzmax
       if(Is_Sparse_Hr) then
          call ham_bulk_coo_sparsehr(k3, acsr,jcsr,icsr)
