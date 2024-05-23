@@ -1,0 +1,84 @@
+&TB_FILE
+Hrfile='wannier90_hr.dat'
+!Hrfile='hr_symmed.dat_nsymm12'
+Particle='electron'
+/
+
+!>
+&CONTROL
+BulkBand_calc  = T
+!BulkFS_calc = T
+!FindNodes_calc = T
+!WeylChirality_calc    = T
+SHC_calc = T
+/
+
+&SYSTEM
+NumOccupied =22 
+SOC = 1
+E_FERMI = 8.3168
+/
+
+&PARAMETERS
+Fermi_broadening = 0.01
+Nk1 = 21   ! No. of slices for the 1st reciprocal vector
+Nk2 = 21   ! No. of slices for the 2nd reciprocal vector
+Nk3 = 21   ! No. of slices for the 3rd reciprocal vector
+Gap_threshold = 0.0001 ! a value to determine which point should be identified as a node
+/
+
+KCUBE_BULK
+-0.00 -0.00 -0.00   ! Original point for 3D k plane
+ 1.00  0.00  0.00   ! The 1st vector to define 3d k cube
+ 0.00  1.00  0.00   ! The 2nd vector to define 3d k cube
+ 0.00  0.00  1.00   ! The 3rd vector to define 3d k cube
+
+LATTICE
+Angstrom
+     2.6844500     1.5498679     4.3920000
+    -2.6844500     1.5498679     4.3920000
+     0.0000000    -3.0997359     4.3920000
+end unit_cell_cart
+
+ATOM_POSITIONS
+7               ! number of atoms in unit cell
+Direct
+Co   0.5000000000000000  -0.0000000000000000  -0.0000000000000000   Co  
+Co  -0.0000000000000000   0.5000000000000000   0.0000000000000001   Co  
+Co  -0.0000000000000000   0.0000000000000000   0.5000000000000000   Co  
+S    0.2837100597000001   0.2837100597000000   0.2837100597000001    S  
+S   -0.2837100596999999  -0.2837100597000000  -0.2837100597000001    S  
+Sn   0.0000000000000000   0.0000000000000000   0.0000000000000000   Sn  
+Sn   0.5000000000000000   0.5000000000000000  -0.5000000000000000   Sn  
+
+PROJECTORS
+5 5 5 3 3 4 4            ! number of projectors for each atom
+Co dz2  dx2-y2  dyz  dxy  dxz
+Co dz2  dx2-y2  dyz  dxy  dxz
+Co dz2  dx2-y2  dyz  dxy  dxz
+S  px py pz
+S  px py pz
+Sn s px py pz 
+Sn s px py pz
+
+KPATH_BULK
+4
+ W       0.249   0.500   0.751    Z       0.500   0.500   0.500   
+ Z       0.500   0.500   0.500    U       0.347   0.751   0.374   
+ U       0.347   0.751   0.374    L       0.000   0.500   0.000   
+ L       0.000   0.500   0.000    \Gamma  0.000   0.000   0.000     
+
+SURFACE            ! See doc for details
+1  0  0
+0  1  0
+0  0  1
+
+!KPATH_SLAB
+!5        ! numker of k line for 2D case
+
+
+KCUBE_BULK
+0 0 0 
+1 0 0
+0 1 0
+0 0 1
