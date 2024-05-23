@@ -1,6 +1,6 @@
 &TB_FILE
-!Hrfile = 'wannier90_hr.dat'
-Hrfile = 'wannier90_hr.dat_nsymm48'
+Hrfile = 'wannier90_hr.dat'
+!Hrfile = 'wannier90_hr.dat_nsymm48'
 /
 
 LATTICE
