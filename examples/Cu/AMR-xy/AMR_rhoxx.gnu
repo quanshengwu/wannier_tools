@@ -7,7 +7,7 @@ set ylabel '{/Symbol r}_{xx}*{/Symbol t} ({/Symbol W}*m*s)'
 set format y "%1.1e"
 set xlabel '{/Symbol \161}'
 set xrange [0:180]
-set yrange [1.2e-21:2.5e-21]
+#set yrange [1.2e-21:2.5e-21]
 set xtics 30
 set key outside
 #unset key

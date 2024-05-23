@@ -3,11 +3,11 @@
 # alpha is the angle between the magnetic field and the z' axis in the z'-b plane, where z' axis is
 # perpendicular to a and b axis.
 
-for ((iphi=0; iphi<=36; iphi++))
+for ((iphi=0; iphi<=12; iphi++))
 do
 
 theta=90
-phi=`echo "$iphi*5"|bc`
+phi=`echo "$iphi*15"|bc`
 dir='Btheta'$theta'Bphi'$phi
 echo $theta $phi $dir
 mkdir $dir
@@ -35,9 +35,9 @@ OmegaNum = 1        ! omega number
 OmegaMin = 0     ! energy interval
 OmegaMax = 0     ! energy interval E_i= OmegaMin+ (OmegaMax-OmegaMin)/(OmegaNum-1)*(i-1)
 EF_integral_range = 0.05  ! in eV, a broadening factor to choose the k points for integration
-Nk1 =81            ! Kmesh(1) for KCUBE_BULK
-Nk2 =81            ! Kmesh(2) for KCUBE_BULK
-Nk3 =81            ! Kmesh(3) for KCUBE_BULK
+Nk1 =41            ! Kmesh(1) for KCUBE_BULK
+Nk2 =41            ! Kmesh(2) for KCUBE_BULK
+Nk3 =41            ! Kmesh(3) for KCUBE_BULK
 BTauNum= 101        ! Number of B*tau we calculate
 BTauMax = 10.0      ! The maximum B*tau, starting from Btau=0.
 Tmin = 30           ! Temperature in Kelvin
@@ -78,39 +78,22 @@ KCUBE_BULK
 EOF
 
 cat>$dir/wt-theta.sh<<EOF2
-#!/bin/bash -l
+#!/bin/bash
+#SBATCH -J $phi
+#SBATCH -p wzhctdnormal
+#SBATCH -N 1
+#SBATCH --ntasks-per-node=2
+#SBATCH -o out
+#SBATCH -e error
 
-##SBATCH --exclusive
-#SBATCH --account=hmt03
-#SBATCH --time=72:00:00
-##SBATCH --exclude=hpcc[154,155,156,114]
-#SBATCH --nodes=1
-##SBATCH --gres=gpu:4
-#SBATCH --partition=long
-#SBATCH --ntasks-per-core=1
-#SBATCH --cpus-per-task=1
-#SBATCH --ntasks-per-node=56
-#SBATCH --job-name=vasp_run
-#SBATCH --output=./log
-#SBATCH --error=./errormsg
-export OMP_NUM_THREADS=1
-export MKL_NUM_THREADS=1
-export MV2_ENABLE_AFFINITY=0
-echo "The current job ID is $SLURM_JOB_ID"
-echo "Running on $SLURM_JOB_NUM_NODES nodes:"
-echo $SLURM_JOB_NODELIST
-echo "Using $SLURM_NTASKS_PER_NODE tasks per node"
-echo "A total of $SLURM_NTASKS tasks is used"
+module purge
+module load compiler/intel/2021.3.0
+module load mpi/intelmpi/2021.3.0
 
-ulimit -s unlimited
-ulimit -c unlimited
-module load cuda11.8
-module load oneapi22.3
-module load nvhpc/22.11
+export I_MPI_PMI_LIBRARY=/opt/gridview/slurm/lib/libpmi.so
+export PATH=~/wt2024/bin:$PATH
 
-mpirun /home/liuzh/Wanniertools/wannier_tools/bin/wt.x
-
-echo work done
+srun --mpi=pmi2 wt.x
 EOF2
 
 cp wannier90_hr.dat_nsymm48 $dir/

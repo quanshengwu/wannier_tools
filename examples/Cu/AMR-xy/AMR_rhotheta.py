@@ -28,7 +28,7 @@ def extract_rho_theta(f,dtheta,num_show,interval_line,choose,output_file, output
 
 
 if __name__ == '__main__':
-    theta_interval=5
+    theta_interval=15
     Btau_show=6
     Btau_num=101
     Btau_max=10
