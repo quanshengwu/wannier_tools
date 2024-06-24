@@ -1,6 +1,5 @@
 &TB_FILE
 Hrfile = 'wannier90_hr.dat'      
-!Hrfile = 'wannier90_hr.dat_nsymm12'
 Package = 'VASP'             ! obtained from VASP, it could be 'VASP', 'QE', 'Wien2k', 'OpenMx'
 /
 
@@ -27,45 +26,42 @@ Se pz px py
 Se pz px py
 Se pz px py
 
-SURFACE            ! See doc for details
- 1  0  0
- 0  1  0
-
-
 !> bulk band structure calculation flag
 &CONTROL
-SlabBandWaveFunc_calc = F
-BulkBand_calc         = F
+BulkBand_calc         = T
+Dos_calc              = F
 BulkBand_points_calc  = F
-SlabBand_calc         = F
-WireBand_calc         = F
-SlabSS_calc           = F
-SlabArc_calc          = F
-Z2_3D_calc            = F
-SlabSpintexture_calc  = T
-Wanniercenter_calc    = F
-SHC_calc              = F
+SlabSS_calc           = T
 /
 
 &SYSTEM
-NSLAB = 20              ! for thin film system
-NSLAB1= 4               ! nanowire system 
-NSLAB2= 4               ! nanowire system 
 NumOccupied = 18        ! NumOccupied
 SOC = 1                 ! soc
 E_FERMI = 4.4195        ! e-fermi
 /
 
+! get projected bands onto different orbitals, here we only consider orbital and omit the spin freedom
+SELECTED_WANNIERORBITALS
+2 
+1-6                ! Bi
+7-15               ! Se
+
+TopAtoms
+2
+1 2
+
+BottomAtoms
+2
+1 2
+
 &PARAMETERS
-Fermi_broadening = 0.0010     ! infinite small value, like brodening 
-E_arc = 0.0         ! energy for calculate Fermi Arc
-OmegaNum = 300      ! omega number       
-OmegaMin = -1.0     ! energy interval
-OmegaMax =  1.0     ! energy interval
 Nk1 = 41            ! number k points  odd number would be better
 Nk2 = 41            ! number k points  odd number would be better
-Nk3 = 21            ! number k points  odd number would be better
-NP = 1              ! number of principle layers
+Nk3 = 41            ! number k points  odd number would be better
+OmegaNum= 101          ! for DOS
+OmegaMin= -1            ! in eV
+OmegaMax=  1            ! in eV
+Np=1
 /
 
 KPATH_BULK            ! k point path
@@ -80,28 +76,6 @@ KPATH_SLAB
 K 0.33 0.67 G 0.0 0.0  ! k path for 2D case
 G 0.0 0.0 M 0.5 0.5
 
-KPLANE_SLAB
--0.1 -0.1      ! Original point for 2D k plane
- 0.2  0.0      ! The first vector to define 2D k plane 
- 0.0  0.2      ! The second vector to define 2D k plane  for arc plots
-
-KPLANE_BULK
- 0.00  0.00  0.50   ! Original point for 3D k plane 
- 1.00  0.00  0.00   ! The first vector to define 3d k space plane
- 0.00  0.50  0.00   ! The second vector to define 3d k space plane
-
-
-KCUBE_BULK
- 0.00  0.00  0.00   ! Original point for 3D k plane 
- 1.00  0.00  0.00   ! The first vector to define 3d k space plane
- 0.00  1.00  0.00   ! The second vector to define 3d k space plane
- 0.00  0.00  1.00   ! The third vector to define 3d k cube
-
-
-EFFECTIVE_MASS      ! optional
-2                   ! The i'th band to be calculated
-0.01                ! k step in unit of (1/Angstrom)
-0.0 0.0 0.0         ! k point where the effective mass calculated.
 
 KPOINTS_3D
 4 
@@ -111,10 +85,11 @@ Direct
 0.0  0.5  0.0
 0.0  0.0  0.5
 
-SINGLEKPOINT_2D
-Direct 
-0.0 0.0
-
+KCUBE_BULK
+0 0 0
+1 0 0
+0 1 0
+0 0 1
 
 WANNIER_CENTRES     ! copy from wannier90.wout
 Cartesian

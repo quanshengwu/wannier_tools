@@ -4845,7 +4845,7 @@ subroutine build_map_supercell_primitivecell
       pos_direct_pc_all(:, ia)= pos_direct_pc
    enddo
 
-   tol = 0.10d0  ! tolrence is tol*(lattice constant)
+   tol = 0.05d0  ! tolrence is tol*(lattice constant)
    !> remove the identity positions
    call eliminate_duplicates_periodic_with_tol(3, NumberofSelectedAtoms(1), pos_direct_sc_all, Nleft, tol)
 
