@@ -4864,7 +4864,7 @@ subroutine build_map_supercell_primitivecell
       print *, 'The selected atoms position'
       do i=1, NumberofSelectedAtoms(1)
         !ia= Selected_Atoms(1)%iarray(i)
-         write(*, '(i7, 30f14.6)')ia, pos_cart_sc_all(:, i ), pos_direct_sc_all(:, i )
+         write(*, '(i7, 30f14.6)')i, pos_cart_sc_all(:, i ), pos_direct_sc_all(:, i )
       enddo
       print *, 'The reduced atoms position'
       do ia=1, Nleft
