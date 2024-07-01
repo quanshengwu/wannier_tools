@@ -1430,7 +1430,6 @@ contains
 
 end module element_table
 
-
 !> module used for matrix element calculation for simulation of ARPES experiment 
 !-----------------------------------------------------------------------------------------------------!
     ! implemented functions
@@ -1818,7 +1817,7 @@ module me_calculate
  
  
     !> Generate the integrand function
-    real(dp) function integrand(r, k_f, name, n, l)
+    real(dp) function integrand_r2(r, k_f, name, n, l)
  
  
         implicit none
@@ -1835,8 +1834,31 @@ module me_calculate
  
         call Z_eff_cal(name, n, l, Z_eff)
         res = (r**2)*slater_Rn(r, n, Z_eff)*spherical_bessel(k_f*r, l) 
-        integrand = res
-    end function integrand
+        integrand_r2 = res
+    end function integrand_r2
+
+
+    !> Generate the integrand function
+    real(dp) function integrand_r3(r, k_f, name, n, l)
+ 
+ 
+        implicit none
+        character(len=10) ,intent(in) :: name
+        real(dp), intent(in) :: r
+        real(dp), intent(in) :: k_f
+        integer, intent(in) :: n
+        integer, intent(in) :: l
+ 
+ 
+        real(dp) :: Z_eff ! effective nuclear charge number under slater rules
+        real(dp) :: res
+ 
+ 
+        call Z_eff_cal(name, n, l, Z_eff)
+        res = (r**3)*slater_Rn(r, n, Z_eff)*spherical_bessel(k_f*r, l) 
+        integrand_r3 = res
+    end function integrand_r3
+
  
  
     !> Simpson integral
@@ -1963,15 +1985,16 @@ module me_calculate
  
  
      !> Main subroutine to calculate the Matrix Element
-    subroutine get_matrix_element(ele_name, orb_name, k_cart, matrix_element_res)
+    subroutine get_matrix_element(ele_name, orb_name, k_cart, atom_position_cart, matrix_element_res)
  
  
         implicit none
         character(len=10), intent(in) :: ele_name
         character(len=10), intent(in) :: orb_name
         real(dp) :: k_cart(3) ! k in cartesian coordinate
+        real(dp) :: atom_position_cart(3) ! position of calculated atom
         real(dp) :: gaunt_value_tmp
-        complex(dp) :: Ylm_gaunt_vec(3) ! values of gaunt coefficient plus Ylm corresponding to polarization vector
+        complex(dp) :: Ylm_gaunt_vec(3) ! values of gaunt coefficient multiplied by Ylm corresponding to polarization vector
         complex(dp) :: polar_epsilon_vec(3) ! polarization vector 
        
  
@@ -1982,7 +2005,7 @@ module me_calculate
         integer :: dl, m_3 ! dl values from {-1, +1}
         
         real(dp) :: Z_eff
-        real(dp) :: inte_res, inte_a = 0d0 
+        real(dp) :: inte_res_r3, inte_res_r2, inte_a = 0d0 
         real(dp) :: k_theta, k_phi, k_f ! k under spherical coordinate, k_f in the unit of angstrom^-1, k_theta and k_phi are in radian
         !real(dp) :: matrix_element_res
         complex(dp) :: matrix_element_res
@@ -2012,10 +2035,13 @@ module me_calculate
         call Z_eff_cal(ele_name, n, l, Z_eff)
 
         matrix_element_res = 0d0
+        
+
         do j = 0, 1
             ! generate the dl
             dl = j*2-1
-            call integral_simpson(inte_a, inte_b, integrand, k_f, ele_name, n, l+dl, inte_res)
+            inte_res_r3 = 0d0
+            call integral_simpson(inte_a, inte_b, integrand_r3, k_f, ele_name, n, l+dl, inte_res_r3)
 
 
             
@@ -2030,13 +2056,28 @@ module me_calculate
           
             Ylm_gaunt_vec(3) = gaunt_value_tmp
 
+            !> calculate the term comes from the atom position 
+
+            
+
+
+
+
+
 
             !> calculate the matrix element
 
-            matrix_element_res = matrix_element_res + (zi)**(l+dl)*4d0*Pi*inte_res*dot_product(polar_epsilon_vec, Ylm_gaunt_vec)
+            matrix_element_res = matrix_element_res + (zi)**(l+dl)*4d0*Pi*inte_res_r3*dot_product(polar_epsilon_vec, Ylm_gaunt_vec)
+                        
 
 
         end do ! j loop
+
+        inte_res_r2 = 0d0  
+        call integral_simpson(inte_a, inte_b, integrand_r2, k_f, ele_name, n, l, inte_res_r2)
+
+        matrix_element_res = matrix_element_res + (zi)**l*4d0*Pi*inte_res_r2*dot_product(polar_epsilon_vec, atom_position_cart)&
+        *Ylm(k_theta, k_phi, l, m)
 
         return
     end subroutine get_matrix_element
