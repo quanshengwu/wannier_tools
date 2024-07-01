@@ -173,9 +173,10 @@
       if (cpuid==0) then
          open(unit=outfileindex, file='wanniercenter3D_Z2.gnu')
 
-         write(outfileindex,'(a)')' set encoding iso_8859_1 '
-         write(outfileindex,'(a)')' set terminal  postscript enhanced color font ",18"'
-         write(outfileindex,'(a)')' set output "wanniercenter3D_Z2.eps"'
+         write(outfileindex,'(a)')' #gnuplot version>5.4 '
+         write(outfileindex,'(a)')' set encoding iso_8859_1'
+         write(outfileindex,'(a)')' set terminal pdf enhanced color font ",12" size 5,4'
+         write(outfileindex,'(a)')' set output "wanniercenter3D_Z2.pdf"'
          write(outfileindex,'(a)')' set size 0.6,1.0'
          write(outfileindex,'(a)')' set multiplot '
          write(outfileindex,'(a)')' unset key '
@@ -187,16 +188,16 @@
          write(outfileindex,'(3a)')' NOYTICS = "set format y '," '';", 'unset ylabel"'
          write(outfileindex,'(3a)')' YTICS = "set ytics format '," '%1.0f' ",&
             '1.0  nomirror in offset 0.7,0; set mytics 2;"'
-         write(outfileindex,'(a)')' TMARGIN = "set tmargin at screen 0.96; set bmargin at screen 0.71"'
-         write(outfileindex,'(a)')' MMARGIN = "set tmargin at screen 0.63; set bmargin at screen 0.38"'
-         write(outfileindex,'(a)')' BMARGIN = "set tmargin at screen 0.30; set bmargin at screen 0.05"'
+         write(outfileindex,'(a)')' TMARGIN = "set tmargin at screen 0.96; set bmargin at screen 0.72"'
+         write(outfileindex,'(a)')' MMARGIN = "set tmargin at screen 0.63; set bmargin at screen 0.39"'
+         write(outfileindex,'(a)')' BMARGIN = "set tmargin at screen 0.30; set bmargin at screen 0.06"'
          write(outfileindex,'(a)')' LMARGIN = "set lmargin at screen 0.20; set rmargin at screen 0.45"'
          write(outfileindex,'(a)')' RMARGIN = "set lmargin at screen 0.50; set rmargin at screen 0.75"'
          write(outfileindex,'(a)')' TITLE = "offset 0, -0.7"'
          write(outfileindex,'(3a)')' LCOLOR = "rgb '," '#696969'",'"'
          write(outfileindex,'(a)')' '
-         write(outfileindex,'(3a)')' POS = "at graph -0.23,1.0 font', " ',18' ",'"'
-         write(outfileindex,'(3a)')' POS2 = "at graph -0.15,1.0 font'," ',18' ",'"'
+         write(outfileindex,'(3a)')' POS = "at graph -0.23,1.0 font', " ',12' ",'"'
+         write(outfileindex,'(3a)')' POS2 = "at graph -0.15,1.0 font'," ',12' ",'"'
          write(outfileindex,'(a)')' '
          write(outfileindex,'(a)')' set xrange [0: 0.5]'
          write(outfileindex,'(a)')' set yrange [0:1]'
@@ -206,7 +207,7 @@
          write(outfileindex,'(a)')' set xlabel "k_2" offset 0,1.6'
          write(outfileindex,'(a)')' set ylabel "c" rotate by  0 offset 1.8,0'
          write(outfileindex,'(a)')' set label 1 "(a)"  @POS front '
-         write(outfileindex,'(a)')' plot "wanniercenter3D_Z2_1.dat" u 1:2 w p  pt 7  ps 0.6 lc @LCOLOR'
+         write(outfileindex,'(a)')' plot "wanniercenter3D_Z2_1.dat" u ($1/2):2 w p  pt 7  ps 0.2 lc @LCOLOR'
          write(outfileindex,'(a)')' '
          write(outfileindex,'(a)')' @TMARGIN; @RMARGIN'
          write(outfileindex,'(a)')' @NOYTICS; @XTICS '
@@ -214,7 +215,7 @@
          write(outfileindex,'(a)')' set label 1 "(b)" @POS2 front'
          write(outfileindex,'(a)')' set xlabel "k_2" offset 0,1.6'
          write(outfileindex,'(a)')' unset ylabel'
-         write(outfileindex,'(a)')' plot "wanniercenter3D_Z2_2.dat" u 1:2 w p  pt 7  ps 0.6 lc @LCOLOR'
+         write(outfileindex,'(a)')' plot "wanniercenter3D_Z2_2.dat" u ($1/2):2 w p  pt 7  ps 0.2 lc @LCOLOR'
          write(outfileindex,'(a)')' '
          write(outfileindex,'(a)')' @MMARGIN; @LMARGIN'
          write(outfileindex,'(a)')' @YTICS; @XTICS '
@@ -222,14 +223,14 @@
          write(outfileindex,'(a)')' set label 1 "(c)" @POS front'
          write(outfileindex,'(a)')' set xlabel "k_1" offset 0,1.6'
          write(outfileindex,'(a)')' set ylabel "c" rotate by  0 offset 1.8,0'
-         write(outfileindex,'(a)')' plot "wanniercenter3D_Z2_3.dat" u 1:2 w p  pt 7  ps 0.6 lc @LCOLOR'
+         write(outfileindex,'(a)')' plot "wanniercenter3D_Z2_3.dat" u ($1/2):2 w p  pt 7  ps 0.2 lc @LCOLOR'
          write(outfileindex,'(a)')' '
          write(outfileindex,'(a)')' @MMARGIN; @RMARGIN'
          write(outfileindex,'(a)')' @NOYTICS; @XTICS '
          write(outfileindex,'(a)')' set label 1 "(d)" @POS2 front'
          write(outfileindex,'(a)')' #set title "k_2=0.5" @TITLE'
          write(outfileindex,'(a)')' set xlabel "k_1" offset 0,1.6'
-         write(outfileindex,'(a)')' plot "wanniercenter3D_Z2_4.dat" u 1:2 w p  pt 7  ps 0.6 lc @LCOLOR'
+         write(outfileindex,'(a)')' plot "wanniercenter3D_Z2_4.dat" u ($1/2):2 w p  pt 7  ps 0.2 lc @LCOLOR'
          write(outfileindex,'(a)')''
          write(outfileindex,'(a)')' @BMARGIN; @LMARGIN'
          write(outfileindex,'(a)')' @YTICS; @XTICS '
@@ -237,7 +238,7 @@
          write(outfileindex,'(a)')' set label 1 "(e)" @POS front'
          write(outfileindex,'(a)')' set ylabel "a" rotate by  0 offset 1.8,0'
          write(outfileindex,'(a)')' set xlabel "k_2" offset 0,1.6'
-         write(outfileindex,'(a)')' plot "wanniercenter3D_Z2_5.dat" u 1:2 w p  pt 7  ps 0.6 lc @LCOLOR'
+         write(outfileindex,'(a)')' plot "wanniercenter3D_Z2_5.dat" u ($1/2):2 w p  pt 7  ps 0.2 lc @LCOLOR'
          write(outfileindex,'(a)')' '
          write(outfileindex,'(a)')' '
          write(outfileindex,'(a)')' @BMARGIN; @RMARGIN'
@@ -245,13 +246,14 @@
          write(outfileindex,'(a)')' #set title "k_3=0.5" @TITLE'
          write(outfileindex,'(a)')' set label 1 "(f)" @POS2 front'
          write(outfileindex,'(a)')' set xlabel "k_2" offset 0,1.6'
-         write(outfileindex,'(a)')' plot "wanniercenter3D_Z2_6.dat" u 1:2 w p  pt 7  ps 0.6 lc @LCOLOR'
+         write(outfileindex,'(a)')' plot "wanniercenter3D_Z2_6.dat" u ($1/2):2 w p  pt 7  ps 0.2 lc @LCOLOR'
  
          close(outfileindex)
       endif
 
 
       if (cpuid==0) then
+         write(stdout, *)'# Notes: Please check the Wilson loop plots gnuplot wanniercenter3D_Z2.gnu '
          write(stdout, *)'# z2 number for 6 planes'
          write(stdout, *)'k1=0.0, k2-k3 plane: ', Z2_all(1)
          write(stdout, *)'k1=0.5, k2-k3 plane: ', Z2_all(2)
@@ -311,28 +313,29 @@
       endif
 
       if (cpuid==0) write(stdout, *)'Z2 for the plane you choose: ', Z2
-
+   
       !> generate gnu script for wannier charge center plots
       outfileindex= outfileindex+ 1
       if (cpuid==0) then
          open(unit=outfileindex, file='wcc.gnu')
+         write(outfileindex, '(a)')"# gnuplot version > 5.4"
          write(outfileindex, '(a)')"set encoding iso_8859_1"
-         write(outfileindex, '(a)')'set terminal  postscript enhanced color font ",30"'
-         write(outfileindex, '(a)')"set output 'wcc.eps'"
+         write(outfileindex, '(a)')'set terminal pdf enhanced color font ",24" size 5, 4'
+         write(outfileindex, '(a)')"set output 'wcc.pdf'"
          write(outfileindex, '(a)')'unset key '
          write(outfileindex, '(a)')'set border lw 3 '
          write(outfileindex, '(a)')'set xtics offset 0, 0.2'
          write(outfileindex, '(a)')'set xtics format "%4.1f" nomirror out '
-         write(outfileindex, '(a)')'set xlabel "k" '
+         write(outfileindex, '(a)')'set xlabel "k in unit of line 3 of KPLANE BULK" font ",18"'
          write(outfileindex, '(a)')'set xlabel offset 0, 0.7 '
          write(outfileindex, '(a)')'set ytics 0.5 '
          write(outfileindex, '(a)')'set ytics format "%4.1f" nomirror out'
          write(outfileindex, '(a)')'set ylabel "WCC"'
          write(outfileindex, '(a)')'set ylabel offset 2, 0.0 '
-         write(outfileindex, '(a)')'set xrange [0: 0.5]'
+         write(outfileindex, '(a)')'set xrange [0: 1.0]'
          write(outfileindex, '(a)')'set yrange [0:1]'
-         write(outfileindex, '(a)')"plot 'wcc.dat' u 1:2 w l lw 2  lc 'blue', \"   
-         write(outfileindex, '(a, i5, a)')" for [i=4: ", NumberofSelectedOccupiedBands+3, "] 'wcc.dat' u 1:i w p  pt 7  ps 1.1 lc 'red'"
+         write(outfileindex, '(a, i5, a)')"plot for [i=4: ", NumberofSelectedOccupiedBands+3, &
+            "] 'wcc.dat' u 1:i w p  pt 7  ps 0.5 lc 'black'"
          close(outfileindex)
       endif
 
@@ -423,7 +426,7 @@
       !> initial k points
       do ik2=1, Nk2
          kpoints(:, ik2)= kstart+ kvec2*(ik2-1d0)/dble(Nk2-1)
-         kpath_wcc(ik2)= (ik2-1d0)/(Nk2-1)/2d0
+         kpath_wcc(ik2)= (ik2-1d0)/(Nk2-1)
       enddo
 
       !> fill data for kline_wcc
@@ -740,16 +743,30 @@
       VT= 0d0
 
       if (Is_Sparse) then
-         neval=OmegaNum
-         if (neval>Num_wann-2) neval= Num_wann- 2
+
+         if (OmegaNum==0) OmegaNum= Num_wann
+         if (NumSelectedEigenVals==0) NumSelectedEigenVals=OmegaNum
       
-         !> ncv
-         nvecs=int(2*neval)
-         if (nvecs<50) nvecs= int(6*neval)
+         neval= NumSelectedEigenVals
+      
+         if (neval>Num_wann-2) then
+            neval= Num_wann- 2
+            nvecs= Num_wann
+         endif
+      
+         !> ncv= NumLCZVecs if specfied in wt.in
+         if (NumLCZVecs.ne.0) then
+            nvecs= NumLCZVecs
+         else
+            nvecs=int(2*neval)
+            if (nvecs<50) nvecs= int(6*neval)
+         endif
+      
+         if (neval+2>=nvecs) neval= nvecs-2
       
          if (nvecs>Num_wann) nvecs= Num_wann
 
-         shiftsigma=(1d0,0d0)*E_arc
+         shiftsigma=(1d0,0d0)*iso_energy
          nnzmax=splen+Num_wann
          nnz=splen
          allocate( acoo(nnzmax))

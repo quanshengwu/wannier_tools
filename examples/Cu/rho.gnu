@@ -6,8 +6,9 @@ set autoscale fix
 set key left samplen 0.8
 set ylabel "{/Symbol r}*{/Symbol t} ({/Symbol W}*m*s)"
 set xlabel "B{/Symbol t} (T.ps)"
-plot 'rho_band_6_mu_0.00eV_T_30.00K.dat-theta0' u 1:3 w l lw 3 title '{/Symbol q}=0', \
-     'rho_band_6_mu_0.00eV_T_30.00K.dat-theta18' u 1:3 w l lw 3 title '{/Symbol q}=18', \
-     'rho_band_6_mu_0.00eV_T_30.00K.dat-theta30' u 1:3 w l lw 3 title '{/Symbol q}=30', \
-     'rho_band_6_mu_0.00eV_T_30.00K.dat-theta45' u 1:3 w l lw 3 title '{/Symbol q}=45'
+set format y '%.1e'
+plot 'rho_total_mu_0.00eV.dat-theta0' every :::0::0 u 1:2 w l lw 3 title '{/Symbol r}_{xx}*{/Symbol t}', \
+     'rho_total_mu_0.00eV.dat-theta0' every :::0::0 u 1:6 w l lw 3 title '{/Symbol r}_{yy}*{/Symbol t}', \
+     'rho_total_mu_0.00eV.dat-theta0' every :::0::0 u 1:10 w l lw 3 title '{/Symbol r}_{zz}*{/Symbol t}', \
+     'rho_total_mu_0.00eV.dat-theta0' every :::0::0 u 1:3 w l lw 3 title '{/Symbol r}_{xy}*{/Symbol t}'
 

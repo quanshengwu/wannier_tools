@@ -1,5 +1,5 @@
 &TB_FILE
-Hrfile = "Wannier90_hr.dat"
+Hrfile = "wannier90_hr.dat"
 Package='VASP'
 /
 

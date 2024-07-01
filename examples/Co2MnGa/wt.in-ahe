@@ -1,0 +1,66 @@
+&TB_FILE
+Hrfile = 'wannier90_hr.dat'      
+Package = 'VASP'             ! obtained from VASP, it could be 'VASP', 'QE', 'Wien2k', 'OpenMx'
+/
+
+!> bulk band structure calculation flag
+&CONTROL
+AHC_calc                  = T
+/
+
+&SYSTEM
+NumOccupied = 28        ! NumOccupied
+SOC = 1                 ! soc
+E_FERMI = 7.2170        ! e-fermi
+/
+
+&PARAMETERS
+Eta_arc = 0.01
+OmegaNum = 901
+OmegaMin = -1
+OmegaMax = 1
+Nk1 = 21     ! 251*251*251 is enough to get a good convergence
+Nk2 = 21     ! number k points  odd number would be better
+Nk3 = 21     ! number k points  odd number would be better
+/
+
+LATTICE
+Angstrom
+     0.0000000000000000    2.8849999904499999    2.8849999904499999
+     2.8849999904499999    0.0000000000000000    2.8849999904499999
+     2.8849999904499999    2.8849999904499999    0.0000000000000000
+
+ATOM_POSITIONS
+4                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+Co  0.2500000000000000  0.2500000000000000  0.2500000000000000
+Co  0.7500000000000000  0.7500000000000000  0.7500000000000000
+Mn  0.5000000000000000  0.5000000000000000  0.5000000000000000
+Ga  0.0000000000000000  0.0000000000000000  0.0000000000000000
+
+
+PROJECTORS
+ 9 9 9 4                  ! number of projectors
+ Co s px py pz dz2 dxz dyz dx2-y2 dxy
+ Co s px py pz dz2 dxz dyz dx2-y2 dxy
+ Mn s px py pz dz2 dxz dyz dx2-y2 dxy
+ Ga s px py pz
+
+SURFACE            ! Specify surface with two vectors, see doc
+ 1  0  0
+ 0  1  0
+ 0  0  1
+
+KPATH_BULK            ! k point path
+4              ! number of k line only for bulk band
+W 0.50000    0.24576    0.75424  T 0.50000    0.50000    0.50000    
+T 0.50000    0.50000    0.50000  U 0.75424    0.37288    0.37288    
+U 0.75424    0.37288    0.37288  L 0.50000    0.00000    0.00000    
+L 0.50000    0.00000    0.00000  G 0.00000    0.00000    0.00000    
+
+KCUBE_BULK
+ -0.50  -0.50  -0.50   ! Original point for 3D k plane 
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  1.00  0.00   ! The second vector to define 3d k space plane
+ 0.00  0.00  1.00   ! The third vector to define 3d k cube
+

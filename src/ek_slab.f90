@@ -73,8 +73,13 @@
         k= k2_path(i, :)
         chamk=0.0d0 
 
-        call ham_slab(k,Chamk)
-
+        !> surface Zeeman splitting for BdG
+        if (abs(Bz_surf)>eps9.or.abs(Bx_surf)>eps9.or.abs(By_surf)>eps9) then
+           call ham_slab_surface_zeeman(k,Chamk)
+        !> no surface Zeeman splitting
+        else
+           call ham_slab(k,Chamk)
+        endif
 
         eigenvalue=0.0d0
 
@@ -169,6 +174,7 @@
      outfileindex= outfileindex+ 1
      if (cpuid==0) then
         open(unit=outfileindex, file='slabek.gnu')
+        write(outfileindex, '(a)') '# requirement: gnuplot version>5.4'
         write(outfileindex, '(a)')"set encoding iso_8859_1"
         write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
         write(outfileindex, '(a)')"#set output 'slabek.eps'"
@@ -189,7 +195,7 @@
         write(outfileindex, '(a)')'#set ytics font ",36"'
         write(outfileindex, '(a)')'#set ylabel font ",36"'
         write(outfileindex, '(a)')'#set xtics offset 0, -1'
-        write(outfileindex, '(a)')'set ylabel offset -1, 0 '
+        write(outfileindex, '(a)')'set ylabel offset -0.5, 0 '
         write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k2len)*Angstrom2atomic, ']'
         if (index(Particle,'phonon')/=0) then
            write(outfileindex, '(a, f10.5, a)')'set yrange [0:', emax, ']'
@@ -313,7 +319,7 @@ subroutine ek_slab_sparseHR
    if (nvecs>Ndimq) nvecs= Ndimq
 
 
-   sigma=(1d0,0d0)*E_arc
+   sigma=(1d0,0d0)*iso_energy
    
    allocate( acoo(nnzmax), stat= ierr)
    call printallocationinfo('acoo', ierr)
@@ -463,6 +469,7 @@ subroutine ek_slab_sparseHR
    outfileindex= outfileindex+ 1
    if (cpuid==0) then
       open(unit=outfileindex, file='slabek.gnu')
+      write(outfileindex, '(a)') '# requirement: gnuplot version>5.4'
       write(outfileindex, '(a)')"set encoding iso_8859_1"
       write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
       write(outfileindex, '(a)')"#set output 'slabek.eps'"
@@ -477,13 +484,13 @@ subroutine ek_slab_sparseHR
       write(outfileindex, '(a)')'unset ztics'
       write(outfileindex, '(a)')'unset key'
       write(outfileindex, '(a)')'set pointsize 0.8'
-      write(outfileindex, '(a)')'set border lw 3 '
+      write(outfileindex, '(a)')'set border lw 3'
       write(outfileindex, '(a)')'set view 0,0'
       write(outfileindex, '(a)')'#set xtics font ",36"'
       write(outfileindex, '(a)')'#set ytics font ",36"'
       write(outfileindex, '(a)')'#set ylabel font ",36"'
       write(outfileindex, '(a)')'#set xtics offset 0, -1'
-      write(outfileindex, '(a)')'set ylabel offset -1, 0 '
+      write(outfileindex, '(a)')'set ylabel offset -0.5, 0 '
       write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(k2len*Angstrom2atomic), ']'
       if (index(Particle,'phonon')/=0) then
          write(outfileindex, '(a, f10.5, a)')'set yrange [0:', emax, ']'
@@ -700,6 +707,7 @@ end subroutine ek_slab_sparseHR
      outfileindex= outfileindex+ 1
      if (cpuid==0)then
         open(unit=outfileindex, file='slabek_plane.gnu')
+        write(outfileindex, '(a)') '# requirement: gnuplot version>5.4'
         write(outfileindex, '(a)')"set encoding iso_8859_1"
         write(outfileindex, '(a)')'#set terminal  postscript enhanced color'
         write(outfileindex, '(a)')"#set output 'slabek_plane.eps'"

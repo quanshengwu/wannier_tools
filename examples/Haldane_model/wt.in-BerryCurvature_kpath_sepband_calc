@@ -1,0 +1,72 @@
+&TB_FILE
+Hrfile = "Haldane_hr.dat"
+/
+
+
+!> bulk band structure calculation flag
+&CONTROL
+BerryCurvature_kpath_sepband_calc   = T  ! calculate BC sum over 1~NumOccupied bands
+/
+
+&SYSTEM
+NSLAB =60  
+NumOccupied = 1         ! NumOccupied
+SOC = 0                 ! soc
+E_FERMI = 0        ! e-fermi
+/
+
+&PARAMETERS
+Eta_Arc = 0.01     ! infinite small value, like brodening 
+E_arc = 0.0         ! energy for calculate Fermi Arc
+OmegaNum = 1000  ! omega number       
+OmegaMin = -5.0     ! energy interval
+OmegaMax =  5.0     ! energy interval
+Nk1 = 60            ! number k points 
+Nk2 = 60            ! number k points 
+NP = 1              ! number of principle layers
+/
+
+LATTICE
+Angstrom
+2.1377110  -1.2342080   0.0000000
+0.0000000   2.4684160   0.0000000
+0.0000000   0.0000000   10.000000
+
+ATOM_POSITIONS
+2                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+C 0.333333 0.666667 0.500000 
+C 0.666667 0.333333 0.500000 
+
+PROJECTORS
+1 1          ! number of projectors
+C pz
+C pz
+
+
+SURFACE            ! See doc for details
+ 0  0  1
+ 1  0  0
+ 0  1  0
+
+KPATH_BULK            ! k point path
+4              ! number of k line only for bulk band
+  M   0.50000  0.00000  0.00000   K' -.33333   -.33333  0.00000
+  K'  -.33333  -.33333  0.00000   G  0.00000   0.00000  0.00000
+  G   0.00000  0.00000  0.00000   K  0.33333   0.33333  0.00000
+  K   0.33333  0.33333  0.00000   M  0.50000   0.00000  0.00000
+
+KPATH_SLAB
+1        ! numker of k line for 2D case
+0 0.0 0.0 1 0. 1.0  ! k path for 2D case
+
+KPLANE_SLAB
+-0.5 -0.5      ! Original point for 2D k plane
+ 1.0  0.0      ! The first vector to define 2D k plane 
+ 0.0  1.0      ! The second vector to define 2D k plane  for arc plots
+
+KPLANE_BULK
+ 0.00  0.00  0.00   ! Original point for 3D k plane 
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  1.00  0.00   ! The second vector to define 3d k space plane
+

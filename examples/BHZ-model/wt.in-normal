@@ -1,0 +1,66 @@
+&TB_FILE
+Hrfile = "BHZ_hr.dat"
+/
+
+!>  flags to control different functionalities
+&CONTROL
+BulkBand_calc   = T   ! bulk band structure
+SlabBand_calc   = T   ! slab band structure
+SHC_calc        = T   ! spin Hall conductivity
+Wilsonloop_calc = T   ! Wilson loop
+/
+
+&SYSTEM
+SOC = 1                 ! soc
+E_FERMI = 0        ! e-fermi
+NumOccupied = 2
+/
+
+&PARAMETERS
+Fermi_broadening = 0.001     ! infinite small value, like brodening 
+iso_energy = 0.0         ! energy for calculate Fermi Arc
+OmegaNum = 400  ! omega number       
+OmegaMin = -8.0     ! energy interval
+OmegaMax =  8.0     ! energy interval
+Nk1 = 60            ! number k points 
+Nk2 = 60            ! number k points 
+Nk3 = 2             ! number k points 
+/
+
+LATTICE
+Angstrom
+3 0 0 
+0 3 0
+0 0 10
+
+ATOM_POSITIONS
+1                       ! number of atoms for projectors
+Direct                  ! Direct or Cartisen coordinate
+C 0 0 0
+
+PROJECTORS
+2            ! number of projectors
+C s pz
+
+KPATH_SLAB
+3        ! numker of k line for 2D case
+-X 0. -0.5 G 0.0 0.0  ! k path for 2D case
+G 0.0 0.0 X 0.0 0.5
+X 0.0 0.50 M 0.5 0.5  ! k path for 2D case
+
+SURFACE            ! See doc for details
+ 0  0  1
+ 1  0  0
+ 0  1  0
+
+KPATH_BULK            ! k point path
+2              ! number of k line only for bulk band
+  X   0.50000  0.00000  0.00000   G  0.00000   0.00000  0.00000
+  G   0.00000  0.00000  0.00000   Y  0.00000   0.50000  0.50000
+
+KCUBE_BULK
+-0.50 -0.50 -0.50   ! Original point for 3D k plane 
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  1.00  0.00   ! The second vector to define 3d k space plane
+ 0.00  0.00  1.00   ! The third vector to define 3d k cube
+

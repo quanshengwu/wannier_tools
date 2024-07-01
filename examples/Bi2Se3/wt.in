@@ -29,7 +29,9 @@ Se pz px py
 !> bulk band structure calculation flag
 &CONTROL
 BulkBand_calc         = T
-BulkBand_points_calc  = T
+Dos_calc              = F
+BulkBand_points_calc  = F
+SlabSS_calc           = T
 /
 
 &SYSTEM
@@ -44,9 +46,22 @@ SELECTED_WANNIERORBITALS
 1-6                ! Bi
 7-15               ! Se
 
+TopAtoms
+2
+1 2
+
+BottomAtoms
+2
+1 2
 
 &PARAMETERS
 Nk1 = 41            ! number k points  odd number would be better
+Nk2 = 41            ! number k points  odd number would be better
+Nk3 = 41            ! number k points  odd number would be better
+OmegaNum= 101          ! for DOS
+OmegaMin= -1            ! in eV
+OmegaMax=  1            ! in eV
+Np=1
 /
 
 KPATH_BULK            ! k point path
@@ -56,6 +71,12 @@ Z 0.00000 0.00000 0.5000 F 0.50000 0.50000 0.0000
 F 0.50000 0.50000 0.0000 G 0.00000 0.00000 0.0000
 G 0.00000 0.00000 0.0000 L 0.50000 0.00000 0.0000  
 
+KPATH_SLAB
+2        ! numker of k line for 2D case
+K 0.33 0.67 G 0.0 0.0  ! k path for 2D case
+G 0.0 0.0 M 0.5 0.5
+
+
 KPOINTS_3D
 4 
 Direct
@@ -63,6 +84,12 @@ Direct
 0.5  0.0  0.0
 0.0  0.5  0.0
 0.0  0.0  0.5
+
+KCUBE_BULK
+0 0 0
+1 0 0
+0 1 0
+0 0 1
 
 WANNIER_CENTRES     ! copy from wannier90.wout
 Cartesian

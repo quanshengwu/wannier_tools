@@ -435,7 +435,7 @@
         call ham_bulk(k, Hamk_bulk)
 
         !> diagonalization by call zheev in lapack
-        Hamk_bulk= Hamk_bulk+ zi*eta_arc
+        Hamk_bulk= Hamk_bulk+ zi*Fermi_broadening
         call inv(Num_wann, Hamk_bulk)
         do i=1, Num_wann
            dos(ik)= dos(ik) -aimag(Hamk_bulk(i, i))

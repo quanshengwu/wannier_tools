@@ -632,7 +632,7 @@ subroutine sparse_landau_level_B
    if (nvecs>Ndimq) nvecs= Ndimq
 
 
-   sigma=(1d0,0d0)*E_arc
+   sigma=(1d0,0d0)*iso_energy
 
    Nmag= Magp-1
    Nmag1=Nmag/1
@@ -938,7 +938,7 @@ subroutine sparse_landau_level_k
    if (nvecs<50) nvecs= 50
    if (nvecs>Ndimq) nvecs= Ndimq
 
-   sigma=(1d0,0d0)*E_arc
+   sigma=(1d0,0d0)*iso_energy
 
    allocate( acoo(nnzmax), stat= ierr)
    call printallocationinfo('acoo', ierr)
@@ -1054,7 +1054,7 @@ subroutine sparse_landau_level_k
       call now(time_start)
 
       if (cpuid==0) write(stdout, '(a, 2i10)') 'LandauLevel_k_calc', ik,nk3_band
-      k3 = K3points(:, ik)
+      k3 = kpath_3d(:, ik)
       nnz= nnzmax
       call now(time1)
       acoo= 0d0
@@ -1193,12 +1193,12 @@ subroutine sparse_landau_level_k
       write(outfileindex, '(a)')'#set xtics offset 0, -1'
       write(outfileindex, '(a)')'#set ylabel offset -1, 0 '
       write(outfileindex, '(a)')'rgb(r,g,b) = int(r)*65536 + int(g)*256 + int(b)'
-      write(outfileindex, 202, advance="no") (k3line_name(i), k3line_mag_stop(i), i=1, nk3lines)
-      write(outfileindex, 203)k3line_name(nk3lines+1), k3line_mag_stop(nk3lines+1)
+      write(outfileindex, 202, advance="no") (k3line_name(i), k3line_mag_stop(i)*Angstrom2atomic, i=1, nk3lines)
+      write(outfileindex, 203)k3line_name(nk3lines+1), k3line_mag_stop(nk3lines+1)*Angstrom2atomic
       write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
 
       do i=1, nk3lines-1
-         write(outfileindex, 204)k3line_mag_stop(i+1), emin, k3line_mag_stop(i+1), emax
+         write(outfileindex, 204)k3line_mag_stop(i+1)*Angstrom2atomic, emin, k3line_mag_stop(i+1)*Angstrom2atomic, emax
       enddo
 
 202   format('set xtics (',:20('"',A3,'" ',F10.5,','))
@@ -1267,6 +1267,7 @@ subroutine sparse_landau_dos
 
    real(dp) :: B0
    real(dp) :: theta
+   real(dp) :: eta_broadening
 
    integer :: nnzmax, nnz
    real(dp) :: dis, dis1
@@ -1311,8 +1312,8 @@ subroutine sparse_landau_dos
    NE= OmegaNum
    emin= OmegaMin
    emax= OmegaMax
-   eta= (emax- emin)/ dble(NE)*1d0
-   if (cpuid.eq.0) write(stdout,*) 'eta=',eta
+   eta_broadening= (emax- emin)/ dble(NE)*1d0
+   if (cpuid.eq.0) write(stdout,*) 'eta_broadening=',eta_broadening
    allocate(dos_mpi(knv3,NE))
    allocate(dos(knv3,NE))
    allocate(omega(NE))
@@ -1321,7 +1322,7 @@ subroutine sparse_landau_dos
    if (NumSelectedEigenVals==0) NumSelectedEigenVals=Ndimq
    neval=NumSelectedEigenVals
    nvecs=2*neval
-   sigma=(1d0,0d0)*E_arc
+   sigma=(1d0,0d0)*iso_energy
    Nq= Magq
    Nmag= Nq
    Nmag1=20
@@ -1401,7 +1402,7 @@ subroutine sparse_landau_dos
       do ie= 1, NE
          do iv= 1, neval
             x= omega(ie)- W(iv)
-            dos_mpi(ik,ie) = dos_mpi(ik,ie)+ delta(eta, x)
+            dos_mpi(ik,ie) = dos_mpi(ik,ie)+ delta(eta_broadening, x)
          enddo ! iv
       enddo ! ie
       if(cpuid==0) then
@@ -1518,7 +1519,7 @@ subroutine sparse_export_maghr
    if (nvecs<50) nvecs= 50
    if (nvecs>Ndimq) nvecs= Ndimq
 
-   sigma=(1d0,0d0)*E_arc
+   sigma=(1d0,0d0)*iso_energy
 
    allocate( acoo(nnzmax), stat= ierr)
    call printallocationinfo('acoo', ierr)
@@ -1733,12 +1734,12 @@ subroutine sparse_export_maghr
       write(outfileindex, '(a)')'#set xtics offset 0, -1'
       write(outfileindex, '(a)')'#set ylabel offset -1, 0 '
       write(outfileindex, '(a)')'rgb(r,g,b) = int(r)*65536 + int(g)*256 + int(b)'
-      write(outfileindex, 202, advance="no") (k3line_name(i), k3line_mag_stop(i), i=1, nk3lines)
-      write(outfileindex, 203)k3line_name(nk3lines+1), k3line_mag_stop(nk3lines+1)
+      write(outfileindex, 202, advance="no") (k3line_name(i), k3line_mag_stop(i)*Angstrom2atomic, i=1, nk3lines)
+      write(outfileindex, 203)k3line_name(nk3lines+1), k3line_mag_stop(nk3lines+1)*Angstrom2atomic
       write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
 
       do i=1, nk3lines-1
-         write(outfileindex, 204)k3line_mag_stop(i+1), emin, k3line_mag_stop(i+1), emax
+         write(outfileindex, 204)k3line_mag_stop(i+1)*Angstrom2atomic, emin, k3line_mag_stop(i+1)*Angstrom2atomic, emax
       enddo
 
 202   format('set xtics (',:20('"',A3,'" ',F10.5,','))

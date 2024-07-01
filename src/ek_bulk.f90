@@ -42,7 +42,7 @@ subroutine ek_bulk_line
 
    do ik= 1+cpuid, knv3, num_cpu
 
-      k = k3points(:, ik)
+      k = kpath_3d(:, ik)
       
       ! calculation bulk hamiltonian
       Hamk_bulk= 0d0
@@ -232,7 +232,7 @@ subroutine ek_bulk_line_valley
 
    do ik= 1+cpuid, knv3, num_cpu
 
-      k = k3points(:, ik)
+      k = kpath_3d(:, ik)
       
       ! calculation bulk hamiltonian
       Hamk_bulk= 0d0
@@ -465,7 +465,7 @@ end subroutine ek_bulk_line_valley
         do ik=1, Nk3_point_mode
            write(outfileindex, '(a, i10)')'# No. of k point', ik
            write(outfileindex, '("#",a9,100a10)')'k1', 'k2', 'k3', 'kx', 'ky', 'kz'  
-           write(outfileindex, '(100f10.6)')k3points_pointmode_direct(:, ik), k3points_pointmode_cart(:, ik)
+           write(outfileindex, '(100f10.6)')k3points_pointmode_direct(:, ik), k3points_pointmode_cart(:, ik)*Angstrom2atomic
            write(outfileindex, '("#", a11, a19, a)')'band index', 'Eigenvalue', '     orbital weights (0-255)'
            do i=1, Num_wann
               write(outfileindex, '(i12, f19.10, 1000i5)')i, eigv_mpi(i, ik), &
@@ -1166,8 +1166,8 @@ subroutine sparse_ekbulk
    real(dp) :: time1, time2, time3
 
 
-   !if (OmegaNum==0) OmegaNum= Num_wann
-   !if (NumSelectedEigenVals==0) NumSelectedEigenVals=OmegaNum
+   if (OmegaNum==0) OmegaNum= Num_wann
+   if (NumSelectedEigenVals==0) NumSelectedEigenVals=OmegaNum
 
    !> first use NumSelectedEigenVals, if NumSelectedEigenVals is not set, 
    !> then use OmegaNum; if OmegaNum is also not set, 
@@ -1188,6 +1188,8 @@ subroutine sparse_ekbulk
    else
       nvecs=int(2*neval)
    endif
+
+   if (neval+2>=nvecs) neval= nvecs-2
 
    if (nvecs<20) nvecs= 20
    if (nvecs>Num_wann) nvecs= Num_wann
@@ -1232,15 +1234,22 @@ subroutine sparse_ekbulk
 
    ritzvec= BulkFatBand_calc
 
+   if (cpuid.eq.0)then
+      write(stdout, *)'# parameters for ARPACK in ek_bulk'
+      write(stdout, *)'NEV=', neval
+      write(stdout, *)'NCV=', nvecs
+      write(stdout, *)'Dimension=', Num_wann
+   endif
+
    !> calculate the energy bands along special k line
    k3= 0
 
    !> change the energy unit from Hatree to eV
-   sigma=(1d0,0d0)*E_arc/eV2Hartree
+   sigma=(1d0,0d0)*iso_energy/eV2Hartree
 
    do ik=1+ cpuid, nk3_band, num_cpu
       if (cpuid==0) write(stdout, '(a, 2i10)') 'BulkBand_calc in sparse mode:', ik,nk3_band
-      k3 = K3points(:, ik)
+      k3 = kpath_3d(:, ik)
       call now(time1)
       !> use atomic gauge here
       call ham_bulk_coo_sparsehr(k3,acoo,icoo,jcoo)
@@ -1494,13 +1503,13 @@ subroutine sparse_ekbulk_valley
    ritzvec= .True.
 
    !> change the energy unit from Hatree to eV
-   sigma=(1d0,0d0)*E_arc/eV2Hartree
+   sigma=(1d0,0d0)*iso_energy/eV2Hartree
 
    !> calculate the energy bands along special k line
    k3= 0
    do ik=1+ cpuid, nk3_band, num_cpu
       if (cpuid==0) write(stdout, '(a, 2i10)') 'BulkBand_calc in sparse mode:', ik,nk3_band
-      k3 = K3points(:, ik)
+      k3 = kpath_3d(:, ik)
       call now(time1)
       call ham_bulk_coo_sparsehr(k3,acoo,icoo,jcoo)
       !> change the energy unit from Hatree to eV
@@ -1786,7 +1795,7 @@ subroutine sparse_ekbulk_plane
       enddo
    enddo
 
-   sigma=(1d0,0d0)*E_arc
+   sigma=(1d0,0d0)*iso_energy
    nnzmax=splen+Num_wann
    nnz=splen
    allocate( acoo(nnzmax))
@@ -2033,7 +2042,7 @@ subroutine ekbulk_elpa
 
       haml_block=0.0d0
       z=0.0d0
-      k3  = k3points(:, ik)
+      k3  = kpath_3d(:, ik)
       call ham_bulk_elpa( k3, haml_block,&
          np_rows,np_cols,&
          na_rows,na_cols,&
@@ -2541,7 +2550,7 @@ end subroutine ekbulk_elpa
         Hamk_bulk= Hamk_bulk/eV2Hartree
 
         !> diagonalization by call zheev in lapack
-        Hamk_bulk= Hamk_bulk+ zi*eta_arc
+        Hamk_bulk= Hamk_bulk+ zi*Fermi_broadening
         call inv(Num_wann, Hamk_bulk)
         do i=1, Num_wann
            dos(ik)= dos(ik) -aimag(Hamk_bulk(i, i))
@@ -2690,7 +2699,7 @@ subroutine ek_bulk_mengyu
       !if (cpuid==0) write(stdout, *)'BulkBand, ik, knv3 ', ik, knv3
 
       !> in fractional coordinates
-      k = k3points(:, ik)
+      k = kpath_3d(:, ik)
 
       kxy_cart(:)= k(1)* Origin_cell%Kua+ k(2)* Origin_cell%Kub+ k(3)* Origin_cell%Kuc
       call rotate_k3_to_kplane(kxy_cart(:), kxy_plane(:))
@@ -2876,7 +2885,7 @@ subroutine ek_bulk_spin
    do ik= 1+cpuid, knv3, num_cpu
       if (cpuid==0) write(stdout, *)'BulkBandSpin, ik, knv3 ', ik, knv3
 
-      k = k3points(:, ik)
+      k = kpath_3d(:, ik)
 
       ! calculation bulk hamiltonian
       Hamk_bulk= 0d0
@@ -3000,14 +3009,14 @@ subroutine ek_bulk_mirror_z
    do ik= 1+cpuid, knv3, num_cpu
       if (cpuid==0) write(stdout, *)'BulkBandmirrorz, ik, knv3 ', ik, knv3
 
-      k = k3points(:, ik)
+      k = kpath_3d(:, ik)
 
       ! calculation bulk hamiltonian
       Hamk_bulk= 0d0
       call ham_bulk_atomicgauge    (k, Hamk_bulk)
       Hamk_bulk= Hamk_bulk/eV2Hartree
 
-      k = k3points(:, ik)
+      k = kpath_3d(:, ik)
       !k(2)= -k(2)
       Hamk= 0d0
       call ham_bulk_latticegauge    (k, Hamk)
@@ -3168,14 +3177,14 @@ subroutine ek_bulk_mirror_x
    do ik= 1+cpuid, knv3, num_cpu
       if (cpuid==0) write(stdout, *)'EkBulk_mirror, ik, knv3 ', ik, knv3
 
-      k = k3points(:, ik)
+      k = kpath_3d(:, ik)
 
       ! calculation bulk hamiltonian
       Hamk_bulk= 0d0
       call ham_bulk_latticegauge    (k, Hamk_bulk)
       Hamk_bulk= Hamk_bulk/eV2Hartree
 
-      !k = k3points(:, ik)
+      !k = kpath_3d(:, ik)
       !k(1)= -k(1)
       !Hamk= 0d0
       !call ham_bulk_latticegauge    (k, Hamk)
@@ -3363,6 +3372,8 @@ subroutine generate_ek_kpath_gnu(datafilename, gnufilename, gnuoutfilename, &
    outfileindex= outfileindex+ 1
    if (cpuid==0) then
       open(unit=outfileindex, file=gnufilename)
+      write(outfileindex, '(a)') '# requirement: gnuplot version>5.4'
+      write(outfileindex, '(2a)') '# Please open the data file to check the data:   ', trim(adjustl(datafilename))
       write(outfileindex, '(a)') 'set terminal pdf enhanced color font ",24"'
       write(outfileindex,'(2a)') 'set palette defined ( 0  "green", ', &
          '5 "yellow", 10 "red" )'
@@ -3374,6 +3385,7 @@ subroutine generate_ek_kpath_gnu(datafilename, gnufilename, gnuoutfilename, &
       write(outfileindex, '(a)')'#set ytics font ",24"'
       write(outfileindex, '(a)')'#set ylabel font ",24"'
       write(outfileindex, '(a)')'set ylabel offset 0.5,0'
+      write(outfileindex, '(a)')'set border lw 2'
       write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', maxval(klen*Angstrom2atomic), ']'
       write(outfileindex, '(a,f12.6)')'emin=', emin
       write(outfileindex, '(a,f12.6)')'emax=', emax
@@ -3396,27 +3408,27 @@ subroutine generate_ek_kpath_gnu(datafilename, gnufilename, gnuoutfilename, &
       enddo
       write(outfileindex, '(2a)')"# please comment the following lines to plot the fatband "
       if (Is_Sparse_Hr) then
-         write(outfileindex, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
-            " w p pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2"
+         write(outfileindex, '(4a)')"plot '", trim(adjustl(datafilename)), "' u 1:2 ",  &
+            " w p pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2 dt 2"
       else
-         write(outfileindex, '(2a)')"plot 'bulkek.dat' u 1:2 ",  &
-            " w lp lw 2 pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2"
+         write(outfileindex, '(4a)')"plot '", trim(adjustl(datafilename)), "' u 1:2 ",  &
+            " w lp lw 2 pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2 dt 2"
       endif
       write(outfileindex, '(2a)')" " 
       write(outfileindex, '(2a)')"# uncomment the following lines to plot the fatband "
-      write(outfileindex, '(2a)')"#plot 'bulkek.dat' u 1:2:3 ",  &
-         " w lp lw 2 pt 7  ps 0.2 lc palette, 0 w l lw 2"
-      write(outfileindex, '(2a)')"# uncomment the following lines to plot the spin if necessary"
-      write(outfileindex, '(2a)')"#plot 'bulkek.dat' u 1:2 ",  &
+      write(outfileindex, '(4a)')"#plot '", trim(adjustl(datafilename)), "' u 1:2:3 ",  &
+         " w lp lw 2 pt 7  ps 0.2 lc palette, 0 w l lw 2 dt 2"
+      write(outfileindex, '(4a)')"# uncomment the following lines to plot the spin if necessary"
+      write(outfileindex, '(4a)')"#plot '", trim(adjustl(datafilename)), "' u 1:2 ",  &
          "w lp lw 2 pt 7  ps 0.2, \"
-      write(outfileindex, '(2a)')"     'bulkek.dat' u 1:2:($3/6):($4/6) ",  &
+      write(outfileindex, '(4a)')"#plot '", trim(adjustl(datafilename)), "' u 1:2:($3/6):($4/6) ",  &
          "w vec"
       close(outfileindex)
    endif
 
 202 format('set xtics (',20('"',A3,'" ',F10.5,','))
 203 format(A3,'" ',F10.5,')')
-204 format('set arrow from ',F10.5,',',A5,' to ',F10.5,',',A5, ' nohead')
+204 format('set arrow from ',F10.5,',',A5,' to ',F10.5,',',A5, ' nohead lw 2')
 
     return
-end subroutine
+end subroutine generate_ek_kpath_gnu

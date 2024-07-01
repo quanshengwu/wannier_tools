@@ -1,0 +1,55 @@
+&TB_FILE
+Hrfile = "Haldane_hr.dat"
+/
+
+
+!> bulk band structure calculation flag
+&CONTROL
+BulkBand_calc = T  ! calculate band structure in kpath mode
+AHC_calc  = T
+/
+
+&SYSTEM
+SOC = 0                 ! soc
+E_FERMI = 0        ! e-fermi
+/
+
+&PARAMETERS
+Fermi_broadening = 0.01     ! infinite small value, like brodening 
+OmegaNum = 1000  ! omega number       
+OmegaMin = -5.0     ! energy interval
+OmegaMax =  5.0     ! energy interval
+Nk1 = 60            ! number k points 
+Nk2 = 60            ! number k points 
+Nk3 = 1             ! number k points 
+/
+
+LATTICE
+Angstrom
+2.1377110  -1.2342080   0.0000000
+0.0000000   2.4684160   0.0000000
+0.0000000   0.0000000   10.000000
+
+ATOM_POSITIONS
+2                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+C 0.333333 0.666667 0.500000 
+C 0.666667 0.333333 0.500000 
+
+PROJECTORS
+1 1          ! number of projectors
+C pz
+C pz
+
+
+KPATH_BULK            ! k point path
+3              ! number of k line only for bulk band
+  M   0.50000  0.00000  0.00000   K' -.33333   -.33333  0.00000
+  K'  -.33333  -.33333  0.00000   G  0.00000   0.00000  0.00000
+  G   0.00000  0.00000  0.00000   K  0.33333   0.33333  0.00000
+
+KCUBE_BULK
+0 0 0 
+1 0 0
+0 1 0
+0 0 1

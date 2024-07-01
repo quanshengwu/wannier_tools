@@ -1,0 +1,89 @@
+&TB_FILE
+Hrfile = 'wannier90_hr.dat'      
+!Hrfile = 'wannier90_hr.dat_nsymm12'
+Package = 'VASP'             ! obtained from VASP, it could be 'VASP', 'QE', 'Wien2k', 'OpenMx'
+/
+
+LATTICE
+Angstrom
+-2.069  -3.583614  0.000000     ! crystal lattice information
+ 2.069  -3.583614  0.000000
+ 0.000   2.389075  9.546667
+
+ATOM_POSITIONS
+5                               ! number of atoms for projectors
+Direct                          ! Direct or Cartisen coordinate
+ Bi 0.3990    0.3990    0.6970
+ Bi 0.6010    0.6010    0.3030
+ Se 0.0000    0.0000    0.5000
+ Se 0.2060    0.2060    0.1180
+ Se 0.7940    0.7940    0.8820
+
+PROJECTORS
+ 3 3 3 3 3          ! number of projectors
+Bi pz px py         ! projectors
+Bi pz px py
+Se pz px py
+Se pz px py
+Se pz px py
+
+SURFACE            ! See doc for details
+ 1  0  0
+ 0  1  0
+
+
+!> bulk band structure calculation flag
+&CONTROL
+Z2_3D_calc            = T
+Wanniercenter_calc    = T
+/
+
+&SYSTEM
+NumOccupied = 18        ! NumOccupied
+SOC = 1                 ! soc
+E_FERMI = 4.4195        ! e-fermi
+/
+
+&PARAMETERS
+Nk1 = 41            ! number k points  odd number would be better
+Nk2 = 41            ! number k points  odd number would be better
+/
+
+KPLANE_BULK
+ 0.00  0.00  0.00   ! Original point for 3D k plane 
+ 1.00  0.00  0.00   ! The first vector to define 3d k space plane
+ 0.00  0.50  0.00   ! The second vector to define 3d k space plane
+
+WANNIER_CENTRES     ! copy from wannier90.wout
+Cartesian
+ -0.000040  -1.194745   6.638646 
+  0.000038  -1.196699   6.640059 
+ -0.000032  -1.192363   6.640243 
+ -0.000086  -3.583414   2.908040 
+  0.000047  -3.581457   2.906587 
+ -0.000033  -3.585864   2.906443 
+ -0.000001   1.194527   4.773338 
+  0.000003   1.194538   4.773336 
+ -0.000037   1.194536   4.773327 
+  0.000006  -1.194384   1.130261 
+ -0.000018  -1.216986   1.140267 
+  0.000007  -1.172216   1.140684 
+  0.000011  -3.583770   8.416406 
+ -0.000002  -3.561169   8.406398 
+ -0.000007  -3.605960   8.405979 
+  0.000086  -1.194737   6.638626 
+ -0.000047  -1.196693   6.640080 
+  0.000033  -1.192286   6.640223 
+  0.000040  -3.583406   2.908021 
+ -0.000038  -3.581452   2.906608 
+  0.000032  -3.585788   2.906424 
+  0.000001   1.194548   4.773330 
+ -0.000003   1.194537   4.773332 
+  0.000037   1.194539   4.773340 
+ -0.000011  -1.194381   1.130260 
+  0.000002  -1.216981   1.140268 
+  0.000007  -1.172191   1.140687 
+ -0.000006  -3.583766   8.416405 
+  0.000018  -3.561165   8.406400 
+ -0.000007  -3.605935   8.405982 
+

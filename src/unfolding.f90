@@ -85,7 +85,7 @@ subroutine unfolding_kpath
 
   
 
-   sigma=(1d0,0d0)*E_arc
+   sigma=(1d0,0d0)*iso_energy
    if (Is_Sparse_Hr) then
       if (NumSelectedEigenVals==0) NumSelectedEigenVals=OmegaNum
       neval=NumSelectedEigenVals
@@ -125,7 +125,7 @@ subroutine unfolding_kpath
    NumberofEta=9
    allocate(eta_array(NumberofEta))
    eta_array=(/0.1d0, 0.2d0, 0.4d0, 0.8d0, 1.0d0, 2d0, 4d0, 8d0, 10d0/)
-   eta_array= eta_array*Eta_Arc
+   eta_array= eta_array*Fermi_broadening
 
    allocate(omega(omeganum_unfold))
    omega= 0d0
@@ -136,7 +136,7 @@ subroutine unfolding_kpath
    !> first unfold the kpoints from the kpath of the supercell
    do ik= 1+cpuid, nk3_band, num_cpu
       if (cpuid==0) write(stdout, '(a, i10," /", i10)') 'BulkBand unfolding at :', ik, nk3_band
-      k_PBZ_direct= k3points(:, ik)
+      k_PBZ_direct= kpath_3d(:, ik)
       call direct_cart_rec_unfold(k_PBZ_direct, k_cart)
       if (Landaulevel_unfold_line_calc) then 
          call cart_direct_rec_magneticcell(k_cart, k_PBZ_direct_in_SBZ)
@@ -157,7 +157,7 @@ subroutine unfolding_kpath
          if (nvecs<50) nvecs= 50
          if (nvecs>Ndimq) nvecs= Ndimq
          
-         sigma=(1d0,0d0)*E_arc
+         sigma=(1d0,0d0)*iso_energy
 
          if (allocated(zeigv)) deallocate(zeigv)
          if (allocated(psi)) deallocate(psi)
@@ -323,7 +323,7 @@ end subroutine unfolding_kpath
 
 subroutine unfolding_kplane
    !> Unfold the energy bands of the supercell to a specified unit cell.
-   !> Calculate unfolded band at (k1, k2) at a given energy E_arc.
+   !> Calculate unfolded band at (k1, k2) at a given energy iso_energy.
    !> Implemented by QSWU 2019
    use para
    use sparse
@@ -411,9 +411,9 @@ subroutine unfolding_kplane
       enddo
    enddo
 
-   k_cart_abs = sqrt(E_arc+ photon_energy_arpes)
+   k_cart_abs = sqrt(iso_energy+ photon_energy_arpes)
 
-   sigma=(1d0,0d0)*E_arc
+   sigma=(1d0,0d0)*iso_energy
    if (Is_Sparse_Hr) then
 
       if (NumSelectedEigenVals==0) then
@@ -458,7 +458,7 @@ subroutine unfolding_kplane
    NumberofEta=9
    allocate(eta_array(NumberofEta))
    eta_array=(/0.1d0, 0.2d0, 0.4d0, 0.8d0, 1.0d0, 2d0, 4d0, 8d0, 10d0/)
-   eta_array= eta_array*Eta_Arc
+   eta_array= eta_array*Fermi_broadening
 
    !> first unfold the kpoints from the kpath of the supercell
    do ik= 1+cpuid, knv3, num_cpu
@@ -527,7 +527,7 @@ subroutine unfolding_kplane
          do ig=1, NumberofSelectedOrbitals_groups
             do ieta= 1, NumberofEta
                spectrum_unfold(ieta, ig, ik1, ik2)= spectrum_unfold(ieta, ig, ik1, ik2) + &
-                  weight(ig)*delta(eta_array(ieta), W(n)-E_arc)
+                  weight(ig)*delta(eta_array(ieta), W(n)-iso_energy)
             enddo ! ieta
          enddo ! ig
       enddo ! sum over n

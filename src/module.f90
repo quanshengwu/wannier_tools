@@ -387,6 +387,7 @@
      logical :: BulkGap_cube_calc  ! Flag for Gap_cube calculation
      logical :: BulkGap_plane_calc ! Flag for Gap_plane calculation
      logical :: SlabBand_calc  ! Flag for 2D slab energy band calculation
+     logical :: SlabBdG_calc   ! Flag for 2D slab BdG energy band calculation
      logical :: SlabBandWaveFunc_calc  ! Flag for 2D slab band wave function
      logical :: SlabBand_plane_calc  ! Flag for 2D slab energy band calculation
      logical :: WireBand_calc  ! Flag for 1D wire energy band calculation
@@ -402,6 +403,8 @@
      logical :: SlabSpintexture_calc ! Flag for surface state spin-texture calculation
      logical :: BulkSpintexture_calc ! Flag for spin-texture calculation
      logical :: WannierCenter_calc  ! Flag for Wilson loop calculation
+     logical :: BdGChern_calc  ! Flag for Wilson loop calculation of Slab BdG Hamiltonian
+     logical :: Wilsonloop_calc  ! Flag for Wilson loop calculation
      logical :: Z2_3D_calc  ! Flag for Z2 number calculations of 6 planes
      logical :: WeylChirality_calc  ! Weyl chirality calculation
      logical :: NLChirality_calc  ! Chirality calculation for nodal line
@@ -412,6 +415,7 @@
      logical :: BerryCurvature_plane_selectedbands_calc ! Flag for Berry curvature calculation
      logical :: BerryCurvature_EF_calc ! Flag for Berry curvature calculation
      logical :: BerryCurvature_kpath_EF_calc ! Flag for Berry curvature calculation in kpath model at EF
+     logical :: BerryCurvature_kpath_sepband_calc ! Flag for Berry curvature calculation in kpath model for each band
      logical :: BerryCurvature_kpath_Occupied_calc ! Flag for Berry curvature calculation in kpath model sum over all occupied bands
      logical :: BerryCurvature_Cube_calc ! Flag for Berry curvature calculation
      logical :: BerryCurvature_slab_calc ! Flag for Berry curvature calculation for a slab system
@@ -465,8 +469,8 @@
                           SlabSS_calc, SlabArc_calc, SlabSpintexture_calc,&
                           ChargeDensity_selected_bands_calc, &
                           ChargeDensity_selected_energies_calc, &
-                          WireBand_calc, &
-                          WannierCenter_calc,BerryPhase_calc, &
+                          WireBand_calc, Wilsonloop_calc, &
+                          WannierCenter_calc,BerryPhase_calc, BerryCurvature_kpath_sepband_calc, &
                           BerryCurvature_EF_calc, BerryCurvature_calc, &
                           Berrycurvature_kpath_EF_calc, BerryCurvature_kpath_Occupied_calc, &
                           BerryCurvature_plane_selectedbands_calc, &
@@ -483,7 +487,7 @@
                           LandauLevel_B_dos_calc,LanczosBand_calc,LanczosDos_calc, &
                           LandauLevel_B_calc, LandauLevel_kplane_calc,landau_chern_calc, &
                           FermiLevel_calc,ANE_calc, export_newhr,export_maghr,w3d_nested_calc, &
-                          valley_projection_calc, Matrix_Element_calc
+                          valley_projection_calc, Matrix_Element_calc, BdGChern_calc, SlabBdG_calc
 
      integer :: Nslab  ! Number of slabs for 2d Slab system
      integer :: Nslab1 ! Number of slabs for 1D wire system
@@ -501,6 +505,8 @@
      real(dp) :: Ntotch !> Number of electrons
     
      integer :: Num_wann  ! Number of Wannier functions
+
+     integer :: Num_wann_BdG  ! Number of Wannier functions for BdG
 
      integer :: Nrpts ! Number of R points
      integer :: Nrpts_valley ! Number of R points
@@ -524,10 +530,10 @@
      integer :: Soc, SOC_in  ! A parameter to control soc;  Soc=0 means no spin-orbit coupling; Soc>0 means spin-orbit coupling
 
     
-     real(Dp) :: eta     ! used to calculate dos epsilon+i eta
      real(Dp) :: Eta_Arc ! used to calculate dos epsilon+i eta
+     real(Dp) :: Fermi_broadening ! used to calculate dos epsilon+i eta From version 2.7.1, we replace Fermi_broadening by Fermi_broadening
      
-     real(Dp) :: EF_broadening ! used to define the energy range around fermi energy in calculating sigma_OHE
+     real(Dp) :: EF_integral_range ! in eV used to define the energy range around fermi energy in calculating sigma_OHE
 
    
      integer :: OmegaNum   ! The number of energy slices between OmegaMin and OmegaMax
@@ -542,6 +548,7 @@
      real(dp) :: OmegaMin, OmegaMax ! omega interval 
   
      real(Dp) :: E_arc ! Fermi energy for arc calculation
+     real(Dp) :: iso_energy ! an iso energy for some properties at a fixed energy. replace iso_energy with iso_energy from version 2.7.2
 
    
      real(Dp) :: Gap_threshold  ! threshold value for output the the k points data for Gap3D
@@ -609,8 +616,8 @@
      real(dp) :: polarization_delta_arpes ! the relative phase between two orthogonal polarization vector components
 
      !> namelist parameters
-     namelist /PARAMETERS/ Eta_Arc,EF_broadening, OmegaNum, OmegaNum_unfold, OmegaMin, OmegaMax, &
-        E_arc, Nk1, Nk2, Nk3, NP, Gap_threshold, Tmin, Tmax, NumT, &
+     namelist /PARAMETERS/ E_arc, Fermi_broadening, EF_integral_range, OmegaNum, OmegaNum_unfold, OmegaMin, OmegaMax, &
+        Eta_Arc, iso_energy, Nk1, Nk2, Nk3, NP, Gap_threshold, Tmin, Tmax, NumT, &
         NBTau, BTauNum, BTauMax, Rcut, Magp, Magq, Magp_min, Magp_max, Nslice_BTau_Max, &
         wcc_neighbour_tol, wcc_calc_tol, Beta,NumLCZVecs, iprint_level, &
         Relaxation_Time_Tau,  symprec, arpack_solver, RKF45_PERIODIC_LEVEL, &
@@ -626,6 +633,21 @@
      real(dp) :: Btheta, Bphi !> magnetic field direction, Bx=cos(theta)*sin(phi), By=sin(theta)*sin(phi), Bz=cos(phi)
      real(dp) :: Bmagnitude  ! sqrt(Bx*Bx+By*By+Bz*Bz) in Tesla
      real(dp) :: Bdirection(3) !> a unit vector to represent the direction of B. 
+
+     !>Zeeman field on surface for slab hamiltonian
+     integer :: Add_surf_zeeman_field ! A parameter to control surface zeeman field; 
+                                      ! Add_surf_zeeman_field=1 means Zeeman field only in the bottom slab; 
+                                      ! Add_surf_zeeman_field=2 means Zeeman field only in the top slab;
+                                      ! Add_surf_zeeman_field=3 means Zeeman field only in top & bottom two slab
+     real(dp) :: Bx_surf, By_surf, Bz_surf !> surface zeeman field
+
+     !> for the parameters of BdG Hamiltionian
+     integer  :: Add_Delta_BdG        ! A parameter to control s-wave superconducting pairing;
+                                      ! Add_Delta_BdG=1 means s-wave superconducting pairing only in the bottom slab; 
+                                      ! Add_Delta_BdG=2 means s-wave superconducting pairing only in the top slab;
+                                      ! Add_Delta_BdG=3 means s-wave superconducting pairing in whole slab
+     real(dp) :: mu_BdG               !> Chemical potential mu
+     real(dp) :: Delta_BdG            !> s-wave superconducting pairing 
 
      !> related to Zeeman effect, Zeeman energy =Effective_gfactor*Bohr_magneton*magneticfield
      !> eg. Effective_gfactor=2, magneticfield=1Tesla, then Zeeman_energy_in_eV =1.16*1E-4 eV  
@@ -652,6 +674,7 @@
      !> Some parameters that relate to the properties of the bulk hamiltonian
      namelist / SYSTEM / Soc, E_fermi, Bx, By, Bz, Btheta, Bphi, surf_onsite, &
         Nslab, Nslab1, Nslab2, Numoccupied, Ntotch, Bmagnitude, &
+        Add_surf_zeeman_field, Bx_surf, By_surf, Bz_surf, Add_Delta_BdG, Delta_BdG, mu_BdG, &
         Add_Zeeman_Field, Effective_gfactor, Zeeman_energy_in_eV, &
         Electric_field_in_eVpA, Symmetrical_Electric_field_in_eVpA, &
         Inner_symmetrical_Electric_Field, ijmax, &
@@ -796,14 +819,14 @@
 
      ! k list for 3D case band
      integer :: nk3lines  ! Howmany k lines for bulk band calculation
-     integer :: nk3_band  ! Howmany k points for each k line
+     integer :: nk3_band  ! Howmany k points for whole kpath
      character(4), allocatable :: k3line_name(:) ! Name of the K points
      real(dp),allocatable :: k3line_stop(:)  ! Connet points
      real(dp),allocatable :: k3line_start(:, :) ! Start point for each k line
      real(dp),allocatable :: k3line_end(:, :) ! End point for each k line
      real(dp),allocatable :: K3list_band(:, :) ! coordinate of k points for bulk band calculation in kpath mode
      real(dp),allocatable :: K3len(:)  ! put all k points in a line in order to plot the bands 
-     real(dp),allocatable :: K3points(:, :) ! coordinate of k points for bulk band calculation in cube mode
+     real(dp),allocatable :: kpath_3d(:, :) ! coordinate of k points for bulk band calculation in cube mode
 
      !> k points in the point mode 
      integer :: Nk3_point_mode
@@ -909,11 +932,18 @@
      
      integer, allocatable     :: ndegen(:)  ! degree of degeneracy of R point
 
-     complex(dp), allocatable :: HmnR_newcell(:,:,:)   ! Hamiltonian m,n are band indexes
+     complex(dp), allocatable :: HmnR_surfacecell(:,:,:)   ! Hamiltonian m,n are band indexes
      real(dp), allocatable :: Atom_position_cart_newcell(:,:)   ! Hamiltonian m,n are band indexes
      real(dp), allocatable :: Atom_position_direct_newcell(:,:)   ! Hamiltonian m,n are band indexes
-     integer, allocatable     :: irvec_newcell(:,:)   ! R coordinates
-     integer, allocatable     :: ndegen_newcell(:)  ! degree of degeneracy of R point
+     integer, allocatable     :: irvec_surfacecell(:,:)   ! R coordinates
+     integer, allocatable     :: ndegen_surfacecell(:)  ! degree of degeneracy of R point
+     
+     real(dp), allocatable     :: Rmn_old(:)
+     real(dp), allocatable     :: Rmn_new(:)
+     real(dp), allocatable     :: irvec_new(:)
+     integer, allocatable     :: irvec_new_int(:)
+     integer                  :: nrpts_surfacecell
+
      real(dp),public, save :: Rua_newcell(3) !> three rotated primitive vectors in old coordinate system
      real(dp),public, save :: Rub_newcell(3) !> three rotated primitive vectors in old coordinate system
      real(dp),public, save :: Ruc_newcell(3) !> three rotated primitive vectors in old coordinate system
