@@ -209,6 +209,10 @@ subroutine ham_3Dlandau_sparse1(nnz, Ndimq, Nq, k, acoo,jcoo,icoo)
       stop
    endif
 
+   !> if we want to calculate the Chern number, we use open boundary such
+   !> that we can get the Chern number from the edge states.
+   if(landau_chern_calc) goto 328
+
    !>> calculate inter-hopping between layers
    ! i1 column index
    do i1=1, Nq
@@ -321,6 +325,7 @@ subroutine ham_3Dlandau_sparse1(nnz, Ndimq, Nq, k, acoo,jcoo,icoo)
 
    enddo ! i1
 
+328 continue
    if (cpuid.eq.0) write(stdout,*) 'nnz, nnzmax after H01:', ncoo, nnz
    if (nnz< ncoo) then
       write(*, *)'Please increase nnzmax in the sparse.f90'
@@ -626,7 +631,7 @@ subroutine sparse_landau_level_B
    if (neval>=Ndimq) neval= Ndimq- 2
 
    !> ncv
-   nvecs=int(2*neval)
+   nvecs=int(3*neval)
 
    if (nvecs<50) nvecs= 50
    if (nvecs>Ndimq) nvecs= Ndimq
@@ -637,9 +642,13 @@ subroutine sparse_landau_level_B
    Nmag= Magp-1
    Nmag1=Nmag/1
 
-   nnzmax= Num_wann*(2*ijmax+1)*Ndimq+Ndimq
-   if(Is_Sparse_Hr) nnzmax=splen*nq+Ndimq
-
+   if (nnzmax_input<0)then
+      nnzmax= Num_wann*(2*ijmax+1)*Ndimq+Ndimq
+      if(Is_Sparse_Hr) nnzmax=splen*nq+Ndimq
+   else
+      nnzmax= nnzmax_input
+   endif
+ 
    allocate( acoo(nnzmax), stat=ierr)
    call printallocationinfo('acoo', ierr)
    allocate( jcoo(nnzmax), stat=ierr)
@@ -926,14 +935,20 @@ subroutine sparse_landau_level_k
    Nq= Magq
    Nmag= Nq
    Ndimq= Num_wann* Nq
-   nnzmax= Num_wann*(2*ijmax+1)*Ndimq+Ndimq
-   if(Is_Sparse_Hr) nnzmax=splen*nq+Ndimq
+   if (nnzmax_input<0)then
+      nnzmax= Num_wann*(2*ijmax+1)*Ndimq+Ndimq
+      if(Is_Sparse_Hr) nnzmax=splen*nq+Ndimq
+   else
+      nnzmax= nnzmax_input
+   endif
+ 
+
    if (NumSelectedEigenVals==0) NumSelectedEigenVals=OmegaNum
    neval=NumSelectedEigenVals
    if (neval>=Ndimq) neval= Ndimq- 2
 
    !> ncv
-   nvecs=int(2*neval)
+   nvecs=int(3*neval)
 
    if (nvecs<50) nvecs= 50
    if (nvecs>Ndimq) nvecs= Ndimq
@@ -1514,7 +1529,7 @@ subroutine sparse_export_maghr
    if (neval>=Ndimq) neval= Ndimq- 2
 
    !> ncv
-   nvecs=int(2*neval)
+   nvecs=int(3*neval)
 
    if (nvecs<50) nvecs= 50
    if (nvecs>Ndimq) nvecs= Ndimq

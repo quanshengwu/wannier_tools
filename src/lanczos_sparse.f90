@@ -330,7 +330,7 @@ subroutine LandauLevel_B_dos_Lanczos
    use wmpi
    use mt19937_64
    use para, only : Magq, Num_Wann, Bx, By, zi, pi, Fermi_broadening, iso_energy, &
-      OmegaNum, OmegaMin, OmegaMax,  Magp, stdout, Magp_min, Magp_max, &
+      OmegaNum, OmegaMin, OmegaMax,  Magp, stdout, Magp_min, Magp_max, nnzmax_input, &
       outfileindex, Single_KPOINT_3D_DIRECT,splen,Is_Sparse_Hr, eV2Hartree, &
       MagneticSuperProjectedArea,ijmax,NumLCZVecs, NumRandomConfs, Add_Zeeman_Field
    implicit none
@@ -385,8 +385,12 @@ subroutine LandauLevel_B_dos_Lanczos
    Nq= Magq
    Nmag= Magp_max- Magp_min +1
    Mdim= Num_Wann*Nq
-   nnzmax= Num_wann*(2*ijmax+1+2)*Mdim
-   if(Is_Sparse_Hr) nnzmax=splen*Nq
+   if (nnzmax_input<0)then
+      nnzmax= Num_wann*(2*ijmax+1+2)*Mdim
+      if(Is_Sparse_Hr) nnzmax=splen*Nq
+   else
+      nnzmax= nnzmax_input
+   endif
    if (cpuid==0) then
       write(stdout, '(a,i8)')' Magnetic supercell is Nq= ', Nq
       write(stdout, '(a,i18)')' Hamiltonian matrix dimension Mdim= ', Mdim
@@ -702,7 +706,7 @@ subroutine LandauLevel_k_dos_Lanczos
    use para, only : Magq, Num_Wann, Bx, By, zi, pi, Fermi_broadening, Angstrom2atomic, &
       OmegaNum, OmegaMin, OmegaMax, nk3_band, Magp, stdout, kpath_3d, eV2Hartree, &
       outfileindex, K3len_mag,splen,Is_Sparse_Hr,ijmax,NumLCZVecs, MagneticSuperProjectedArea, &
-      Nk3lines, k3line_mag_stop, k3line_name, NumRandomConfs
+      Nk3lines, k3line_mag_stop, k3line_name, NumRandomConfs, nnzmax_input
    implicit none
 
    !> magnetic field strength, this number should compatiable with the magnetic supercell
@@ -736,12 +740,15 @@ subroutine LandauLevel_k_dos_Lanczos
 
    Nq= Magq
    Mdim= Num_Wann*Magq
-   nnzmax= Num_wann*(2*ijmax+1)*Mdim
-   if(Is_Sparse_Hr) nnzmax=splen*Nq
-
    !> need to be checked
    !if(Is_Sparse_Hr) nnzmax=Nq*splen
-
+   if (nnzmax_input<0)then
+      nnzmax= Num_wann*(2*ijmax+1+2)*Mdim
+      if(Is_Sparse_Hr) nnzmax=splen*Nq
+   else
+      nnzmax= nnzmax_input
+   endif
+ 
    NumLczVectors = NumLCZVecs
    NumLczVectors_out = NumLCZVecs
    if (NumLczVectors>Mdim) then
@@ -930,7 +937,7 @@ subroutine bulkbandk_dos_lanczos
    use sparse
    use wmpi
    use para, only : Magq, Num_Wann, Bx, By, zi, pi, Fermi_broadening, Angstrom2atomic, &
-      OmegaNum, OmegaMin, OmegaMax, nk3_band, Magp, stdout, kpath_3d, &
+      OmegaNum, OmegaMin, OmegaMax, nk3_band, Magp, stdout, kpath_3d, nnzmax_input, &
       outfileindex, K3len,splen,Is_Sparse_Hr,ijmax,NumLCZVecs, eV2Hartree
    implicit none
 
@@ -964,9 +971,13 @@ subroutine bulkbandk_dos_lanczos
 
    Nq= 1
    Mdim= Num_Wann*Nq
-   nnzmax= Num_wann*(2*ijmax+1)*Mdim
-   if(Is_Sparse_Hr) nnzmax=splen*Nq
-
+   if (nnzmax_input<0)then
+      nnzmax= Num_wann*(2*ijmax+1+2)*Mdim
+      if(Is_Sparse_Hr) nnzmax=splen*Nq
+   else
+      nnzmax= nnzmax_input
+   endif
+ 
    !> need to be checked
    !if(Is_Sparse_Hr) nnzmax=Nq*splen
 
@@ -1105,7 +1116,7 @@ subroutine bulk_dos_lanczos
    use sparse
    use wmpi
    use para, only : Num_Wann, Bx, By, zi, pi, Fermi_broadening, &
-      OmegaNum, OmegaMin, OmegaMax, nk3_band, Magp, stdout, &
+      OmegaNum, OmegaMin, OmegaMax, nk3_band, Magp, stdout, nnzmax_input, &
       outfileindex,splen,Is_Sparse_Hr,ijmax,NumLCZVecs,Nk1,Nk2,Nk3,&
       K3D_start_cube,K3D_vec1_cube,K3D_vec2_cube,K3D_vec3_cube, &
       NumRandomConfs, Omega_array, eV2Hartree
@@ -1141,15 +1152,19 @@ subroutine bulk_dos_lanczos
 
    NumberofEta=9
    Mdim= Num_Wann
-   nnzmax= Num_wann*(2*ijmax+1)*Mdim
    knv3= Nk1*Nk2*Nk3
 
-   if (Is_Sparse_Hr) then
-      nnzmax=splen
+   if (nnzmax_input<0)then
+      nnzmax= Num_wann*(2*ijmax+1+2)*Mdim
+      if (Is_Sparse_Hr) then
+         nnzmax=splen
+      else
+         nnzmax= Num_wann* Num_wann
+      endif
    else
-      nnzmax= Num_wann* Num_wann
+      nnzmax= nnzmax_input
    endif
-
+ 
    !> need to be checked
    !if(Is_Sparse_Hr) nnzmax=Nq*splen
 

@@ -2871,7 +2871,7 @@ subroutine ek_bulk_spin
 
    nwann= Num_wann/2
 
-   if (SOC==0) stop 'you should set soc=0 in the input file'
+   if (SOC==0) return !stop 'you should set soc=0 in the input file'
    !> construct spin matrix
    do i= 1, nwann
       sigmax(i, i+ nwann)= 1d0

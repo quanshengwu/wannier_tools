@@ -604,6 +604,7 @@ subroutine readinput
    arpack_solver= 'zndrv1'
    RKF45_PERIODIC_LEVEL= 1
    iprint_level = 1
+   nnzmax_input=-1
    penetration_lambda_arpes= 5 ! in angstrom
    photon_energy_arpes= 0d0 ! photon energy for ARPES in ev
    polarization_phi_arpes = (0d0/180d0)*3.14159265358979d0 
@@ -675,6 +676,7 @@ subroutine readinput
       write(stdout, '(1x, a, f16.2)')'RKF45_PERIODIC_LEVEL', RKF45_PERIODIC_LEVEL
       write(stdout, '(1x, a, i16  )')'Magp_min', Magp_min
       write(stdout, '(1x, a, i16  )')'Magp_max', Magp_max
+      write(stdout, '(1x, a, i16  )')'nnzmax_input', nnzmax_input
       write(stdout, '(1x, a, f16.5)')'wcc_calc_tol', wcc_calc_tol
       write(stdout, '(1x, a, f16.5)')'wcc_neighbour_tol', wcc_neighbour_tol
       write(stdout, '(1x, a, i6   )')'NumLCZVecs', NumLCZVecs

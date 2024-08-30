@@ -246,7 +246,7 @@
       if(cpuid.eq.0)write(stdout, *)'>> start of calculating the Hofstader butterfly '
       call now(time_start)
       if (Is_HrFile) then
-         if(Is_Sparse_Hr) then
+         if(Is_Sparse_Hr.or.Num_wann*Magq>4000) then
             call sparse_landau_level_B
          else
             call landau_level_B

@@ -606,6 +606,9 @@
      !> iprint_level=3 : print all the debug messages
      integer :: iprint_level = 1       
 
+     !> an input integer to control the largest value of the non-zero entries of H
+     integer :: nnzmax_input
+
      !> parameters for matrix element
      real(dp) :: penetration_lambda_arpes ! penetration depth of photon, appear in polarization term and the overlp_i in unfolding.f90
      real(dp) :: photon_energy_arpes  ! photon energy ,input unit eV
@@ -622,7 +625,7 @@
         wcc_neighbour_tol, wcc_calc_tol, Beta,NumLCZVecs, iprint_level, &
         Relaxation_Time_Tau,  symprec, arpack_solver, RKF45_PERIODIC_LEVEL, &
         NumRandomConfs, NumSelectedEigenVals, projection_weight_mode, topsurface_atom_index, &
-        photon_energy_arpes, polarization_xi_arpes, test_namelist,&
+        photon_energy_arpes, polarization_xi_arpes, test_namelist, nnzmax_input, &
         polarization_alpha_arpes, polarization_delta_arpes, penetration_lambda_arpes, polarization_phi_arpes
     
      real(Dp) :: E_fermi  ! Fermi energy, search E-fermi in OUTCAR for VASP, set to zero for Wien2k
