@@ -143,7 +143,7 @@
            ! there are two method to calculate surface green's function
            ! the method in 1985 is better, you can find the ref in the
            ! subroutine
-           call surfgreen_1985(w,GLL,GRR,GB,H00,H01,ones, eta_broadening)
+            call surfgreen_1985(w,GLL,GRR,GB,H00,H01,ones, eta_broadening)
            ! call surfgreen_1984(w,GLL,GRR,H00,H01,ones, eta_broadening)
 
            ! calculate spectral function

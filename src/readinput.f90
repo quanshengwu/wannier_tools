@@ -129,6 +129,7 @@ subroutine readinput
    BerryCurvature_kpath_Occupied_calc = .FALSE.
    MirrorChern_calc      = .FALSE.
    Dos_calc              = .FALSE.
+   Dos_slab_calc              = .FALSE.
    JDos_calc             = .FALSE.
    EffectiveMass_calc    = .FALSE.
    FindNodes_calc        = .FALSE.

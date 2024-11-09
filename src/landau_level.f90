@@ -637,13 +637,14 @@ subroutine landau_level_B
    integer :: Nq, Ndimq
    integer :: Nmag
 
-   integer :: ib, i, j, ie, ierr, iq, ig
+   integer :: ib, i, j, ie, ierr, iq, ig, ieta
 
-   real(dp) :: B0, B0Tesla, B0Tesla_quantumflux_magsupcell
+   real(dp) :: B0, B0Tesla, B0Tesla_quantumflux_magsupcell, x, eta
    real(dp) :: time_start, time_end, time_start0
 
    ! wave vector
    real(dp) :: k3(3)
+   real(dp), external :: delta
 
    !> dim= Ndimq, knv3
    real(dp), allocatable :: mag(:), mag_Tesla(:)
@@ -658,6 +659,18 @@ subroutine landau_level_B
    !> print the weight for the Selected_WannierOrbitals
    real(dp), allocatable :: dos_selected(:, :, :)
    real(dp), allocatable :: dos_selected_mpi(:, :, :)
+
+   !> energy interval
+   !> OmegaNum is defined in the module.f90 and read from the input.dat or wt.in
+   real, allocatable :: omega(:)
+
+   !> spectrum calculated
+   real(dp), allocatable :: dos_B_omega(:, :, :), dos_B_omega_mpi(:, :, :)
+   real(dp), allocatable ::  n_int(:, :)
+
+   integer :: NumberofEta, ie_Earc
+   real(dp), allocatable :: eta_array(:), n_Earc(:)
+
 
 
    !> dim= Ndimq*Ndimq
@@ -682,6 +695,22 @@ subroutine landau_level_B
    eigv_mpi= 0d0
    eigv    = 0d0
    ham_landau= 0d0
+
+   NumberofEta=9
+   allocate(eta_array(NumberofEta))
+   allocate(n_Earc(NumberofEta))
+   eta_array=(/0.1d0, 0.2d0, 0.4d0, 0.8d0, 1.0d0, 2d0, 4d0, 8d0, 10d0/)
+   eta_array= eta_array*Fermi_broadening
+
+   allocate(omega(OmegaNum))
+   allocate(n_int(0:Omeganum, NumberofEta))
+   allocate(dos_B_omega(Nmag, OmegaNum, NumberofEta), dos_B_omega_mpi(Nmag, OmegaNum, NumberofEta))
+   dos_B_omega= 0d0; dos_B_omega_mpi= 0d0
+
+   !> energy
+   do ie=1, OmegaNum
+      omega(ie)= OmegaMin+ (OmegaMax-OmegaMin)* (ie-1d0)/dble(OmegaNum-1)
+   enddo ! ie
 
    !> deal with the magnetic field
    !> first transform the Bx By into B*Cos\theta, B*Sin\theta
@@ -751,7 +780,6 @@ subroutine landau_level_B
 
 
       call ham_3Dlandau(Ndimq, Nq, k3, ham_landau)
-      ham_landau= ham_landau/eV2Hartree
 
       !> diagonalization by call zheev in lapack
       W= 0d0
@@ -777,6 +805,18 @@ subroutine landau_level_B
 
       eigv(:, ib)= W
 
+      !> calculate density of states using the eigenvalues
+      do ieta=1, NumberofEta
+         eta= eta_array(ieta)
+         do ie=1, OmegaNum
+            do i = 1, Ndimq
+               x= omega(ie)- W(i)
+               dos_B_omega(ib, ie, ieta)= dos_B_omega(ib, ie, ieta)+ &
+                  delta(eta, x)
+            enddo
+         enddo
+      enddo
+    
       call now(time_end)
    enddo !ib
 
@@ -785,10 +825,14 @@ subroutine landau_level_B
       mpi_dp,mpi_sum,mpi_cmw,ierr)
    call mpi_allreduce(dos_selected, dos_selected_mpi,size(dos_selected),&
       mpi_dp,mpi_sum,mpi_cmw,ierr)
+   call mpi_allreduce(dos_B_omega, dos_B_omega_mpi, size(dos_B_omega), &
+      mpi_dp, mpi_sum, mpi_cmw, ierr)
 #else
    eigv_mpi= eigv
    dos_selected_mpi= dos_selected
+   dos_B_omega_mpi= dos_B_omega
 #endif
+   eigv_mpi = eigv_mpi/eV2Hartree
 
    outfileindex= outfileindex+ 1
    if (cpuid.eq.0) then
@@ -851,6 +895,132 @@ subroutine landau_level_B
       endif
       close(outfileindex)
    endif
+
+   outfileindex= outfileindex+ 1
+   if (cpuid.eq.0)then
+      open (unit=outfileindex, file='LandauLevel_B_dos.dat')
+      open (unit=outfileindex+1,file='wannierdiagram.dat')
+      write(outfileindex, '("#", a)')'Hofstadter butterfly (Landau level in (E,B) axis) '
+      write(outfileindex, '("#", a, i6)')'Magnetic supercell size : ', Magq
+      write(outfileindex+1, '("#", a)')'Wannier diagram '
+      write(outfileindex+1, '("#", a, i6)')'Magnetic supercell size : ', Magq
+      write(outfileindex, '("#", a, 3f12.6, a)')'k points in fractional coordinates (', k3, ')'
+      write(outfileindex, '("# Column", I5, 100I16)')(i, i=1, 12)
+      write(outfileindex, '("#", a15, 5a16)', advance='NO')'Flux', 'B(Tesla)', 'E(eV)'
+      write(outfileindex+1, '("# Column", I5, 100I16)')(i, i=1, 20)
+      write(outfileindex+1, '("#", a15, 2a16)', advance='NO')'Flux', 'B(Tesla)'
+      do ieta=1, NumberofEta-1
+         write(outfileindex, '(a16)', advance='NO') 'A(B, E)'
+         write(outfileindex+1, '(2a16)', advance='NO') 'n   ', 'A(n, E)'
+      enddo
+      write(outfileindex, '(a16)') 'A(B, E)'
+      write(outfileindex+1, '(2a16)') 'n   ', 'A(n, E)'
+
+      write(outfileindex, '("#", a, 20X, 300f16.2)')'Broadening \eta (meV): ', Eta_array(:)*1000d0/eV2Hartree
+      write(outfileindex+1, '("#", a, 5X, f26.2,300f32.2)')'Broadening \eta (meV): ', Eta_array(:)*1000d0/eV2Hartree
+
+      !> find n_int at EF
+      do ie=1, omeganum
+         if (omega(ie)>iso_energy) then
+            ie_Earc= ie- 1
+            exit
+         endif
+      enddo
+
+      do ib=1, Nmag
+         n_int=0
+         do ie=1, omeganum
+            write(outfileindex, '(300E16.4)')mag(ib)/2d0/pi, mag_Tesla(ib), omega(ie)/eV2Hartree, dos_B_omega_mpi(ib, ie, :)
+         enddo
+
+         !> get number of electrons between the lowest energy level and iso_energy
+         n_Earc= 0d0
+         do ie=1, ie_Earc
+            n_Earc(:)= n_Earc(:)+ dos_B_omega_mpi(ib, ie, :)
+         enddo
+
+         !> get number of electrons between the lowest energy level and omega(ie)
+         do ie=1, omeganum
+            n_int(ie, :)=n_int(ie-1, :)+ dos_B_omega_mpi(ib, ie, :)
+         enddo
+
+         !> set n(E)= n_int- n_Earc= \int_Earc^E \rho(\epsilon)d\epsilon
+         do ie=1, omeganum
+            n_int(ie, :)= n_int(ie, :)-n_Earc(:)
+         enddo
+
+        !do ieta=1, NumberofEta
+        !   n_int(:, ieta)=n_int(:, ieta)/n_int(omeganum, ieta)
+        !enddo
+
+         do ie=1, omeganum
+            write(outfileindex+1,'(300E16.4)')  mag(ib)/2d0/pi, mag_Tesla(ib), &
+               (n_int(ie, ieta), dos_B_omega_mpi(ib, ie, ieta), ieta=1, NumberofEta)
+         enddo
+
+         write(outfileindex+1, *) ' '
+         write(outfileindex, *) ' '
+      enddo
+      close(outfileindex)
+      write(stdout,*)'calculate Landau level spectrum in B-E mode successfully'
+   endif
+
+   outfileindex= outfileindex+ 2
+   if (cpuid.eq.0)then
+      open (unit=outfileindex, file='LandauLevel_B_dos.gnu')
+      write(outfileindex, '(a)')'#set terminal  postscript enhanced color font ",24"'
+      write(outfileindex, '(a)')'set terminal pngcairo enhanced color font ",60" size 1920, 1680'
+      write(outfileindex, '(a)')"set output 'LandauLevel_B_dos.png'"
+      write(outfileindex, '(a)')'set pm3d'
+      write(outfileindex, '(a)')'set palette rgb 21,22,23'
+      write(outfileindex, '(a)')'#set isosamples 50,50'
+      write(outfileindex, '(a)')'set size 0.9,1'
+      write(outfileindex, '(a)')'set origin 0.05,0'
+      write(outfileindex, '(a)')'set view map'
+      write(outfileindex, '(a)')'unset ztics'
+      write(outfileindex, '(a)')'unset surface'
+      write(outfileindex, '(a)')'unset key'
+      write(outfileindex, '(a)')'#set xtics font ",24"'
+      write(outfileindex, '(a)')'#set ytics font ",24"'
+      write(outfileindex, '(a)')'#set xlabel font ",24"'
+      write(outfileindex, '(a)')'set ylabel "Energy (eV)"'
+      write(outfileindex, '(a, i6,a)')'set title "Hofstadter butterfly with Nq=', Nq, '" font ",40"'
+      write(outfileindex, '(a, f12.6, a, f12.6, a)')'set yrange [',OmegaMin/eV2Hartree,':',OmegaMax/eV2Hartree,']'
+      write(outfileindex, '(a)')'set xlabel "Phi per unit cell"'
+      write(outfileindex,*) '#set xlabel "{/Symbol F}/{/Symbol F}_0"'
+      write(outfileindex, '(a, f12.6, a)')     'set xrange [ 0.0000 :', maxval(mag/2d0/pi) ,']'
+      write(outfileindex, '(a)')     "splot 'LandauLevel_B_dos.dat' u 1:3:(log($4)) w pm3d"
+      write(outfileindex, '(a)')'set xlabel "B (Tesla)"'
+      write(outfileindex, '(a, f12.6, a)')     '#set xrange [ 0.0000 :', maxval(mag_Tesla) ,']'
+      write(outfileindex, '(a)')     "#splot 'LandauLevel_B_dos.dat' u 2:3:(log($4)) w pm3d"
+   endif
+
+   outfileindex=outfileindex+1
+   if(cpuid == 0) then
+      open(unit=outfileindex, file='wannierdiagram.gnu')
+      write(outfileindex,*) 'set terminal pngcairo enhanced color font ",60" size 1920, 1680'
+      write(outfileindex,*) "set output 'wannierdiagram.png'"
+      write(outfileindex,*) 'set pm3d'
+      write(outfileindex, '(a)')'set size 0.9,1'
+      write(outfileindex, '(a)')'set origin 0.05,0'
+      write(outfileindex, '(a)')'set palette rgb 21,22,23'
+      write(outfileindex,*) '#set isosamples 50,50'
+      write(outfileindex,*) 'set view map'
+      write(outfileindex,*) 'unset ztics'
+      write(outfileindex,*) 'unset surface'
+      write(outfileindex,*) 'unset key'
+
+      write(outfileindex,*) 'set ylabel "n"'
+      write(outfileindex, '(a, i6, a)') 'set title "Wannier diagram with Nq=', Nq, '"'
+      write(outfileindex,*) '#set yrange [   ] noextend'
+      write(outfileindex,*) '#set xlabel "{/Symbol F}/{/Symbol F}_0"'
+      write(outfileindex,*) 'set xlabel "Phi/Phi_0 per unit cell"'
+      write(outfileindex,*) '#set xlabel "{/Symbol F}/{/Symbol F}_0"'
+      write(outfileindex,*) '#set xrange [ ] noextend'
+
+      write(outfileindex,*) "splot 'wannierdiagram.dat' u 1:3:(log($4)) w pm3d #lc palette"
+   end if
+
 
 #if defined (MPI)
    call mpi_barrier(mpi_cmw, ierr)

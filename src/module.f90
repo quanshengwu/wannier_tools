@@ -393,6 +393,7 @@
      logical :: WireBand_calc  ! Flag for 1D wire energy band calculation
      logical :: SlabSS_calc    ! Flag for surface state ARPES spectrum calculation
      logical :: Dos_calc       ! Flag for density of state calculation
+     logical :: Dos_slab_calc       ! Flag for density of state calculation for slab system
      logical :: ChargeDensity_selected_bands_calc       ! Flag for charge density 
      logical :: ChargeDensity_selected_energies_calc       ! Flag for charge density 
      logical :: JDos_calc      ! Flag for joint density of state calculation
@@ -476,7 +477,7 @@
                           BerryCurvature_plane_selectedbands_calc, &
                           BerryCurvature_slab_calc, MirrorChern_calc, BerryCurvature_Cube_calc, &
                           Z2_3D_calc, Chern_3D_calc, WeylChirality_calc, NLChirality_calc, &
-                          Dos_calc, JDos_calc, EffectiveMass_calc, &
+                          Dos_calc, Dos_slab_calc, JDos_calc, EffectiveMass_calc, &
                           FindNodes_calc, TBtoKP_calc, LOTO_correction, &
                           BulkBand_plane_calc, Hof_Butt_calc, Symmetry_Import_calc, &
                           Boltz_Berry_correction, &
@@ -1175,7 +1176,17 @@
    real, parameter :: a_0 = 5.29177210903E-1 ! Bohr radius in the unit of angstrom
    
    
-   character(len=10) :: element_name(lenth_of_table) = ['H','He','Li','Be','B','C','N','O','F','Ne','Na','Mg','Al','Si','P','S','Cl','Ar','K','Ca','Sc','Ti','V','Cr','Mn','Fe','Co','Ni','Cu','Zn','Ga','Ge','As','Se','Br','Kr','Rb','Sr','Y','Zr','Nb','Mo','Tc','Ru','Rh','Pd','Ag','Cd','In','Sn','Sb','Te','I','Xe','Cs','Ba','La','Ce','Pr','Nd','Pm','Sm','Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb','Lu','Hf','Ta','W','Re','Os','Ir','Pt','Au','Hg','Tl','Pb','Bi','Po','At','Rn','Fr','Ra','Ac','Th','Pa','U','Np','Pu','Am','Cm','Bk','Cf','Es','Fm','Md','No','Lr','Rf']
+   character(len=10) :: element_name(lenth_of_table) = &
+       ['H','He','Li','Be','B','C','N','O','F',&
+      'Ne','Na','Mg','Al','Si','P','S','Cl','Ar',&
+      'K','Ca','Sc','Ti','V','Cr','Mn','Fe','Co','Ni',&
+      'Cu','Zn','Ga','Ge','As','Se','Br','Kr','Rb','Sr',&
+      'Y','Zr','Nb','Mo','Tc','Ru','Rh','Pd','Ag','Cd','In',&
+      'Sn','Sb','Te','I','Xe','Cs','Ba','La','Ce','Pr','Nd',&
+      'Pm','Sm','Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb','Lu',&
+      'Hf','Ta','W','Re','Os','Ir','Pt','Au','Hg','Tl','Pb',&
+      'Bi','Po','At','Rn','Fr','Ra','Ac','Th','Pa','U','Np',&
+      'Pu','Am','Cm','Bk','Cf','Es','Fm','Md','No','Lr','Rf']
 
    ! Each element's electron configuration
    character(len=64) :: element_electron_config(lenth_of_table) = [&

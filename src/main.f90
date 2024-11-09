@@ -358,6 +358,16 @@
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the bulk FS'
      endif
 
+     if (Dos_slab_calc) then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating DOS for slab system'
+        call now(time_start)
+        call dos_slab
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'Dos_calc and Jdos_calc')
+        if(cpuid.eq.0)write(stdout, *)'<< End of calculating the DOS for slab system'
+     endif
+ 
      !> calculate density of state and joint density of state
      if (JDos_calc.and.Dos_calc) then
         if(cpuid.eq.0)write(stdout, *)' '

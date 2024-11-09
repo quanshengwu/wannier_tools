@@ -14,7 +14,7 @@ OBJ =  module.o sparse.o wt_aux.o math_lib.o symmetry.o \
 		main.o
 
 # compiler
-F90  = mpif90 -fpp -DMPI -fpe3 -O3 -DARPACK -DINTELMKL # -check all -traceback -g
+F90  = mpif90 -fpp -DMPI -fpe3 -O3 -DARPACK -DINTELMKL #-check all -traceback -g
 #F90  = ifort -fpp  -DINTELMKL -fpe3 -check all -traceback -g
 CC = mpicc -cpp -O3 -DINTELMKL 
 

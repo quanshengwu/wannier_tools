@@ -580,6 +580,119 @@ subroutine ham_bulk_LOTO(k,Hamk_bulk)
    return
 end subroutine ham_bulk_LOTO
 
+subroutine ham_bulk_kp_abcb_graphene(k,Hamk_bulk)
+   ! > construct the kp model at K point of ABCB tetralayer graphene
+
+   use para, only : Num_wann, dp, stdout, zi, zzero, One_complex, &
+      Symmetrical_Electric_field_in_eVpA, eV2Hartree, Angstrom2atomic, &
+      Electric_field_in_eVpA, Origin_cell, cpuid
+   implicit none
+
+   integer :: i1,i2,ia,ib,ic,iR, nwann, io, i
+   integer :: add_electric_field
+   real(dp) :: pos(Origin_cell%Num_atoms)
+   real(dp) :: static_potential
+
+   ! coordinates of R vector
+   real(Dp) :: R(3), R1(3), R2(3), kdotr, kx, ky, kz
+   real(dp) :: v,v3,v4,v6,v7,d1,d2,d3,d4,d5,d6,d7,d8,g1,g2,g3,g4,g5,g6
+
+   complex(dp) :: factor, km, kp
+
+   real(dp), intent(in) :: k(3)
+
+   !> the k point that the kp model is constructed
+   !> in fractional coordinate
+   real(dp) :: k_center_direct(3), l(19)
+
+   ! Hamiltonian of bulk system
+   complex(Dp),intent(out) ::Hamk_bulk(Num_wann, Num_wann)
+
+   if (Num_wann/=8) then
+      print *, "Error : in this kp model, num_wann should be 8"
+      print *, 'Num_wann', Num_wann
+      stop
+   endif
+  !l=(/ 1.26416117e+01, -5.57664351e+00, -5.87940524e+00,  1.60839693e+01, &
+  ! 8.13551651e+00,  2.82753440e-01,  9.16947940e-03, -2.61922210e-03, &
+  !-2.77215942e-03,  7.01879554e-03, -3.38271168e-01, -6.64427749e-02, &
+  !-3.08356540e-02, -8.82150889e-03, -2.57865658e-03,  1.83192652e-01, &
+  ! 4.35695252e-03, -2.28829893e-01, -1.82821963e-02/)
+
+   l=(/1.57937270e+01, -2.49047067e+00, -1.82376120e+00,  1.21854647e-02, &
+    -5.75783391e+00, -2.09787893e-01,  7.48348077e-03,  2.03490675e-01, &
+    -1.82294202e-04,  3.11506594e-02, -1.32325756e-01,  2.72568864e-01, &
+     2.27263042e-02, -2.57806046e-01, -2.01920757e-01, -2.46168084e-01, &
+    -1.45799538e-01, -1.59225389e-01, -2.20335989e-01/)
+
+   v=l(1); v3=l(2); v4=l(3); v6=l(4); v7=l(5);
+   d1=l(6); d2= l(7); d3= l(8); d4=l(9); d5=l(10); d6= l(11); d7=l(12); d8= l(19)
+   g1= l(13); g2= l(14); g3= l(15); g4= l(16); g5= l(17); g6= l(18);
+
+   k_center_direct= (/1d0/3d0, 1d0/3d0, 0d0/)
+   kx=k(1) -k_center_direct(1)
+   ky=k(2) -k_center_direct(2)
+   kz=k(3) -k_center_direct(3)
+
+   km=-kx+ zi*ky
+   kp=-kx- zi*ky
+   !> write out the parameters
+   if (cpuid.eq.0) then
+   !  write(stdout, '(a, 8f8.4)') '> Onsite energies: ', d1, d2, d3, d4, d5, d6, d7, d8
+   endif
+
+   Hamk_bulk= 0d0
+   !> kp
+   Hamk_bulk(:, 1)= (/d1*One_complex, v*kp, -v4*kp, v3*km, v6*km, g6*One_complex, zzero, zzero/)
+   Hamk_bulk(:, 2)= (/v*km, d2*One_complex, g1*One_complex, -v4*kp, v7*kp, v6*km, zzero, zzero/)
+   Hamk_bulk(:, 3)= (/-v4*km, g1*One_complex, d3*One_complex, v*kp, -v4*kp, v3*km, g4*One_complex, zzero/)
+   Hamk_bulk(:, 4)= (/v3*kp, -v4*km, v*km, d4*One_complex, g2*One_complex, -v4*kp, zzero, g5*One_complex/)
+   Hamk_bulk(:, 5)= (/v6*kp, v7*km, -v4*km, g2*One_complex, d5*One_complex, v*kp, -v4*km, g3*One_complex/)
+   Hamk_bulk(:, 6)= (/g6*One_complex, v6*kp, v3*kp, -v4*km, v*km, d6*One_complex, v3*kp, -v4*km/)
+   Hamk_bulk(:, 7)= (/zzero, zzero, g4*One_complex, zzero, -v4*kp, v3*km, d7*One_complex, v*kp/)
+   Hamk_bulk(:, 8)= (/zzero, zzero, zzero, g5*One_complex, g3*One_complex, -v4*kp, v*km, d8*One_complex/)
+
+   !> add electrical field
+
+   call get_stacking_direction_and_pos(add_electric_field, pos)
+ 
+   if (add_electric_field>0) then
+      io=0
+      do ia=1, Origin_cell%Num_atoms
+         !static_potential= pos(ia)*Origin_cell%cell_parameters(add_electric_field)*Electric_field_in_eVpA
+         !if (Inner_symmetrical_Electric_Field) then
+         !   static_potential= abs(pos(ia)*Origin_cell%cell_parameters(add_electric_field))*Electric_field_in_eVpA
+         !endif
+         static_potential= abs(pos(ia)*Origin_cell%cell_parameters(add_electric_field))&
+            *Symmetrical_Electric_field_in_eVpA*eV2Hartree/Angstrom2atomic+ &
+            (pos(ia)*Origin_cell%cell_parameters(add_electric_field))*&
+            Electric_field_in_eVpA*eV2Hartree/Angstrom2atomic
+
+         do i=1, Origin_cell%nprojs(ia)
+            io=io+1
+            Hamk_bulk(io, io)= Hamk_bulk(io, io)+ static_potential
+         enddo ! nproj
+      enddo ! ia
+   endif  ! add electric field or not
+
+   ! check hermitcity
+   do i1=1, Num_wann
+      do i2=1, Num_wann
+         if(abs(Hamk_bulk(i1,i2)-conjg(Hamk_bulk(i2,i1))).ge.1e-6)then
+            write(stdout,*)'there is something wrong with Hamk_bulk'
+            write(stdout,*)'i1, i2', i1, i2
+            write(stdout,*)'value at (i1, i2)', Hamk_bulk(i1, i2)
+            write(stdout,*)'value at (i2, i1)', Hamk_bulk(i2, i1)
+            !stop
+         endif
+      enddo
+   enddo
+   Hamk_bulk= Hamk_bulk*eV2Hartree
+
+   return
+end subroutine ham_bulk_kp_abcb_graphene
+
+
 subroutine ham_bulk_kp(k,Hamk_bulk)
    ! > construct the kp model at K point of WC system
    ! > space group is 187. The little group is C3h

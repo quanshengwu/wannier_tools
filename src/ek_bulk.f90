@@ -49,7 +49,7 @@ subroutine ek_bulk_line
 
       ! generate bulk Hamiltonian
       if (index(KPorTB, 'KP')/=0)then
-         call ham_bulk_kp(k, Hamk_bulk)
+         call ham_bulk_kp_abcb_graphene(k, Hamk_bulk)
       else
          !> deal with phonon system
          if (index(Particle,'phonon')/=0.and.LOTO_correction) then
@@ -870,7 +870,7 @@ subroutine ek_bulk_plane
       ! generate bulk Hamiltonian
       Hamk_bulk= 0d0
       if (index(KPorTB, 'KP')/=0)then
-         call ham_bulk_kp(k, Hamk_bulk)
+         call ham_bulk_kp_abcb_graphene(k, Hamk_bulk)
       else
          !> deal with phonon system
          if (index(Particle,'phonon')/=0.and.LOTO_correction) then
