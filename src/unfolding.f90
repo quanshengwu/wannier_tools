@@ -763,6 +763,7 @@ subroutine get_projection_weight_bulk_unfold(ndim, k_SBZ_direct, k_PBZ_direct, p
    k_t=k_PBZ_direct-k_SBZ_direct_in_PBZ
 
    allocate(me_values(Folded_cell%NumberofSpinOrbitals))
+
    if ( Matrix_Element_calc == .True. ) then
       !@ k_abs is the k_f(3) considering the photon energy
       if ( (k_cart_abs**2 - k_cart(1)**2 - k_cart(2)**2 ) .le. 0 ) then
@@ -783,9 +784,9 @@ subroutine get_projection_weight_bulk_unfold(ndim, k_SBZ_direct, k_PBZ_direct, p
    
             projector_name_PC= adjustl(trim(Folded_cell%proj_name(Folded_cell%spinorbital_to_projector_index(io_PC), Folded_cell%spinorbital_to_atom_index(io_PC))))
             me = 0d0 !! initialize the variable
-            call get_matrix_element(atom_name_PC, projector_name_PC, k_cart, me)
+            call get_matrix_element(atom_name_PC, projector_name_PC, k_cart, Folded_cell%wannier_centers_direct(:, io_PC), me)
             me_values(io_PC) = me
-           
+            
          enddo ! io_PC
    
       
