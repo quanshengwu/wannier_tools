@@ -194,17 +194,9 @@ subroutine readNormalHmnR()
    !> Hz= Zeeman_energy_in_eV*(Bx*sx+By*sy+Bz*sz)/2d0
    !> sx, sy, sz are Pauli matrices.
    if (Add_Zeeman_Field) then
-      if (abs(Zeeman_energy_in_eV)<eps6)then
-         Zeeman_energy_in_eV= Bmagnitude*Effective_gfactor*Bohr_magneton/eV2Hartree
-         if (cpuid==0)then
-            write(stdout, '(1x, a, 3f16.6)')"Zeeman_energy_in_eV: ",  Zeeman_energy_in_eV
-         endif
-      endif
       call add_zeeman_normal_hr()
-
       !> After considering the Zeeman field, we already extended the spin space to spin-full.
       SOC = 1
-
    endif ! Add_Zeeman_Field
 
    call get_stacking_direction_and_pos(add_electric_field, pos)
@@ -1194,13 +1186,18 @@ end subroutine reorder_wannierbasis
          ir0= ir
       endif
    enddo
-   if (ir0==0) stop 'something wrong with irvec in subroutine add_zeeman_sparse_hr'
+   if (ir0==0) stop 'something wrong with irvec in subroutine add_zeeman_normal_hr'
 
    if (abs(Zeeman_energy_in_eV)<eps9)then
       !> in atomic unit
       Zeeman_energy_in_au= Effective_gfactor*Bohr_magneton*Bmagnitude
    else
       Zeeman_energy_in_au= Zeeman_energy_in_eV*eV2Hartree
+   endif
+   if (cpuid==0)then
+      write(stdout, '(1x, a, 1f16.6, a)')" >>> Zeeman_energy_in_au used in WT: ",  Zeeman_energy_in_au, ' Hartree'
+      write(stdout, '(1x, a, 1f16.6, a)')" >>> Zeeman_energy_in_eV used in WT: ",  Zeeman_energy_in_au/eV2Hartree, ' eV'
+      write(stdout, '(1x, a, 3f16.3, a)')" >>> Bdirection: ",  Bdirection 
    endif
 
    if (SOC==0) then
@@ -1224,10 +1221,10 @@ end subroutine reorder_wannierbasis
    else
       do n=1, nwann_nsoc
          HmnR(n, n, ir0)            = HmnR(n, n, ir0)+ Zeeman_energy_in_au/2d0*Bdirection(3)
-         HmnR(n+nwann_nsoc, n+nwann_nsoc, ir0)= HmnR(n, n, ir0)- Zeeman_energy_in_au/2d0*Bdirection(3)
-         HmnR(n      , n+nwann_nsoc, ir0)= Zeeman_energy_in_au/2d0*Bdirection(1) &
+         HmnR(n+nwann_nsoc, n+nwann_nsoc, ir0)= HmnR(n+nwann_nsoc, n+nwann_nsoc, ir0)- Zeeman_energy_in_au/2d0*Bdirection(3)
+         HmnR(n      , n+nwann_nsoc, ir0)= HmnR(n      , n+nwann_nsoc, ir0)+ Zeeman_energy_in_au/2d0*Bdirection(1) &
                                          - zi*Zeeman_energy_in_au/2d0*Bdirection(2)
-         HmnR(n+nwann_nsoc, n      , ir0)= Zeeman_energy_in_au/2d0*Bdirection(1) &
+         HmnR(n+nwann_nsoc, n      , ir0)= HmnR(n+nwann_nsoc, n      , ir0)+ Zeeman_energy_in_au/2d0*Bdirection(1) &
                                          + zi*Zeeman_energy_in_au/2d0*Bdirection(2)
       enddo
    endif ! SOC
