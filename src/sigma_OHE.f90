@@ -271,7 +271,8 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
 
       !> we get the kpath by Btau_final=-exponent_max*BTauMax, but we only use half of them
       !>  means that we can reach the accuracy as to exp(-exponent_max)
-      exponent_max= 30
+      ! exponent_max= 30
+      exponent_max= 15
 
       !> exclude all kpoints with zero velocity x B and large energy away from Fermi level
       do iband= 1, Nband_Fermi_Level 
@@ -964,13 +965,17 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
                      BTau= BTau_array(ibtau)
 
                      if (NBTau==1)then
-                        NSlice_Btau_local= 2
+                        ! NSlice_Btau_local= 2
+                        NSlice_Btau_local= 1
                      else
-                        NSlice_Btau_local= (ibtau-1)*NSlice_Btau_inuse/(NBTau-1)/2
+                        ! NSlice_Btau_local= (ibtau-1)*NSlice_Btau_inuse/(NBTau-1)/2
+                        NSlice_Btau_local= (ibtau-1)*NSlice_Btau_inuse/(NBTau-1)
                         if (NSlice_Btau_local==0)then
-                           NSlice_Btau_local= 2
+                           ! NSlice_Btau_local= 2
+                           NSlice_Btau_local= 1
                         else
-                           DeltaBtau= exponent_max/2d0/NSlice_Btau_local
+                           ! DeltaBtau= exponent_max/2d0/NSlice_Btau_local
+                           DeltaBtau= exponent_max/NSlice_Btau_local
                         endif
                      endif
    
@@ -980,21 +985,41 @@ subroutine sigma_ohe_calc_symm(mu_array, KBT_array, BTau_array, Nband_Fermi_Leve
                         !> The core of Chamber formular is to get the average of velocity 
                         !> in the relaxation time approximation
                         v_k= klist_iband(iband)%velocity_k(:, 1+ishift)
-                        if (BTau>eps3.and.NSlice_Btau_local>2) then
-                           ! set weight 
-                           do it=1, NSlice_Btau_local
-                              weights(it) = exp(-DeltaBtau*(it-1d0))
-                           enddo
-                           !> trapezoidal integral
+                        ! if (BTau>eps3.and.NSlice_Btau_local>2) then
+                        if (BTau>eps3.and.NSlice_Btau_local>1) then
                            velocity_bar_k= 0d0
-                           do it=1, NSlice_Btau_local
+                           !> five point integration(n=4)
+                           do it=1, NSlice_Btau_local, 4 !(hj, j=it-1, j mod 4==0, Aj=28/45)
                              velocity_bar_k= velocity_bar_k+ &
-                                DeltaBtau*exp(-(it-1d0)*DeltaBtau)*klist_iband(iband)%velocity_k(:, it+ishift)
+                                 28.0d0/45.0d0*DeltaBtau*exp(-(it-1d0)*DeltaBtau)*klist_iband(iband)%velocity_k(:, it+ishift)
                            enddo
-                           velocity_bar_k= velocity_bar_k &
-                           - 0.5d0*DeltaBtau*(exp(-(NSlice_Btau_local-1d0)*DeltaBtau)&
-                           * klist_iband(iband)%velocity_k(:, NSlice_Btau_local+ishift)  &
-                           + klist_iband(iband)%velocity_k(:, 1+ishift))
+                           do it=2, NSlice_Btau_local, 4 !(hj, j=it-1, j mod 4==1, Aj=64/45)
+                              velocity_bar_k= velocity_bar_k+ &
+                                 64.0d0/45.0d0*DeltaBtau*exp(-(it-1d0)*DeltaBtau)*klist_iband(iband)%velocity_k(:, it+ishift)
+                           enddo
+                           do it=3, NSlice_Btau_local, 4 !(hj, j=it-1, j mod 4==2, Aj=24/45)
+                              velocity_bar_k= velocity_bar_k+ &
+                                 24.0d0/45.0d0*DeltaBtau*exp(-(it-1d0)*DeltaBtau)*klist_iband(iband)%velocity_k(:, it+ishift)
+                           enddo
+                           do it=4, NSlice_Btau_local, 4 !(hj, j=it-1, j mod 4==3, Aj=64/45)
+                              velocity_bar_k= velocity_bar_k+ &
+                                 64.0d0/45.0d0*DeltaBtau*exp(-(it-1d0)*DeltaBtau)*klist_iband(iband)%velocity_k(:, it+ishift)
+                           enddo
+                           velocity_bar_k= velocity_bar_k-14.0d0/45.0d0*DeltaBtau*klist_iband(iband)%velocity_k(:, 1+ishift)
+                           ! set weight 
+                           ! do it=1, NSlice_Btau_local
+                           !    weights(it) = exp(-DeltaBtau*(it-1d0))
+                           ! enddo
+                           ! !> trapezoidal integral
+                           ! velocity_bar_k= 0d0
+                           ! do it=1, NSlice_Btau_local
+                           !   velocity_bar_k= velocity_bar_k+ &
+                           !      DeltaBtau*exp(-(it-1d0)*DeltaBtau)*klist_iband(iband)%velocity_k(:, it+ishift)
+                           ! enddo
+                           ! velocity_bar_k= velocity_bar_k &
+                           ! - 0.5d0*DeltaBtau*(exp(-(NSlice_Btau_local-1d0)*DeltaBtau)&
+                           ! * klist_iband(iband)%velocity_k(:, NSlice_Btau_local+ishift)  &
+                           ! + klist_iband(iband)%velocity_k(:, 1+ishift))
 
                           !> Simpson's integral
                           !> add the first and the last term
