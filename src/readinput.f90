@@ -792,7 +792,7 @@ subroutine readinput
    if(cpuid==0)write(stdout, '(a)') '>> lattice information (Angstrom)'
    if(cpuid==0)write(stdout, '(6a12)')" a", " b", " c", 'alpha', 'beta', 'gamma'
    ! Thanks for Shengpu Huang pointing out the bug in the unit conversion of the lattice vector angle.
-   if(cpuid==0)write(stdout, '(6f12.6)')Origin_cell%cell_parameters(1:3)/Angstrom2atomic, Origin_cell%cell_parameters(1:3) 
+   if(cpuid==0)write(stdout, '(6f12.6)')Origin_cell%cell_parameters(1:3)/Angstrom2atomic, Origin_cell%cell_parameters(4:6) 
    if(cpuid==0)write(stdout, '(a)')" Three Lattice vectors of the unfolded cell: "
    if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Rua/Angstrom2atomic
    if(cpuid==0)write(stdout, '(3f12.6)')Origin_cell%Rub/Angstrom2atomic
