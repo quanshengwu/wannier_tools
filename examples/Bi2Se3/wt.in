@@ -29,10 +29,10 @@ Se pz px py
 !> bulk band structure calculation flag
 &CONTROL
 BulkBand_calc         = F
+SlabBand_calc         = T
 Dos_calc              = F
 BulkBand_points_calc  = F
-SlabSS_calc           = T
-
+SlabSS_calc           = F
 /
 
 &SYSTEM
@@ -41,7 +41,8 @@ SOC = 1                 ! soc
 E_FERMI = 4.4195        ! e-fermi
 !Add_Zeeman_Field = T
 !Zeeman_energy_in_eV = 0.5
-!Nslab = 10
+Nslab = 10
+Electric_field_in_eVpA = 0.005 ! E in eV/Angstrom
 /
 
 ! get projected bands onto different orbitals, here we only consider orbital and omit the spin freedom
