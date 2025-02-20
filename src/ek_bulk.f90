@@ -114,8 +114,8 @@ subroutine ek_bulk_line
          outfileindex= outfileindex+ 1
          open(unit=outfileindex, file=filename)
          write(outfileindex, '(a, a6, a, a6)')'# segment between', k3line_name(il), ' and ',  k3line_name(il+1)
-         write(outfileindex, '(a, 3f10.6)')'# kstart (fractional units)', k3line_start(:, il)*Angstrom2atomic
-         write(outfileindex, '(a, 3f10.6)')'# kend   (fractional units)', k3line_end(:, il)*Angstrom2atomic
+         write(outfileindex, '(a, 3f10.6)')'# kstart (fractional units)', k3line_start(:, il)!*Angstrom2atomic   !fractional units
+         write(outfileindex, '(a, 3f10.6)')'# kend   (fractional units)', k3line_end(:, il)!*Angstrom2atomic
    
          do i=1, Num_wann
             do ik=1+(il-1)*Nk1, il*Nk1

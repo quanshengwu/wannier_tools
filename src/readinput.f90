@@ -1646,9 +1646,9 @@ subroutine readinput
    if (cpuid.eq.0) then
       write(stdout, *)" "
       write(stdout, *)"The rotated new unit cell in cartesian coordinates : "
-      write(stdout, '(3f12.6)') R1
-      write(stdout, '(3f12.6)') R2
-      write(stdout, '(3f12.6)') R3
+      write(stdout, '(3f12.6)') R1/Angstrom2atomic ! in unit of Angstrom
+      write(stdout, '(3f12.6)') R2/Angstrom2atomic
+      write(stdout, '(3f12.6)') R3/Angstrom2atomic
 
       call get_volume(R1, R2, R3, cell_volume2)
       write(stdout, '(a, f18.5, a)')"New cell's Volume is ", cell_volume2/(Angstrom2atomic**3), 'Ang^3'
