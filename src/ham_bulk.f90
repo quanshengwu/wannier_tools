@@ -207,6 +207,83 @@ subroutine d2Hdk2_atomicgauge(k, DHDk2_wann)
    return
 end subroutine d2Hdk2_atomicgauge
 
+subroutine d2Hdk2_atomicgauge_wann(k, D2HDk2_wann)
+   !> second derivatve of H(k)
+   use para, only : Nrpts, irvec, crvec, Origin_cell, HmnR, ndegen, &
+       Num_wann, dp, Rcut, pi2zi, zi, twopi, pi
+   implicit none
+
+   !> momentum in 3D BZ
+   real(dp), intent(in) :: k(3)
+
+   !> second derivate of H(k)
+   complex(dp), intent(out) :: D2HDk2_wann(Num_wann, Num_wann, 3, 3)
+
+   integer :: iR, i1, i2, i, j
+
+   real(dp) :: pos(3), pos1(3), pos2(3), pos_cart(3), pos_direct(3)
+   real(dp) :: kdotr, dis
+   complex(dp) :: ratio
+   real(dp), external :: norm
+
+   D2HDk2_wann= 0d0
+   !> the first atom in home unit cell
+   do iR=1, Nrpts
+      do i2=1, Num_wann
+         pos2= Origin_cell%wannier_centers_direct(:, i2)
+         !> the second atom in unit cell R
+         do i1=1, Num_wann
+            pos1= Origin_cell%wannier_centers_direct(:, i1)
+            pos_direct= irvec(:, iR)
+            pos_direct= pos_direct+ pos2- pos1
+
+            call direct_cart_real(pos_direct, pos_cart, Origin_cell%lattice)
+
+            dis= norm(pos_cart)
+            if (dis> Rcut) cycle
+
+            kdotr=k(1)*pos_direct(1) + k(2)*pos_direct(2) + k(3)*pos_direct(3)
+            ratio= (cos(twopi*kdotr)+zi*sin(twopi*kdotr))/ndegen(iR)
+
+            do j=1, 3
+               do i=1, 3
+                  D2HDk2_wann(i1, i2, i, j)=D2HDk2_wann(i1, i2, i, j) &
+                     -pos_cart(i)*pos_cart(j)*HmnR(i1, i2, iR)*ratio
+               enddo ! j 
+            enddo ! i
+         enddo ! i1
+      enddo ! i2
+   enddo ! iR
+
+   return
+end subroutine d2Hdk2_atomicgauge_wann
+
+subroutine d2Hdk2_atomicgauge_Ham(UU, dHdkdk, D2HDk2_Ham)
+   !> Transform d2H/dk^2 from Wannier gauge to Hamiltonian gauge
+   use para, only : Num_wann, dp
+   implicit none
+
+   ! Inputs
+   complex(dp), intent(in)  :: UU(Num_wann, Num_wann)
+   complex(dp), intent(in)  :: dHdkdk(Num_wann, Num_wann, 3, 3)
+
+   ! Output
+   complex(dp), intent(out) :: D2HDk2_Ham(Num_wann, Num_wann, 3, 3)
+
+   ! Locals
+   integer :: i, j
+   complex(dp) :: mat_tmp(Num_wann, Num_wann)
+
+   do j = 1, 3
+      do i = 1, 3
+         call rotation_to_Ham_basis(UU, dHdkdk(:, :, i, j), mat_tmp)
+         D2HDk2_Ham(:, :, i, j) = mat_tmp
+      enddo ! i
+   enddo ! j
+
+   return
+end subroutine d2Hdk2_atomicgauge_Ham
+
 subroutine dHdk_atomicgauge(k, velocity_Wannier)
    !> Velocity operator in Wannier basis using atomic gauge
    !> First derivate of H(k); dH(k)/dk

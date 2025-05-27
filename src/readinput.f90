@@ -33,7 +33,7 @@ subroutine readinput
       if(cpuid==0)write(stdout,*) '>>>Read some paramters from wt.in'
       open(unit=1001,file=fname,status='old')
    else
-      if(cpuid==0)write(stdout,*)'file' ,fname, 'dosnot exist'
+      if(cpuid==0)write(stdout,*)'file' ,fname, 'does not exist'
       stop
    endif
 
@@ -163,6 +163,9 @@ subroutine readinput
    SlabBdG_calc          = .FALSE.
    BdGChern_calc         = .FALSE.   
 
+   linear_optic_calc = .FALSE.
+   BPVE_calc = .FALSE.
+
    read(1001, CONTROL, iostat=stat)
    SlabQPI_kplane_calc= SlabQPI_kplane_calc.or.SlabQPI_calc
 
@@ -220,6 +223,8 @@ subroutine readinput
       write(*, *)"valley_projection_calc"
       write(*, *)"ChargeDensity_selected_energies_calc"
       write(*, *)"ChargeDensity_selected_bands_calc"
+      write(*, *)"linear_optic_calc"
+      write(*, *)"BPVE_calc"
       write(*, *)"The default Vaule is F"
 
       backspace(1001)
@@ -301,6 +306,8 @@ subroutine readinput
       write(stdout, *) "valley_projection_calc : "           , valley_projection_calc
       write(stdout, *) "SlabBdG_calc        : ",  SlabBdG_calc
       write(stdout, *) "BdGChern_calc       : ",  BdGChern_calc
+      write(stdout, *) "linear_optic_calc        : ",  linear_optic_calc
+      write(stdout, *) "BPVE_calc       : ",  BPVE_calc
    endif
 
    Wilsonloop_calc= Wilsonloop_calc.or.wanniercenter_calc
@@ -613,6 +620,11 @@ subroutine readinput
    polarization_alpha_arpes= (45d0/180d0)*3.14159265358979d0
    polarization_delta_arpes= (0d0/180d0)*3.14159265358979d0
 
+   FreqMin = 0d0
+   FreqMax = 2d0
+   FreqNum = 101
+   eta_smr_fixed = 0.02d0
+
    !> by default, we only project on atoms for a given wave function
    projection_weight_mode = "NORMAL"
 
@@ -690,6 +702,10 @@ subroutine readinput
       write(stdout, '(1x, a, f16.5)')'Incoming light is at alpha angular to the normal line of the experiment plane :', polarization_alpha_arpes
       write(stdout, '(1x, a, f16.5)')'The ratio between two orthogonal polarization vector components', polarization_xi_arpes 
       write(stdout, '(1x, a, f16.5)')'The relative phase between two orthogonal polarization vector components', polarization_delta_arpes
+      write(stdout, '(1x, a, f16.5, a)')'FreqMin : ', FreqMin, ' eV'
+      write(stdout, '(1x, a, f16.5, a)')'FreqMax : ', FreqMax, ' eV'
+      write(stdout, '(1x, a, i6   )')'FreqNum : ', FreqNum
+      write(stdout, '(1x, a, f16.5, a)')'eta_smr_fixed : ', eta_smr_fixed, ' eV'
    endif
 
    !> changed to atomic units
@@ -701,6 +717,10 @@ subroutine readinput
    Rcut= Rcut*Ang2Bohr
    penetration_lambda_arpes= penetration_lambda_arpes*Ang2Bohr
    photon_energy_arpes= photon_energy_arpes*eV2Hartree
+
+   FreqMin = FreqMin * eV2Hartree ! for optic.f90
+   FreqMax = FreqMax * eV2Hartree ! for optic.f90
+   eta_smr_fixed = eta_smr_fixed * eV2Hartree ! for optic.f90
 
    !> change the unit of relaxtion time from ps to atomic unit
    Relaxation_Time_Tau= Relaxation_Time_Tau*1E-12/Time_atomic

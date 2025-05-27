@@ -457,6 +457,9 @@
      logical :: w3d_nested_calc = .false.
      logical :: Matrix_Element_calc = .false. ! Matrix element calculation
 
+     logical :: linear_optic_calc  ! Linear optical conductivity @ optic.f90
+     logical :: BPVE_calc  !  bulk photovotaic conducticity @ optic.f90
+
      namelist / Control / BulkBand_calc, BulkFS_calc,  BulkFS_Plane_calc, &
                           BulkFS_plane_stack_calc,  BulkGap_plane_calc, &
                           QPI_unfold_plane_calc, &
@@ -488,7 +491,8 @@
                           LandauLevel_B_dos_calc,LanczosBand_calc,LanczosDos_calc, &
                           LandauLevel_B_calc, LandauLevel_kplane_calc,landau_chern_calc, &
                           FermiLevel_calc,ANE_calc, export_newhr,export_maghr,w3d_nested_calc, &
-                          valley_projection_calc, Matrix_Element_calc, BdGChern_calc, SlabBdG_calc
+                          valley_projection_calc, Matrix_Element_calc, BdGChern_calc, SlabBdG_calc, &
+                          linear_optic_calc, BPVE_calc
 
      integer :: Nslab  ! Number of slabs for 2d Slab system
      integer :: Nslab1 ! Number of slabs for 1D wire system
@@ -619,6 +623,10 @@
      real(dp) :: polarization_xi_arpes ! defines the ratio between two orthogonal polarization vector components
      real(dp) :: polarization_delta_arpes ! the relative phase between two orthogonal polarization vector components
 
+     !> For optic.f90
+     integer :: FreqNum
+     real(dp) :: FreqMin, FreqMax, eta_smr_fixed
+
      !> namelist parameters
      namelist /PARAMETERS/ E_arc, Fermi_broadening, EF_integral_range, OmegaNum, OmegaNum_unfold, OmegaMin, OmegaMax, &
         Eta_Arc, iso_energy, Nk1, Nk2, Nk3, NP, Gap_threshold, Tmin, Tmax, NumT, &
@@ -627,7 +635,8 @@
         Relaxation_Time_Tau,  symprec, arpack_solver, RKF45_PERIODIC_LEVEL, &
         NumRandomConfs, NumSelectedEigenVals, projection_weight_mode, topsurface_atom_index, &
         photon_energy_arpes, polarization_xi_arpes, test_namelist, nnzmax_input, &
-        polarization_alpha_arpes, polarization_delta_arpes, penetration_lambda_arpes, polarization_phi_arpes
+        polarization_alpha_arpes, polarization_delta_arpes, penetration_lambda_arpes, polarization_phi_arpes, &
+        FreqNum, FreqMin, FreqMax, eta_smr_fixed
     
      real(Dp) :: E_fermi  ! Fermi energy, search E-fermi in OUTCAR for VASP, set to zero for Wien2k
 
@@ -685,6 +694,7 @@
         Vacuum_thickness_in_Angstrom, center_atom_for_electric_field
 
      real(dp),parameter :: alpha= 1.20736d0*1D-6  !> e/2/h*a*a   a=1d-10m, h is the planck constant then the flux equals alpha*B*s
+     real(dp),parameter :: hbar_eV= 6.582119e-16  !> in optic.f90, converts for delta function
 
      !> some parameters related to atomic units
      !> https://en.wikipedia.org/wiki/Hartree_atomic_units 2020

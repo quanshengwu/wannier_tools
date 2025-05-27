@@ -751,6 +751,29 @@
         if(cpuid.eq.0)write(stdout, *)'End of calculating the spin texture for surface'
      endif
 
+     !> calculate the linear optical conductivity 
+     if (linear_optic_calc)then
+      if(cpuid.eq.0)write(stdout, *)' '
+      if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the linear optical conductivity'
+      call now(time_start)
+      call linear_optic
+      call now(time_end)
+      call print_time_cost(time_start, time_end, 'linear_optic_calc')
+      if(cpuid.eq.0)write(stdout, *)'End of calculating the linear optical conductivity'
+   endif
+
+
+     !> calculate the the bulk photovotaic effect 
+     if (BPVE_calc)then
+      if(cpuid.eq.0)write(stdout, *)' '
+      if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the bulk photovotaic effect'
+      call now(time_start)
+      call bulk_photovoltaic
+      call now(time_end)
+      call print_time_cost(time_start, time_end, 'BPVE_calc')
+      if(cpuid.eq.0)write(stdout, *)'End of calculating the bulk photovotaic effect'
+   endif
+
      call now(time_end)
 
      if(cpuid.eq.0)write(stdout, *)' '

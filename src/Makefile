@@ -10,7 +10,7 @@ OBJ =  module.o sparse.o wt_aux.o math_lib.o symmetry.o \
 		 berry.o wanniercenter_adaptive.o \
   		 effective_mass.o findnodes.o \
 		 sigma_OHE.o sigma.o Boltz_transport_anomalous.o \
-		 2D_TSC.o \
+		 2D_TSC.o optic.o\
 		main.o
 
 # compiler
@@ -48,4 +48,3 @@ main : $(OBJ)
 
 clean :
 	rm -f *.o *.mod *~ wt.x
-
