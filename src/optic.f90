@@ -501,18 +501,18 @@ subroutine bulk_photovoltaic
     !> The calculation inside WannierTools uses atomic unit, the outputs are in uA*Ang/V^2
 
     !> The unit of shift current / inject current in atomic units is converted to uA*Ang/V² by:
-    !>  - 6.582119e-16: converts 1/eV (delta function) to seconds
+    !>  - 6.582119e-16(hbar_eV): converts for delta function
     !>  - pi*e/(4 hbar**2 V): from nonlinear shift current formula
     !>  - pi*e/(2 hbar**2 V): from nonlinear shift current formula
     !>  - 1/100: empirical scaling to match uA scale
 
-    lshiftcur = lshiftcur * 6.582119e-16_dp * pi *Echarge**3 / (4*hbar**2*Origin_cell%CellVolume) / 100
+    lshiftcur = lshiftcur * hbar_eV * pi *Echarge**3 / (4*hbar**2*Origin_cell%CellVolume) / 100
 
-    cshiftcur = cshiftcur * 6.582119e-16_dp * pi *Echarge**3 / (4*hbar**2*Origin_cell%CellVolume) / 100
+    cshiftcur = cshiftcur * hbar_eV * pi *Echarge**3 / (4*hbar**2*Origin_cell%CellVolume) / 100
 
-    linjectcur = linjectcur * 6.582119e-16_dp * pi *Echarge**3 / (2*hbar**2*Origin_cell%CellVolume) / 100
+    linjectcur = linjectcur * hbar_eV * pi *Echarge**3 / (2*hbar**2*Origin_cell%CellVolume) / 100
 
-    cinjectcur = cinjectcur * 6.582119e-16_dp * pi *Echarge**3 / (2*hbar**2*Origin_cell%CellVolume) / 100
+    cinjectcur = cinjectcur * hbar_eV * pi *Echarge**3 / (2*hbar**2*Origin_cell%CellVolume) / 100
 
 
     if (cpuid.eq.0) then

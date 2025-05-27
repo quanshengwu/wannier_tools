@@ -694,6 +694,7 @@
         Vacuum_thickness_in_Angstrom, center_atom_for_electric_field
 
      real(dp),parameter :: alpha= 1.20736d0*1D-6  !> e/2/h*a*a   a=1d-10m, h is the planck constant then the flux equals alpha*B*s
+     real(dp),parameter :: hbar_eV= 6.582119e-16  !> in optic.f90, converts for delta function
 
      !> some parameters related to atomic units
      !> https://en.wikipedia.org/wiki/Hartree_atomic_units 2020
