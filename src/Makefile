@@ -10,11 +10,12 @@ OBJ =  module.o sparse.o wt_aux.o math_lib.o symmetry.o \
 		 berry.o wanniercenter_adaptive.o \
   		 effective_mass.o findnodes.o \
 		 sigma_OHE.o sigma.o Boltz_transport_anomalous.o \
-		 2D_TSC.o \
+		 2D_TSC.o optic.o\
 		main.o
 
 # compiler
-F90  = mpif90 -fpp -DMPI -fpe3 -O3 -DARPACK -DINTELMKL #-check all -traceback -g
+#F90  = mpif90 -fpp -DMPI -fpe3 -O3 -DARPACK -DINTELMKL #-check all -traceback -g
+F90  = mpiifort -fpp -DMPI -DINTELMKL -fpe3
 #F90  = ifort -fpp  -DINTELMKL -fpe3 -check all -traceback -g
 CC = mpicc -cpp -O3 -DINTELMKL 
 
@@ -25,7 +26,7 @@ FFLAG = $(OFLAG) $(WFLAG)
 LFLAG = $(OFLAG)
 
 # ARPACK LIBRARY
-ARPACK=/Users/user/quan/work/workplace/ARPACK/libarpack_MAC.a
+ARPACK=/data/home/yanyi2024/0-tools/0-Basic/ARPACK/libarpack_MAC.a
 
 # blas and lapack libraries
 # static linking
@@ -38,8 +39,8 @@ ARPACK=/Users/user/quan/work/workplace/ARPACK/libarpack_MAC.a
 LIBS = ${ARPACK} -L/${MKLROOT}/lib/intel64 -lmkl_core -lmkl_sequential -lmkl_intel_lp64 -lpthread 
  
 main : $(OBJ)
-	$(F90) $(LFLAG) $(OBJ) -o wt.x $(LIBS)
-	cp -f wt.x ../bin
+	$(F90) $(LFLAG) $(OBJ) -o wt-2025.x $(LIBS)
+	cp -f wt-2025.x ../bin
 
 .SUFFIXES: .o .f90 .c
 
@@ -47,5 +48,5 @@ main : $(OBJ)
 	$(F90) $(FFLAG) $(INCLUDE) -c $*.f90
 
 clean :
-	rm -f *.o *.mod *~ wt.x
+	rm -f *.o *.mod *~ wt-2025.x
 
