@@ -572,6 +572,15 @@
         call print_time_cost(time_start, time_end, 'WannierCenterBdG')
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the Wilson loop'
      endif
+     if (Intra_orbital_hall_calc)then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Intra_orbital_hall_calc! '
+        call now(time_start)
+        call Intra_Orbital_hall_conductivity
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'Intra_orbital_hall_calc')
+        if(cpuid.eq.0)write(stdout, *)'<< End of calculating the Intra_orbital_hall_calc!'
+     endif
 
      !> mirror chern number calculation
      if (MirrorChern_calc)then
