@@ -244,6 +244,106 @@ subroutine readNormalHmnR()
    return
 end subroutine readNormalHmnR
 
+
+subroutine read_OAM_operator(Lx_wann, Ly_wann, Lz_wann)
+   !>> Read in the valley operator from valley_operator.dat
+   ! Constructed by quansheng wu 04 Nov. 2023
+   ! License: GPL V3
+
+   use para
+
+   implicit none
+
+
+   integer :: n, m, ir0
+   integer :: add_electric_field
+   integer :: nwann, nwann_nsoc
+   logical :: exists
+
+
+
+   integer :: i, j, ios
+   real :: re, im
+   character(len=2) :: current_matrix
+   character(len=256) :: line
+
+   complex(dp), intent(out) :: Lx_wann(num_wann, num_wann), Ly_wann(num_wann, num_wann), Lz_wann(num_wann, num_wann)
+
+   !allocate(Lx_wann(num_wann, num_wann))
+   !allocate(Ly_wann(num_wann, num_wann))
+   !allocate(Lz_wann(num_wann, num_wann))
+
+   if(cpuid.eq.0)write(stdout,*)'****************OAM******************** '
+   inquire (file ="oam.dat", EXIST = exists)
+   if (exists)then
+      write(stdout,*)'****************OAM******************** '
+      open(12, file="oam.dat", status='OLD', iostat = ios)
+      !if (ios /= 0) then
+      !  write(*,*) "Error opening file!"
+      !  stop
+      !end if
+   else
+      STOP ">> for OAM projection , you have to prepare a file oam.dat"
+   endif
+
+
+   
+   !Lx_wann = 0
+   !Ly_wann = 0
+   !Lz_wann = 0
+   read(12,*) nwann
+   write(stdout,*) 'num_wann_OAM', num_wann
+   do
+        read(12, '(A)', iostat=ios) line
+        if (ios /= 0) exit
+
+        ! 检查是否是矩阵标识行
+        if (line(1:2) == 'Lx' .or. line(1:2) == 'Ly' .or. line(1:2) == 'Lz') then
+            current_matrix = line(1:2)
+            cycle
+        end if
+
+        ! 跳过空行
+        if (len_trim(line) == 0) cycle
+
+        ! 读取数据行
+        read(line, *, iostat=ios) i, j, re, im
+        write(stdout,*) i,j,re,im
+        if (ios /= 0) then
+            write(*,*) "Error reading line:", trim(line)
+            cycle
+        end if
+
+
+         if (current_matrix == 'Lx') then
+                Lx_wann(i,j) = cmplx(re, im)
+         else if (current_matrix == 'Ly') then
+                Ly_wann(i,j) = cmplx(re, im)
+         else if (current_matrix == 'Lz') then
+                Lz_wann(i,j) = cmplx(re, im)
+         else
+            write(*,*) "Unknown matrix identifier:", current_matrix
+        end if
+    end do
+
+
+
+
+   !1001 continue
+   close(12)
+
+   do i=1,num_wann
+      do j=1,num_wann
+      if (abs(Lx_wann(i,j))>0.0001) write(stdout,*) i,j, Lx_wann(i,j)
+      enddo
+   enddo
+
+   if (cpuid.eq.0) write(stdout, *) ">>> finished reading of OAM operator"
+
+end subroutine read_OAM_operator
+
+
+
 subroutine read_valley_operator()
    !>> Read in the valley operator from valley_operator.dat
    ! Constructed by quansheng wu 04 Nov. 2023

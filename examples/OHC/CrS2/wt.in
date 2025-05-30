@@ -1,0 +1,62 @@
+&TB_FILE
+Hrfile = 'CrS2_wannier90_hr.dat'
+Package = 'VASP'             ! obtained from VASP, it could be 'VASP', 'QE', 'Wien2k', 'OpenMx'
+/
+
+LATTICE
+Angstrom                         ! crystal lattice information
+     3.0475636     0.0000000     0.0000000
+    -1.5237818     2.6392675     0.0000000
+     0.0000000     0.0000000    17.9481697
+ATOM_POSITIONS
+3
+Cartisen                          ! Direct or Cartisen coordinate
+Cr       0.0000000     0.0000000     8.9740849
+S        1.5237818     0.8797558    10.4481694
+S        1.5237818     0.8797558     7.5000003
+
+PROJECTORS
+5 3 3 
+Cr dz2 dxz dyz dx2-y2 dxy 
+S pz px py
+S pz px py
+
+SURFACE            ! See doc for details
+0  0  1
+1  0  0
+0  1  0
+
+!> bulk band structure calculation flag
+&CONTROL
+BulkBand_calc         = T
+Intra_orbital_hall_calc = T
+/
+
+&SYSTEM
+NSLAB = 20              ! for thin film system
+NSLAB1= 4               ! nanowire system
+NSLAB2= 4               ! nanowire system
+NumOccupied = 14        ! NumOccupied
+SOC = 1                 ! soc
+E_FERMI = -1.3727       ! e-fermi
+/
+
+&PARAMETERS
+Eta_Arc = 0.001     ! infinite small value, like brodening
+E_arc = 0.0         ! energy for calculate Fermi Arc
+OmegaNum = 500      ! omega number
+OmegaMin = -3     ! energy interval
+OmegaMax =  3     ! energy interval
+Nk1 = 201           ! number k points  odd number would be better
+Nk2 = 201           ! number k points  odd number would be better
+Nk3 = 1           ! number k points  odd number would be better
+NP = 2              ! number of principle layers
+/
+
+KPATH_BULK            ! k point path
+3
+G 0.0 0.0 0.0 K -0.33333333 0.66666667 0.0
+K -0.33333333 0.66666667 0.0 M 0.0 0.5 0.0
+M 0.0 0.5 0.0 G 0.0 0.0 0.0
+
+
