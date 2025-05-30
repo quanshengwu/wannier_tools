@@ -493,7 +493,7 @@
                           LandauLevel_B_calc, LandauLevel_kplane_calc,landau_chern_calc, &
                           FermiLevel_calc,ANE_calc, export_newhr,export_maghr,w3d_nested_calc, &
                           valley_projection_calc, Matrix_Element_calc, BdGChern_calc, SlabBdG_calc, &
-                          linear_optic_calc, BPVE_calc, Intra_orbital_texture_calc
+                          linear_optic_calc, BPVE_calc, Intra_orbital_hall_calc
 
      integer :: Nslab  ! Number of slabs for 2d Slab system
      integer :: Nslab1 ! Number of slabs for 1D wire system
