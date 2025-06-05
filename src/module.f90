@@ -405,6 +405,7 @@
      logical :: BulkSpintexture_calc ! Flag for spin-texture calculation
      logical :: WannierCenter_calc  ! Flag for Wilson loop calculation
      logical :: BdGChern_calc  ! Flag for Wilson loop calculation of Slab BdG Hamiltonian
+     logical :: BdG_phase_calc  ! Flag for BdG phase diagram calculation
      logical :: Wilsonloop_calc  ! Flag for Wilson loop calculation
      logical :: Z2_3D_calc  ! Flag for Z2 number calculations of 6 planes
      logical :: WeylChirality_calc  ! Weyl chirality calculation
@@ -492,7 +493,7 @@
                           LandauLevel_B_dos_calc,LanczosBand_calc,LanczosDos_calc, &
                           LandauLevel_B_calc, LandauLevel_kplane_calc,landau_chern_calc, &
                           FermiLevel_calc,ANE_calc, export_newhr,export_maghr,w3d_nested_calc, &
-                          valley_projection_calc, Matrix_Element_calc, BdGChern_calc, SlabBdG_calc, &
+                          valley_projection_calc, Matrix_Element_calc, BdGChern_calc, SlabBdG_calc, BdG_phase_calc &
                           linear_optic_calc, BPVE_calc, Intra_orbital_hall_calc
 
      integer :: Nslab  ! Number of slabs for 2d Slab system
@@ -662,6 +663,11 @@
                                       ! Add_Delta_BdG=3 means s-wave superconducting pairing in whole slab
      real(dp) :: mu_BdG               !> Chemical potential mu
      real(dp) :: Delta_BdG            !> s-wave superconducting pairing 
+     real(dp) :: t_BdG                !> Temperature T/Tc
+     real(dp) :: xi_BdG               !> Superconducting correlation length  
+     real(dp) :: l_BdG                !> mean free path  
+
+
 
      !> related to Zeeman effect, Zeeman energy =Effective_gfactor*Bohr_magneton*magneticfield
      !> eg. Effective_gfactor=2, magneticfield=1Tesla, then Zeeman_energy_in_eV =1.16*1E-4 eV  
@@ -688,7 +694,7 @@
      !> Some parameters that relate to the properties of the bulk hamiltonian
      namelist / SYSTEM / Soc, E_fermi, Bx, By, Bz, Btheta, Bphi, surf_onsite, &
         Nslab, Nslab1, Nslab2, Numoccupied, Ntotch, Bmagnitude, &
-        Add_surf_zeeman_field, Bx_surf, By_surf, Bz_surf, Add_Delta_BdG, Delta_BdG, mu_BdG, &
+        Add_surf_zeeman_field, Bx_surf, By_surf, Bz_surf, Add_Delta_BdG, Delta_BdG, mu_BdG, t_BdG, xi_BdG, l_BdG, &
         Add_Zeeman_Field, Effective_gfactor, Zeeman_energy_in_eV, &
         Electric_field_in_eVpA, Symmetrical_Electric_field_in_eVpA, &
         Inner_symmetrical_Electric_Field, ijmax, &
