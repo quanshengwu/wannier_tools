@@ -1,4 +1,4 @@
-subroutine ham_slab_surface_zeeman(k, Hamk_slab_surf_zeeman)
+subroutine ham_slab_surface_zeeman(k, Bz_BdG_phase, Hamk_slab_surf_zeeman)
     ! This subroutine is used to caculate Hamiltonian for
     ! slab system with surface Zeeman splitting.
     !
@@ -12,10 +12,17 @@ subroutine ham_slab_surface_zeeman(k, Hamk_slab_surf_zeeman)
     implicit none
 
     ! loop index
-    integer :: i1, i2, i, ii
+    integer :: i1, i2, i, ii, j
 
     ! wave vector in 2d
     real(Dp), intent(in) :: k(2)
+
+    real(Dp), intent(in) :: Bz_BdG_phase
+
+    ! A vector perpendicular to the surface
+
+    real(Dp) :: ez(3)
+    real(dp), external :: norm
 
     ! Hamiltonian of slab system with surface Zeeman splitting
     complex(Dp), intent(out) :: Hamk_slab_surf_zeeman(Num_wann*nslab,Num_wann*nslab)
@@ -42,16 +49,27 @@ subroutine ham_slab_surface_zeeman(k, Hamk_slab_surf_zeeman)
 
     !> There are several types of Zeeman splitting
 
+    ez(1)= (Rua_newcell(2)*Rub_newcell(3)-Rua_newcell(3)*Rub_newcell(2))
+    ez(2)= (Rua_newcell(3)*Rub_newcell(1)-Rua_newcell(1)*Rub_newcell(3))
+    ez(3)= (Rua_newcell(1)*Rub_newcell(2)-Rua_newcell(2)*Rub_newcell(1))
+    ez(:)= ez(:)/norm(ez(:))
+
+    if (cpuid==0) then
+        write(stdout, *)'A vector perpendicular to the slab: '
+        write(stdout, "(3f12.6)")ez(:)
+    endif
+
+
     !> 1. Add Zeeman splitting only in the bottom slab
     if(Add_surf_zeeman_field == 1) then
         do i=1, Num_wann/2
             ii= i
             !>Bz_surf
-            Hamk_slab_surf_zeeman(ii, ii)= Hamk_slab_surf_zeeman(ii, ii)+ Bz_surf* eV2Hartree
-            Hamk_slab_surf_zeeman(ii+Num_wann/2, ii+Num_wann/2)= Hamk_slab_surf_zeeman(ii+Num_wann/2, ii+Num_wann/2)- Bz_surf* eV2Hartree
+            Hamk_slab_surf_zeeman(ii, ii)= Hamk_slab_surf_zeeman(ii, ii)+ Bz_BdG_phase * ez(3) * eV2Hartree
+            Hamk_slab_surf_zeeman(ii+Num_wann/2, ii+Num_wann/2)= Hamk_slab_surf_zeeman(ii+Num_wann/2, ii+Num_wann/2)- Bz_BdG_phase * ez(3) * eV2Hartree
             !>Bx_surf, By_surf
-            Hamk_slab_surf_zeeman(ii, ii+Num_wann/2)= Hamk_slab_surf_zeeman(ii, ii+Num_wann/2)+ Bx_surf* eV2Hartree- zi*By_surf* eV2Hartree
-            Hamk_slab_surf_zeeman(ii+Num_wann/2, ii)= Hamk_slab_surf_zeeman(ii+Num_wann/2, ii)+ Bx_surf* eV2Hartree+ zi*By_surf* eV2Hartree
+            Hamk_slab_surf_zeeman(ii, ii+Num_wann/2)= Hamk_slab_surf_zeeman(ii, ii+Num_wann/2)+ Bz_BdG_phase * ez(1) * eV2Hartree- zi*Bz_BdG_phase * ez(2) * eV2Hartree
+            Hamk_slab_surf_zeeman(ii+Num_wann/2, ii)= Hamk_slab_surf_zeeman(ii+Num_wann/2, ii)+ Bz_BdG_phase * ez(1) * eV2Hartree+ zi*Bz_BdG_phase * ez(2) * eV2Hartree
        enddo
     endif
 
@@ -60,35 +78,39 @@ subroutine ham_slab_surface_zeeman(k, Hamk_slab_surf_zeeman)
         do i=1, Num_wann/2
             ii= (nslab-1)*Num_wann+ i
             !>Bz_surf
-            Hamk_slab_surf_zeeman(ii, ii)= Hamk_slab_surf_zeeman(ii, ii)+ Bz_surf* eV2Hartree
-            Hamk_slab_surf_zeeman(ii+Num_wann/2, ii+Num_wann/2)= Hamk_slab_surf_zeeman(ii+Num_wann/2, ii+Num_wann/2)- Bz_surf* eV2Hartree
+            Hamk_slab_surf_zeeman(ii, ii)= Hamk_slab_surf_zeeman(ii, ii)+ Bz_BdG_phase * ez(3) * eV2Hartree
+            Hamk_slab_surf_zeeman(ii+Num_wann/2, ii+Num_wann/2)= Hamk_slab_surf_zeeman(ii+Num_wann/2, ii+Num_wann/2)- Bz_BdG_phase * ez(3) * eV2Hartree
             !>Bx_surf, By_surf
-            Hamk_slab_surf_zeeman(ii, ii+Num_wann/2)= Hamk_slab_surf_zeeman(ii, ii+Num_wann/2)+ Bx_surf* eV2Hartree- zi*By_surf* eV2Hartree
-            Hamk_slab_surf_zeeman(ii+Num_wann/2, ii)= Hamk_slab_surf_zeeman(ii+Num_wann/2, ii)+ Bx_surf* eV2Hartree+ zi*By_surf* eV2Hartree
+            Hamk_slab_surf_zeeman(ii, ii+Num_wann/2)= Hamk_slab_surf_zeeman(ii, ii+Num_wann/2) + Bz_BdG_phase * ez(1) * eV2Hartree- zi*Bz_BdG_phase * ez(2) * eV2Hartree
+            Hamk_slab_surf_zeeman(ii+Num_wann/2, ii)= Hamk_slab_surf_zeeman(ii+Num_wann/2, ii) + Bz_BdG_phase * ez(1) * eV2Hartree+ zi*Bz_BdG_phase * ez(2) * eV2Hartree
        enddo
     endif    
 
-    !> 3. Add Zeeman splitting only in top & bottom two slab
+    !> 3. Add Zeeman splitting in whole slab
     if(Add_surf_zeeman_field == 3) then
-        do i=1, Num_wann/2
-            ii= i
-            !>Bz_surf
-            Hamk_slab_surf_zeeman(ii, ii)= Hamk_slab_surf_zeeman(ii, ii)+ Bz_surf* eV2Hartree
-            Hamk_slab_surf_zeeman(ii+Num_wann/2, ii+Num_wann/2)= Hamk_slab_surf_zeeman(ii+Num_wann/2, ii+Num_wann/2)- Bz_surf* eV2Hartree
-            !>Bx_surf, By_surf
-            Hamk_slab_surf_zeeman(ii, ii+Num_wann/2)= Hamk_slab_surf_zeeman(ii, ii+Num_wann/2)+ Bx_surf* eV2Hartree- zi*By_surf* eV2Hartree
-            Hamk_slab_surf_zeeman(ii+Num_wann/2, ii)= Hamk_slab_surf_zeeman(ii+Num_wann/2, ii)+ Bx_surf* eV2Hartree+ zi*By_surf* eV2Hartree
-       enddo
-       do i=1, Num_wann/2
-            ii= (nslab-1)*Num_wann+ i
-            !>Bz_surf
-            Hamk_slab_surf_zeeman(ii, ii)= Hamk_slab_surf_zeeman(ii, ii)+ Bz_surf* eV2Hartree
-            Hamk_slab_surf_zeeman(ii+Num_wann/2, ii+Num_wann/2)= Hamk_slab_surf_zeeman(ii+Num_wann/2, ii+Num_wann/2)- Bz_surf* eV2Hartree
-            !>Bx_surf, By_surf
-            Hamk_slab_surf_zeeman(ii, ii+Num_wann/2)= Hamk_slab_surf_zeeman(ii, ii+Num_wann/2)+ Bx_surf* eV2Hartree- zi*By_surf* eV2Hartree
-            Hamk_slab_surf_zeeman(ii+Num_wann/2, ii)= Hamk_slab_surf_zeeman(ii+Num_wann/2, ii)+ Bx_surf* eV2Hartree+ zi*By_surf* eV2Hartree
-       enddo
+        do j=1, nslab
+           do i=1, Num_wann/2
+              ii= i+(j-1)*Num_wann
+              !>Bz_surf
+              Hamk_slab_surf_zeeman(ii, ii)= Hamk_slab_surf_zeeman(ii, ii)+ Bz_BdG_phase * ez(3) * eV2Hartree
+              Hamk_slab_surf_zeeman(ii+Num_wann/2, ii+Num_wann/2)= Hamk_slab_surf_zeeman(ii+Num_wann/2, ii+Num_wann/2)- Bz_BdG_phase * ez(3) * eV2Hartree
+              !>Bx_surf, By_surf
+              Hamk_slab_surf_zeeman(ii, ii+Num_wann/2)= Hamk_slab_surf_zeeman(ii, ii+Num_wann/2)+ Bz_BdG_phase * ez(1) * eV2Hartree- zi*Bz_BdG_phase * ez(2) * eV2Hartree
+              Hamk_slab_surf_zeeman(ii+Num_wann/2, ii)= Hamk_slab_surf_zeeman(ii+Num_wann/2, ii)+ Bz_BdG_phase * ez(1) * eV2Hartree+ zi*Bz_BdG_phase * ez(2) * eV2Hartree
+           enddo
+        enddo
     endif   
+
+    !Hamk_slab_surf_zeeman(1, 1)=Hamk_slab_surf_zeeman(1, 1)+5*eV2Hartree
+    !Hamk_slab_surf_zeeman(2, 2)=Hamk_slab_surf_zeeman(2, 2)+5*eV2Hartree
+    !Hamk_slab_surf_zeeman(8, 8)=Hamk_slab_surf_zeeman(8, 8)+5*eV2Hartree
+    !Hamk_slab_surf_zeeman(9, 9)=Hamk_slab_surf_zeeman(9, 9)+5*eV2Hartree
+
+    !Hamk_slab_surf_zeeman((nslab-1)*Num_wann+6, (nslab-1)*Num_wann+6)=Hamk_slab_surf_zeeman((nslab-1)*Num_wann+6, (nslab-1)*Num_wann+6)-5*eV2Hartree
+    !Hamk_slab_surf_zeeman((nslab-1)*Num_wann+7, (nslab-1)*Num_wann+7)=Hamk_slab_surf_zeeman((nslab-1)*Num_wann+7, (nslab-1)*Num_wann+7)-5*eV2Hartree
+    !Hamk_slab_surf_zeeman((nslab-1)*Num_wann+13, (nslab-1)*Num_wann+13)=Hamk_slab_surf_zeeman((nslab-1)*Num_wann+13, (nslab-1)*Num_wann+13)-5*eV2Hartree
+    !Hamk_slab_surf_zeeman((nslab-1)*Num_wann+14, (nslab-1)*Num_wann+14)=Hamk_slab_surf_zeeman((nslab-1)*Num_wann+14, (nslab-1)*Num_wann+14)-5*eV2Hartree
+
 
     ! check hermitcity
     do i1=1,nslab*Num_wann
@@ -104,7 +126,7 @@ subroutine ham_slab_surface_zeeman(k, Hamk_slab_surf_zeeman)
  return
  end subroutine ham_slab_surface_zeeman
 
- subroutine ham_slab_BdG(k,Hamk_slab_BdG)
+ subroutine ham_slab_BdG(k,Bz_BdG_phase,Hamk_slab_BdG)
     ! This subroutine is used to caculate Hamiltonian for
     ! slab BdG system .
     !
@@ -118,13 +140,15 @@ subroutine ham_slab_surface_zeeman(k, Hamk_slab_surf_zeeman)
     implicit none
 
     ! loop index
-    integer :: i1, i2
+    integer :: i1, i2, i
 
     ! wave vector in 2d
     real(Dp), intent(in) :: k(2)
 
-    !real(Dp) :: k1(2)
+    real(Dp), intent(in) :: Bz_BdG_phase
 
+    ! Delta_decay coefficient
+    real(Dp) :: kd
 
     ! Hamiltonian of slab BdG system
     complex(Dp), intent(out) :: Hamk_slab_BdG(Num_wann_BdG*nslab,Num_wann_BdG*nslab)
@@ -171,24 +195,28 @@ subroutine ham_slab_surface_zeeman(k, Hamk_slab_surf_zeeman)
     sigma0(1,1)= (1.0d0, 0.0d0);   sigma0(1,2)= (0.0d0, 0.0d0)
     sigma0(2,1)= (0.0d0, 0.0d0);   sigma0(2,2)= (1.0d0, 0.0d0)
     
-    call ham_slab_surface_zeeman( k, Hamk_slab)
-    call ham_slab_surface_zeeman(-k, Hamk_slab_minus)
+    call ham_slab_surface_zeeman( k, Bz_BdG_phase, Hamk_slab)
+    call ham_slab_surface_zeeman(-k, Bz_BdG_phase, Hamk_slab_minus)
 
     !> s-wave superconducting pairing for basis: up up dn dn (wannier90_hr.dat from vasp)
     !> s-wave pairing: Kron(I_nslab, Kron(i*sigmay*Delta_BdG, I_norb))
     call eye_mat(Num_wann/2, I_norb)
     call eye_mat(nslab*Num_wann,I_mu)
 
+    !> Delta_decay (Ref: Theory of the Superconducting Proximity Effect)
+    kd=sqrt((t_BdG/xi_BdG)*((t_BdG/xi_BdG)+(3/l_BdG)))
+
+
     if(Add_Delta_BdG == 1) then
-      I_nslab(1,1)=1.0d0
+       do i=1 ,nslab
+          I_nslab(i,i)=cosh(kd*(i-1-nslab)*Ruc_newcell(3)/(10*Angstrom2atomic))/cosh(kd*(nslab)*Ruc_newcell(3)/(10*Angstrom2atomic))
+       enddo !i
     endif
 
     if(Add_Delta_BdG == 2) then
-      I_nslab(nslab,nslab)=1.0d0
-    endif
-
-    if(Add_Delta_BdG == 3) then
-      call eye_mat(nslab, I_nslab)
+       do i=1 ,nslab
+          I_nslab(i,i)=cosh(kd*(i)*Ruc_newcell(3)/(10*Angstrom2atomic))/cosh(kd*(nslab)*Ruc_newcell(3)/(10*Angstrom2atomic))
+       enddo !i
     endif
 
     Hamk_temp= KronProd(zi*Delta_BdG*sigmay*eV2Hartree, I_norb)
@@ -263,6 +291,12 @@ subroutine ek_slab_BdG
    ! time measurement
    real(dp) :: time_start, time_end, time_start0
 
+   ! Delta_decay coefficient
+   real(Dp) :: kd
+
+   ! Delta_decay
+   real(Dp),allocatable :: Delta_decay(:)
+
    ! parameters for zheev
    real(Dp), allocatable ::  rwork(:)
    complex(Dp), allocatable :: work(:)
@@ -294,6 +328,7 @@ subroutine ek_slab_BdG
    allocate(CHamk_BdG(nslab*Num_wann_BdG,nslab*Num_wann_BdG))
    allocate(work(lwork))
    allocate(rwork(lwork))
+   allocate(Delta_decay(nslab))
 
    surf_l_weight_BdG= 0d0
    surf_l_weight_BdG_mpi= 0d0
@@ -320,7 +355,7 @@ subroutine ek_slab_BdG
       k= k2_path(i, :)
       chamk_BdG=0.0d0 
 
-      call ham_slab_BdG(k,Chamk_BdG)
+      call ham_slab_BdG(k,Bz_surf,Chamk_BdG)
 
 
       eigenvalue_BdG=0.0d0
@@ -440,11 +475,11 @@ subroutine ek_slab_BdG
          endif
       enddo
       write(outfileindex, '(a)')'#rgb(r,g,b) = int(r)*65536 + int(g)*256 + int(b)'
-      write(outfileindex, '(2a)')"#plot 'slabek.dat' u 1:2:(rgb(255,$3, 3)) ",  &
+      write(outfileindex, '(2a)')"#plot 'slabek_BdG.dat' u 1:2:(rgb(255,$3, 3)) ",  &
           "w lp lw 2 pt 7  ps 1 lc rgb variable"
       write(outfileindex, '(2a)')"# (a) "
       write(outfileindex, '(2a)')"# plot the top and bottom surface's weight together"
-      write(outfileindex, '(2a)')"#plot 'slabek.dat' u 1:2:($3+$4) ",  &
+      write(outfileindex, '(2a)')"#plot 'slabek_BdG.dat' u 1:2:($3+$4) ",  &
           "w lp lw 2 pt 7  ps 1 lc palette"
       write(outfileindex, '(2a)')"# (b) "
       write(outfileindex, '(2a)') &
@@ -456,6 +491,41 @@ subroutine ek_slab_BdG
 
       !write(outfileindex, '(2a)')"splot 'slabek.dat' u 1:2:3 ",  &
       !   "w lp lw 2 pt 13 palette"
+      close(outfileindex)
+   endif
+
+   !> Delta_decay (Ref: Theory of the Superconducting Proximity Effect)
+   kd=sqrt((t_BdG/xi_BdG)*((t_BdG/xi_BdG)+(3/l_BdG)))
+
+   do i = 1, Nslab
+      Delta_decay(i)=Delta_BdG*cosh(kd*(i-1-nslab)*Ruc_newcell(3)/(10*Angstrom2atomic))/cosh(kd*(nslab)*Ruc_newcell(3)/(10*Angstrom2atomic))
+   enddo
+
+   outfileindex= outfileindex+ 1
+   if(cpuid==0)then
+      open(unit=outfileindex, file='Delta_decay.dat')
+      write(outfileindex, "('#', a15, a15 )")'d(layer)', ' Delta'
+      do i=1, Nslab
+         write(outfileindex,'(i10, f16.7)') i, Delta_decay(i)
+      enddo
+      close(outfileindex)
+      write(stdout,*) 'Plot the Delta decay curve'
+   endif
+
+   outfileindex= outfileindex+ 1
+   if (cpuid==0) then
+      open(unit=outfileindex, file='Delta_decay.gnu')
+      write(outfileindex, '(a)')'set terminal pdf enhanced color font ",24"'
+      write(outfileindex, '(a)')"set output 'Delta_decay.pdf'"
+      write(outfileindex, '(a)')"set style data linespoints"
+      write(outfileindex, '(a)')"unset key"
+      write(outfileindex, '(a)')"set pointsize 0.8"
+      write(outfileindex, '(a)')"set border lw 2"
+      write(outfileindex, '(a, i, a)')'set xrange [1: ', Nslab, ']'
+      write(outfileindex, '(a)')'set xlabel "Distance(layer)"'
+      write(outfileindex, '(a)')'set ylabel "Delta(eV)"'
+      write(outfileindex, '(a, f10.5, a)')'set yrange [0: ', Delta_BdG, ']'
+      write(outfileindex, '(a)')"plot 'Delta_decay.dat' u 1:2  w lp lw 2 pt 7  ps 0.2 lc rgb 'red', 0 w l lw 2 dt 2"
       close(outfileindex)
    endif
 
@@ -623,13 +693,13 @@ subroutine  wannier_center2D_BdG
     slab_Kub(2)= 2d0*pi/cell_slab*slab_Rua(1)
 
     if (cpuid==0) then
-        write(stdout, *)'2D Primitive Cell_Volume: ', cell_slab
+        write(stdout, *)'2D Primitive Cell_Volume: ', cell_slab/(Angstrom2atomic**2)
         write(stdout, *)'slab_Rua, slab_Rub'
-        write(stdout, '(3f10.4)')slab_Rua
-        write(stdout, '(3f10.4)')slab_Rub
+        write(stdout, '(3f10.4)')slab_Rua/Angstrom2atomic
+        write(stdout, '(3f10.4)')slab_Rub/Angstrom2atomic
         write(stdout, *)'slab_Kua, slab_Kub'
-        write(stdout, '(3f10.4)')slab_Kua
-        write(stdout, '(3f10.4)')slab_Kub
+        write(stdout, '(3f10.4)')slab_Kua/Angstrom2atomic
+        write(stdout, '(3f10.4)')slab_Kub/Angstrom2atomic
     endif
 
     b= 0.0d0
@@ -678,14 +748,22 @@ subroutine  wannier_center2D_BdG
     !> set up atoms' position in the unit cell of the new basis
     !> only for 2D slab system
     AtomsPosition_unitcell=0.0d0
+
+    !do ia=1, Origin_cell%Num_atoms
+    !   do i=1, 3
+    !      do j=1,3
+    !          AtomsPosition_unitcell(i,ia)= AtomsPosition_unitcell(i, ia)+ &
+    !              Umatrix_t(i,j)*Origin_cell%Atom_position_cart(j, ia)
+    !      enddo ! j
+    !   enddo ! i
+    !enddo ! ia
+
     do ia=1, Origin_cell%Num_atoms
        do i=1, 3
-          do j=1,3
-              AtomsPosition_unitcell(i,ia)= AtomsPosition_unitcell(i, ia)+ &
-                  Umatrix_t(i,j)*Origin_cell%Atom_position_cart(j, ia)
-          enddo ! j
+          AtomsPosition_unitcell(i,ia)= Cell_defined_by_surface%Atom_position_cart(i,ia)
        enddo ! i
     enddo ! ia
+
 
     if (cpuid==0) then
         write(stdout, *)'AtomPosition_unitcell: '
@@ -701,8 +779,7 @@ subroutine  wannier_center2D_BdG
     do i=1, Nslab
        do ia=1, Origin_cell%Num_atoms
           ia1= ia1+ 1
-          AtomsPosition_supercell(1, ia1)= AtomsPosition_unitcell(1,ia)
-          AtomsPosition_supercell(2, ia1)= AtomsPosition_unitcell(2,ia)
+          AtomsPosition_supercell(:, ia1)= AtomsPosition_unitcell(:,ia) !+Ruc_new*(i-1d0)
        enddo ! ia
     enddo ! i
 
@@ -727,7 +804,7 @@ subroutine  wannier_center2D_BdG
           k(1)= kpoints(1, ikx, iky)
           k(2)= kpoints(2, ikx, iky)
 
-          call ham_slab_BdG(k,hamk)
+          call ham_slab_BdG(k,Bz_surf,hamk)
 
           !> diagonal hamk
           call eigensystem_c('V', 'U', Num_wann_BdG*Nslab, hamk, eigenvalue)
@@ -892,3 +969,149 @@ subroutine  wannier_center2D_BdG
 
     return
  end subroutine  wannier_center2D_BdG
+
+ subroutine ek_slab_BdG_phase
+  
+   use wmpi
+   use para
+   implicit none 
+
+   ! loop index
+   integer :: i, j, l, lwork, ierr
+
+   real(Dp) :: k(2), emin, emax
+
+   real(Dp) :: Bz_BdG_phase(Nk1)
+   real(Dp) :: Bz_BdG_i
+
+   ! time measurement
+   real(dp) :: time_start, time_end, time_start0
+
+   ! parameters for zheev
+   real(Dp), allocatable ::  rwork(:)
+   complex(Dp), allocatable :: work(:)
+
+   ! eigenvalue 
+   real(Dp), allocatable :: eigenvalue_BdG(:)
+
+   ! energy dispersion
+   real(Dp), allocatable :: ekslab_BdG(:,:), ekslab_BdG_mpi(:,:)
+
+   ! hamiltonian slab
+   complex(Dp), allocatable :: CHamk_BdG(:,:)
+
+   lwork= 16*Nslab*Num_wann_BdG
+   ierr = 0
+
+   allocate(eigenvalue_BdG(nslab* Num_wann_BdG))
+   allocate(ekslab_BdG(nslab* Num_wann_BdG, Nk1))
+   allocate(ekslab_BdG_mpi(nslab* Num_wann_BdG, Nk1))
+   allocate(CHamk_BdG(nslab* Num_wann_BdG, nslab* Num_wann_BdG))
+
+   allocate(work(lwork))
+   allocate(rwork(lwork))
+
+   ! sweep k
+   ekslab_BdG=0.0d0
+   ekslab_BdG_mpi=0.0d0
+
+   time_start= 0d0
+   time_start0= 0d0
+   call now(time_start0)
+   time_start= time_start0
+   time_end  = time_start0
+
+   Bz_BdG_phase=0d0
+   do i=1, Nk1
+      Bz_BdG_phase(i)= real(i-1d0)/real(Nk1-1d0)*Bz_surf
+   enddo
+
+   do i= 1+cpuid, Nk1, num_cpu
+      if (cpuid==0.and. mod(i/num_cpu, 4)==0) &
+         write(stdout, '(a, i9, "  /", i10, a, f10.1, "s", a, f10.1, "s")') &
+         ' Slabek: ik', i, Nk1, ' time left', &
+         (Nk1-i)*(time_end- time_start)/num_cpu, &
+         ' time elapsed: ', time_end-time_start0 
+
+      call now(time_start)
+
+      k= Single_KPOINT_2D_DIRECT
+
+      Bz_BdG_i= Bz_BdG_phase(i)
+      
+      CHamk_BdG=0.0d0
+      call ham_slab_BdG(k, Bz_BdG_i, CHamk_BdG)
+
+      eigenvalue_BdG=0.0d0
+
+      ! diagonal Chamk_BdG
+      call eigensystem_c('V', 'U', Num_wann_BdG*Nslab, CHamk_BdG, eigenvalue_BdG)
+     
+      ekslab_BdG(:,i)=eigenvalue_BdG
+
+      call now(time_end)
+   enddo ! i
+
+#if defined (MPI)
+   call mpi_allreduce(ekslab_BdG,ekslab_BdG_mpi,size(ekslab_BdG),&
+                     mpi_dp,mpi_sum,mpi_cmw,ierr)
+#else
+   ekslab_BdG_mpi= ekslab_BdG
+#endif
+
+   ekslab_BdG_mpi= ekslab_BdG_mpi/eV2Hartree
+
+   ekslab_BdG=ekslab_BdG_mpi
+   
+   outfileindex= outfileindex+ 1
+   if(cpuid==0)then
+      open(unit=outfileindex, file='slabek_BdG_phase.dat')
+      write(outfileindex, "('#', a10, a15, 5X)")'# k', ' E'
+      do j=1, Num_wann_BdG*Nslab
+         do i=1, Nk1
+            write(outfileindex,'(2f15.7)')Bz_BdG_phase(i), ekslab_BdG(j,i)
+         enddo
+         write(outfileindex , *)''
+      enddo
+      close(outfileindex)
+      write(stdout,*) 'calculate BdG_phase done'
+   endif
+
+
+   emin= -Delta_BdG*2
+   emax= Delta_BdG*2
+   !> write script for gnuplot
+   outfileindex= outfileindex+ 1
+   if (cpuid==0) then
+      open(unit=outfileindex, file='slabek_BdG_phase.gnu')
+      write(outfileindex, '(a)')'set terminal pdf enhanced color font ",24"'
+      write(outfileindex, '(a)')"set output 'slabek_BdG_phase.pdf'"
+      write(outfileindex, '(a)')"set style data linespoints"
+      write(outfileindex, '(a)')"unset key"
+      write(outfileindex, '(a)')"set pointsize 0.8"
+      write(outfileindex, '(a)')"set border lw 2"
+      write(outfileindex, '(a, f10.5, a)')'set xrange [0: ', Bz_surf, ']'
+      write(outfileindex, '(a)')'set xlabel "Bz surf(eV)"'
+      write(outfileindex, '(a)')'set ylabel "Energy(eV)"'
+      write(outfileindex, '(a, f10.5, a, f10.5, a)')'set yrange [', emin, ':', emax, ']'
+      write(outfileindex, '(a)')"plot 'slabek_BdG_phase.dat' u 1:2  w lp lw 2 pt 7  ps 0.2 lc rgb 'red', 0 w l lw 2 dt 2"
+      close(outfileindex)
+   endif
+
+
+   202 format('set xtics (',:20('"',A3,'" ',F10.5,','))
+   203 format(A3,'" ',F10.5,')')
+   204 format('set arrow from ',F10.5,',',F10.5, &
+      ' to ',F10.5,',',F10.5, ' nohead')
+ 
+
+   deallocate(eigenvalue_BdG)
+   deallocate(ekslab_BdG)
+   deallocate(ekslab_BdG_mpi)
+   deallocate(CHamk_BdG)
+
+   deallocate(work)
+   deallocate(rwork)
+ 
+return
+end subroutine ek_slab_BdG_phase
