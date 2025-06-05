@@ -488,6 +488,19 @@
         if(cpuid.eq.0)write(stdout, *)'<< End of calculating the slab BdG band structure'
      endif     
 
+     !> BdG phase
+     if (BdG_phase_calc)then
+        if(cpuid.eq.0)write(stdout, *)' '
+        if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the slab BdG Phase diagram'
+        call now(time_start)
+        call ek_slab_BdG_phase
+        call now(time_end)
+        call print_time_cost(time_start, time_end, 'SlabBand')
+        if(cpuid.eq.0)write(stdout, *)'<< End of calculating the slab BdG Phase diagram'
+     endif
+
+
+
      if (BerryCurvature_slab_calc)then
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the Berry curvature for a slab system'
