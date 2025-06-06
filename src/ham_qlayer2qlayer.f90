@@ -101,6 +101,110 @@
   return
   end subroutine ham_qlayer2qlayer
 
+  subroutine s_qlayer2qlayer(k,H00new,H01new)
+   ! This subroutine caculates Hamiltonian between
+   ! slabs For surface state calculation
+   ! 4/23/2010 by QS Wu
+   ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
+
+   use para
+
+   implicit none
+
+   ! loop index
+   integer :: i,j,iR
+
+   ! index used to sign irvec     
+   real(dp) :: ia,ib,ic
+
+   ! new index used to sign irvec     
+   real(dp) :: new_ia,new_ib,new_ic
+   integer :: inew_ic
+   integer :: int_ic
+
+   ! wave vector k times lattice vector R  
+   real(Dp) :: kdotr  
+
+   ! input wave vector k's cooridinates
+   real(Dp),intent(in) :: k(2)
+
+   ! H00 Hamiltonian between nearest neighbour-quintuple-layers
+   ! the factor 2 is induced by spin
+
+   complex(dp) :: ratio
+
+   complex(Dp), allocatable :: Hij(:, :, :)
+
+   ! H00 Hamiltonian between nearest neighbour-quintuple-layers
+   ! the factor 2 is induced by spin
+
+   !     complex(Dp),allocatable,intent(out) :: H00new(:,:)
+   complex(Dp),intent(out) :: H00new(Ndim,Ndim)
+
+   ! H01 Hamiltonian between next-nearest neighbour-quintuple-layers
+   !     complex(Dp),allocatable,intent(out) :: H01new(:,:)
+   complex(Dp),intent(out) :: H01new(Ndim,Ndim)
+
+   allocate(Hij(Num_wann,Num_wann,-ijmax:ijmax))
+
+   Hij=0.0d0
+   do iR=1,nrpts_surfacecell
+      ia=irvec_surfacecell(1,iR)
+      ib=irvec_surfacecell(2,iR)
+      ic=irvec_surfacecell(3,iR)
+
+      int_ic= int(ic)
+      if (abs(ic).le.ijmax)then
+         kdotr=k(1)*ia+ k(2)*ib
+         ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
+
+         Hij(1:Num_wann, 1:Num_wann, int_ic )&
+         =Hij(1:Num_wann, 1:Num_wann, int_ic)&
+         +SmnR_surfacecell(:,:,iR)*ratio/ndegen_surfacecell(iR)
+      endif
+
+   enddo
+
+   H00new=0.0d0
+   H01new=0.0d0
+
+   ! nslab's principle layer 
+   ! H00new
+   do i=1,Np
+   do j=1,Np
+      if (abs(i-j).le.(ijmax)) then
+        H00new(Num_wann*(i-1)+1:Num_wann*i,Num_wann*(j-1)+1:Num_wann*j)&
+              =Hij(:,:,j-i)
+      endif
+   enddo
+   enddo
+
+   ! H01new
+   do i=1,Np
+   do j=Np+1,Np*2
+      if (j-i.le.ijmax) then
+         H01new(Num_wann*(i-1)+1:Num_wann*i,&
+             Num_wann*(j-1-Np)+1:Num_wann*(j-Np))=Hij(:,:,j-i)
+      endif
+   enddo
+   enddo
+
+   do i=1,Ndim
+   do j=1,Ndim
+      if(abs(H00new(i,j)-conjg(H00new(j,i))).ge.1e-4)then
+     !  write(stdout,*)'there are something wrong with ham_qlayer2qlayer'
+     !stop
+      endif
+
+   enddo
+   enddo
+
+   deallocate(Hij)
+
+ return
+ end subroutine s_qlayer2qlayer
+
+
   subroutine ham_qlayer2qlayer_bak(k,H00new,H01new)
      ! This subroutine caculates Hamiltonian between
      ! slabs For surface state calculation
@@ -481,7 +585,55 @@
   return
   end subroutine ham_qlayer2qlayer2
 
+  subroutine s_qlayer2qlayer2(k,Hij)
+   ! This subroutine caculates Hamiltonian between
+   ! slabs  
+   ! 4/23/2010 by QS Wu
+   ! Copyright (c) 2010 QuanSheng Wu. All rights reserved.
 
+   use para
+
+   implicit none
+
+   ! loop index
+   integer :: iR, inew_ic, int_ic
+   real(dp) :: ia, ib, ic
+
+   ! new index used to sign irvec     
+   real(dp) :: new_ia,new_ib,new_ic
+
+   ! wave vector k times lattice vector R  
+   real(Dp) :: kdotr  
+
+   ! input wave vector k's cooridinates
+   real(Dp),intent(in) :: k(2)
+
+   complex(dp) :: ratio
+
+   complex(Dp), intent(out) :: Hij(-ijmax:ijmax,Num_wann,Num_wann)
+
+   Hij=0.0d0
+
+   do iR=1,nrpts_surfacecell
+      ia=irvec_surfacecell(1,iR)
+      ib=irvec_surfacecell(2,iR)
+      ic=irvec_surfacecell(3,iR)
+
+      int_ic= int(ic)
+      if (abs(ic).le.ijmax)then
+         kdotr=k(1)*ia+k(2)*ib
+         ratio=cos(2d0*pi*kdotr)+zi*sin(2d0*pi*kdotr)
+
+         Hij(int_ic, 1:Num_wann, 1:Num_wann )&
+         =Hij(int_ic, 1:Num_wann, 1:Num_wann )&
+         +SmnR_surfacecell(:,:,iR)*ratio/ndegen_surfacecell(iR)
+
+      endif
+
+   enddo
+
+return
+end subroutine s_qlayer2qlayer2
 
   subroutine ham_qlayer2qlayer2_LOTO(k,Hij)
      ! This subroutine caculates Hamiltonian between

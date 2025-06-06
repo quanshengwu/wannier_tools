@@ -932,6 +932,7 @@
      integer, allocatable     :: irvec_valley(:,:)   ! R coordinates in fractional units
      real(dp), allocatable    :: crvec(:,:)   ! R coordinates in Cartesian coordinates in units of Angstrom
      complex(dp), allocatable :: HmnR(:,:,:)   ! Hamiltonian m,n are band indexes
+     complex(dp), allocatable :: SmnR(:,:,:)   ! Overlap matrix m,n are band indexes
      complex(dp), allocatable :: valley_operator_R(:,:,:)   ! Hamiltonian m,n are band indexes
      
      
@@ -954,6 +955,7 @@
      integer, allocatable     :: ndegen(:)  ! degree of degeneracy of R point
 
      complex(dp), allocatable :: HmnR_surfacecell(:,:,:)   ! Hamiltonian m,n are band indexes
+     complex(dp), allocatable :: SmnR_surfacecell(:,:,:)   ! Overlap matrix m,n are band indexes
      real(dp), allocatable :: Atom_position_cart_newcell(:,:)   ! Hamiltonian m,n are band indexes
      real(dp), allocatable :: Atom_position_direct_newcell(:,:)   ! Hamiltonian m,n are band indexes
      integer, allocatable     :: irvec_surfacecell(:,:)   ! R coordinates

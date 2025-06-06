@@ -21,7 +21,7 @@ subroutine ek_bulk_line
    real(Dp), allocatable :: W(:)
 
    ! Hamiltonian of bulk system
-   complex(Dp), allocatable :: Hamk_bulk(:, :)
+   complex(Dp), allocatable :: Hamk_bulk(:, :), Sk_bulk(:, :)
 
    ! eigenectors of H
    real(dp), allocatable :: eigv(:,:), eigv_mpi(:,:)
@@ -39,6 +39,10 @@ subroutine ek_bulk_line
    eigv    = 0d0; eigv_mpi= 0d0
    weight  = 0d0; weight_sum = 0d0; weight_mpi = 0d0
 
+   if (.not. Orthogonal_Basis) then
+      allocate(Sk_bulk(Num_wann, Num_wann))
+      Sk_bulk= 0d0
+   endif
 
    do ik= 1+cpuid, knv3, num_cpu
 
@@ -55,7 +59,20 @@ subroutine ek_bulk_line
          if (index(Particle,'phonon')/=0.and.LOTO_correction) then
             call ham_bulk_LOTO(k, Hamk_bulk)
          else
-            call ham_bulk_latticegauge(k, Hamk_bulk)
+            if (Is_Sparse) then
+               stop 'ERROR: Sparse mode is not supported in ek_bulk_line'
+            else
+               if (Orthogonal_Basis) then
+                  call ham_bulk_latticegauge(k, Hamk_bulk)
+               else
+                  
+                  Sk_bulk= 0d0
+                  call S_bulk_latticegauge(k, Sk_bulk)
+                  call ham_bulk_latticegauge(k, Hamk_bulk)
+                  call orthogonalize_hamiltonian(Hamk_bulk, Sk_bulk, Num_wann)
+               endif
+
+            endif
            !call ham_bulk_atomicgauge(k, Hamk_bulk)
          endif
       endif
@@ -3407,7 +3424,7 @@ subroutine generate_ek_kpath_gnu(datafilename, gnufilename, gnuoutfilename, &
          endif
       enddo
       write(outfileindex, '(2a)')"# please comment the following lines to plot the fatband "
-      if (Is_Sparse_Hr) then
+      if (Is_Sparse) then
          write(outfileindex, '(4a)')"plot '", trim(adjustl(datafilename)), "' u 1:2 ",  &
             " w p pt 7  ps 0.2 lc rgb 'black', 0 w l lw 2 dt 2"
       else
