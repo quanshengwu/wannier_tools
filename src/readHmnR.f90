@@ -21,7 +21,7 @@ subroutine readNormalHmnR()
    integer :: n, m, ir0
    integer :: add_electric_field
    integer :: nwann, nwann_nsoc
-
+   integer :: stat, idx, nRused
    real(dp) :: static_potential
    real(dp) :: tot, rh, ih
    real(dp) :: pos(Origin_cell%Num_atoms)
@@ -39,58 +39,118 @@ subroutine readNormalHmnR()
 
    if (index(Hrfile, 'HWR')==0) then
       !> for Normal HmnR obtained from Wannier90 or sparse HmnR
+      if (.not. Is_Sparse_Hr) then
 
-      !> skip a comment line
-      read(12, *)
+         !> skip a comment line
+         read(12, *)
 
-      !> number of Wannier orbitals in the hr file
-      nwann=0
-      read(12, *)nwann
-      if (nwann==0) then
-         stop "ERROR : num_wann is zero in hr file"
+         !> number of Wannier orbitals in the hr file
+         nwann=0
+         read(12, *)nwann
+         if (nwann==0) then
+            stop "ERROR : num_wann is zero in hr file"
+         endif
+         nwann_nsoc=nwann
+         if (SOC>0) nwann_nsoc= nwann/2
+
+         if ((soc==0 .and. sum(Origin_cell%nprojs)/=nwann .and. .not.Add_Zeeman_Field) .or. &
+         (soc>0 .and. sum(Origin_cell%nprojs)/=nwann/2))then
+         print *, 'sum(Origin_cell%nprojs), num_wann, num_wann/2'
+         print *, sum(Origin_cell%nprojs), nwann, nwann/2
+         print *, "ERROR: Maybe the SOC tags in the SYSTEM is wrongly set"
+         stop "ERROR: the summation of all projectors times spin degeneracy is not equal to num_wann"
+         endif
+   
+         !> number of lattice vectors taken into account
+         read(12, *)Nrpts
+         if (.not. allocated(HmnR)) allocate(HmnR(Num_wann,Num_wann,nrpts))
+         allocate(irvec(3,nrpts))
+         allocate(ndegen(nrpts))
+         irvec= 0
+         ndegen=1
+
+         !> The degeneracy of each R point, this is caused by the Fourier transform in the Wigner-Seitz cell
+         read(12, *)(ndegen(i), i=1, Nrpts)
+      else
+         !> for Sparse HmnR
+         !> skip a comment line
+         read(12, *)
+         read(12,*) splen_input   !> number of non-zeros lines
+         if (splen_input<=0) then
+            stop "ERROR : splen_input is zero in hr file"
+         endif
+
+         !> 读取 Wannier 轨道数
+         read(12, *) nwann
+         if (nwann /= Num_wann) then
+            write(*, *) '>>> ERROR: Num_wann mismatch in Hr file: ', nwann, ' vs ', Num_wann
+            stop
+         endif
+         nwann_nsoc = nwann
+         if (SOC > 0) nwann_nsoc = nwann/2
+
+         !> 读取 R 点个数
+         read(12, *) Nrpts
+         if (.not. allocated(HmnR)) allocate(HmnR(Num_wann,Num_wann,nrpts))
+         allocate(irvec(3, Nrpts))
+         allocate(ndegen(Nrpts))
+         ndegen = 1
       endif
-      nwann_nsoc=nwann
-      if (SOC>0) nwann_nsoc= nwann/2
 
-      if ((soc==0 .and. sum(Origin_cell%nprojs)/=nwann .and. .not.Add_Zeeman_Field) .or. &
-        (soc>0 .and. sum(Origin_cell%nprojs)/=nwann/2))then
-        print *, 'sum(Origin_cell%nprojs), num_wann, num_wann/2'
-        print *, sum(Origin_cell%nprojs), nwann, nwann/2
-        print *, "ERROR: Maybe the SOC tags in the SYSTEM is wrongly set"
-        stop "ERROR: the summation of all projectors times spin degeneracy is not equal to num_wann"
-      endif
-  
-      !> number of lattice vectors taken into account
-      read(12, *)Nrpts
-      if (.not. allocated(HmnR)) allocate(HmnR(Num_wann,Num_wann,nrpts))
-      allocate(irvec(3,nrpts))
-      allocate(ndegen(nrpts))
-      irvec= 0
-      ndegen=1
+      nRused = 0
+      do 
+         read(12,*,iostat=stat) i1, i2, i3, i4, i5, rh, ih
+         if (stat<0) exit   ! EOF
+         if (stat>0) stop "格式错误"
+         !—— 1) 在已有 R 点中查找 ——
+         idx = 0
+         do j = 1, nRused
+            if (irvec(1,j)==i1 .and. irvec(2,j)==i2 .and. irvec(3,j)==i3) then
+               idx = j
+               exit
+            end if
+         end do
+      
+         !—— 2) 如果没找到，就新增一个 R 点 ——
+         if (idx == 0) then
+            nRused = nRused + 1
+            idx = nRused
+            irvec(:,idx) = (/ i1, i2, i3 /)
+            ! write(*, '(a, i5, a, i5, a, i5)') 'New R point found: i1 =', i1, ', i2=', i2, ', i3=', i3
+         end if
+      
+         !—— 3) 填写 overlap 矩阵 ——
+         HmnR(i4, i5, idx) = dcmplx(rh, ih)
 
-      !> The degeneracy of each R point, this is caused by the Fourier transform in the Wigner-Seitz cell
-      read(12, *)(ndegen(i), i=1, Nrpts)
-      ir=0
-      do ir=1,Nrpts
-         do n=1,nwann
-            do m=1,nwann
-               read(12,*,end=1001)i1, i2, i3, i4, i5, rh, ih
-               irvec(1,ir)=i1
-               irvec(2,ir)=i2
-               irvec(3,ir)=i3
-               HmnR(i4,i5,ir)=dcmplx(rh,ih)
-            end do
-         enddo
-      enddo
+      end do
+
+      ! ir=0
+      ! do ir=1,Nrpts
+      !    do n=1,nwann
+      !       do m=1,nwann
+      !          read(12,*,end=1001)i1, i2, i3, i4, i5, rh, ih
+      !          irvec(1,ir)=i1
+      !          irvec(2,ir)=i2
+      !          irvec(3,ir)=i3
+      !          HmnR(i4,i5,ir)=dcmplx(rh,ih)
+      !       end do
+      !    enddo
+      ! enddo
 
       !> extract the fermi energy
-      do iR=1,Nrpts
-         if (Irvec(1,iR).eq.0.and.Irvec(2,iR).eq.0.and.Irvec(3,iR).eq.0)then
-            do i=1, Num_wann
-               HmnR(i,i,iR)=HmnR(i,i,iR)-E_fermi
-            enddo
-         endif
-      enddo
+      if (Orthogonal_Basis) then
+         do iR=1,Nrpts
+            if (Irvec(1,iR).eq.0.and.Irvec(2,iR).eq.0.and.Irvec(3,iR).eq.0)then
+               do i=1, Num_wann
+                  HmnR(i,i,iR)=HmnR(i,i,iR)-E_fermi
+                  ! write(*, '(a, 5i5, a, f18.7)') 'HmnR at R=0', iR, i, irvec(:,iR), ' is ', HmnR(i,i,iR)
+               enddo
+            endif
+         enddo
+      endif
+
+      !直接结束所有程序
+      ! stop "ERROR: Orthogonal_Basis is not supported in this version of Wannier90"
       !> WannierTools codes use Hatree atomic units
       if (index(Particle,'phonon')/=0) then
          HmnR= HmnR*eV2Hartree*eV2Hartree ! from eV to Hartree
@@ -224,7 +284,7 @@ subroutine readNormalHmnR()
    endif  ! add electric field or not
 
    !> write out Hmn(R=0)
-   if (cpuid.eq.0 .and. Num_wann< 200)then
+   if (cpuid.eq.0 .and. Num_wann< 300)then
       write(stdout, '(a)')" "
       write(stdout, '(a)')" >> Hopping parameters in the home unit cell"
       write(stdout, '(a)')" >> H00= Hmn(R=0) real part"
@@ -239,7 +299,7 @@ subroutine readNormalHmnR()
       write(stdout, '(a)')" "
    endif
 
-   call get_hmnr_cell(Cell_defined_by_surface)
+   ! call get_hmnr_cell(Cell_defined_by_surface)
 
    return
 end subroutine readNormalHmnR
@@ -341,6 +401,105 @@ subroutine read_OAM_operator(Lx_wann, Ly_wann, Lz_wann)
    if (cpuid.eq.0) write(stdout, *) ">>> finished reading of OAM operator"
 
 end subroutine read_OAM_operator
+
+subroutine readNormalSmnR()
+   !>> Read in the overlap matrix from wannier90_sr.dat
+   !>  The format is defined by the Wannier90 software
+   !  Constructed by quansheng wu 4/2/2010
+   !  Modified for overlap (SmnR)
+
+   use para
+   implicit none
+
+   integer :: ir, n, m, i, j, k, idx, nRused
+   integer :: i1, i2, i3, i4, i5
+   integer :: nwann, nwann_nsoc
+   real(dp) :: rh, ih
+   ! complex(dp), allocatable :: SmnR(:,:,:)  ! overlap matrix
+   logical :: exists
+
+   if(cpuid.eq.0)write(stdout,*)' '
+   if(cpuid.eq.0)write(stdout,'(2a)')' >> Now we are reading the overlap files: ', trim(adjustl(Overlapfile))
+   inquire(file= Overlapfile, EXIST = exists)
+   if (exists)then
+      open(13, file= Overlapfile, status='OLD')
+   else
+      STOP ">> for non-orthogonal basis , you have to prepare a file like overlap.dat"
+   endif
+
+   if(.not. Is_Sparse_Hr) then
+      write(*, *) '>>> ERROR: The overlap file is not sparse. Please use the sparse format.'
+      stop
+   else
+      !> 跳过注释行
+      read(13, *) 
+      
+      read(13,*) splen_overlap_input   !> number of non-zeros lines
+
+      !> 读取 Wannier 轨道数
+      read(13, *) nwann
+      if (nwann /= Num_wann) then
+         write(*, *) '>>> ERROR: Num_wann mismatch in Sr file: ', nwann, ' vs ', Num_wann
+         stop
+      endif
+      nwann_nsoc = nwann
+      if (SOC > 0) nwann_nsoc = nwann/2
+
+      !> 读取 R 点个数
+      read(13, *) Nrpts
+
+      !> 分配数组
+      allocate(SmnR(Num_wann, Num_wann, Nrpts))
+      ! allocate(irvec(3,    Nrpts))
+      ! allocate(ndegen(    Nrpts))
+
+      nRused = Nrpts
+      do k = 1, splen_overlap_input
+         read(13,*) i1, i2, i3, i4, i5, rh, ih
+      
+         !—— 1) 在已有 R 点中查找 ——
+         idx = 0
+         do j = 1, nRused
+            if (irvec(1,j)==i1 .and. irvec(2,j)==i2 .and. irvec(3,j)==i3) then
+               idx = j
+               exit
+            end if
+         end do
+
+         !—— 2) 如果没找到，就新增一个 R 点 ——
+         if (idx == 0) then
+            ! nRused = nRused + 1
+            ! idx = nRused
+            ! irvec(:,idx) = (/ i1, i2, i3 /)
+            ! write(*, '(a, i5, a, i5, a, i5)') 'New R point found: ', i1, i2, i3
+            stop "ERROR: R point not found in SmnR reading"
+         end if
+
+         !—— 3) 填写 overlap 矩阵 ——
+
+         SmnR(i4, i5, idx) = dcmplx(rh, ih)
+         if (i4 == i5) then
+            !打印i1,i2,i3,i4,i5以及值
+            ! write(*, '(a, 5i5, a, f18.7)') 'SmnR at R=', i1, i2, i3, i4, i5, ' is ', SmnR(i4, i5, idx)
+         endif
+      end do
+
+      do iR=1,Nrpts
+         if (Irvec(1,iR).eq.0.and.Irvec(2,iR).eq.0.and.Irvec(3,iR).eq.0)then
+            do i=1, Num_wann
+               !打印ir, i, SmnR(i, i, iR)
+               ! write(*, '(a, i5, a, i5, a, f18.7)') 'SmnR at R=0', iR, ' for i=', i, ' is ', SmnR(i, i, iR)
+            enddo
+         endif
+      enddo
+
+   endif
+
+
+
+   close(13)
+end subroutine readNormalSmnR
+
 
 
 
@@ -521,6 +680,11 @@ subroutine get_hmnr_cell(cell)
    HmnR_surfacecell= 0d0
    ndegen_surfacecell= 1
 
+   if (.not. Orthogonal_Basis) then
+      allocate(SmnR_surfacecell(Num_wann, Num_wann, nrpts_surfacecell))
+      SmnR_surfacecell = 0d0
+   endif
+
    !> 3. Allocate the old HmnR to the new HmnR.
    !>  Note: The cell can't be treated as a mass point. We need to consider the relative coordinates of atoms.
    do ir=1, nrpts
@@ -554,6 +718,10 @@ subroutine get_hmnr_cell(cell)
             if (abs(irvec_new_int(1))>max_ir .or. abs(irvec_new_int(2))>max_ir .or. abs(irvec_new_int(3))>max_ir) cycle
             ir_cell = rpts_map(irvec_new_int(1), irvec_new_int(2), irvec_new_int(3))
             HmnR_surfacecell(i,j,ir_cell) = HmnR(i,j,ir)/ndegen(ir)
+            
+            if (.not. Orthogonal_Basis) then
+               SmnR_surfacecell(i,j,ir_cell) = SmnR(i,j,ir)/ndegen(ir)
+            endif 
 
          enddo
       enddo

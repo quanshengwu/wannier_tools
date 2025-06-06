@@ -402,20 +402,142 @@ subroutine ham_bulk_latticegauge(k,Hamk_bulk)
    !Hamk_bulk= (Hamk_bulk+ mat2)/2d0
 
    ! check hermitcity
-  !do i1=1, Num_wann
-  !   do i2=1, Num_wann
-  !      if(abs(Hamk_bulk(i1,i2)-conjg(Hamk_bulk(i2,i1))).ge.1e-6)then
-  !         write(stdout,*)'there is something wrong with Hamk_bulk'
-  !         write(stdout,*)'i1, i2', i1, i2
-  !         write(stdout,*)'value at (i1, i2)', Hamk_bulk(i1, i2)
-  !         write(stdout,*)'value at (i2, i1)', Hamk_bulk(i2, i1)
-  !         !stop
-  !      endif
-  !   enddo
-  !enddo
+  !打印出k点
+   ! write(*,*)'check Hamk_bulk hermitcity'
+  do i1=1, Num_wann
+    do i2=1, Num_wann
+       if(abs(Hamk_bulk(i1,i2)-conjg(Hamk_bulk(i2,i1))).ge.1e-6)then
+          write(stdout,*)'there is something wrong with Hamk_bulk'
+          write(stdout,*)'i1, i2', i1, i2
+          write(stdout,*)'value at (i1, i2)', Hamk_bulk(i1, i2)
+          write(stdout,*)'value at (i2, i1)', Hamk_bulk(i2, i1)
+          !stop
+       endif
+    enddo
+  enddo
 
    return
 end subroutine ham_bulk_latticegauge
+
+
+subroutine S_bulk_latticegauge(k,Sk_bulk)
+   ! This subroutine caculates Hamiltonian for
+   ! bulk system without the consideration of the atom's position
+   !
+   ! History
+   !
+   !        May/29/2011 by Quansheng Wu
+
+   use para, only : dp, pi2zi, SmnR, ndegen, nrpts, irvec, Num_wann, stdout, twopi, zi
+   implicit none
+
+   ! loop index
+   integer :: i1,i2,iR
+
+   real(dp) :: kdotr
+
+   complex(dp) :: factor
+
+   real(dp), intent(in) :: k(3)
+
+   ! Hamiltonian of bulk system
+   complex(Dp),intent(out) ::Sk_bulk(Num_wann, Num_wann)
+
+   Sk_bulk=0d0
+   do iR=1, Nrpts
+      kdotr= k(1)*irvec(1,iR) + k(2)*irvec(2,iR) + k(3)*irvec(3,iR)
+      factor= (cos(twopi*kdotr)+zi*sin(twopi*kdotr))
+
+      Sk_bulk(:, :)= Sk_bulk(:, :)+ SmnR(:, :, iR)*factor
+   enddo ! iR
+   
+   !call mat_mul(Num_wann, mirror_z, Hamk_bulk, mat1)
+   !call mat_mul(Num_wann, mat1, mirror_z, mat2)
+   !Hamk_bulk= (Hamk_bulk+ mat2)/2d0
+
+   ! check hermitcity
+   ! write(*,*)'check Sk_bulk'
+  do i1=1, Num_wann
+    do i2=1, Num_wann
+       if(abs(Sk_bulk(i1,i2)-conjg(Sk_bulk(i2,i1))).ge.1e-6)then
+          write(stdout,*)'there is something wrong with Sk_bulk'
+          write(stdout,*)'i1, i2', i1, i2
+          write(stdout,*)'value at (i1, i2)', Sk_bulk(i1, i2)
+          write(stdout,*)'value at (i2, i1)', Sk_bulk(i2, i1)
+          !stop
+       endif
+    enddo
+  enddo
+
+   return
+end subroutine S_bulk_latticegauge
+
+!---------------------------------------------------------------
+! Surroutines:change the non-orthogonal basis H and S to orthogonal basis
+!   H_new = U * H_old * U
+!   U = S_vec * M_inv * S_vec^H
+!---------------------------------------------------------------
+subroutine orthogonalize_hamiltonian(Hamk_bulk, Sk_bulk , N)
+   use para, only: Dp, stdout,E_fermi,eV2Hartree
+   implicit none
+ 
+   integer, intent(in)       :: N
+   complex(Dp), intent(in )    :: Sk_bulk(N,N)
+   complex(Dp), intent(inout)  :: Hamk_bulk(N,N)
+ 
+   !-- 局部 --
+   integer           :: i, info, j
+   real(Dp), allocatable    :: S_vals(:)
+   complex(Dp), allocatable :: S_vec(:,:), M_inv(:,:), U(:,:)
+ 
+
+   allocate(S_vals(N))
+   allocate(S_vec (N,N))
+   allocate(M_inv (N,N))
+   allocate(U     (N,N))
+   U = (0.0_dp,0.0_dp)
+   ! 1) Sk_bulk =  S_vec * diag(S_vals) * S_vec^H 
+   S_vec = Sk_bulk
+   call eigensystem_c('V','U', N, S_vec, S_vals)
+ 
+   ! 2)  M_inv = diag(1/√S_vals)
+   M_inv = (0.0_dp,0.0_dp)
+   ! do i = 1, N
+   !   M_inv(i,i) = 1.0_dp / sqrt(S_vals(i))
+   ! end do
+
+   do i = 1, N
+      if (S_vals(i) <= 0.0_dp) then
+         write(stdout,'(a,i5,1pe13.4)') ' WARNING: λ <= 0, i =', i, S_vals(i)
+      else
+         M_inv(i,i) = 1.0_dp / sqrt(S_vals(i))
+      endif
+   enddo
+ 
+   ! 3) U = S_vec * M_inv * S_vec^H
+   ! U = matmul( S_vec, matmul(M_inv, conjg(transpose(S_vec))) )
+   U = matmul( S_vec, M_inv )
+   U = matmul(U, conjg(transpose(S_vec)))
+
+   ! call mat_mul(N, S_vec, M_inv, U)
+   ! call mat_mul(N, U, conjg(transpose(S_vec)), U)
+
+ 
+   ! 4)Hamiltonian = U * Hamk_bulk * U
+   ! Hamk_bulk = matmul( U, matmul(Hamk_bulk, U) )
+   Hamk_bulk = matmul(U, Hamk_bulk)
+   Hamk_bulk = matmul(Hamk_bulk, U)
+   ! call mat_mul(N, U, Hamk_bulk, Hamk_bulk)
+   ! call mat_mul(N, Hamk_bulk, U, Hamk_bulk)
+
+   do i = 1, N
+      Hamk_bulk(i,i) = Hamk_bulk(i,i) - E_fermi*eV2Hartree
+   enddo
+
+   deallocate(S_vals, S_vec, M_inv, U)
+end subroutine orthogonalize_hamiltonian
+ 
+
 
 subroutine dHdk_latticegauge_wann(k, velocity_Wannier)
    use para, only : Nrpts, irvec, crvec, Origin_cell, &

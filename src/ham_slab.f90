@@ -19,7 +19,7 @@
      complex(Dp),intent(out) ::Hamk_slab(Num_wann*nslab,Num_wann*nslab) 
 
      ! the factor 2 is induced by spin
-     complex(Dp), allocatable :: Hij(:, :, :), ham_elec(:, :)
+     complex(Dp), allocatable :: Hij(:, :, :), ham_elec(:, :), Sij(:, :, :), Sk_slab(:, :)
 
      allocate( Hij(-ijmax:ijmax,Num_wann,Num_wann))
      allocate( ham_elec( Num_wann*nslab, Num_wann*nslab))
@@ -45,6 +45,25 @@
         enddo ! i2
      enddo ! i1
 
+     if (.not. Orthogonal_Basis) then
+         stop 'ERROR: slab system not support orthogonal basis yet'
+         allocate(Sij(-ijmax:ijmax,Num_wann,Num_wann))
+         allocate(Sk_slab(Num_wann*nslab,Num_wann*nslab))
+         Sk_slab=0.0d0
+         
+         call s_qlayer2qlayer2(k,Sij)
+         do i1=1, nslab
+            do i2=1, nslab
+               if (abs(i2-i1).le.ijmax)then
+                  Sk_slab((i2-1)*Num_wann+1:(i2-1)*Num_wann+Num_wann,&
+                         (i1-1)*Num_wann+1:(i1-1)*Num_wann+Num_wann )&
+                  = Sij(i1-i2,1:Num_wann,1:Num_wann)
+               endif 
+            enddo ! i2
+         enddo ! i1
+         call orthogonalize_hamiltonian(Hamk_slab, Sk_slab,Num_wann*nslab)
+     endif
+
      call add_ham_slab_elec_field(ham_elec)
      Hamk_slab= Hamk_slab+ ham_elec 
 
@@ -60,6 +79,9 @@
      enddo
 
      deallocate( Hij)
+     if (.not. Orthogonal_Basis) then
+        deallocate(Sij)
+     endif
   return
   end subroutine ham_slab
 

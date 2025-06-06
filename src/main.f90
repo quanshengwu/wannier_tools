@@ -119,9 +119,12 @@
      if(Is_HrFile) then
         !> allocate necessary arrays for tight binding hamiltonians
         !> normal hmnr file
-        if(.not. Is_Sparse_Hr) then
+      !   if(.not. Is_Sparse_Hr) then
+        if(.not. Is_Sparse) then
            !> for the dense hr file, we allocate HmnR
            call readNormalHmnR()
+           if (.not.Orthogonal_Basis) call readNormalSmnR()
+           call get_hmnr_cell(Cell_defined_by_surface)
            if (valley_projection_calc) call  read_valley_operator
         !> sparse hmnr input
         else
@@ -169,7 +172,8 @@
       if(cpuid.eq.0)write(stdout, *)' '
       if(cpuid.eq.0)write(stdout, *)'>> Start of calculating bulk band'
       call now(time_start)
-      if (Is_Sparse_Hr) then
+      if (Is_Sparse) then
+      ! if (Is_Sparse_Hr) then
          if (valley_projection_calc) then
             call sparse_ekbulk_valley
          else
@@ -382,7 +386,7 @@
            if(cpuid.eq.0)write(stdout, *)' '
            if(cpuid.eq.0)write(stdout, *)'>> Start of calculating DOS for bulk system'
            call now(time_start)
-           if(.not. Is_Sparse_Hr) then
+           if(.not. Is_Sparse) then
               call dos_sub
            else
               call dos_sparse
@@ -467,7 +471,7 @@
         if(cpuid.eq.0)write(stdout, *)' '
         if(cpuid.eq.0)write(stdout, *)'>> Start of calculating the slab band structure'
         call now(time_start)
-        if (Is_Sparse_Hr) then
+        if (Is_Sparse) then
           call ek_slab_sparseHR
         else
            call ek_slab

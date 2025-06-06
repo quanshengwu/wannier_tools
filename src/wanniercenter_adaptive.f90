@@ -656,7 +656,7 @@
 
       !> hamiltonian for each k point
       !> and also the eigenvector of hamiltonian after eigensystem_c
-      complex(dp), allocatable :: Hamk(:, :), Hamk_dag(:, :)
+      complex(dp), allocatable :: Hamk(:, :), Hamk_dag(:, :),Sk(:, :)
 
       !> for sparse hamiltonian
       !> dim= Num_wann*Num_wann
@@ -730,6 +730,18 @@
          allocate(hamk(Num_wann, Num_wann))
          allocate(hamk_dag(Num_wann, Num_wann))
       endif
+      if (.not. Orthogonal_Basis) then
+         if (Is_Sparse) then
+            stop 'wannier center calculation for northogonal basis is not implemented for sparse hamiltonian now'
+         else
+            !> Sk is the overlap matrix
+            !> Sk= <u_n(k)|u_m(k+b)>
+            !> |u_n(k)> is the periodic part of wave function
+            allocate(Sk(Num_wann, Num_wann))
+            Sk= 0d0
+         endif
+      endif
+         
 
       wcc_old= 0d0
       hamk=0d0
@@ -869,8 +881,19 @@
 
             else
                !> get the TB hamiltonian in k space
-               call ham_bulk_latticegauge(k,hamk)
-      
+               ! call ham_bulk_latticegauge(k,hamk)
+               if (Orthogonal_Basis) then
+                  call ham_bulk_latticegauge(k, hamk)
+               else
+                  
+                  Sk= 0d0
+                  call S_bulk_latticegauge(k, Sk)
+                  call ham_bulk_latticegauge(k, hamk)
+                  call orthogonalize_hamiltonian(hamk, Sk, Num_wann)
+                  do i = 1, Num_wann
+                     hamk(i, i)= hamk(i, i) - E_fermi
+                  enddo !
+               endif
                !> diagonal hamk
                call eigensystem_c('V', 'U', Num_wann, hamk, eigenvalue)
                kline_integrate(ik1)%eig_vec(1:Num_wann, 1:NumberofSelectedOccupiedBands)= &
