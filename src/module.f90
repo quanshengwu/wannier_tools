@@ -493,7 +493,7 @@
                           LandauLevel_B_dos_calc,LanczosBand_calc,LanczosDos_calc, &
                           LandauLevel_B_calc, LandauLevel_kplane_calc,landau_chern_calc, &
                           FermiLevel_calc,ANE_calc, export_newhr,export_maghr,w3d_nested_calc, &
-                          valley_projection_calc, Matrix_Element_calc, BdGChern_calc, SlabBdG_calc, BdG_phase_calc &
+                          valley_projection_calc, Matrix_Element_calc, BdGChern_calc, SlabBdG_calc, BdG_phase_calc, &
                           linear_optic_calc, BPVE_calc, Intra_orbital_hall_calc
 
      integer :: Nslab  ! Number of slabs for 2d Slab system
