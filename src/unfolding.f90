@@ -764,7 +764,7 @@ subroutine get_projection_weight_bulk_unfold(ndim, k_SBZ_direct, k_PBZ_direct, p
 
    allocate(me_values(Folded_cell%NumberofSpinOrbitals))
 
-   if ( Matrix_Element_calc == .True. ) then
+   if ( Matrix_Element_calc .eqv. .True. ) then
       !@ k_abs is the k_f(3) considering the photon energy
       if ( (k_cart_abs**2 - k_cart(1)**2 - k_cart(2)**2 ) .le. 0 ) then
          weight = 0
@@ -851,7 +851,7 @@ subroutine get_projection_weight_bulk_unfold(ndim, k_SBZ_direct, k_PBZ_direct, p
    weight= weight/origincell%CellVolume*Folded_cell%CellVolume
    weight_matix_element= weight_matix_element/origincell%CellVolume*Folded_cell%CellVolume
 
-   if ( Matrix_Element_calc == .True. ) then
+   if ( Matrix_Element_calc .eqv. .True. ) then
    weight = weight_matix_element
    end if 
    

@@ -1,11 +1,11 @@
    &PARAMETERS
-   number_layers = 2
+   number_layers = 4
 
    !> magic angle
-   twisted_angle_degree= 1.0661
+   twisted_angle_degree= 0.85
 
    !> setup the stacking sequences
-   stacking_sequences_input ="A" "A" "B" "A"
+   stacking_sequences_input ="A" "B" "B" "A"
 
 
    !>> A-ABA 
@@ -13,7 +13,7 @@
    !> in unit of twisted_angle_degree
    !> In this example, there is a twist between the first layer and the second layer. There is no twist between the 2nd and the 3rd layer.
    !>  There is no twist between the 3nd and the 4th layer neither.
-   twisted_angle_array_input = 0   1   1    1 
+   twisted_angle_array_input = 0   0   1    1 
 
    !> In this version, it supports only one moire lattice. it means that A-AB-A where the first and the second twist have opposite angle is also supported.
    !> twisted_angle_array_input = 0   1   1    0 
@@ -33,7 +33,7 @@
 
    vppsigma=0.48d0  ! eV  
    Qcutoff=4
-   Num_bands=40
+   Num_bands=20
    Nk=20   
    Electric_field = -0.0000 ! eV/Angstrom
 

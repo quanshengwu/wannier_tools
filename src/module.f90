@@ -1194,133 +1194,156 @@
    integer, parameter :: magnetic_number_max = 7 ! the max number of orbitals with different magnetic number
    real, parameter :: a_0 = 5.29177210903E-1 ! Bohr radius in the unit of angstrom
    
-   
-   character(len=10) :: element_name(lenth_of_table) = &
-       ['H','He','Li','Be','B','C','N','O','F',&
-      'Ne','Na','Mg','Al','Si','P','S','Cl','Ar',&
-      'K','Ca','Sc','Ti','V','Cr','Mn','Fe','Co','Ni',&
-      'Cu','Zn','Ga','Ge','As','Se','Br','Kr','Rb','Sr',&
-      'Y','Zr','Nb','Mo','Tc','Ru','Rh','Pd','Ag','Cd','In',&
-      'Sn','Sb','Te','I','Xe','Cs','Ba','La','Ce','Pr','Nd',&
-      'Pm','Sm','Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb','Lu',&
-      'Hf','Ta','W','Re','Os','Ir','Pt','Au','Hg','Tl','Pb',&
-      'Bi','Po','At','Rn','Fr','Ra','Ac','Th','Pa','U','Np',&
-      'Pu','Am','Cm','Bk','Cf','Es','Fm','Md','No','Lr','Rf']
+  
+   !— 统一使用最长的长度 (2) 来声明字符串，并把所有单字符符号补一个空格
+   character(len=2), parameter :: element_name(lenth_of_table) = (/ &
+     'H ', 'He', 'Li', 'Be', 'B ', 'C ', 'N ', 'O ', 'F ', 'Ne', &
+     'Na', 'Mg', 'Al', 'Si', 'P ', 'S ', 'Cl', 'Ar', 'K ', 'Ca', &
+     'Sc', 'Ti', 'V ', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', &
+     'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y ', 'Zr', &
+     'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', &
+     'Sb', 'Te', 'I ', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', &
+     'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', &
+     'Lu', 'Hf', 'Ta', 'W ', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', &
+     'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn', 'Fr', 'Ra', 'Ac', 'Th', &
+     'Pa', 'U ', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', &
+     'Md', 'No', 'Lr', 'Rf'  &
+    /)
 
-   ! Each element's electron configuration
-   character(len=64) :: element_electron_config(lenth_of_table) = [&
-   '1s1'&
-   ,'1s2'&
-   ,'1s22s1'&
-   ,'1s22s2'&
-   ,'1s22s22p1'&
-   ,'1s22s22p2'&
-   ,'1s22s22p3'&
-   ,'1s22s22p4'&
-   ,'1s22s22p5'&
-   ,'1s22s22p6'&
-   ,'1s22s22p63s1'&
-   ,'1s22s22p63s2'&
-   ,'1s22s22p63s23p1'&
-   ,'1s22s22p63s23p2'&
-   ,'1s22s22p63s23p3'&
-   ,'1s22s22p63s23p4'&
-   ,'1s22s22p63s23p5'&
-   ,'1s22s22p63s23p6'&
-   ,'1s22s22p63s23p64s1'&
-   ,'1s22s22p63s23p64s2'&
-   ,'1s22s22p63s23p63d14s2'&
-   ,'1s22s22p63s23p63d24s2'&
-   ,'1s22s22p63s23p63d34s2'&
-   ,'1s22s22p63s23p63d54s1'&
-   ,'1s22s22p63s23p63d54s2'&
-   ,'1s22s22p63s23p63d64s2'&
-   ,'1s22s22p63s23p63d74s2'&
-   ,'1s22s22p63s23p63d84s2'&
-   ,'1s22s22p63s23p63d104s1'&
-   ,'1s22s22p63s23p63d104s2'&
-   ,'1s22s22p63s23p63d104s24p1'&
-   ,'1s22s22p63s23p63d104s24p2'&
-   ,'1s22s22p63s23p63d104s24p3'&
-   ,'1s22s22p63s23p63d104s24p4'&
-   ,'1s22s22p63s23p63d104s24p5'&
-   ,'1s22s22p63s23p63d104s24p6'&
-   ,'1s22s22p63s23p63d104s24p65s1'&
-   ,'1s22s22p63s23p63d104s24p65s2'&
-   ,'1s22s22p63s23p63d104s24p64d15s2'&
-   ,'1s22s22p63s23p63d104s24p64d25s2'&
-   ,'1s22s22p63s23p63d104s24p64d45s1'&
-   ,'1s22s22p63s23p63d104s24p64d55s1'&
-   ,'1s22s22p63s23p63d104s24p64d55s2'&
-   ,'1s22s22p63s23p63d104s24p64d75s1'&
-   ,'1s22s22p63s23p63d104s24p64d85s1'&
-   ,'1s22s22p63s23p63d104s24p64d10'&
-   ,'1s22s22p63s23p63d104s24p64d105s1'&
-   ,'1s22s22p63s23p63d104s24p64d105s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p1'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p3'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p4'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p5'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p6'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p66s1'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p66s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p65d16s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f15d16s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f36s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f46s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f56s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f66s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f76s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f75d16s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f96s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f106s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f116s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f126s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f136s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f146s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d16s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d26s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d36s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d46s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d56s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d66s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d76s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d96s1'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s1'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p1'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p3'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p4'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p5'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p6'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p67s1'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p67s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p66d17s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p66d27s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f26d17s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f36d17s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f46d17s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f67s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f77s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f76d17s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f97s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f107s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f117s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f127s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f137s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f147s2'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f147s27p1'&
-   ,'1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f146d27s2']
-
+   ! 3) 用固定长度+补空格的方式定义电子组态数组
+   character(len=59), parameter :: element_electron_config(lenth_of_table) = (/ &
+    '1s1                                                        ', &  ! 长度=3+57空格
+    '1s2                                                        ', &
+    '1s22s1                                                     ', &
+    '1s22s2                                                     ', &
+    '1s22s22p1                                                  ', &
+    '1s22s22p2                                                  ', &
+    '1s22s22p3                                                  ', &
+    '1s22s22p4                                                  ', &
+    '1s22s22p5                                                  ', &
+    '1s22s22p6                                                  ', &
+    '1s22s22p63s1                                               ', &
+    '1s22s22p63s2                                               ', &
+    '1s22s22p63s23p1                                            ', &
+    '1s22s22p63s23p2                                            ', &
+    '1s22s22p63s23p3                                            ', &
+    '1s22s22p63s23p4                                            ', &
+    '1s22s22p63s23p5                                            ', &
+    '1s22s22p63s23p6                                            ', &
+    '1s22s22p63s23p64s1                                         ', &
+    '1s22s22p63s23p64s2                                         ', &
+    '1s22s22p63s23p63d14s2                                      ', &
+    '1s22s22p63s23p63d24s2                                      ', &
+    '1s22s22p63s23p63d34s2                                      ', &
+    '1s22s22p63s23p63d54s1                                      ', &
+    '1s22s22p63s23p63d54s2                                      ', &
+    '1s22s22p63s23p63d64s2                                      ', &
+    '1s22s22p63s23p63d74s2                                      ', &
+    '1s22s22p63s23p63d84s2                                      ', &
+    '1s22s22p63s23p63d104s1                                     ', &
+    '1s22s22p63s23p63d104s2                                     ', &
+    '1s22s22p63s23p63d104s24p1                                  ', &
+    '1s22s22p63s23p63d104s24p2                                  ', &
+    '1s22s22p63s23p63d104s24p3                                  ', &
+    '1s22s22p63s23p63d104s24p4                                  ', &
+    '1s22s22p63s23p63d104s24p5                                  ', &
+    '1s22s22p63s23p63d104s24p6                                  ', &
+    '1s22s22p63s23p63d104s24p65s1                               ', &
+    '1s22s22p63s23p63d104s24p65s2                               ', &
+    '1s22s22p63s23p63d104s24p64d15s2                            ', &
+    '1s22s22p63s23p63d104s24p64d25s2                            ', &
+    '1s22s22p63s23p63d104s24p64d45s1                            ', &
+    '1s22s22p63s23p63d104s24p64d55s1                            ', &
+    '1s22s22p63s23p63d104s24p64d55s2                            ', &
+    '1s22s22p63s23p63d104s24p64d75s1                            ', &
+    '1s22s22p63s23p63d104s24p64d85s1                            ', &
+    '1s22s22p63s23p63d104s24p64d10                              ', &
+    '1s22s22p63s23p63d104s24p64d105s1                           ', &
+    '1s22s22p63s23p63d104s24p64d105s2                           ', &
+    '1s22s22p63s23p63d104s24p64d105s25p1                        ', &
+    '1s22s22p63s23p63d104s24p64d105s25p2                        ', &
+    '1s22s22p63s23p63d104s24p64d105s25p3                        ', &
+    '1s22s22p63s23p63d104s24p64d105s25p4                        ', &
+    '1s22s22p63s23p63d104s24p64d105s25p5                        ', &
+    '1s22s22p63s23p63d104s24p64d105s25p6                        ', &
+    '1s22s22p63s23p63d104s24p64d105s25p66s1                     ', &
+    '1s22s22p63s23p63d104s24p64d105s25p66s2                     ', &
+    '1s22s22p63s23p63d104s24p64d105s25p65d16s2                  ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f15d16s2               ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f36s2                  ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f46s2                  ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f56s2                  ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f66s2                  ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f76s2                  ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f75d16s2               ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f96s2                  ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f106s2                 ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f116s2                 ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f126s2                 ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f136s2                 ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f146s2                 ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d16s2              ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d26s2              ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d36s2              ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d46s2              ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d56s2              ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d66s2              ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d76s2              ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d96s1              ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s1             ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s2             ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p1          ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p2          ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p3          ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p4          ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p5          ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p6          ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p67s1       ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p67s2       ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p66d17s2    ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p66d27s2    ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f26d17s2 ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f36d17s2 ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f46d17s2 ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f67s2    ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f77s2    ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f76d17s2 ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f97s2    ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f107s2   ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f117s2   ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f127s2   ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f137s2   ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f147s2   ', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f147s27p1', &
+    '1s22s22p63s23p63d104s24p64d105s25p64f145d106s26p65f146d27s2'  &
+   /)
    character :: orb_ang_sign(angular_number) = ['s','p','d','f'] ! angular signs of orbital, only "spdf" are included
-   character(10) :: orb_sign(magnetic_number_max, angular_number) = &
-   [['','','','s','','',''],&
-   ['','','py','pz','px','',''],&
-   ['','dxy','dyz','dz2','dxz','dx2-y2',''],&
-   ['fy(3x2-y2)','fxyz','fyz2','fz3','fxz2','fz(x2-y2)','fx(x2-3y2)']]
-   
+!  character(10) :: orb_sign(magnetic_number_max, angular_number) = &
+!  [['','','','s','','',''],&
+!  ['','','py','pz','px','',''],&
+!  ['','dxy','dyz','dz2','dxz','dx2-y2',''],&
+!  ['fy(3x2-y2)','fxyz','fyz2','fz3','fxz2','fz(x2-y2)','fx(x2-3y2)']]
+  
+!  ! 每个轨道符号，固定长度为10，编译器会自动把短的字符串用空格填充到10
+!  character(len=10) :: orb_sign(magnetic_number_max, angular_number) = &
+!   [ [ '          ','          ','          ','s         ','          ','          ','          '], &
+!     [ '          ','          ','py        ','pz        ','px        ','          ','          '], &
+!     [ '          ','dxy       ','dyz       ','dz2       ','dxz       ','dx2-y2    ','          '], &
+!     [ 'fy(3x2-y2)','fxyz      ','fyz2      ','fz3       ','fxz2      ','fz(x2-y2) ','fx(x2-3y2)'] ]
+
+   !————— orb_sign 定义 —————
+   character(len=10), parameter :: orb_sign(magnetic_number_max, angular_number) = reshape( (/ &
+     !—— 第1列：s 轨道 (j=1..7) ——
+     '          ','          ','          ','s         ','          ','          ','          ', &
+     !—— 第2列：p 轨道 ——
+     '          ','          ','py        ','pz        ','px        ','          ','          ', &
+     !—— 第3列：d 轨道 ——
+     '          ','dxy       ','dyz       ','dz2       ','dxz       ','dx2-y2    ','          ', &
+     !—— 第4列：f 轨道 ——
+     'fy(3x2-y2)','fxyz      ','fyz2      ','fz3       ','fxz2      ','fz(x2-y2) ','fx(x2-3y2)'  &
+   /), shape=(/ magnetic_number_max, angular_number /) )
+
+
 contains
 
    !> Find the specific element's index
@@ -1987,10 +2010,10 @@ module me_calculate
  
         NO_1: do while(.true.)
             
-            if ((is_a_inf == .false.).and.(is_b_inf == .false.)) then
+            if ((is_a_inf .eqv. .false.).and.(is_b_inf .eqv. .false.)) then
                 exit NO_1
             else
-                if (is_a_inf == .true.) then
+                if (is_a_inf .eqv. .true.) then
                     a_1 = a_1 - inte_step
                     a_2 = a_1 - inte_step
                     b_1 = b_1 - inte_step
@@ -1999,7 +2022,7 @@ module me_calculate
                     call integral_simpson(a_2, b_2, func, k_f, name, n, l, s_2)
                 end if
  
-                if (is_b_inf == .true.) then
+                if (is_b_inf .eqv. .true.) then
                     a_1 = b_1
                     b_1 = a_2
                     a_2 = b_2

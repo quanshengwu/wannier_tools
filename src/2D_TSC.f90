@@ -521,7 +521,7 @@ subroutine ek_slab_BdG
       write(outfileindex, '(a)')"unset key"
       write(outfileindex, '(a)')"set pointsize 0.8"
       write(outfileindex, '(a)')"set border lw 2"
-      write(outfileindex, '(a, i, a)')'set xrange [1: ', Nslab, ']'
+      write(outfileindex, '(a, i8, a)')'set xrange [1: ', Nslab, ']'
       write(outfileindex, '(a)')'set xlabel "Distance(layer)"'
       write(outfileindex, '(a)')'set ylabel "Delta(eV)"'
       write(outfileindex, '(a, f10.5, a)')'set yrange [0: ', Delta_BdG, ']'
