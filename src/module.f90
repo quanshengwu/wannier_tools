@@ -1195,8 +1195,8 @@
    real, parameter :: a_0 = 5.29177210903E-1 ! Bohr radius in the unit of angstrom
    
   
-   !— 统一使用最长的长度 (2) 来声明字符串，并把所有单字符符号补一个空格
-   character(len=2), parameter :: element_name(lenth_of_table) = (/ &
+   !— 统一使用最长的长度 (10) 来声明字符串，并把所有单字符符号补一个空格
+   character(len=10), parameter :: element_name(lenth_of_table) = (/ &
      'H ', 'He', 'Li', 'Be', 'B ', 'C ', 'N ', 'O ', 'F ', 'Ne', &
      'Na', 'Mg', 'Al', 'Si', 'P ', 'S ', 'Cl', 'Ar', 'K ', 'Ca', &
      'Sc', 'Ti', 'V ', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', &
@@ -1211,7 +1211,7 @@
     /)
 
    ! 3) 用固定长度+补空格的方式定义电子组态数组
-   character(len=59), parameter :: element_electron_config(lenth_of_table) = (/ &
+   character(len=64), parameter :: element_electron_config(lenth_of_table) = (/ &
     '1s1                                                        ', &  ! 长度=3+57空格
     '1s2                                                        ', &
     '1s22s1                                                     ', &
