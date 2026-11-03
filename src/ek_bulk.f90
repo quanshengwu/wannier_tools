@@ -10,6 +10,7 @@ subroutine ek_bulk_line
 
    use wmpi
    use para
+   use, intrinsic :: ieee_arithmetic, only: ieee_is_finite
 
    implicit none
 
@@ -69,7 +70,13 @@ subroutine ek_bulk_line
                   Sk_bulk= 0d0
                   call S_bulk_latticegauge(k, Sk_bulk)
                   call ham_bulk_latticegauge(k, Hamk_bulk)
+                  if (Abacus_CSR) call abacus_csr_check_k(Hamk_bulk, Sk_bulk)
                   call orthogonalize_hamiltonian(Hamk_bulk, Sk_bulk, Num_wann)
+                  if (Abacus_CSR) then
+                     if (.not.all(ieee_is_finite(real(Hamk_bulk,dp))).or. &
+                         .not.all(ieee_is_finite(aimag(Hamk_bulk)))) &
+                        call abacus_csr_error('non-finite orthogonalized H(k)')
+                  endif
                endif
 
             endif
@@ -80,6 +87,9 @@ subroutine ek_bulk_line
       !> diagonalization by call zheev in lapack
       W= 0d0
       call eigensystem_c('V', 'U', Num_wann ,Hamk_bulk, W)
+      if (Abacus_CSR) then
+         if (.not.all(ieee_is_finite(W))) call abacus_csr_error('non-finite band eigenvalues')
+      endif
       eigv(:, ik)= W
 
       do j= 1, Num_wann  !> band
@@ -116,6 +126,9 @@ subroutine ek_bulk_line
       enddo
    endif
    eigv_mpi= eigv_mpi/eV2Hartree
+   if (Abacus_CSR) then
+      if (.not.all(ieee_is_finite(eigv_mpi))) call abacus_csr_error('non-finite band energies in eV')
+   endif
 
    outfileindex= outfileindex+ 1
    if (cpuid==0)then
@@ -148,14 +161,22 @@ subroutine ek_bulk_line
    if (cpuid==0)then
       open(unit=outfileindex, file='bulkek.dat')
 
+      if (Abacus_CSR) then
+         write(outfileindex, '(a)') '# klen E(eV); ABACUS CSR band energies only'
+      else
       write(outfileindex, &
          "('#', a12, a14, 1X, '| projection', 100(3X,'|group', i2, ': A '))")&
          'klen', 'E', (i, i=1, NumberofSelectedOrbitals_groups)
       write(outfileindex, "('#column', i5, 200i16)")(i, i=1, 2+NumberofSelectedOrbitals_groups)
+      endif
       do i=1, Num_wann
          do ik=1, knv3
+            if (Abacus_CSR) then
+               write(outfileindex, '(2f16.9)') k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik)
+            else
             write(outfileindex, '(200f16.9)')k3len(ik)*Angstrom2atomic,eigv_mpi(i, ik), &
                weight_mpi(:, i, ik)
+            endif
          enddo
          write(outfileindex, *)' '
       enddo

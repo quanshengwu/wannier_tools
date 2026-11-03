@@ -367,8 +367,9 @@
      character(80) :: KPorTB             ! KP or TB
      logical       :: Orthogonal_Basis   ! True or False for Orthogonal basis or non-orthogonal basis
      logical :: Is_Sparse_Hr, Is_Sparse, Is_Hrfile
+     logical :: Abacus_CSR = .false. ! Explicit opt-in; legacy readers remain the default.
      namelist / TB_FILE / Hrfile, Particle, Package, KPorTB, Is_Hrfile, &
-        Is_Sparse, Is_Sparse_Hr, Orthogonal_Basis, Overlapfile
+        Is_Sparse, Is_Sparse_Hr, Orthogonal_Basis, Overlapfile, Abacus_CSR
 
      !> control parameters
      logical :: BulkBand_calc    ! Flag for bulk energy band calculation

@@ -478,7 +478,8 @@ end subroutine S_bulk_latticegauge
 !   U = S_vec * M_inv * S_vec^H
 !---------------------------------------------------------------
 subroutine orthogonalize_hamiltonian(Hamk_bulk, Sk_bulk , N)
-   use para, only: Dp, stdout,E_fermi,eV2Hartree
+   use para, only: Dp, stdout,E_fermi,eV2Hartree, Abacus_CSR
+   use, intrinsic :: ieee_arithmetic, only: ieee_is_finite
    implicit none
  
    integer, intent(in)       :: N
@@ -499,6 +500,10 @@ subroutine orthogonalize_hamiltonian(Hamk_bulk, Sk_bulk , N)
    ! 1) Sk_bulk =  S_vec * diag(S_vals) * S_vec^H 
    S_vec = Sk_bulk
    call eigensystem_c('V','U', N, S_vec, S_vals)
+    if (Abacus_CSR) then
+       if (.not.all(ieee_is_finite(S_vals))) call abacus_csr_error('non-finite overlap eigenvalues')
+       if (any(S_vals<=0.0_dp)) call abacus_csr_error('overlap is not positive definite')
+    endif
  
    ! 2)  M_inv = diag(1/√S_vals)
    M_inv = (0.0_dp,0.0_dp)

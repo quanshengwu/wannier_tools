@@ -16,6 +16,7 @@ subroutine readinput
 
    integer  :: i, j, ia, ik, iq, io, it, idummy, ig, NN, stat, istart, iend
    integer  :: NumberOfspinorbitals, NumberOfspinorbitals_unfold
+   integer :: abacus_count_buffer(1)
 
    integer, allocatable :: iarray_temp(:)
 
@@ -48,8 +49,10 @@ subroutine readinput
    Is_Sparse_Hr= .FALSE.
    Is_Sparse   = .FALSE.
    Orthogonal_Basis = .TRUE.
+   Abacus_CSR = .FALSE.
    read(1001, TB_FILE, iostat= stat)
    if (stat/=0) then
+      if (Abacus_CSR) call abacus_csr_error('invalid TB_FILE namelist')
       Hrfile='wannier90_hr.dat'
       Particle='electron'
       inquire(file='wannier90_hr.dat',exist=exists)
@@ -88,6 +91,7 @@ subroutine readinput
 !> CONTROL namelist
 !===============================================================================================================!
 
+   if (Abacus_CSR) call abacus_csr_control_defaults()
    BulkBand_calc         = .FALSE.
    BulkBand_line_calc    = .FALSE.
    BulkBand_unfold_line_calc    = .FALSE.
@@ -168,6 +172,10 @@ subroutine readinput
    BPVE_calc = .FALSE.
 
    read(1001, CONTROL, iostat=stat)
+   if (Abacus_CSR) then
+      if (stat/=0) call abacus_csr_error('invalid CONTROL namelist')
+      call abacus_csr_validate_control()
+   endif
    SlabQPI_kplane_calc= SlabQPI_kplane_calc.or.SlabQPI_calc
 
    if (stat/=0) then
@@ -376,6 +384,12 @@ subroutine readinput
 
    !> read system parameters from file
    read(1001, SYSTEM, iostat=stat)
+   if (Abacus_CSR) then
+      if (stat/=0) call abacus_csr_error('invalid SYSTEM namelist')
+      if (NumOccupied<1) call abacus_csr_error('NumOccupied must be positive')
+      if (SOC/=0.and.SOC/=1) call abacus_csr_error('SOC must be 0 or 1')
+      if (Add_Zeeman_Field) call abacus_csr_error('Zeeman modification is not supported')
+   endif
    if (stat/=0) then
       write(*, *)"ERROR: namelist SYSTEM is wrong and should be set correctly"
 
@@ -640,6 +654,8 @@ subroutine readinput
 
    !>>>> read a lot of parameters from namilist PARAMETERS
    read(1001, PARAMETERS, iostat= stat)
+   if (Abacus_CSR.and.stat/=0) call abacus_csr_error('invalid PARAMETERS namelist')
+   if (Abacus_CSR.and.Nk1<2) call abacus_csr_error('Nk1 must be at least 2 for a band path')
 
    if (Magp<1) Magp= 0
    if (Magp_max<1) Magp_max= Magp
@@ -1060,6 +1076,9 @@ subroutine readinput
    !> read Wannier centres
    NumberOfspinorbitals= sum(Origin_cell%nprojs)
    if (SOC>0.or.Add_Zeeman_Field) NumberOfspinorbitals= 2*NumberOfspinorbitals
+   if (Abacus_CSR) then
+      if (NumOccupied>NumberOfspinorbitals) call abacus_csr_error('NumOccupied exceeds basis dimension')
+   endif
    Origin_cell%NumberOfspinorbitals= NumberOfspinorbitals
    allocate(Origin_cell%spinorbital_to_atom_index(NumberOfspinorbitals))
    allocate(Origin_cell%spinorbital_to_projector_index(NumberOfspinorbitals))
@@ -3331,8 +3350,15 @@ subroutine readinput
    stat= 0
    NumberofSelectedOccupiedBands= 0
    read(1001, '(A)', err=232, iostat=stat)inline
+   if (Abacus_CSR.and.stat/=0) call abacus_csr_error('invalid SELECTED_OCCUPIED_BANDS card')
    !> get howmany integer numbers specified in the inline string
-   call param_get_range_vector('SelectedOccupiedBands',inline,idummy,.true., Selected_Occupiedband_index)
+   if (Abacus_CSR) then
+      ! Counting must not pass an unallocated array to an explicit-shape dummy.
+      idummy=1
+      call param_get_range_vector('SelectedOccupiedBands',inline,idummy,.true., abacus_count_buffer)
+   else
+      call param_get_range_vector('SelectedOccupiedBands',inline,idummy,.true., Selected_Occupiedband_index)
+   endif
    NumberofSelectedOccupiedBands= idummy
 
    if (NumberofSelectedOccupiedBands>0) then
@@ -3340,11 +3366,13 @@ subroutine readinput
       Selected_Occupiedband_index= 0
       call param_get_range_vector('SelectedOccupiedBands',inline,idummy,.false., Selected_Occupiedband_index)
    else
+      if (Abacus_CSR) call abacus_csr_error('empty occupied-band selection')
       stop 'NumberofSelectedOccupiedBands should be an integer and larger than zero'
    endif
 
 232 continue
    if (stat/=0) then
+      if (Abacus_CSR) call abacus_csr_error('invalid SELECTED_OCCUPIED_BANDS card')
       if (cpuid==0) write(stdout, *)' '
       if (cpuid==0) write(stdout, *)' '
       if (cpuid==0) write(stdout, '(a)')'Error: Please set the right number of bands and band indices in wt.in like this:'
@@ -4535,6 +4563,7 @@ subroutine param_get_range_vector(keyword,inline,length,lcount,i_value)
 !> then get values
 !> call param_get_range_vector('TOPATOMS','1,2,3,4-10',NTopAtoms,lcount=.false., TopAtoms)
 
+    use para, only: Abacus_CSR
     implicit none
 
     character(len=*), intent(in) :: keyword
@@ -4569,13 +4598,18 @@ subroutine param_get_range_vector(keyword,inline,length,lcount,i_value)
     counter=0
     do 
        i_punc=scan(dummy,c_punc)
-       if(i_punc==0) call printerrormsg('Error parsing keyword '//trim(keyword)) 
+       if(i_punc==0) call range_error('Error parsing keyword '//trim(keyword))
        c_num1=dummy(1:i_punc-1)
        read(c_num1,*,err=1201,end=1201) num1
        dummy=adjustl(dummy(i_punc:))
        !look for range
        if(scan(dummy,c_range)==1) then
           i_digit=scan(dummy,c_digit)
+          if (Abacus_CSR) then
+             if (i_digit==0) call range_error('Error parsing keyword '//trim(keyword)//' missing range endpoint')
+             if (verify(dummy(2:i_digit-1),' ')/=0) &
+                call range_error('Error parsing keyword '//trim(keyword)//' incorrect range')
+          endif
           dummy=adjustl(dummy(i_digit:))
           i_punc=scan(dummy,c_punc)
           c_num2=dummy(1:i_punc-1)
@@ -4592,7 +4626,7 @@ subroutine param_get_range_vector(keyword,inline,length,lcount,i_value)
        end if
 
        if(scan(dummy,c_sep)==1) dummy=adjustl(dummy(2:))
-       if(scan(dummy,c_range)==1) call printerrormsg('Error parsing keyword '//trim(keyword)//' incorrect range') 
+       if(scan(dummy,c_range)==1) call range_error('Error parsing keyword '//trim(keyword)//' incorrect range')
        if(index(dummy,' ')==1) exit
     end do
 
@@ -4601,16 +4635,21 @@ subroutine param_get_range_vector(keyword,inline,length,lcount,i_value)
        do loop=1,counter-1
           do loop_r=loop+1,counter 
              if(i_value(loop)==i_value(loop_r)) &
-                call printerrormsg('Error parsing keyword '//trim(keyword)//' duplicate values')
+                call range_error('Error parsing keyword '//trim(keyword)//' duplicate values')
           end do
         end do
     end if
 
     return
 
-1201 call printerrormsg('Error parsing keyword '//trim(keyword))
+1201 call range_error('Error parsing keyword '//trim(keyword))
 
-
+contains
+    subroutine range_error(message)
+       character(*), intent(in) :: message
+       if (Abacus_CSR) call abacus_csr_error(message)
+       call printerrormsg(message)
+    end subroutine range_error
 end  subroutine param_get_range_vector
 
 

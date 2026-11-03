@@ -1,0 +1,48 @@
+&TB_FILE
+ Abacus_CSR=T, Hrfile='HR.csr', Overlapfile='SR.csr',
+ Package='ABACUS', Orthogonal_Basis=F, Is_Sparse_Hr=F
+/
+&CONTROL
+ BulkBand_calc=T
+/
+&SYSTEM
+ SOC=0, NumOccupied=1, E_FERMI=0.15, Nslab=3
+/
+&PARAMETERS
+ Nk1=9, Nk2=5, Nk3=3, Np=1, OmegaNum=11, OmegaMin=-1, OmegaMax=6, Eta_Arc=0.01
+
+/
+LATTICE
+Angstrom
+1 0 0
+0 1 0
+0 0 1
+ATOM_POSITIONS
+1
+Direct
+X 0 0 0
+PROJECTORS
+2
+X s pz
+SURFACE
+1 0 0
+0 1 0
+KPATH_BULK
+1
+G 0 0 0 X 0.5 0 0
+KPLANE_BULK
+0 0 0
+1 0 0
+0 0.5 0
+KCUBE_BULK
+-0.5 -0.5 -0.5
+1 0 0
+0 1 0
+0 0 1
+KPATH_SLAB
+1
+G 0 0 X 0.5 0
+KPLANE_SLAB
+-0.5 -0.5
+1 0
+0 1

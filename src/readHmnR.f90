@@ -1500,3 +1500,484 @@ end subroutine reorder_wannierbasis
    return
 
  end subroutine add_zeeman_normal_hr
+
+! ABACUS CSR adapter: opt-in bulk band energies only.
+subroutine abacus_csr_error(message)
+   use, intrinsic :: iso_fortran_env, only: error_unit
+   use wmpi
+   use para, only: stdout
+   implicit none
+   character(*), intent(in) :: message
+   logical :: log_open
+#if defined (MPI)
+   logical :: initialized
+   integer :: ierr
+#endif
+   write(error_unit, '(a)') 'ERROR: ABACUS CSR: '//trim(message)
+   flush(error_unit)
+   if (cpuid==0) then
+      inquire(unit=stdout, opened=log_open)
+      if (log_open) then
+         write(stdout, '(a)') 'ERROR: ABACUS CSR: '//trim(message)
+         flush(stdout)
+      endif
+   endif
+#if defined (MPI)
+   call mpi_initialized(initialized, ierr)
+   if (initialized) call mpi_abort(mpi_cmw, 1, ierr)
+#endif
+   stop 1
+end subroutine abacus_csr_error
+
+subroutine abacus_csr_control_defaults()
+   use para
+   implicit none
+   BulkBand_calc = .false.
+   BulkFS_calc = .false.
+   BulkFS_Plane_calc = .false.
+   BulkFS_plane_stack_calc = .false.
+   BulkGap_plane_calc = .false.
+   QPI_unfold_plane_calc = .false.
+   BulkBand_unfold_line_calc = .false.
+   Landaulevel_unfold_line_calc = .false.
+   BulkBand_unfold_plane_calc = .false.
+   BulkBand_points_calc = .false.
+   BulkBand_cube_calc = .false.
+   BulkBand_line_calc = .false.
+   BulkGap_cube_calc = .false.
+   BulkSpintexture_calc = .false.
+   BulkFatBand_calc = .false.
+   SlabBand_calc = .false.
+   SlabBand_plane_calc = .false.
+   SlabBandWaveFunc_calc = .false.
+   SlabQPI_calc = .false.
+   SlabQPI_kpath_calc = .false.
+   SlabQPI_kplane_calc = .false.
+   SlabSS_calc = .false.
+   SlabArc_calc = .false.
+   SlabSpintexture_calc = .false.
+   ChargeDensity_selected_bands_calc = .false.
+   ChargeDensity_selected_energies_calc = .false.
+   WireBand_calc = .false.
+   Wilsonloop_calc = .false.
+   WannierCenter_calc = .false.
+   BerryPhase_calc = .false.
+   BerryCurvature_kpath_sepband_calc = .false.
+   BerryCurvature_EF_calc = .false.
+   BerryCurvature_calc = .false.
+   Berrycurvature_kpath_EF_calc = .false.
+   BerryCurvature_kpath_Occupied_calc = .false.
+   BerryCurvature_plane_selectedbands_calc = .false.
+   BerryCurvature_slab_calc = .false.
+   MirrorChern_calc = .false.
+   BerryCurvature_Cube_calc = .false.
+   Z2_3D_calc = .false.
+   Chern_3D_calc = .false.
+   WeylChirality_calc = .false.
+   NLChirality_calc = .false.
+   Dos_calc = .false.
+   Dos_slab_calc = .false.
+   JDos_calc = .false.
+   EffectiveMass_calc = .false.
+   FindNodes_calc = .false.
+   TBtoKP_calc = .false.
+   LOTO_correction = .false.
+   BulkBand_plane_calc = .false.
+   Hof_Butt_calc = .false.
+   Symmetry_Import_calc = .false.
+   Boltz_Berry_correction = .false.
+   Boltz_k_calc = .false.
+   Boltz_evolve_k = .false.
+   Boltz_OHE_calc = .false.
+   AHC_Calc = .false.
+   SHC_calc = .false.
+   LandauLevel_k_calc = .false.
+   OrbitalTexture_calc = .false.
+   OrbitalTexture_3D_calc = .false.
+   LandauLevel_wavefunction_calc = .false.
+   Fit_kp_calc = .false.
+   DMFT_MAG_calc = .false.
+   LanczosSeqDOS_calc = .false.
+   Translate_to_WS_calc = .false.
+   LandauLevel_k_dos_calc = .false.
+   LandauLevel_B_dos_calc = .false.
+   LanczosBand_calc = .false.
+   LanczosDos_calc = .false.
+   LandauLevel_B_calc = .false.
+   LandauLevel_kplane_calc = .false.
+   landau_chern_calc = .false.
+   FermiLevel_calc = .false.
+   ANE_calc = .false.
+   export_newhr = .false.
+   export_maghr = .false.
+   w3d_nested_calc = .false.
+   valley_projection_calc = .false.
+   Matrix_Element_calc = .false.
+   BdGChern_calc = .false.
+   SlabBdG_calc = .false.
+   BdG_phase_calc = .false.
+   linear_optic_calc = .false.
+   BPVE_calc = .false.
+   Intra_orbital_hall_calc = .false.
+end subroutine abacus_csr_control_defaults
+
+subroutine abacus_csr_validate_control()
+   use para
+   implicit none
+   if (trim(Package)/='ABACUS') call abacus_csr_error('Abacus_CSR requires Package=ABACUS')
+   if (Orthogonal_Basis) call abacus_csr_error('Abacus_CSR requires Orthogonal_Basis=F')
+   if (.not.Is_HrFile.or.Is_Sparse.or.Is_Sparse_Hr) &
+      call abacus_csr_error('use Is_HrFile=T and Is_Sparse=Is_Sparse_Hr=F')
+   if (trim(Particle)/='electron'.or.trim(KPorTB)/='TB') &
+      call abacus_csr_error('only electron TB models are supported')
+   if (.not.(BulkBand_calc.or.BulkBand_line_calc)) &
+      call abacus_csr_error('enable BulkBand_calc or BulkBand_line_calc')
+   if (BulkFS_calc) call abacus_csr_error('unsupported CONTROL flag: BulkFS_calc')
+   if (BulkFS_Plane_calc) call abacus_csr_error('unsupported CONTROL flag: BulkFS_Plane_calc')
+   if (BulkFS_plane_stack_calc) call abacus_csr_error('unsupported CONTROL flag: BulkFS_plane_stack_calc')
+   if (BulkGap_plane_calc) call abacus_csr_error('unsupported CONTROL flag: BulkGap_plane_calc')
+   if (QPI_unfold_plane_calc) call abacus_csr_error('unsupported CONTROL flag: QPI_unfold_plane_calc')
+   if (BulkBand_unfold_line_calc) call abacus_csr_error('unsupported CONTROL flag: BulkBand_unfold_line_calc')
+   if (Landaulevel_unfold_line_calc) call abacus_csr_error('unsupported CONTROL flag: Landaulevel_unfold_line_calc')
+   if (BulkBand_unfold_plane_calc) call abacus_csr_error('unsupported CONTROL flag: BulkBand_unfold_plane_calc')
+   if (BulkBand_points_calc) call abacus_csr_error('unsupported CONTROL flag: BulkBand_points_calc')
+   if (BulkBand_cube_calc) call abacus_csr_error('unsupported CONTROL flag: BulkBand_cube_calc')
+   if (BulkGap_cube_calc) call abacus_csr_error('unsupported CONTROL flag: BulkGap_cube_calc')
+   if (BulkSpintexture_calc) call abacus_csr_error('unsupported CONTROL flag: BulkSpintexture_calc')
+   if (BulkFatBand_calc) call abacus_csr_error('unsupported CONTROL flag: BulkFatBand_calc')
+   if (SlabBand_calc) call abacus_csr_error('unsupported CONTROL flag: SlabBand_calc')
+   if (SlabBand_plane_calc) call abacus_csr_error('unsupported CONTROL flag: SlabBand_plane_calc')
+   if (SlabBandWaveFunc_calc) call abacus_csr_error('unsupported CONTROL flag: SlabBandWaveFunc_calc')
+   if (SlabQPI_calc) call abacus_csr_error('unsupported CONTROL flag: SlabQPI_calc')
+   if (SlabQPI_kpath_calc) call abacus_csr_error('unsupported CONTROL flag: SlabQPI_kpath_calc')
+   if (SlabQPI_kplane_calc) call abacus_csr_error('unsupported CONTROL flag: SlabQPI_kplane_calc')
+   if (SlabSS_calc) call abacus_csr_error('unsupported CONTROL flag: SlabSS_calc')
+   if (SlabArc_calc) call abacus_csr_error('unsupported CONTROL flag: SlabArc_calc')
+   if (SlabSpintexture_calc) call abacus_csr_error('unsupported CONTROL flag: SlabSpintexture_calc')
+   if (ChargeDensity_selected_bands_calc) call abacus_csr_error('unsupported CONTROL flag: ChargeDensity_selected_bands_calc')
+   if (ChargeDensity_selected_energies_calc) call abacus_csr_error('unsupported CONTROL flag: ChargeDensity_selected_energies_calc')
+   if (WireBand_calc) call abacus_csr_error('unsupported CONTROL flag: WireBand_calc')
+   if (Wilsonloop_calc) call abacus_csr_error('unsupported CONTROL flag: Wilsonloop_calc')
+   if (WannierCenter_calc) call abacus_csr_error('unsupported CONTROL flag: WannierCenter_calc')
+   if (BerryPhase_calc) call abacus_csr_error('unsupported CONTROL flag: BerryPhase_calc')
+   if (BerryCurvature_kpath_sepband_calc) call abacus_csr_error('unsupported CONTROL flag: BerryCurvature_kpath_sepband_calc')
+   if (BerryCurvature_EF_calc) call abacus_csr_error('unsupported CONTROL flag: BerryCurvature_EF_calc')
+   if (BerryCurvature_calc) call abacus_csr_error('unsupported CONTROL flag: BerryCurvature_calc')
+   if (Berrycurvature_kpath_EF_calc) call abacus_csr_error('unsupported CONTROL flag: Berrycurvature_kpath_EF_calc')
+   if (BerryCurvature_kpath_Occupied_calc) call abacus_csr_error('unsupported CONTROL flag: BerryCurvature_kpath_Occupied_calc')
+   if (BerryCurvature_plane_selectedbands_calc) call abacus_csr_error('unsupported CONTROL flag: BerryCurvature_plane_selectedbands_calc')
+   if (BerryCurvature_slab_calc) call abacus_csr_error('unsupported CONTROL flag: BerryCurvature_slab_calc')
+   if (MirrorChern_calc) call abacus_csr_error('unsupported CONTROL flag: MirrorChern_calc')
+   if (BerryCurvature_Cube_calc) call abacus_csr_error('unsupported CONTROL flag: BerryCurvature_Cube_calc')
+   if (Z2_3D_calc) call abacus_csr_error('unsupported CONTROL flag: Z2_3D_calc')
+   if (Chern_3D_calc) call abacus_csr_error('unsupported CONTROL flag: Chern_3D_calc')
+   if (WeylChirality_calc) call abacus_csr_error('unsupported CONTROL flag: WeylChirality_calc')
+   if (NLChirality_calc) call abacus_csr_error('unsupported CONTROL flag: NLChirality_calc')
+   if (Dos_calc) call abacus_csr_error('unsupported CONTROL flag: Dos_calc')
+   if (Dos_slab_calc) call abacus_csr_error('unsupported CONTROL flag: Dos_slab_calc')
+   if (JDos_calc) call abacus_csr_error('unsupported CONTROL flag: JDos_calc')
+   if (EffectiveMass_calc) call abacus_csr_error('unsupported CONTROL flag: EffectiveMass_calc')
+   if (FindNodes_calc) call abacus_csr_error('unsupported CONTROL flag: FindNodes_calc')
+   if (TBtoKP_calc) call abacus_csr_error('unsupported CONTROL flag: TBtoKP_calc')
+   if (LOTO_correction) call abacus_csr_error('unsupported CONTROL flag: LOTO_correction')
+   if (BulkBand_plane_calc) call abacus_csr_error('unsupported CONTROL flag: BulkBand_plane_calc')
+   if (Hof_Butt_calc) call abacus_csr_error('unsupported CONTROL flag: Hof_Butt_calc')
+   if (Symmetry_Import_calc) call abacus_csr_error('unsupported CONTROL flag: Symmetry_Import_calc')
+   if (Boltz_Berry_correction) call abacus_csr_error('unsupported CONTROL flag: Boltz_Berry_correction')
+   if (Boltz_k_calc) call abacus_csr_error('unsupported CONTROL flag: Boltz_k_calc')
+   if (Boltz_evolve_k) call abacus_csr_error('unsupported CONTROL flag: Boltz_evolve_k')
+   if (Boltz_OHE_calc) call abacus_csr_error('unsupported CONTROL flag: Boltz_OHE_calc')
+   if (AHC_Calc) call abacus_csr_error('unsupported CONTROL flag: AHC_Calc')
+   if (SHC_calc) call abacus_csr_error('unsupported CONTROL flag: SHC_calc')
+   if (LandauLevel_k_calc) call abacus_csr_error('unsupported CONTROL flag: LandauLevel_k_calc')
+   if (OrbitalTexture_calc) call abacus_csr_error('unsupported CONTROL flag: OrbitalTexture_calc')
+   if (OrbitalTexture_3D_calc) call abacus_csr_error('unsupported CONTROL flag: OrbitalTexture_3D_calc')
+   if (LandauLevel_wavefunction_calc) call abacus_csr_error('unsupported CONTROL flag: LandauLevel_wavefunction_calc')
+   if (Fit_kp_calc) call abacus_csr_error('unsupported CONTROL flag: Fit_kp_calc')
+   if (DMFT_MAG_calc) call abacus_csr_error('unsupported CONTROL flag: DMFT_MAG_calc')
+   if (LanczosSeqDOS_calc) call abacus_csr_error('unsupported CONTROL flag: LanczosSeqDOS_calc')
+   if (Translate_to_WS_calc) call abacus_csr_error('unsupported CONTROL flag: Translate_to_WS_calc')
+   if (LandauLevel_k_dos_calc) call abacus_csr_error('unsupported CONTROL flag: LandauLevel_k_dos_calc')
+   if (LandauLevel_B_dos_calc) call abacus_csr_error('unsupported CONTROL flag: LandauLevel_B_dos_calc')
+   if (LanczosBand_calc) call abacus_csr_error('unsupported CONTROL flag: LanczosBand_calc')
+   if (LanczosDos_calc) call abacus_csr_error('unsupported CONTROL flag: LanczosDos_calc')
+   if (LandauLevel_B_calc) call abacus_csr_error('unsupported CONTROL flag: LandauLevel_B_calc')
+   if (LandauLevel_kplane_calc) call abacus_csr_error('unsupported CONTROL flag: LandauLevel_kplane_calc')
+   if (landau_chern_calc) call abacus_csr_error('unsupported CONTROL flag: landau_chern_calc')
+   if (FermiLevel_calc) call abacus_csr_error('unsupported CONTROL flag: FermiLevel_calc')
+   if (ANE_calc) call abacus_csr_error('unsupported CONTROL flag: ANE_calc')
+   if (export_newhr) call abacus_csr_error('unsupported CONTROL flag: export_newhr')
+   if (export_maghr) call abacus_csr_error('unsupported CONTROL flag: export_maghr')
+   if (w3d_nested_calc) call abacus_csr_error('unsupported CONTROL flag: w3d_nested_calc')
+   if (valley_projection_calc) call abacus_csr_error('unsupported CONTROL flag: valley_projection_calc')
+   if (Matrix_Element_calc) call abacus_csr_error('unsupported CONTROL flag: Matrix_Element_calc')
+   if (BdGChern_calc) call abacus_csr_error('unsupported CONTROL flag: BdGChern_calc')
+   if (SlabBdG_calc) call abacus_csr_error('unsupported CONTROL flag: SlabBdG_calc')
+   if (BdG_phase_calc) call abacus_csr_error('unsupported CONTROL flag: BdG_phase_calc')
+   if (linear_optic_calc) call abacus_csr_error('unsupported CONTROL flag: linear_optic_calc')
+   if (BPVE_calc) call abacus_csr_error('unsupported CONTROL flag: BPVE_calc')
+   if (Intra_orbital_hall_calc) call abacus_csr_error('unsupported CONTROL flag: Intra_orbital_hall_calc')
+end subroutine abacus_csr_validate_control
+
+subroutine readAbacusCSR()
+   use para
+   use, intrinsic :: ieee_arithmetic, only: ieee_is_finite
+   use, intrinsic :: iso_fortran_env, only: iostat_eor
+   implicit none
+   integer :: matrix, unit_in, stat, nw, nr, step, hr_step
+   integer :: block, target, j, row, entry, col, nnz, total_nnz
+   integer :: rvec(3)
+   integer, allocatable :: columns(:), pointers(:)
+   real(dp), allocatable :: real_values(:)
+   complex(dp), allocatable :: values(:)
+   logical, allocatable :: seen_r(:), seen_col(:)
+   character(1) :: matrix_kind
+   character(512) :: line
+   character(80) :: filename
+   character(:), allocatable :: record
+
+   if (Num_wann<1) call abacus_csr_error('Num_wann must be positive')
+   if (NumOccupied<1.or.NumOccupied>Num_wann) &
+      call abacus_csr_error('NumOccupied must lie in [1, Num_wann]')
+   if (SOC/=0.and.SOC/=1) call abacus_csr_error('SOC must be 0 or 1')
+   if (Add_Zeeman_Field) call abacus_csr_error('Zeeman modification is not supported')
+   if (Electric_field_in_eVpA/=0.0_dp.or.Symmetrical_Electric_field_in_eVpA/=0.0_dp) &
+      call abacus_csr_error('electric-field modification is not supported')
+   if (.not.ieee_is_finite(E_fermi)) call abacus_csr_error('E_FERMI must be finite')
+   if (NumberofSelectedOccupiedBands<1) call abacus_csr_error('empty occupied-band selection')
+   if (any(Selected_Occupiedband_index<1).or.any(Selected_Occupiedband_index>Num_wann)) &
+      call abacus_csr_error('occupied-band selection is out of range')
+
+   ! Reuse the upstream dense H(R), S(R) storage and Fourier transforms.
+   do matrix=1,2
+      if (matrix==1) then
+         filename=Hrfile
+         matrix_kind='H'
+      else
+         filename=Overlapfile
+         matrix_kind='S'
+      endif
+      open(newunit=unit_in, file=filename, status='old', action='read', iostat=stat)
+      if (stat/=0) call abacus_csr_error('cannot open '//trim(filename))
+      call read_header_integer('STEP:', step)
+      if (matrix==1) then
+         hr_step=step
+      else
+         if (step/=hr_step) call abacus_csr_error('HR and SR STEP values differ')
+      endif
+      call read_header_integer('Matrix Dimension of '//matrix_kind//'(R):', nw)
+      if (nw/=Num_wann) call abacus_csr_error('CSR dimension differs from Num_wann')
+      call read_header_integer('Matrix number of '//matrix_kind//'(R):', nr)
+      if (nr<1) call abacus_csr_error('R-block count must be positive')
+
+      if (matrix==1) then
+         Nrpts=nr
+         allocate(HmnR(Num_wann, Num_wann, Nrpts), irvec(3, Nrpts), ndegen(Nrpts), stat=stat)
+         if (stat/=0) call abacus_csr_error('cannot allocate dense HR storage')
+         HmnR=cmplx(0.0_dp, 0.0_dp, dp)
+         irvec=0
+         ndegen=1
+      else
+         if (nr/=Nrpts) call abacus_csr_error('HR and SR R-block counts differ')
+         allocate(SmnR(Num_wann, Num_wann, Nrpts), stat=stat)
+         if (stat/=0) call abacus_csr_error('cannot allocate dense SR storage')
+         SmnR=cmplx(0.0_dp, 0.0_dp, dp)
+      endif
+      allocate(seen_r(Nrpts), seen_col(Num_wann), stat=stat)
+      if (stat/=0) call abacus_csr_error('cannot allocate CSR validation storage')
+      seen_r=.false.
+      total_nnz=0
+
+      do block=1,nr
+         call read_record(4, .false., 'R-block header')
+         read(record, *, iostat=stat) rvec, nnz
+         if (stat/=0) call abacus_csr_error('invalid R-block header')
+         if (nnz<0) call abacus_csr_error('negative nonzero count')
+         if (int(nnz,8)>int(Num_wann,8)*int(Num_wann,8)) &
+            call abacus_csr_error('nonzero count exceeds matrix size')
+         if (matrix==1) then
+            do j=1,block-1
+               if (all(irvec(:,j)==rvec)) call abacus_csr_error('duplicate HR R vector')
+            enddo
+            target=block
+            irvec(:,target)=rvec
+         else
+            target=0
+            do j=1,Nrpts
+               if (all(irvec(:,j)==rvec)) then
+                  target=j
+                  exit
+               endif
+            enddo
+            if (target==0) call abacus_csr_error('SR R vector is absent from HR')
+         endif
+         if (seen_r(target)) call abacus_csr_error('duplicate SR R vector')
+         seen_r(target)=.true.
+
+         if (nnz>0) then
+            allocate(values(nnz), columns(nnz), pointers(Num_wann+1), stat=stat)
+            if (stat/=0) call abacus_csr_error('cannot allocate CSR block')
+            call read_record(nnz, SOC==1, 'CSR value array')
+            if (SOC==1) then
+               read(record, *, iostat=stat) values
+            else
+               allocate(real_values(nnz), stat=stat)
+               if (stat/=0) call abacus_csr_error('cannot allocate real CSR values')
+               read(record, *, iostat=stat) real_values
+               if (stat==0) values=cmplx(real_values, 0.0_dp, dp)
+               deallocate(real_values)
+            endif
+            if (stat/=0) call abacus_csr_error('invalid CSR value array')
+            if (.not.all(ieee_is_finite(real(values,dp))).or. &
+                .not.all(ieee_is_finite(aimag(values)))) call abacus_csr_error('non-finite CSR value')
+            call read_record(nnz, .false., 'CSR column array')
+            read(record, *, iostat=stat) columns
+            if (stat/=0) call abacus_csr_error('invalid CSR column array')
+            call read_record(Num_wann+1, .false., 'CSR row-pointer array')
+            read(record, *, iostat=stat) pointers
+            if (stat/=0) call abacus_csr_error('invalid CSR row-pointer array')
+            if (any(columns<0).or.any(columns>=Num_wann)) &
+               call abacus_csr_error('CSR column index out of range')
+            if (any(pointers<0).or.any(pointers>nnz)) &
+               call abacus_csr_error('CSR row pointer out of range')
+            if (pointers(1)/=0.or.pointers(Num_wann+1)/=nnz) &
+               call abacus_csr_error('inconsistent CSR row-pointer endpoints')
+            if (any(pointers(2:)<pointers(:Num_wann))) &
+               call abacus_csr_error('non-monotonic CSR row pointers')
+            do row=1,Num_wann
+               seen_col=.false.
+               do entry=pointers(row)+1,pointers(row+1)
+                  col=columns(entry)+1
+                  if (seen_col(col)) call abacus_csr_error('duplicate CSR column in a row')
+                  seen_col(col)=.true.
+                  if (matrix==1) then
+                     HmnR(row,col,target)=0.5_dp*values(entry) ! Ry to Hartree, not eV.
+                  else
+                     SmnR(row,col,target)=values(entry)
+                  endif
+               enddo
+            enddo
+            deallocate(values, columns, pointers)
+         endif
+         if (nnz>huge(total_nnz)-total_nnz) call abacus_csr_error('CSR nonzero total overflows')
+         total_nnz=total_nnz+nnz
+      enddo
+      if (.not.all(seen_r)) call abacus_csr_error('incomplete R-vector coverage')
+      ! One calculation snapshot per input; do not silently accept a second STEP.
+      do
+         read(unit_in, '(a)', iostat=stat) line
+         if (stat<0) exit
+         if (stat/=0) call abacus_csr_error('error reading CSR trailer')
+         if (len_trim(line)>0) call abacus_csr_error('unexpected trailing data or multiple STEP records')
+      enddo
+      close(unit_in)
+      if (matrix==1) then
+         splen_input=total_nnz
+      else
+         splen_overlap_input=total_nnz
+      endif
+      deallocate(seen_r, seen_col)
+   enddo
+
+   if (.not.any(all(irvec==0,dim=1))) call abacus_csr_error('missing R=0 block')
+   allocate(crvec(3,Nrpts), stat=stat)
+   if (stat/=0) call abacus_csr_error('cannot allocate Cartesian R vectors')
+   do j=1,Nrpts
+      crvec(:,j)=Origin_cell%Rua*irvec(1,j)+Origin_cell%Rub*irvec(2,j)+Origin_cell%Ruc*irvec(3,j)
+   enddo
+   if (cpuid==0) then
+      write(stdout,'(a,i0,a,i0)') 'ABACUS CSR loaded: dimension=',Num_wann,', R blocks=',Nrpts
+      write(stdout,'(a)') 'ABACUS CSR scope: bulk band energies only; orbital weights are not exported.'
+   endif
+contains
+
+   subroutine read_header_integer(label, value)
+      character(*), intent(in) :: label
+      integer, intent(out) :: value
+      integer :: ios
+      call read_record(1, .false., 'header: '//label, label)
+      read(record, *, iostat=ios) value
+      if (ios/=0) call abacus_csr_error('invalid integer in header: '//label)
+   end subroutine read_header_integer
+
+   subroutine read_record(nfields, complex_values, context, label)
+      integer, intent(in) :: nfields
+      logical, intent(in) :: complex_values
+      character(*), intent(in) :: context
+      character(*), optional, intent(in) :: label
+      character(*), parameter :: whitespace=' '//achar(9)
+      character(4096) :: chunk
+      character(:), allocatable :: buffer
+      integer :: used, nread, ios, first, last, offset, comma, fields
+
+      ! Grow the buffer for long CSR rows; never read into the next record.
+      buffer=repeat(' ',len(chunk))
+      used=0
+      do
+         read(unit_in, '(a)', advance='no', size=nread, iostat=ios) chunk
+         if (ios/=0.and.ios/=iostat_eor) call abacus_csr_error('invalid '//context)
+         if (used+nread>len(buffer)) buffer=buffer//repeat(' ',len(buffer))
+         buffer(used+1:used+nread)=chunk(:nread)
+         used=used+nread
+         if (ios==iostat_eor) exit
+      enddo
+      record=buffer(:used)
+      if (present(label)) then
+         record=adjustl(record)
+         if (index(record,label)/=1) call abacus_csr_error('invalid '//context)
+         record=record(len(label)+1:)
+      endif
+
+      ! List-directed '/' and null/repeat fields can leave elements unassigned.
+      ! Check field boundaries here; Fortran still performs numeric conversion.
+      if (scan(record,'/!*;'//achar(34)//achar(39))>0) call abacus_csr_error('invalid '//context)
+      fields=0
+      first=1
+      do while (first<=len(record))
+         offset=verify(record(first:),whitespace)
+         if (offset==0) exit
+         first=first+offset-1
+         if (complex_values) then
+            if (record(first:first)/='(') call abacus_csr_error('invalid '//context)
+            offset=index(record(first:),')')
+            if (offset==0) call abacus_csr_error('invalid '//context)
+            last=first+offset-1
+            offset=index(record(first:last),',')
+            if (offset==0) call abacus_csr_error('invalid '//context)
+            comma=first+offset-1
+            if (verify(record(first+1:comma-1),whitespace)==0.or. &
+                verify(record(comma+1:last-1),whitespace)==0) call abacus_csr_error('invalid '//context)
+            if (scan(record(first+1:comma-1),'(),')>0.or. &
+                scan(record(comma+1:last-1),'(),')>0) call abacus_csr_error('invalid '//context)
+         else
+            offset=scan(record(first:),whitespace)
+            last=len(record)
+            if (offset>0) last=first+offset-2
+            if (scan(record(first:last),',()')>0) call abacus_csr_error('invalid '//context)
+         endif
+         if (last<len(record)) then
+            if (scan(record(last+1:last+1),whitespace)==0) call abacus_csr_error('invalid '//context)
+         endif
+         fields=fields+1
+         if (fields>nfields) call abacus_csr_error('invalid '//context//': too many fields')
+         first=last+1
+      enddo
+      if (fields/=nfields) call abacus_csr_error('invalid '//context//': missing fields')
+   end subroutine read_record
+end subroutine readAbacusCSR
+
+subroutine abacus_csr_check_k(hk,sk)
+   use para, only: dp, Num_wann
+   use, intrinsic :: ieee_arithmetic, only: ieee_is_finite
+   implicit none
+   complex(dp), intent(in) :: hk(Num_wann,Num_wann), sk(Num_wann,Num_wann)
+   real(dp), parameter :: hermitian_tol=1.0e-10_dp
+   if (.not.all(ieee_is_finite(real(hk,dp))).or..not.all(ieee_is_finite(aimag(hk)))) &
+      call abacus_csr_error('non-finite H(k)')
+   if (.not.all(ieee_is_finite(real(sk,dp))).or..not.all(ieee_is_finite(aimag(sk)))) &
+      call abacus_csr_error('non-finite S(k)')
+   if (maxval(abs(hk-conjg(transpose(hk))))>hermitian_tol*max(1.0_dp,maxval(abs(hk)))) &
+      call abacus_csr_error('H(k) is not Hermitian')
+   if (maxval(abs(sk-conjg(transpose(sk))))>hermitian_tol*max(1.0_dp,maxval(abs(sk)))) &
+      call abacus_csr_error('S(k) is not Hermitian')
+end subroutine abacus_csr_check_k
