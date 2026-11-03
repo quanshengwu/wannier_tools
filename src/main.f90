@@ -122,8 +122,12 @@
       !   if(.not. Is_Sparse_Hr) then
         if(.not. Is_Sparse) then
            !> for the dense hr file, we allocate HmnR
-           call readNormalHmnR()
-           if (.not.Orthogonal_Basis) call readNormalSmnR()
+           if (Abacus_CSR) then
+              call readAbacusCSR()
+           else
+              call readNormalHmnR()
+              if (.not.Orthogonal_Basis) call readNormalSmnR()
+           endif
            call get_hmnr_cell(Cell_defined_by_surface)
            if (valley_projection_calc) call  read_valley_operator
         !> sparse hmnr input
